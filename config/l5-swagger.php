@@ -5,7 +5,7 @@ return [
     'documentations' => [
         'default' => [
             'api' => [
-                'title' => 'Backbon Swagger UI',
+                'title' => 'BackBon Swagger UI',
             ],
 
             'routes' => [

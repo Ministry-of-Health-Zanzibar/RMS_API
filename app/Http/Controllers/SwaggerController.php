@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 
 /**
  * @OA\Info(
- *   title="Backbon API DOCUMENTATION",
+ *   title="BackBon API DOCUMENTATION",
  *   version="1.0.0",
  *   description="This is the Project Progres Information System API documentation."
  * )
