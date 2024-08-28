@@ -1,7 +1,7 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "Backbon API DOCUMENTATION",
+        "title": "BackBon API DOCUMENTATION",
         "description": "This is the Project Progres Information System API documentation.",
         "version": "1.0.0"
     },
