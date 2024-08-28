@@ -17,21 +17,48 @@ class PermissionsCotroller extends Controller
     {
         $this->middleware('auth:sanctum');
         $this->middleware('permission:View Permission|View Permission', ['only' => ['index','show']]);
-
-        $validate_batch_year = new GeneralController();
-        $validate_batch_year->batch_year_configuration();
     }
 
     /**
-     * Display a listing of the resource.
-     */
+     * @OA\Get(
+     *     path="/api/permissions",
+     *     summary="Get a list of permissions",
+     *     tags={"permissions"},
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(
+    *                 property="data",
+    *                 type="array",
+    *                 @OA\Items(
+    *                     type="object",
+    *                     @OA\Property(property="id", type="integer", example=2),
+    *                     @OA\Property(property="name", type="string", example="Create Permissioin"),
+    *                     @OA\Property(property="isSelected", type="boolean", example="true")
+    *                 )
+    *             ),
+    *             @OA\Property(property="statusCode", type="integer", example=200)
+    *         )
+    *     )
+    * )
+    */
     public function index()
     {
         if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL'))
         {
             try{
-               // $permission =  DB::table('permissions')->select('id','name')->get();
-
                 $permission =  Permission::get(['id','name']);
 
                 $permissions = [];

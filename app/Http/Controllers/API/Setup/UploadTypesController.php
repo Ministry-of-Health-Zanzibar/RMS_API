@@ -18,14 +18,49 @@ class UploadTypesController extends Controller
     {
         $this->middleware('auth:sanctum');
         $this->middleware('permission:Setup Management|Create Upload Types|Create Upload Types|Update Upload Types|Update Upload Types|Delete Upload Types', ['only' => ['index','create','store','update','destroy']]);
-
-        $validate_batch_year = new GeneralController();
-        $validate_batch_year->batch_year_configuration();
     }
 
     /**
-     * Display a listing of the resource.
-     */
+     * @OA\Get(
+     *     path="/api/uploadTypes",
+     *     summary="Get a list of uploadTypess",
+     *     tags={"uploadTypes"},
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(
+    *                 property="data",
+    *                 type="array",
+    *                 @OA\Items(
+    *                     type="object",
+    *                     @OA\Property(property="upload_type_id", type="integer", example=2),
+    *                     @OA\Property(property="upload_name", type="string", example="ROLE NATIONAL"),
+    *                     @OA\Property(property="created_by", type="integer", example=1),
+    *                     @OA\Property(property="first_name", type="string", example="Mohammed"),
+    *                     @OA\Property(property="middle_name", type="string", example="Abdalla"),
+    *                     @OA\Property(property="last_name", type="string", example="Bakar"),
+    *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-08-28 11:30:25"),
+    *                     @OA\Property(property="deleted_at", type="string", format="date-time", example="2024-08-28 11:30:25"),
+    *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-08-28 11:30:25")
+    *                 )
+    *             ),
+    *             @OA\Property(property="statusCode", type="integer", example=200)
+    *         )
+    *     )
+    * )
+    */
     public function index()
     {
         if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Setup Management'))
@@ -70,8 +105,39 @@ class UploadTypesController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
-     */
+     * @OA\Post(
+     *     path="/api/uploadTypes",
+     *     summary="Store a new uploadTypes",
+     *     tags={"uploadTypes"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="upload_name", type="string"),
+     *             @OA\Property(property="upload_excel", type="string", format="binary")
+     *         )
+     *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="message", type="string"),
+    *             @OA\Property(property="statusCode", type="integer")
+    *         )
+    *     )
+    * )
+    */
     public function store(Request $request)
     {
         $auto_id = random_int(10000, 99999).time();
@@ -138,9 +204,53 @@ class UploadTypesController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
+   /**
+     * @OA\Get(
+     *     path="/api/uploadTypes/{upload_type_id}",
+     *     summary="Get a specific uploadTypes",
+     *     tags={"uploadTypes"},
+     *     @OA\Parameter(
+     *         name="upload_type_id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(
+    *                 property="data",
+    *                 type="array",
+    *                 @OA\Items(
+    *                     type="object",
+    *                     @OA\Property(property="upload_type_id", type="integer", example=2),
+    *                     @OA\Property(property="upload_name", type="string", example="ROLE NATIONAL"),
+    *                     @OA\Property(property="created_by", type="integer", example=1),
+    *                     @OA\Property(property="first_name", type="string", example="Mohammed"),
+    *                     @OA\Property(property="middle_name", type="string", example="Abdalla"),
+    *                     @OA\Property(property="last_name", type="string", example="Bakar"),
+    *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-08-28 11:30:25"),
+    *                     @OA\Property(property="deleted_at", type="string", format="date-time", example="2024-08-28 11:30:25"),
+    *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-08-28 11:30:25")
+    *                 )
+    *             ),
+    *             @OA\Property(property="statusCode", type="integer", example=200)
+    *         )
+    *     )
+    * )
+    */
     public function show(string $upload_type_id)
     {
         if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Setup Management'))
@@ -179,9 +289,45 @@ class UploadTypesController extends Controller
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+/**
+     * @OA\Put(
+     *     path="/api/uploadTypes/{upload_type_id}",
+     *     summary="Update a uploadTypes",
+     *     tags={"uploadTypes"},
+     *     @OA\Parameter(
+     *         name="upload_type_id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="upload_name", type="string")
+     *         )
+     *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+   *             type="object",
+    *             @OA\Property(property="message", type="string"),
+    *             @OA\Property(property="statusCode", type="integer")
+    *         )
+    *     )
+    * )
+    */
     public function update(Request $request, string $upload_type_id)
     {
         // $data = Validator::make($request->all(),[

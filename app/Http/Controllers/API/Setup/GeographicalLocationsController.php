@@ -8,9 +8,11 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\GeographicalLocationsImport;
 use App\Models\GeographicalLocations;
+use Illuminate\Support\Str;
 use Exception;
 use Validator;
 use DB;
+
 
 class GeographicalLocationsController extends Controller
 {
@@ -19,13 +21,53 @@ class GeographicalLocationsController extends Controller
         $this->middleware('auth:sanctum');
         $this->middleware('permission:Setup Management|Create Location|Create Location|Update Location|Update Location|Delete Location', ['only' => ['index','create','store','update','destroy']]);
 
-        $validate_batch_year = new GeneralController();
-        $validate_batch_year->batch_year_configuration();
+        // $validate_batch_year = new GeneralController();
+        // $validate_batch_year->batch_year_configuration();
     }
-
+    
     /**
-     * Display a listing of the resource.
-     */
+     * @OA\Get(
+     *     path="/api/locations",
+     *     summary="Get a list of locations",
+     *     tags={"locations"},
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(
+    *                 property="data",
+    *                 type="array",
+    *                 @OA\Items(
+    *                     type="object",
+    *                     @OA\Property(property="location_id", type="integer", example=2),
+    *                     @OA\Property(property="location_name", type="string", example="ROLE NATIONAL"),
+    *                     @OA\Property(property="parent_id", type="string", example="web"),
+    *                     @OA\Property(property="label", type="string", example="Kaskazini Unguja REGION,Unguja ISLAND"),
+    *                     @OA\Property(property="created_by", type="integer", example=1),
+    *                     @OA\Property(property="first_name", type="string", example="Mohammed"),
+    *                     @OA\Property(property="middle_name", type="string", example="Abdalla"),
+    *                     @OA\Property(property="last_name", type="string", example="Bakar"),
+    *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-08-28 11:30:25"),
+    *                     @OA\Property(property="deleted_at", type="string", format="date-time", example="2024-08-28 11:30:25"),
+    *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-08-28 11:30:25")
+    *                 )
+    *             ),
+    *             @OA\Property(property="statusCode", type="integer", example=200)
+    *         )
+    *     )
+    * )
+    */
     public function index()
     {
         if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Setup Management'))
@@ -54,24 +96,57 @@ class GeographicalLocationsController extends Controller
      */
     public function create()
     {
-        //
+        
     }
 
     /**
-     * Store a newly created resource in storage.
-     */
+     * @OA\Post(
+     *     path="/api/locations",
+     *     summary="Store a new Geographical Location",
+     *     tags={"locations"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="location_name", type="string"),
+     *             @OA\Property(property="parent_id", type="string"),
+     *             @OA\Property(property="label", type="string"),
+     *             @OA\Property(property="upload_excel", type="string", format="binary")
+     *         )
+     *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="message", type="string"),
+    *             @OA\Property(property="statusCode", type="integer")
+    *         )
+    *     )
+    * )
+    */
     public function store(Request $request)
     {
-        $auto_id = random_int(10000, 99999).time();
+        $auto_id = random_int(100000, 999999).time();
         if((auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL')) && $request->upload_excel){
 
-            // $data = Validator::make($request->all(),[
-            //     'upload_excel' => 'mimes:xls,xlsx,csv'
-            // ]);
+            $data = Validator::make($request->all(),[
+                'upload_excel' => 'mimes:xls,xlsx,csv'
+            ]);
 
-            // if($data->fails()){
-            //     return response()->json($data->errors());
-            // }
+            if($data->fails()){
+                return response()->json($data->errors());
+            }
 
             try{
                 $path = $request->file('upload_excel')->getRealPath();
@@ -108,6 +183,7 @@ class GeographicalLocationsController extends Controller
             try{
                 $GeographicalLocations = GeographicalLocations::create([
                     'location_id' => $auto_id,
+                    'uuid' => Str::uuid(),
                     'location_name' => $request->location_name,
                     'parent_id' => $request->parent_id,
                     'label' => $request->label,
@@ -124,7 +200,7 @@ class GeographicalLocationsController extends Controller
             catch (Exception $e)
             {
                 return response()
-                    ->json(['message' => $e->getMessage(),'statusCode'=> 401]);
+                    ->json(['message' => $e->getMessage(),'statusCode'=> 500]);
             }
         }
         else{
@@ -134,8 +210,55 @@ class GeographicalLocationsController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
+     * @OA\Get(
+     *     path="/api/locations/{location_id}",
+     *     summary="Get a specific Geographical Location",
+     *     tags={"locations"},
+     *     @OA\Parameter(
+     *         name="location_id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+*             type="object",
+    *             @OA\Property(
+    *                 property="data",
+    *                 type="array",
+    *                 @OA\Items(
+    *                     type="object",
+    *                     @OA\Property(property="location_id", type="integer", example=2),
+    *                     @OA\Property(property="location_name", type="string", example="ROLE NATIONAL"),
+    *                     @OA\Property(property="parent_id", type="string", example="web"),
+    *                     @OA\Property(property="label", type="string", example="Kaskazini Unguja REGION,Unguja ISLAND"),
+    *                     @OA\Property(property="user_id", type="integer", example=1),
+    *                     @OA\Property(property="first_name", type="string", example="Mohammed"),
+    *                     @OA\Property(property="middle_name", type="string", example="Abdalla"),
+    *                     @OA\Property(property="last_name", type="string", example="Bakar"),
+    *                     @OA\Property(property="created_by", type="integer", example=1),
+    *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-08-28 11:30:25"),
+    *                     @OA\Property(property="deleted_at", type="string", format="date-time", example="2024-08-28 11:30:25"),
+    *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-08-28 11:30:25")
+    *                 )
+    *             ),
+    *             @OA\Property(property="statusCode", type="integer", example=200)
+    *         )
+    *     )
+    * )
+    */
     public function show(string $location_id)
     {
         if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Setup Management'))
@@ -174,9 +297,47 @@ class GeographicalLocationsController extends Controller
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+   /**
+     * @OA\Put(
+     *     path="/api/locations/{location_id}",
+     *     summary="Update a Geographical Location",
+     *     tags={"locations"},
+     *     @OA\Parameter(
+     *         name="location_id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="location_name", type="string"),
+     *             @OA\Property(property="parent_id", type="string"),
+     *             @OA\Property(property="label", type="string")
+     *         )
+     *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="message", type="string"),
+    *             @OA\Property(property="statusCode", type="integer")
+    *         )
+    *     )
+    * )
+    */
     public function update(Request $request, string $location_id)
     {
         $check_value = DB::select("SELECT location_name FROM geographical_locations WHERE LOWER(location_name) = LOWER('$request->location_name') and location_id != $location_id");
@@ -211,7 +372,7 @@ class GeographicalLocationsController extends Controller
             catch (Exception $e)
             {
                 return response()
-                    ->json(['message' => $e->getMessage(),'statusCode'=> 401]);
+                    ->json(['message' => $e->getMessage(),'statusCode'=> 500]);
             }
         }
         else{
@@ -220,9 +381,38 @@ class GeographicalLocationsController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+     /**
+     * @OA\Delete(
+     *     path="/api/locations/{location_id}",
+     *     summary="Delete a Geographical Location",
+     *     tags={"locations"},
+     *     @OA\Parameter(
+     *         name="location_id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="message", type="string"),
+    *             @OA\Property(property="statusCode", type="integer")
+    *         )
+    *     )
+    * )
+    */
     public function destroy(string $location_id)
     {
         if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Delete Location'))
@@ -232,7 +422,7 @@ class GeographicalLocationsController extends Controller
                 $delete->delete();
 
                 $respose =[
-                    'message'=> 'Geographical Location Blocked Successfuly',
+                    'message'=> 'Geographical Location Blocked Successfully',
                     'statusCode'=> 201
                 ];
                 return response()->json($respose);
@@ -243,4 +433,5 @@ class GeographicalLocationsController extends Controller
                 ->json(['message' => 'unAuthenticated','statusCode'=> 401]);
         }
     }
+
 }

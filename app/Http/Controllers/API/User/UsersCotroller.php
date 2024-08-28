@@ -21,14 +21,53 @@ class UsersCotroller extends Controller
     {
         $this->middleware('auth:sanctum');
         $this->middleware('permission:User Management|Create User|Create User|Update User|Update User|Delete User', ['only' => ['index','create','store','update','destroy']]);
-
-        $validate_batch_year = new GeneralController();
-        $validate_batch_year->batch_year_configuration();
     }
 
     /**
-     * Display a listing of the resource.
-     */
+     * @OA\Get(
+     *     path="/api/userAccounts",
+     *     summary="Get a list of userAccountss",
+     *     tags={"userAccounts"},
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(
+    *                 property="data",
+    *                 type="array",
+    *                 @OA\Items(
+    *                     type="object",
+    *                     @OA\Property(property="id", type="integer", example=2),
+    *                     @OA\Property(property="first_name", type="string", example="ROLE NATIONAL"),
+    *                     @OA\Property(property="middle_name", type="string", example="web"),
+    *                     @OA\Property(property="last_name", type="string", example="ROLE NATIONAL"),
+    *                     @OA\Property(property="email", type="string", example="web"),
+    *                     @OA\Property(property="phone_no", type="string", example="ROLE NATIONAL"),
+    *                     @OA\Property(property="address", type="string", example="web"),
+    *                     @OA\Property(property="gender", type="string", example="ROLE NATIONAL"),
+    *                     @OA\Property(property="date_of_birth",type="string",format="date"),
+    *                     @OA\Property(property="role_id", type="integer", example=2),
+    *                     @OA\Property(property="role_name", type="string", example="web"),
+    *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-08-28 11:30:25"),
+    *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-08-28 11:30:25")
+    *                 )
+    *             ),
+    *             @OA\Property(property="statusCode", type="integer", example=200)
+    *         )
+    *     )
+    * )
+    */
     public function index()
     {
         if(auth()->user()->hasRole('ROLE ADMIN'))
@@ -104,8 +143,48 @@ class UsersCotroller extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
-     */
+     * @OA\Post(
+     *     path="/api/userAccounts",
+     *     summary="Store a new userAccounts",
+     *     tags={"userAccounts"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="first_name", type="string"),
+     *             @OA\Property(property="middle_name", type="string"),
+     *             @OA\Property(property="last_name", type="string"),
+     *             @OA\Property(property="location_id", type="string"),
+     *             @OA\Property(property="role_id", type="string"),
+     *             @OA\Property(property="council_id", type="string"),
+     *             @OA\Property(property="phone_no", type="string"),
+     *             @OA\Property(property="date_of_birth", type="date"),
+     *             @OA\Property(property="email", type="string"),
+     *             @OA\Property(property="gender", type="string"),
+     *             @OA\Property(property="password", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="message", type="string"),
+    *             @OA\Property(property="statusCode", type="integer")
+    *         )
+    *     )
+    * )
+    */
     public function store(Request $request)
     {
         $user_id = auth()->user()->id;
@@ -184,8 +263,56 @@ class UsersCotroller extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
+     * @OA\Get(
+     *     path="/api/userAccounts/{id}",
+     *     summary="Get a specific userAccounts",
+     *     tags={"userAccounts"},
+      *     @OA\Parameter(
+     *         name="Id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(
+    *                 property="data",
+    *                 type="array",
+    *                 @OA\Items(
+    *                     type="object",
+    *                     @OA\Property(property="id", type="integer", example=2),
+    *                     @OA\Property(property="first_name", type="string", example="ROLE NATIONAL"),
+    *                     @OA\Property(property="middle_name", type="string", example="web"),
+    *                     @OA\Property(property="last_name", type="string", example="ROLE NATIONAL"),
+    *                     @OA\Property(property="email", type="string", example="web"),
+    *                     @OA\Property(property="phone_no", type="string", example="ROLE NATIONAL"),
+    *                     @OA\Property(property="address", type="string", example="web"),
+    *                     @OA\Property(property="gender", type="string", example="ROLE NATIONAL"),
+    *                     @OA\Property(property="date_of_birth",type="string",format="date"),
+    *                     @OA\Property(property="role_id", type="integer", example=2),
+    *                     @OA\Property(property="role_name", type="string", example="web"),
+    *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-08-28 11:30:25"),
+    *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-08-28 11:30:25")
+    *                 )
+    *             ),
+    *             @OA\Property(property="statusCode", type="integer", example=200)
+    *         )
+    *     )
+    * )
+    */
     public function show(string $id)
     {
         if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Delete User'))
@@ -219,9 +346,54 @@ class UsersCotroller extends Controller
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+/**
+     * @OA\Put(
+     *     path="/api/userAccounts/{id}",
+     *     summary="Update a userAccounts",
+     *     tags={"userAccounts"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="first_name", type="string"),
+     *             @OA\Property(property="middle_name", type="string"),
+     *             @OA\Property(property="last_name", type="string"),
+     *             @OA\Property(property="location_id", type="string"),
+     *             @OA\Property(property="council_id", type="string"),
+     *             @OA\Property(property="phone_no", type="string"),
+     *             @OA\Property(property="date_of_birth", type="date"),
+     *             @OA\Property(property="email", type="string"),
+     *             @OA\Property(property="gender", type="string"),
+     *             @OA\Property(property="password", type="string")
+     *         )
+     *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="message", type="string"),
+    *             @OA\Property(property="statusCode", type="integer")
+    *         )
+    *     )
+    * )
+    */
     public function update(Request $request, string $id)
     {
         $user_id = auth()->user()->id;
@@ -271,9 +443,38 @@ class UsersCotroller extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+/**
+     * @OA\Delete(
+     *     path="/api/userAccounts/{id}",
+     *     summary="Delete a userAccounts",
+     *     tags={"userAccounts"},
+    *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+    *      @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="message", type="string"),
+    *             @OA\Property(property="statusCode", type="integer")
+    *         )
+    *     )
+    * )
+    */
     public function destroy(string $id)
     {
         //

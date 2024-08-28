@@ -17,9 +17,6 @@ class UserProfileCotroller extends Controller
     {
         $this->middleware('auth:sanctum');
         //$this->middleware('permission:Setup Management|Create Upload Types|Create Upload Types|Update Upload Types|Update Upload Types|Delete Upload Types', ['only' => ['index','create','store','update','destroy']]);
-
-        $validate_batch_year = new GeneralController();
-        $validate_batch_year->batch_year_configuration();
     }
     
     /**
@@ -68,8 +65,39 @@ class UserProfileCotroller extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
-     */
+     * @OA\Post(
+     *     path="/api/changePassword",
+     *     summary="change Password",
+     *     tags={"userProfile"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="new_password", type="string"),
+     *             @OA\Property(property="password_confirmation", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="message", type="string"),
+    *             @OA\Property(property="statusCode", type="integer")
+    *         )
+    *     )
+    * )
+    */
     public function change_password(Request $request)
     {
         $id = auth()->user()->id;

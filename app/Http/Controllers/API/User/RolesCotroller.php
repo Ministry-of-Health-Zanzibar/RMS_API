@@ -16,14 +16,45 @@ class RolesCotroller extends Controller
     {
         $this->middleware('auth:sanctum');
         $this->middleware('permission:User Management|Create Role|Create Role|Update Role|Update Role|Delete Role', ['only' => ['index','create','store','update','destroy']]);
-
-        $validate_batch_year = new GeneralController();
-        $validate_batch_year->batch_year_configuration();
     }
 
     /**
-     * Display a listing of the resource.
-     */
+     * @OA\Get(
+     *     path="/api/roles",
+     *     summary="Get a list of roles",
+     *     tags={"roles"},
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(
+    *                 property="data",
+    *                 type="array",
+    *                 @OA\Items(
+    *                     type="object",
+    *                     @OA\Property(property="id", type="integer", example=2),
+    *                     @OA\Property(property="name", type="string", example="ROLE NATIONAL"),
+    *                     @OA\Property(property="guard_name", type="string", example="web"),
+    *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-08-28 11:30:25"),
+    *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-08-28 11:30:25")
+    *                 )
+    *             ),
+    *             @OA\Property(property="statusCode", type="integer", example=200)
+    *         )
+    *     )
+    * )
+    */
     public function index()
     {
         if(auth()->user()->hasRole('ROLE ADMIN')){
@@ -92,8 +123,39 @@ class RolesCotroller extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
-     */
+     * @OA\Post(
+     *     path="/api/roles",
+     *     summary="Store a new role",
+     *     tags={"roles"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="permission_id", type="array", @OA\Items(type="integer"))
+     *         )
+     *     ),
+     *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="message", type="string"),
+    *             @OA\Property(property="statusCode", type="integer")
+    *         )
+    *     )
+    * )
+    */
     public function store(Request $request)
     {
         $permission = $request->permission_id;
@@ -149,8 +211,54 @@ class RolesCotroller extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
+     * @OA\Get(
+     *     path="/api/roles/{id}",
+     *     summary="Get a specific role",
+     *     tags={"roles"},
+      *     @OA\Parameter(
+     *         name="Id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(
+    *                 property="roles",
+    *                 type="array",
+    *                 @OA\Items(
+    *                     type="object",
+    *                     @OA\Property(property="id", type="integer", example=1),
+    *                     @OA\Property(property="name", type="string", example="ROLE ADMIN")
+    *                 )
+    *             ),
+    *             @OA\Property(
+    *                 property="permission",
+    *                 type="array",
+    *                 @OA\Items(
+    *                     type="object",
+    *                     @OA\Property(property="id", type="integer", example=1),
+    *                     @OA\Property(property="name", type="string", example="View Dashboard"),
+    *                     @OA\Property(property="isSelected", type="boolean", example=true)
+    *                 )
+    *             )
+    *         )
+    *     )
+    * )
+    */
     public function show(string $id)
     {
         if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Update Role'))
@@ -210,8 +318,45 @@ class RolesCotroller extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
-     */
+     * @OA\Put(
+     *     path="/api/roles/{id}",
+     *     summary="Update a role",
+     *     tags={"roles"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="permission_id", type="array", @OA\Items(type="integer"))
+     *         )
+     *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="message", type="string"),
+    *             @OA\Property(property="statusCode", type="integer")
+    *         )
+    *     )
+    * )
+    */
     public function update(Request $request, string $id)
     {
         $data = Validator::make($request->all(),[
@@ -258,9 +403,38 @@ class RolesCotroller extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+     /**
+     * @OA\Delete(
+     *     path="/api/roles/{id}",
+     *     summary="Delete a role",
+     *     tags={"roles"},
+    *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+    *      @OA\Response(
+    *         response=200,
+    *         description="Successful operation",
+    *         @OA\Header(
+    *             header="Cache-Control",
+    *             description="Cache control header",
+    *             @OA\Schema(type="string", example="no-cache, private")
+    *         ),
+    *         @OA\Header(
+    *             header="Content-Type",
+    *             description="Content type header",
+    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+    *         ),
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="message", type="string"),
+    *             @OA\Property(property="statusCode", type="integer")
+    *         )
+    *     )
+    * )
+    */
     public function destroy(string $id)
     {
         if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Delete Role'))
