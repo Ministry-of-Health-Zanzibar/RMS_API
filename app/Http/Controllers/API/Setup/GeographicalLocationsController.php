@@ -15,7 +15,7 @@ use DB;
 
 
 class GeographicalLocationsController extends Controller
-{
+{ 
     public function __construct()
     {
         $this->middleware('auth:sanctum');
@@ -24,7 +24,7 @@ class GeographicalLocationsController extends Controller
         // $validate_batch_year = new GeneralController();
         // $validate_batch_year->batch_year_configuration();
     }
-    
+
     /**
      * @OA\Get(
      *     path="/api/locations",
@@ -96,7 +96,7 @@ class GeographicalLocationsController extends Controller
      */
     public function create()
     {
-        
+
     }
 
     /**
@@ -177,7 +177,7 @@ class GeographicalLocationsController extends Controller
                     'statusCode'=> 400
                 ];
 
-                return response()->json($respose);       
+                return response()->json($respose);
             }
 
             try{
@@ -349,7 +349,7 @@ class GeographicalLocationsController extends Controller
                 'statusCode'=> 400
             ];
 
-            return response()->json($respose);       
+            return response()->json($respose);
         }
 
         if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Update Location'))
