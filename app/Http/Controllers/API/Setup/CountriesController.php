@@ -17,9 +17,9 @@ class CountriesController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Country|Delete Country', ['only' => ['index','destroy']]);
+        $this->middleware('permission:Setup Management|Delete Country', ['only' => ['index','destroy']]);
     }
-    
+
     /**
      * @OA\Get(
      *     path="/api/countries",
@@ -65,7 +65,7 @@ class CountriesController extends Controller
     public function index()
     {
         //
-        if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('View Country'))
+        if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Setup Management'))
         {
             $countries = DB::table('countries')
                                 ->join('users', 'users.id', '=', 'countries.created_by')
@@ -93,13 +93,13 @@ class CountriesController extends Controller
         //
     }
 
-   
+
     public function store(Request $request)
     {
         //
     }
 
-    
+
     public function show(string $id)
     {
         //
@@ -113,7 +113,7 @@ class CountriesController extends Controller
         //
     }
 
-   
+
     public function update(Request $request, string $id)
     {
         //
@@ -158,18 +158,18 @@ class CountriesController extends Controller
             $delete = Countries::find($country_id);
             if ($delete != null) {
                 $delete->delete();
-                
+
                 $respose =[
                     'message'=>'Data deleted successfuly',
                     'statusCode'=>'200'
                 ];
-                return response()->json($respose); 
+                return response()->json($respose);
             }
         }
         else{
             return response()
                 ->json(['message' => 'unAuthenticated','statusCode'=> 401]);
         }
-    
+
     }
 }
