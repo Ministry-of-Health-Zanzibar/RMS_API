@@ -15,7 +15,6 @@ class Disease extends Model
 
     protected $primaryKey = 'disease_id';   // custom PK
     public $incrementing = true;            // still auto-incrementing
-    protected $keyType = 'int';             // make sure Laravel knows it's an integer
 
     protected $fillable = [
         'disease_name',
