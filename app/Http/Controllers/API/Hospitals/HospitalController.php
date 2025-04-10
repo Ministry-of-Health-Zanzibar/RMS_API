@@ -156,8 +156,8 @@ class HospitalController extends Controller
         if ($hospital) {
             return response([
                 'data' => $hospital,
-                'statusCode' => 200,
-            ], 201);
+                'statusCode' => 201,
+            ], status: 201);
         } else {
             return response([
                 'message' => 'Internal server error',
