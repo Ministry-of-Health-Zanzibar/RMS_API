@@ -4,16 +4,15 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('treatments', function (Blueprint $table) {
-            $table->id();  // Auto-incrementing primary key
-            $table->string('referral_id');  // Foreign key from the referrals table
+            $table->bigIncrements('treatment_id');  // Auto-incrementing primary key
+            $table->unsignedBigInteger('referral_id');
             $table->date('received_date');
             $table->date('started_date')->nullable();
             $table->date('ended_date')->nullable();
@@ -21,6 +20,7 @@ return new class extends Migration
             $table->text('measurements')->nullable();  // Store measurements as text
             $table->unsignedBigInteger('disease_id');  // Foreign key to the disease table
             $table->string('treatment_file')->nullable();  // Path to uploaded treatment file
+            $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();
 

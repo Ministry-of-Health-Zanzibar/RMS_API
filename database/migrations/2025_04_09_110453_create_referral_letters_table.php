@@ -4,18 +4,18 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('referral_letters', function (Blueprint $table) {
-            $table->id();  // Auto-incrementing primary key
-            $table->string('referral_id');  // Foreign key from the referrals table
+            $table->bigIncrements('referral_letter_id');  // Auto-incrementing primary key
+            $table->unsignedBigInteger('referral_id');  // Foreign key from the referrals table
             $table->text('letter_text');  // Text of the referral letter
             $table->boolean('signed')->default(false);  // Default value for 'signed' is false
+            $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();
 
