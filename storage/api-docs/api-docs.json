@@ -12,6 +12,61 @@
         }
     ],
     "paths": {
+        "/api/hospitals/unblock/{id}": {
+            "patch": {
+                "tags": [
+                    "hospitals"
+                ],
+                "summary": "Unblock hospital",
+                "operationId": "b2cd7a55d9a79e283f8acb7aec5fcd17",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/countries": {
             "get": {
                 "tags": [
@@ -2799,6 +2854,10 @@
         }
     },
     "tags": [
+        {
+            "name": "hospitals",
+            "description": "hospitals"
+        },
         {
             "name": "countries",
             "description": "countries"
