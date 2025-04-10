@@ -50,4 +50,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // RMS RELATED APIs
     Route::resource('hospitals', HospitalController::class);
+    Route::patch('hospitals/unBlock/{hospitalId}', [HospitalController::class, 'unBlockHospital']);
+
 });

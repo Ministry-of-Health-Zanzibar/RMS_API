@@ -22,7 +22,8 @@ class HospitalController extends Controller
      */
     public function index()
     {
-        if (!auth()->user()->can('View Hospital')) {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View Hospital')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -254,7 +255,7 @@ class HospitalController extends Controller
         $hospital->restore($id);
 
         return response([
-            'message' => 'Hospital restored successfully',
+            'message' => 'Hospital unbocked successfully',
             'statusCode' => 200,
         ], 200);
     }

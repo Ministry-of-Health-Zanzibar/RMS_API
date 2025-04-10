@@ -18,7 +18,7 @@ return new class extends Migration {
             $table->date('ended_date')->nullable();
             $table->enum('treatment_status', ['Pending', 'In Progress', 'Completed', 'Cancelled']);
             $table->text('measurements')->nullable();  // Store measurements as text
-            $table->unsignedBigInteger('disease_id');  // Foreign key to the disease table
+            $table->string('disease');  // Foreign key to the disease table
             $table->string('treatment_file')->nullable();  // Path to uploaded treatment file
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
@@ -26,7 +26,7 @@ return new class extends Migration {
 
             // Foreign key constraints
             $table->foreign('referral_id')->references('referral_id')->on('referrals');
-            $table->foreign('disease_id')->references('disease_id')->on('diseases');
+            // $table->foreign('disease_id')->references('disease_id')->on('diseases');
         });
     }
 
