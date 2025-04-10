@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\Hospitals\HospitalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 // use App\Http\Controllers\API\Auth\AuthController;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 
- Route::post('login', [App\Http\Controllers\API\Auth\AuthController::class, 'login']);
+Route::post('login', [App\Http\Controllers\API\Auth\AuthController::class, 'login']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
@@ -31,7 +32,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('identifications', App\Http\Controllers\API\Setup\IdentificationsController::class);
     Route::resource('senorities', App\Http\Controllers\API\Setup\SenoritiesController::class);
     Route::resource('countries', App\Http\Controllers\API\Setup\CountriesController::class);
-    
+
     Route::resource('userAccounts', App\Http\Controllers\API\User\UsersCotroller::class);
     Route::resource('roles', App\Http\Controllers\API\User\RolesCotroller::class);
     Route::resource('permissions', App\Http\Controllers\API\User\PermissionsCotroller::class);
@@ -45,5 +46,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('unBlockGeographicalLocations/{geographical_locations_id}', [App\Http\Controllers\API\Setup\UnBlockCotroller::class, 'unblock_geographical_locations'])->name('unBlockGeographicalLocations');
     Route::get('unBlockUploadTypes/{upload_types_id}', [App\Http\Controllers\API\Setup\UnBlockCotroller::class, 'unblock_upload_types'])->name('unBlockUploadTypes');
     Route::get('unBlockUser/{user_id}', [App\Http\Controllers\API\Setup\UnBlockCotroller::class, 'unblock_user'])->name('unBlockUser');
-    
+
+
+    // RMS RELATED APIs
+    Route::resource('hospitals', HospitalController::class);
 });
