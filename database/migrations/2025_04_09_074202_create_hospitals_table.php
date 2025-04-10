@@ -12,8 +12,8 @@ return new class extends Migration {
     {
         Schema::create('hospitals', function (Blueprint $table) {
             $table->bigIncrements('hospital_id');
-            $table->string('hospital_code')->unique();
             $table->string('hospital_name');
+            $table->string('hospital_code')->unique();
             $table->text('hospital_address')->nullable();
             $table->string('contact_number', 20)->nullable();
             $table->string('hospital_email')->nullable();
