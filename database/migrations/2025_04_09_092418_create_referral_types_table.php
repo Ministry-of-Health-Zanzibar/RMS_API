@@ -13,6 +13,7 @@ return new class extends Migration {
         Schema::create('referral_types', function (Blueprint $table) {
             $table->bigIncrements('referral_type_id'); // auto-increment primary key
             $table->string('referral_type_name');
+            $table->string('referral_type_code')->unique();
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();

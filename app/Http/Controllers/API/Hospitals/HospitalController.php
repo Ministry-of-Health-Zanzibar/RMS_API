@@ -14,9 +14,6 @@ class HospitalController extends Controller
         $this->middleware('auth:sanctum');
         $this->middleware('permission:View Hospital|Create Hospital|View Hospital|Update Hospital|Delete Hospital', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
     }
-
-
-
     /**
      * Display a listing of the resource.
      */
@@ -441,7 +438,7 @@ class HospitalController extends Controller
         $hospital->restore($id);
 
         return response([
-            'message' => 'Hospital unbocked successfully',
+            'message' => 'Hospital unblocked successfully',
             'statusCode' => 200,
         ], 200);
     }

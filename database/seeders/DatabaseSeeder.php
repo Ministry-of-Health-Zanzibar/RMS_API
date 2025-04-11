@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             batch_year::class,
             ReasonSeeder::class,
             HospitalSeeder::class,
+            referralTypeSeeder::class,
         ]);
     }
 }
