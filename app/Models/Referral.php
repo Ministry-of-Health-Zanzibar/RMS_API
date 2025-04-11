@@ -14,10 +14,9 @@ class Referral extends Model
     use LogsActivity, HasFactory, SoftDeletes;
 
     protected $primaryKey = 'referral_id';  // Set the primary key to referral_id
-    public $incrementing = false;  // Disable auto-increment
+    public $incrementing = true;  // Disable auto-increment
 
     protected $fillable = [
-        'referral_id',
         'patient_id',
         'hospital_id',
         'referral_type_id',
@@ -25,7 +24,8 @@ class Referral extends Model
         'start_date',
         'end_date',
         'status',
-        'confirmed_by'
+        'confirmed_by',
+        'created_by',
     ];
 
     public function patient()

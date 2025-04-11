@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\Hospitals\HospitalController;
+use App\Http\Controllers\API\Referrals\ReferralController;
 use App\Http\Controllers\API\ReferralType\ReferralTypeController;
 use App\Http\Controllers\API\Insuarances\InsuaranceController;
 use App\Http\Controllers\API\Patients\PatientController;
@@ -61,13 +62,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('referralTypes', ReferralTypeController::class);
     Route::patch('referralTypes/unblock/{id}', [ReferralTypeController::class, 'unBlockReferralType']);
 
+    // PATIENTS APIs
     Route::resource('patients', PatientController::class);
     Route::post('patients/update/{id}', [PatientController::class, 'updatePatient']);
     Route::patch('patients/unBlock/{id}', [PatientController::class, 'unBlockPatient']);
 
+    // INSUARANCES APIs
     Route::resource('insuarances', InsuaranceController::class);
     Route::patch('insuarances/unBlock/{hospitalId}', [InsuaranceController::class, 'unBlockHospital']);
 
+    // REFERRAL APIs
+    Route::resource('referrals', ReferralController::class);
+    Route::patch('referrals/unBlock/{referralId}', [ReferralController::class, 'unBlockReferral']);
 
     // RMS REASON APIs
     Route::resource('reasons', ReasonController::class);
