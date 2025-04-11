@@ -73,7 +73,10 @@ class permission_info extends Seeder
             'Update Patient',
             'Delete Patient',
             'View Patient',
-
+            'Create Reason',
+            'Update Reason',
+            'Delete Reason',
+            'View Reason',
 
         ];
 

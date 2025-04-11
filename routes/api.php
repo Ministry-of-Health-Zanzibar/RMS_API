@@ -6,6 +6,7 @@ use App\Http\Controllers\API\Insuarances\InsuaranceController;
 use App\Http\Controllers\API\Patients\PatientController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\Reasons\ReasonController;
 // use App\Http\Controllers\API\Auth\AuthController;
 
 /*
@@ -67,5 +68,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('insuarances', InsuaranceController::class);
     Route::patch('insuarances/unBlock/{hospitalId}', [InsuaranceController::class, 'unBlockHospital']);
 
+
+    // RMS REASON APIs
+    Route::resource('reasons', ReasonController::class);
+    Route::patch('reasons/unBlock/{reasonsId}', [ReasonController::class, 'unBlockReason']);
 
 });
