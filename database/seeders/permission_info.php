@@ -63,7 +63,14 @@ class permission_info extends Seeder
             'Create ReferralType',
             'Update ReferralType',
             'Delete ReferralType',
-            'View ReferralType',            'Create Insuarance',
+            'View ReferralType',
+
+            'Create Reason',
+            'Update Reason',
+            'Delete Reason',
+            'View Reason',
+
+            'Create Insuarance',
             'Update Insuarance',
             'Delete Insuarance',
             'View Insuarance',
@@ -73,10 +80,25 @@ class permission_info extends Seeder
             'Update Patient',
             'Delete Patient',
             'View Patient',
-            'Create Reason',
-            'Update Reason',
-            'Delete Reason',
-            'View Reason',
+
+            'Referral Module',
+            'Create Referral',
+            'Update Referral',
+            'Delete Referral',
+            'View Referral',
+
+            'Bill Module',
+            'Create Bill',
+            'Update Bill',
+            'Delete Bill',
+            'View Bill',
+
+            'Treatment Module',
+            'Create Treatment',
+            'Update Treatment',
+            'Delete Treatment',
+            'View Treatment',
+
 
         ];
 
