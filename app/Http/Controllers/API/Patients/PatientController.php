@@ -1,27 +1,29 @@
 <?php
 
-namespace App\Http\Controllers\API\Hospitals;
+namespace App\Http\Controllers\API\Patients;
 
-use App\Http\Controllers\Controller;
-use App\Models\Hospital;
+use App\Models\Patient;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use function PHPUnit\Framework\isEmpty;
 
-class HospitalController extends Controller
+class PatientController extends Controller
 {
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Hospital|Create Hospital|View Hospital|Update Hospital|Delete Hospital', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
+        $this->middleware('permission:View Patient|Create Patient|View Patient|Update Patient|Delete Patient', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
     }
+
     /**
      * Display a listing of the resource.
      */
     /** 
      * @OA\Get(
-     *     path="/api/hospitals",
-     *     summary="Get all hospitals",
-     *     tags={"hospitals"},
+     *     path="/api/patients",
+     *     summary="Get all patients",
+     *     tags={"patients"},
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -42,12 +44,16 @@ class HospitalController extends Controller
      *                 type="array",
      *                 @OA\Items(
      *                     type="object",
-     *                     @OA\Property(property="hospital_id", type="integer"),
-     *                     @OA\Property(property="hospital_code", type="string"),
-     *                     @OA\Property(property="hospital_name", type="string"),
-     *                     @OA\Property(property="hospital_address", type="string"),
-     *                     @OA\Property(property="contact_number", type="string"),
-     *                     @OA\Property(property="hospital_email", type="string"),
+     *                     @OA\Property(property="patient_id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string"),
+     *                     @OA\Property(property="date_of_birth", type="string", format="date-time"),
+     *                     @OA\Property(property="gender", type="string"),
+     *                     @OA\Property(property="phone", type="string"),
+     *                     @OA\Property(property="location", type="string"),
+     *                     @OA\Property(property="job", type="string"),
+     *                     @OA\Property(property="position", type="string"),
+     *                     @OA\Property(property="referral_letter_file", type="string"),
+     *                     @OA\Property(property="created_by", type="integer", example=1),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="deleted_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time")
@@ -61,25 +67,34 @@ class HospitalController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View Hospital')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('View Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $hospitals = Hospital::withTrashed()->get();
+        $patients = Patient::withTrashed()->get();
 
-        if ($hospitals) {
-            return response([
-                'data' => $hospitals,
-                'statusCode' => 200,
-            ], 200);
-        } else {
+        if ($patients->isEmpty()) {
             return response([
                 'message' => 'No data found',
                 'statusCode' => 500,
             ], 500);
+        } else {
+
+            // Append full doc URL 
+            $patients = $patients->map(function ($patient) {
+                $patient->documentUrl = $patient->referral_letter_file
+                    ? asset('storage/' . $patient->referral_letter_file)
+                    : null;
+                return $patient;
+            });
+
+            return response([
+                'data' => $patients,
+                'statusCode' => 200,
+            ], 200);
         }
     }
 
@@ -88,17 +103,21 @@ class HospitalController extends Controller
      */
     /**
      * @OA\Post(
-     *     path="/api/hospitals",
-     *     summary="Create hospitals",
-     *     tags={"hospitals"},
+     *     path="/api/patients",
+     *     summary="Create patient",
+     *     tags={"patients"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="hospital_name", type="string"),
-     *                     @OA\Property(property="hospital_address", type="string"),
-     *                     @OA\Property(property="contact_number", type="string"),
-     *                     @OA\Property(property="hospital_email", type="string"),
+     *              @OA\Property(property="name", type="string"),
+     *              @OA\Property(property="date_of_birth", type="string", format="date-time"),
+     *              @OA\Property(property="gender", type="string"),
+     *              @OA\Property(property="phone", type="string"),
+     *              @OA\Property(property="location", type="string"),
+     *              @OA\Property(property="job", type="string"),
+     *              @OA\Property(property="position", type="string"),
+     *              @OA\Property(property="referral_letter_file", type="string"),
      *         )
      *     ),
      *     @OA\Response(
@@ -117,7 +136,7 @@ class HospitalController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string"),
-     *             @OA\Property(property="statusCode", type="integer")
+     *             @OA\Property(property="statusCode", type="integer", example="201")
      *         )
      *     )
      * )
@@ -125,7 +144,7 @@ class HospitalController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Create Hospital')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Create Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -133,26 +152,47 @@ class HospitalController extends Controller
         }
 
         $data = $request->validate([
-            'hospital_name' => ['required', 'string'],
-            'hospital_address' => ['nullable', 'string'],
-            'contact_number' => ['nullable', 'string'],
-            'hospital_email' => ['nullable', 'email'],
+            'name' => ['required', 'string'],
+            'date_of_birth' => ['nullable', 'date'],
+            'gender' => ['nullable', 'string'],
+            'phone' => ['nullable', 'string'],
+            'location' => ['nullable', 'string'],
+            'job' => ['nullable', 'string'],
+            'position' => ['nullable', 'string'],
+            'referral_letter_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,png', 'max:5120'], // 5MB max
+            // 'referral_letter_file' => ['nullable', 'string'],
         ]);
 
 
-        // Create hospital
-        $hospital = Hospital::create([
-            'hospital_name' => $data['hospital_name'],
-            'hospital_address' => $data['hospital_address'],
-            'contact_number' => $data['contact_number'],
-            'hospital_email' => $data['hospital_email'],
+        // Handle file upload
+        // $path = null;
+        // if ($request->hasFile('referral_letter_file')) {
+        //     $path = $request->file('referral_letter_file')->store('documents', 'public');
+        // }
+
+        // Only handle the file after validation passes
+        $path = null;
+        if (isset($data['referral_letter_file'])) {
+            $path = $data['referral_letter_file']->store('documents', 'public');
+        }
+
+
+        // Create Patient
+        $patient = Patient::create([
+            'name' => $data['name'],
+            'date_of_birth' => $data['date_of_birth'],
+            'gender' => $data['gender'],
+            'phone' => $data['phone'],
+            'location' => $data['location'],
+            'job' => $data['job'],
+            'position' => $data['position'],
+            'referral_letter_file' => $path,
             'created_by' => Auth::id(),
-            // 'created_by' => auth()->id(),
         ]);
 
-        if ($hospital) {
+        if ($patient) {
             return response([
-                'data' => $hospital,
+                'data' => $patient,
                 'statusCode' => 201,
             ], status: 201);
         } else {
@@ -163,18 +203,16 @@ class HospitalController extends Controller
         }
     }
 
-
-
     /**
      * Display the specified resource.
      */
     /**
      * @OA\Get(
-     *     path="/api/hospitals/{id}",
-     *     summary="Find hospital by ID",
-     *     tags={"hospitals"},
+     *     path="/api/patients/{patientId}",
+     *     summary="Find patient by ID",
+     *     tags={"patients"},
      *     @OA\Parameter(
-     *         name="id",
+     *         name="patientId",
      *         in="path",
      *         required=true,
      *         @OA\Schema(type="integer")
@@ -187,12 +225,15 @@ class HospitalController extends Controller
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="hospital_id", type="integer", example=1),
-     *                 @OA\Property(property="hospital_code", type="string", example="HOSP001"),
-     *                 @OA\Property(property="hospital_name", type="string", example="LUMUMBA"),
-     *                 @OA\Property(property="hospital_address", type="string", example="Zanzibar"),
-     *                 @OA\Property(property="contact_number", type="string", example="000 000 000"),
-     *                 @OA\Property(property="hospital_email", type="string", example="hospital@gmail.com"),
+     *                 @OA\Property(property="patient_id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string"),
+     *                 @OA\Property(property="date_of_birth", type="string", format="date-time"),
+     *                 @OA\Property(property="gender", type="string"),
+     *                 @OA\Property(property="phone", type="string"),
+     *                 @OA\Property(property="location", type="string"),
+     *                 @OA\Property(property="job", type="string"),
+     *                 @OA\Property(property="position", type="string"),
+     *                 @OA\Property(property="referral_letter_file", type="string"),
      *                 @OA\Property(property="created_by", type="integer", example=1),
      *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-04-10T10:44:31.000000Z"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-04-10T10:44:31.000000Z"),
@@ -206,23 +247,30 @@ class HospitalController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View Hospital')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('View Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $hospital = Hospital::withTrashed()->find($id);
+        $patient = Patient::withTrashed()->find($id);
 
-        if (!$hospital) {
+        if (!$patient) {
             return response([
-                'message' => 'Hospital not found',
+                'message' => 'Patient not found',
                 'statusCode' => 404,
             ]);
         } else {
+            // Append full image URL 
+            if ($patient->referral_letter_file) {
+                $patient->documentUrl = asset('storage/' . $patient->referral_letter_file);
+            } else {
+                $patient->documentUrl = null;
+            }
+
             return response([
-                'data' => $hospital,
+                'data' => $patient,
                 'statusCode' => 200,
             ]);
         }
@@ -234,11 +282,11 @@ class HospitalController extends Controller
      */
     /**
      * @OA\Put(
-     *     path="/api/hospitals/{id}",
-     *     summary="Update hospital",
-     *     tags={"hospitals"},
+     *     path="/api/patients/update/{patientId}",
+     *     summary="Update patient",
+     *     tags={"patients"},
      *      @OA\Parameter(
-     *         name="id",
+     *         name="patientId",
      *         in="path",
      *         required=true,
      *         @OA\Schema(type="string")
@@ -263,10 +311,14 @@ class HospitalController extends Controller
      *                 type="array",
      *                 @OA\Items(
      *                     type="object",
-     *                     @OA\Property(property="hospital_name", type="string"),
-     *                 @OA\Property(property="hospital_address", type="string" ),
-     *                 @OA\Property(property="contact_number", type="string"),
-     *                 @OA\Property(property="hospital_email", type="string"),
+     *                 @OA\Property(property="name", type="string"),
+     *                 @OA\Property(property="date_of_birth", type="string", format="date-time"),
+     *                 @OA\Property(property="gender", type="string"),
+     *                 @OA\Property(property="phone", type="string"),
+     *                 @OA\Property(property="location", type="string"),
+     *                 @OA\Property(property="job", type="string"),
+     *                 @OA\Property(property="position", type="string"),
+     *                 @OA\Property(property="referral_letter_file", type="string"),
      *                 )
      *             ),
      *             @OA\Property(property="statusCode", type="integer", example=200)
@@ -274,10 +326,10 @@ class HospitalController extends Controller
      *     )
      * )
      */
-    public function update(Request $request, string $id)
+    public function updatePatient(Request $request, int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Update Hospital')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Update Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -285,55 +337,47 @@ class HospitalController extends Controller
         }
 
         $data = $request->validate([
-            'hospital_name' => ['required', 'string'],
-            'hospital_address' => ['nullable', 'string'],
-            'contact_number' => ['nullable', 'string'],
-            'hospital_email' => ['nullable', 'email'],
+            'name' => ['required', 'string'],
+            'date_of_birth' => ['nullable', 'date'],
+            'gender' => ['nullable', 'string'],
+            'phone' => ['nullable', 'string'],
+            'location' => ['nullable', 'string'],
+            'job' => ['nullable', 'string'],
+            'position' => ['nullable', 'string'],
+            'referral_letter_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,png', 'max:1024'], // 1MB
         ]);
 
-        $hospital = Hospital::find($id);
+        $patient = Patient::findOrFail($id);
 
-        if (!$hospital) {
-            return response([
-                'message' => 'Hospital not found',
-                'statusCode' => 404,
-            ]);
-        }
-
-
-        $hospital->update([
-            'hospital_name' => $data['hospital_name'],
-            'hospital_address' => $data['hospital_address'],
-            'contact_number' => $data['contact_number'],
-            'hospital_email' => $data['hospital_email'],
-            'created_by' => Auth::id(),
-        ]);
-
-        if ($hospital) {
-            return response([
-                'data' => $hospital,
-                'message' => 'Hospital updated successfully',
-                'statusCode' => 200,
-            ], 201);
+        // Handle file upload if provided
+        if ($request->hasFile('referral_letter_file')) {
+            $path = $request->file('referral_letter_file')->store('documents', 'public');
+            $data['referral_letter_file'] = $path;
         } else {
-            return response([
-                'message' => 'Internal server error',
-                'statusCode' => 500,
-            ], 500);
+            unset($data['referral_letter_file']);
         }
 
+        $data['created_by'] = Auth::id();
+
+        $patient->update($data);
+
+        return response([
+            'data' => $patient,
+            'statusCode' => 200,
+        ], 200);
     }
+
 
     /**
      * Remove the specified resource from storage.
      */
     /**
      * @OA\Delete(
-     *     path="/api/hospitals/{id}",
-     *     summary="Delete hospital",
-     *     tags={"hospitals"},
+     *     path="/api/patients/{patientId}",
+     *     summary="Delete patient",
+     *     tags={"patients"},
      *     @OA\Parameter(
-     *         name="id",
+     *         name="patientId",
      *         in="path",
      *         required=true,
      *         @OA\Schema(type="string")
@@ -362,26 +406,26 @@ class HospitalController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Delete Hospital')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Delete Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $hospital = Hospital::withTrashed()->find($id);
+        $patient = Patient::withTrashed()->find($id);
 
-        if (!$hospital) {
+        if (!$patient) {
             return response([
-                'message' => 'Hospital not found',
+                'message' => 'Patient not found',
                 'statusCode' => 404,
             ]);
         }
 
-        $hospital->delete();
+        $patient->delete();
 
         return response([
-            'message' => 'Hospital blocked successfully',
+            'message' => 'Patient blocked successfully',
             'statusCode' => 200,
         ], 200);
 
@@ -393,11 +437,11 @@ class HospitalController extends Controller
      */
     /**
      * @OA\Patch(
-     *     path="/api/hospitals/unBlock/{id}",
-     *     summary="Unblock hospital",
-     *     tags={"hospitals"},
+     *     path="/api/patients/unblock/{patientId}",
+     *     summary="Unblock patient",
+     *     tags={"patients"},
      *     @OA\Parameter(
-     *         name="id",
+     *         name="patientId",
      *         in="path",
      *         required=true,
      *         @OA\Schema(type="integer")
@@ -423,22 +467,22 @@ class HospitalController extends Controller
      *     )
      * )
      */
-    public function unBlockHospital(int $id)
+    public function unBlockPatient(int $id)
     {
 
-        $hospital = Hospital::withTrashed()->find($id);
+        $patient = Patient::withTrashed()->find($id);
 
-        if (!$hospital) {
+        if (!$patient) {
             return response([
-                'message' => 'Hospital not found',
+                'message' => 'Patient not found',
                 'statusCode' => 404,
             ], 404);
         }
 
-        $hospital->restore($id);
+        $patient->restore($id);
 
         return response([
-            'message' => 'Hospital unblocked successfully',
+            'message' => 'Patient unbocked successfully',
             'statusCode' => 200,
         ], 200);
     }

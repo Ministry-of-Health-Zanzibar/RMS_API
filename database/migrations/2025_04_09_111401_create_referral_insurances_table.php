@@ -11,7 +11,8 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('insurances', function (Blueprint $table) {
-            $table->bigIncrements('insurance_id');  // Auto-incrementing primary key
+            $table->bigIncrements('insurance_id');
+            $table->string('insurance_code')->unique();
             $table->unsignedBigInteger('patient_id');  // Foreign key from the patients table
             $table->string('insurance_provider_name');  // Name of the insurance provider
             $table->string('policy_number')->unique();  // Unique policy number for the insurance

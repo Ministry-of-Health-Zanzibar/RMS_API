@@ -63,7 +63,17 @@ class permission_info extends Seeder
             'Create ReferralType',
             'Update ReferralType',
             'Delete ReferralType',
-            'View ReferralType',
+            'View ReferralType',            'Create Insuarance',
+            'Update Insuarance',
+            'Delete Insuarance',
+            'View Insuarance',
+
+            'Patient Module',
+            'Create Patient',
+            'Update Patient',
+            'Delete Patient',
+            'View Patient',
+
 
         ];
 
