@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\Hospitals\HospitalController;
+use App\Http\Controllers\API\Patients\PatientController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 // use App\Http\Controllers\API\Auth\AuthController;
@@ -52,4 +53,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('hospitals', HospitalController::class);
     Route::patch('hospitals/unBlock/{hospitalId}', [HospitalController::class, 'unBlockHospital']);
 
+    Route::resource('patients', PatientController::class);
+    Route::post('patients/update/{id}', [PatientController::class, 'updatePatient']);
+    Route::patch('patients/unBlock/{id}', [PatientController::class, 'unBlockPatient']);
 });

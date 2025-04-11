@@ -60,6 +60,11 @@ class permission_info extends Seeder
             'Delete Hospital',
             'View Hospital',
 
+            'Patient Module',
+            'Create Patient',
+            'Update Patient',
+            'Delete Patient',
+            'View Patient',
 
 
         ];

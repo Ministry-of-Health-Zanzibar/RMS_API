@@ -28,6 +28,7 @@ class Patient extends Model
         'job',
         'position',
         'referral_letter_file',
+        'created_by',
     ];
 
     protected $dates = [

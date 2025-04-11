@@ -425,6 +425,468 @@
                 }
             }
         },
+        "/api/patients": {
+            "get": {
+                "tags": [
+                    "patients"
+                ],
+                "summary": "Get all patients",
+                "operationId": "83ecbc80ac9fb0279949fed567d77777",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "patient_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "date_of_birth": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "gender": {
+                                                        "type": "string"
+                                                    },
+                                                    "phone": {
+                                                        "type": "string"
+                                                    },
+                                                    "location": {
+                                                        "type": "string"
+                                                    },
+                                                    "job": {
+                                                        "type": "string"
+                                                    },
+                                                    "position": {
+                                                        "type": "string"
+                                                    },
+                                                    "referral_letter_file": {
+                                                        "type": "string"
+                                                    },
+                                                    "created_by": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "deleted_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "patients"
+                ],
+                "summary": "Create patient",
+                "operationId": "bc2b6e3d7d0117805a6d78a5d45a7ef4",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "date_of_birth": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "gender": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "location": {
+                                        "type": "string"
+                                    },
+                                    "job": {
+                                        "type": "string"
+                                    },
+                                    "position": {
+                                        "type": "string"
+                                    },
+                                    "referral_letter_file": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": "201"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/patients/{patientId}": {
+            "get": {
+                "tags": [
+                    "patients"
+                ],
+                "summary": "Find patient by ID",
+                "operationId": "578aa49950254967e99d182082d7574c",
+                "parameters": [
+                    {
+                        "name": "patientId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "patient_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "date_of_birth": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "gender": {
+                                                    "type": "string"
+                                                },
+                                                "phone": {
+                                                    "type": "string"
+                                                },
+                                                "location": {
+                                                    "type": "string"
+                                                },
+                                                "job": {
+                                                    "type": "string"
+                                                },
+                                                "position": {
+                                                    "type": "string"
+                                                },
+                                                "referral_letter_file": {
+                                                    "type": "string"
+                                                },
+                                                "created_by": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-04-10T10:44:31.000000Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-04-10T10:44:31.000000Z"
+                                                },
+                                                "deleted_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": null,
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "patients"
+                ],
+                "summary": "Delete patient",
+                "operationId": "a78b0466c202efe33adf388d1d1dccfd",
+                "parameters": [
+                    {
+                        "name": "patientId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/patients/update/{patientId}": {
+            "put": {
+                "tags": [
+                    "patients"
+                ],
+                "summary": "Update patient",
+                "operationId": "0a97fa787e4d55dfb0a3b4068440dcc8",
+                "parameters": [
+                    {
+                        "name": "patientId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "date_of_birth": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "gender": {
+                                                        "type": "string"
+                                                    },
+                                                    "phone": {
+                                                        "type": "string"
+                                                    },
+                                                    "location": {
+                                                        "type": "string"
+                                                    },
+                                                    "job": {
+                                                        "type": "string"
+                                                    },
+                                                    "position": {
+                                                        "type": "string"
+                                                    },
+                                                    "referral_letter_file": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/patients/unblock/{patientId}": {
+            "patch": {
+                "tags": [
+                    "patients"
+                ],
+                "summary": "Unblock patient",
+                "operationId": "1937e4cb67a96f9f2b4cb53f3db205f6",
+                "parameters": [
+                    {
+                        "name": "patientId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/countries": {
             "get": {
                 "tags": [
@@ -3215,6 +3677,10 @@
         {
             "name": "hospitals",
             "description": "hospitals"
+        },
+        {
+            "name": "patients",
+            "description": "patients"
         },
         {
             "name": "countries",
