@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\Hospitals\HospitalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\Reasons\ReasonController;
 // use App\Http\Controllers\API\Auth\AuthController;
 
 /*
@@ -51,5 +52,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // RMS RELATED APIs
     Route::resource('hospitals', HospitalController::class);
     Route::patch('hospitals/unBlock/{hospitalId}', [HospitalController::class, 'unBlockHospital']);
+
+    // RMS REASON APIs
+    Route::resource('reasons', ReasonController::class);
+    Route::patch('reasons/unBlock/{reasonsId}', [ReasonController::class, 'unBlockReason']);
 
 });
