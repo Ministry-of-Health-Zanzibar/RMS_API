@@ -17,6 +17,44 @@ class ReferralTypeController extends Controller
     /**
      * Display a listing of the resource.
      */
+    /** 
+     * @OA\Get(
+     *     path="/api/referralTypes",
+     *     summary="Get all referral types",
+     *     tags={"referralTypes"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\Header(
+     *             header="Cache-Control",
+     *             description="Cache control header",
+     *             @OA\Schema(type="string", example="no-cache, private")
+     *         ),
+     *         @OA\Header(
+     *             header="Content-Type",
+     *             description="Content type header",
+     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+     *         ),
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="referral_type_id", type="integer"),
+     *                     @OA\Property(property="referral_type_code", type="string"),
+     *                     @OA\Property(property="referral_type_name", type="string"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="deleted_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     )
+     * )
+     */
     public function index()
     {
         $user = auth()->user();
@@ -42,10 +80,43 @@ class ReferralTypeController extends Controller
     }
 }
     
-
     /**
      * Store a newly created resource in storage.
      */
+    /**
+     * @OA\Post(
+     *     path="/api/referralTypes",
+     *     summary="Create referral type",
+     *     tags={"referralTypes"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="referral_type_name", type="string"),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\Header(
+     *             header="Cache-Control",
+     *             description="Cache control header",
+     *             @OA\Schema(type="string", example="no-cache, private")
+     *         ),
+     *         @OA\Header(
+     *             header="Content-Type",
+     *             description="Content type header",
+     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+     *         ),
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Referral type created successfully."),
+     *             @OA\Property(property="statusCode", type="integer", example="201")
+     *         )
+     *     )
+     * )
+     */
+
     public function store(Request $request)
     {
         $user = auth()->user();
@@ -71,6 +142,7 @@ class ReferralTypeController extends Controller
         if ($ReferralType) {
             return response([
                 'data' => $ReferralType,
+                'message' => "Referral type created successfully.",
                 'statusCode' => 201,
             ], status: 201);
         } else {
@@ -190,11 +262,11 @@ class ReferralTypeController extends Controller
      */
     /**
      * @OA\Patch(
-     *     path="/api/ReferralType/unblock/{id}",
+     *     path="/api/referralTypes/unblock/{referralTypeId}",
      *     summary="Unblock ReferralType",
-     *     tags={"referral_types"},
+     *     tags={"referralTypes"},
      *     @OA\Parameter(
-     *         name="id",
+     *         name="referralTypeId",
      *         in="path",
      *         required=true,
      *         @OA\Schema(type="integer")
