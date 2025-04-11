@@ -156,6 +156,39 @@ class ReferralTypeController extends Controller
     /**
      * Display the specified resource.
      */
+    /**
+     * @OA\Get(
+     *     path="/api/referralTypes/{id}",
+     *     summary="Find Referal type by ID",
+     *     tags={"referralTypes"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="referral_type_id", type="integer", example=1),
+     *                 @OA\Property(property="referral_type_code", type="string", example="REFTYPE1"),
+     *                 @OA\Property(property="referral_type_name", type="string", example="MAINLAND"),
+     *                 @OA\Property(property="created_by", type="integer", example=1),
+     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-04-10T10:44:31.000000Z"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-04-10T10:44:31.000000Z"),
+     *                 @OA\Property(property="deleted_at", type="string", format="date-time", nullable=true, example=null)
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     )
+     * )
+     */
+
     public function show(int $id)
     {
         $user = auth()->user();
@@ -184,6 +217,46 @@ class ReferralTypeController extends Controller
     /**
      * Update the specified resource in storage.
      */
+    /**
+     * @OA\Put(
+     *     path="/api/referralTypes/{id}",
+     *     summary="Update referral type",
+     *     tags={"referralTypes"},
+     *      @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *      ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\Header(
+     *             header="Cache-Control",
+     *             description="Cache control header",
+     *             @OA\Schema(type="string", example="no-cache, private")
+     *         ),
+     *         @OA\Header(
+     *             header="Content-Type",
+     *             description="Content type header",
+     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+     *         ),
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="referral_type_name", type="string"),
+     *                 )
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     )
+     * )
+     */
+    
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
@@ -229,6 +302,38 @@ class ReferralTypeController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     */
+    /**
+     * @OA\Delete(
+     *     path="/api/referralTypes/{id}",
+     *     summary="Delete Referral type",
+     *     tags={"referralTypes"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *      @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\Header(
+     *             header="Cache-Control",
+     *             description="Cache control header",
+     *             @OA\Schema(type="string", example="no-cache, private")
+     *         ),
+     *         @OA\Header(
+     *             header="Content-Type",
+     *             description="Content type header",
+     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+     *         ),
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="statusCode", type="integer")
+     *         )
+     *     )
+     * )
      */
     public function destroy(int $id)
     {
