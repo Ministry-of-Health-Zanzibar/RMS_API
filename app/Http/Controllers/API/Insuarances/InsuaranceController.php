@@ -1,30 +1,28 @@
 <?php
 
-namespace App\Http\Controllers\API\Hospitals;
+namespace App\Http\Controllers\API\Insuarances;
 
-use App\Http\Controllers\Controller;
-use App\Models\Hospital;
+use App\Models\Insurance;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 
-class HospitalController extends Controller
+class InsuaranceController extends Controller
 {
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Hospital|Create Hospital|View Hospital|Update Hospital|Delete Hospital', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
+        $this->middleware('permission:View Insuarance|Create Insuarance|View Insuarance|Update Insuarance|Delete Insuarance', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
     }
-
-
 
     /**
      * Display a listing of the resource.
      */
     /** 
      * @OA\Get(
-     *     path="/api/hospitals",
-     *     summary="Get all hospitals",
-     *     tags={"hospitals"},
+     *     path="/api/insuarances",
+     *     summary="Get all insuarances",
+     *     tags={"insuarances"},
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -45,12 +43,12 @@ class HospitalController extends Controller
      *                 type="array",
      *                 @OA\Items(
      *                     type="object",
-     *                     @OA\Property(property="hospital_id", type="integer"),
-     *                     @OA\Property(property="hospital_code", type="string"),
-     *                     @OA\Property(property="hospital_name", type="string"),
-     *                     @OA\Property(property="hospital_address", type="string"),
-     *                     @OA\Property(property="contact_number", type="string"),
-     *                     @OA\Property(property="hospital_email", type="string"),
+     *                     @OA\Property(property="insurance_id", type="integer"),
+     *                     @OA\Property(property="insurance_code", type="string"),
+     *                     @OA\Property(property="patient_id", type="integer"),
+     *                     @OA\Property(property="insurance_provider_name", type="string"),
+     *                     @OA\Property(property="policy_number", type="string"),
+     *                     @OA\Property(property="valid_until", type="string", format="date-time"),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="deleted_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time")
@@ -64,18 +62,18 @@ class HospitalController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View Hospital')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View Insuarance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $hospitals = Hospital::withTrashed()->get();
+        $insuarances = Insurance::withTrashed()->get();
 
-        if ($hospitals) {
+        if ($insuarances) {
             return response([
-                'data' => $hospitals,
+                'data' => $insuarances,
                 'statusCode' => 200,
             ], 200);
         } else {
@@ -86,23 +84,24 @@ class HospitalController extends Controller
         }
     }
 
+
     /**
      * Store a newly created resource in storage.
      */
     /**
      * @OA\Post(
-     *     path="/api/hospitals",
-     *     summary="Create hospitals",
-     *     tags={"hospitals"},
+     *     path="/api/insuarances",
+     *     summary="Create insuarance",
+     *     tags={"insuarances"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="hospital_name", type="string"),
-     *                     @OA\Property(property="hospital_address", type="string"),
-     *                     @OA\Property(property="contact_number", type="string"),
-     *                     @OA\Property(property="hospital_email", type="string"),
-     *         )
+     *             @OA\Property(property="patient_id", type="integer"),
+     *                     @OA\Property(property="insurance_provider_name", type="string"),
+     *                     @OA\Property(property="policy_number", type="string"),
+     *                     @OA\Property(property="valid_until", type="string", format="date-time"),
+     *         ),
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -128,7 +127,7 @@ class HospitalController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Create Hospital')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Create Insuarance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -136,26 +135,25 @@ class HospitalController extends Controller
         }
 
         $data = $request->validate([
-            'hospital_name' => ['required', 'string'],
-            'hospital_address' => ['nullable', 'string'],
-            'contact_number' => ['nullable', 'string'],
-            'hospital_email' => ['nullable', 'email'],
+            'patient_id' => ['required', 'numeric'],
+            'insurance_provider_name' => ['nullable', 'string'],
+            'policy_number' => ['nullable', 'string'],
+            'valid_until' => ['nullable', 'date'],
         ]);
 
 
-        // Create hospital
-        $hospital = Hospital::create([
-            'hospital_name' => $data['hospital_name'],
-            'hospital_address' => $data['hospital_address'],
-            'contact_number' => $data['contact_number'],
-            'hospital_email' => $data['hospital_email'],
+        // Create Insurance
+        $insuarance = Insurance::create([
+            'patient_id' => $data['patient_id'],
+            'insurance_provider_name' => $data['insurance_provider_name'],
+            'policy_number' => $data['policy_number'],
+            'valid_until' => $data['valid_until'],
             'created_by' => Auth::id(),
-            // 'created_by' => auth()->id(),
         ]);
 
-        if ($hospital) {
+        if ($insuarance) {
             return response([
-                'data' => $hospital,
+                'data' => $insuarance,
                 'statusCode' => 201,
             ], status: 201);
         } else {
@@ -166,18 +164,16 @@ class HospitalController extends Controller
         }
     }
 
-
-
     /**
      * Display the specified resource.
      */
     /**
      * @OA\Get(
-     *     path="/api/hospitals/{id}",
-     *     summary="Find hospital by ID",
-     *     tags={"hospitals"},
+     *     path="/api/insuarances/{insuarance_id}",
+     *     summary="Find insuarance by ID",
+     *     tags={"insuarances"},
      *     @OA\Parameter(
-     *         name="id",
+     *         name="insuarance_id",
      *         in="path",
      *         required=true,
      *         @OA\Schema(type="integer")
@@ -190,16 +186,15 @@ class HospitalController extends Controller
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="hospital_id", type="integer", example=1),
-     *                 @OA\Property(property="hospital_code", type="string", example="HOSP001"),
-     *                 @OA\Property(property="hospital_name", type="string", example="LUMUMBA"),
-     *                 @OA\Property(property="hospital_address", type="string", example="Zanzibar"),
-     *                 @OA\Property(property="contact_number", type="string", example="000 000 000"),
-     *                 @OA\Property(property="hospital_email", type="string", example="hospital@gmail.com"),
-     *                 @OA\Property(property="created_by", type="integer", example=1),
-     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-04-10T10:44:31.000000Z"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-04-10T10:44:31.000000Z"),
-     *                 @OA\Property(property="deleted_at", type="string", format="date-time", nullable=true, example=null)
+     *                 @OA\Property(property="insurance_id", type="integer"),
+     *                     @OA\Property(property="insurance_code", type="string"),
+     *                     @OA\Property(property="patient_id", type="integer"),
+     *                     @OA\Property(property="insurance_provider_name", type="string"),
+     *                     @OA\Property(property="policy_number", type="string"),
+     *                     @OA\Property(property="valid_until", type="string", format="date-time"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="deleted_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
      *             ),
      *             @OA\Property(property="statusCode", type="integer", example=200)
      *         )
@@ -209,27 +204,26 @@ class HospitalController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View Hospital')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View Insuarance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $hospital = Hospital::withTrashed()->find($id);
+        $insuarance = Insurance::withTrashed()->find($id);
 
-        if (!$hospital) {
+        if (!$insuarance) {
             return response([
-                'message' => 'Hospital not found',
+                'message' => 'Insurance not found',
                 'statusCode' => 404,
             ]);
         } else {
             return response([
-                'data' => $hospital,
+                'data' => $insuarance,
                 'statusCode' => 200,
             ]);
         }
-
     }
 
     /**
@@ -237,11 +231,11 @@ class HospitalController extends Controller
      */
     /**
      * @OA\Put(
-     *     path="/api/hospitals/{id}",
-     *     summary="Update hospital",
-     *     tags={"hospitals"},
+     *     path="/api/insuarances/{insuarance_id}",
+     *     summary="Update insuarance",
+     *     tags={"insuarances"},
      *      @OA\Parameter(
-     *         name="id",
+     *         name="insuarance_id",
      *         in="path",
      *         required=true,
      *         @OA\Schema(type="string")
@@ -266,10 +260,10 @@ class HospitalController extends Controller
      *                 type="array",
      *                 @OA\Items(
      *                     type="object",
-     *                     @OA\Property(property="hospital_name", type="string"),
-     *                 @OA\Property(property="hospital_address", type="string" ),
-     *                 @OA\Property(property="contact_number", type="string"),
-     *                 @OA\Property(property="hospital_email", type="string"),
+     *                    @OA\Property(property="patient_id", type="integer"),
+     *                     @OA\Property(property="insurance_provider_name", type="string"),
+     *                     @OA\Property(property="policy_number", type="string"),
+     *                     @OA\Property(property="valid_until", type="string", format="date-time"),
      *                 )
      *             ),
      *             @OA\Property(property="statusCode", type="integer", example=200)
@@ -277,10 +271,10 @@ class HospitalController extends Controller
      *     )
      * )
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Update Hospital')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Create Insuarance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -288,43 +282,35 @@ class HospitalController extends Controller
         }
 
         $data = $request->validate([
-            'hospital_name' => ['required', 'string'],
-            'hospital_address' => ['nullable', 'string'],
-            'contact_number' => ['nullable', 'string'],
-            'hospital_email' => ['nullable', 'email'],
+            'patient_id' => ['required', 'numeric'],
+            'insurance_provider_name' => ['nullable', 'string'],
+            'policy_number' => ['nullable', 'string'],
+            'valid_until' => ['nullable', 'date'],
         ]);
 
-        $hospital = Hospital::find($id);
 
-        if (!$hospital) {
-            return response([
-                'message' => 'Hospital not found',
-                'statusCode' => 404,
-            ]);
-        }
-
-
-        $hospital->update([
-            'hospital_name' => $data['hospital_name'],
-            'hospital_address' => $data['hospital_address'],
-            'contact_number' => $data['contact_number'],
-            'hospital_email' => $data['hospital_email'],
+        // Update Insurance
+        $insuarance = Insurance::findOrFail($id);
+        $insuarance->update([
+            'patient_id' => $data['patient_id'],
+            'insurance_provider_name' => $data['insurance_provider_name'],
+            'policy_number' => $data['policy_number'],
+            'valid_until' => $data['valid_until'],
             'created_by' => Auth::id(),
         ]);
 
-        if ($hospital) {
+        if ($insuarance) {
             return response([
-                'data' => $hospital,
-                'message' => 'Hospital updated successfully',
-                'statusCode' => 200,
-            ], 201);
+                'data' => $insuarance,
+                'message' => 'Insurance updated successfully',
+                'statusCode' => 201,
+            ], status: 201);
         } else {
             return response([
                 'message' => 'Internal server error',
                 'statusCode' => 500,
             ], 500);
         }
-
     }
 
     /**
@@ -332,11 +318,11 @@ class HospitalController extends Controller
      */
     /**
      * @OA\Delete(
-     *     path="/api/hospitals/{id}",
-     *     summary="Delete hospital",
-     *     tags={"hospitals"},
+     *     path="/api/insuarances/{insuarance_id}",
+     *     summary="Delete insuarance",
+     *     tags={"insuarances"},
      *     @OA\Parameter(
-     *         name="id",
+     *         name="insuarance_id",
      *         in="path",
      *         required=true,
      *         @OA\Schema(type="string")
@@ -365,26 +351,26 @@ class HospitalController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Delete Hospital')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Delete Insuarance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $hospital = Hospital::withTrashed()->find($id);
+        $insuarance = Insurance::withTrashed()->find($id);
 
-        if (!$hospital) {
+        if (!$insuarance) {
             return response([
-                'message' => 'Hospital not found',
+                'message' => 'Insuarance not found',
                 'statusCode' => 404,
             ]);
         }
 
-        $hospital->delete();
+        $insuarance->delete();
 
         return response([
-            'message' => 'Hospital blocked successfully',
+            'message' => 'Insuarance blocked successfully',
             'statusCode' => 200,
         ], 200);
 
@@ -396,11 +382,11 @@ class HospitalController extends Controller
      */
     /**
      * @OA\Patch(
-     *     path="/api/hospitals/unBlock/{id}",
-     *     summary="Unblock hospital",
-     *     tags={"hospitals"},
+     *     path="/api/insuarances/unBlock/{insuarance_id}",
+     *     summary="Unblock insuarance",
+     *     tags={"insuarances"},
      *     @OA\Parameter(
-     *         name="id",
+     *         name="insuarance_id",
      *         in="path",
      *         required=true,
      *         @OA\Schema(type="integer")
@@ -429,20 +415,21 @@ class HospitalController extends Controller
     public function unBlockHospital(int $id)
     {
 
-        $hospital = Hospital::withTrashed()->find($id);
+        $insuarance = Insurance::withTrashed()->find($id);
 
-        if (!$hospital) {
+        if (!$insuarance) {
             return response([
-                'message' => 'Hospital not found',
+                'message' => 'Insuarance not found',
                 'statusCode' => 404,
             ], 404);
         }
 
-        $hospital->restore($id);
+        $insuarance->restore($id);
 
         return response([
-            'message' => 'Hospital unbocked successfully',
+            'message' => 'Insuarance unbocked successfully',
             'statusCode' => 200,
         ], 200);
     }
+
 }

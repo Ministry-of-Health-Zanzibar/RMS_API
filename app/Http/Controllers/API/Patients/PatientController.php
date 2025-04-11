@@ -67,7 +67,7 @@ class PatientController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View Patient')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('View Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -144,7 +144,7 @@ class PatientController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Create Patient')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Create Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -247,7 +247,7 @@ class PatientController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View Patient')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('View Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -329,7 +329,7 @@ class PatientController extends Controller
     public function updatePatient(Request $request, int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Update Patient')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Update Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -406,7 +406,7 @@ class PatientController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Delete Patient')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Delete Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
