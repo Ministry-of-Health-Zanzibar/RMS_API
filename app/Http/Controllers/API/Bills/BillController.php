@@ -326,8 +326,8 @@ class BillController extends Controller
             'amount' => ['nullable', 'numeric'],
             'notes' => ['nullable', 'string'],
             'sent_to' => ['nullable', 'string'],
-            'bill_file' => ['nullable', 'string'],
-            // 'bill_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,png', 'max:1024'],
+            // 'bill_file' => ['nullable', 'string'],
+            'bill_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,png', 'max:1024'],
         ]);
 
         $bill = Bill::findOrFail($id);
@@ -354,8 +354,119 @@ class BillController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    /**
+     * @OA\Delete(
+     *     path="/api/bills/{billId}",
+     *     summary="Delete patient",
+     *     tags={"bills"},
+     *     @OA\Parameter(
+     *         name="billId",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *      @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\Header(
+     *             header="Cache-Control",
+     *             description="Cache control header",
+     *             @OA\Schema(type="string", example="no-cache, private")
+     *         ),
+     *         @OA\Header(
+     *             header="Content-Type",
+     *             description="Content type header",
+     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+     *         ),
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="statusCode", type="integer")
+     *         )
+     *     )
+     * )
+     */
+    public function destroy(int $id)
     {
-        //
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Delete Bill')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $bill = Bill::withTrashed()->find($id);
+
+        if (!$bill) {
+            return response([
+                'message' => 'Bill not found',
+                'statusCode' => 404,
+            ]);
+        }
+
+        $bill->delete();
+
+        return response([
+            'message' => 'Bill blocked successfully',
+            'statusCode' => 200,
+        ], 200);
+
+    }
+
+
+    /**
+     * Unblock
+     */
+    /**
+     * @OA\Patch(
+     *     path="/api/bills/unblock/{billId}",
+     *     summary="Unblock bill",
+     *     tags={"bills"},
+     *     @OA\Parameter(
+     *         name="billId",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *      @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\Header(
+     *             header="Cache-Control",
+     *             description="Cache control header",
+     *             @OA\Schema(type="string", example="no-cache, private")
+     *         ),
+     *         @OA\Header(
+     *             header="Content-Type",
+     *             description="Content type header",
+     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+     *         ),
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="statusCode", type="integer")
+     *         )
+     *     )
+     * )
+     */
+    public function unBlockBill(int $id)
+    {
+
+        $bill = Bill::withTrashed()->find($id);
+
+        if (!$bill) {
+            return response([
+                'message' => 'Bill not found',
+                'statusCode' => 404,
+            ], 404);
+        }
+
+        $bill->restore($id);
+
+        return response([
+            'message' => 'Bill unbocked successfully',
+            'statusCode' => 200,
+        ], 200);
     }
 }

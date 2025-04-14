@@ -412,7 +412,7 @@ class InsuaranceController extends Controller
      *     )
      * )
      */
-    public function unBlockHospital(int $id)
+    public function unBlockInsuarance(int $id)
     {
 
         $insuarance = Insurance::withTrashed()->find($id);

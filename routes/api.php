@@ -71,7 +71,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // INSUARANCES APIs
     Route::resource('insuarances', InsuaranceController::class);
-    Route::patch('insuarances/unBlock/{hospitalId}', [InsuaranceController::class, 'unBlockHospital']);
+    Route::patch('insuarances/unBlock/{hospitalId}', [InsuaranceController::class, 'unBlockInsuarance']);
 
     // REFERRAL APIs
     Route::resource('referrals', ReferralController::class);
@@ -90,6 +90,4 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('bills', BillController::class);
     Route::post('bills/update/{id}', [BillController::class, 'updateBill']);
     Route::patch('bills/unBlock/{billId}', [BillController::class, 'unBlockBill']);
-
-
 });
