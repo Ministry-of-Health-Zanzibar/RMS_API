@@ -31,11 +31,6 @@ class Patient extends Model
         'created_by',
     ];
 
-    protected $dates = [
-        'date_of_birth',
-        'deleted_at',
-    ];
-
     public function referrals()
     {
         return $this->hasMany(Referral::class);
