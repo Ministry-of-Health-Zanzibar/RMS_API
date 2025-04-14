@@ -79,8 +79,8 @@ class BillController extends Controller
         if ($bills->isEmpty()) {
             return response([
                 'message' => 'No data found',
-                'statusCode' => 500,
-            ], 500);
+                'statusCode' => 200,
+            ], 200);
         } else {
 
             // Append full doc URL 
@@ -267,9 +267,88 @@ class BillController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    /**
+     * @OA\Put(
+     *     path="/api/bills/update/{billId}",
+     *     summary="Update bill",
+     *     tags={"bills"},
+     *      @OA\Parameter(
+     *         name="billId",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *      ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\Header(
+     *             header="Cache-Control",
+     *             description="Cache control header",
+     *             @OA\Schema(type="string", example="no-cache, private")
+     *         ),
+     *         @OA\Header(
+     *             header="Content-Type",
+     *             description="Content type header",
+     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+     *         ),
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                 @OA\Property(property="referral_id", type="integer"),
+     *                     @OA\Property(property="amount", type="double"),
+     *                     @OA\Property(property="notes", type="string"),
+     *                     @OA\Property(property="sent_to", type="string"),
+     *                     @OA\Property(property="sent_date", type="string", format="date-time"),
+     *                     @OA\Property(property="bill_file", type="string"),
+     *                 ),
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     )
+     * )
+     */
+    public function updateBill(Request $request, int $id)
     {
-        //
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Update Bill')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $data = $request->validate([
+            'referral_id' => ['required', 'numeric'],
+            'amount' => ['nullable', 'numeric'],
+            'notes' => ['nullable', 'string'],
+            'sent_to' => ['nullable', 'string'],
+            'bill_file' => ['nullable', 'string'],
+            // 'bill_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,png', 'max:1024'],
+        ]);
+
+        $bill = Bill::findOrFail($id);
+
+        // Handle file upload if provided
+        if ($request->hasFile('bill_file')) {
+            $path = $request->file('bill_file')->store('documents', 'public');
+            $data['bill_file'] = $path;
+        } else {
+            unset($data['bill_file']);
+        }
+
+        $data['created_by'] = Auth::id();
+
+        $bill->update($data);
+
+        return response([
+            'data' => $bill,
+            'message' => 'Bill updated successfully.',
+            'statusCode' => 200,
+        ], 200);
     }
 
     /**

@@ -84,7 +84,7 @@ class ReferralController extends Controller
             return response([
                 'message' => 'No data found',
                 'statusCode' => 200,
-            ], 500);
+            ], 200);
         }
     }
 

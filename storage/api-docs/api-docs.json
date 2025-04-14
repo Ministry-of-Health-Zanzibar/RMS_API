@@ -261,6 +261,87 @@
                 }
             }
         },
+        "/api/bills/update/{billId}": {
+            "put": {
+                "tags": [
+                    "bills"
+                ],
+                "summary": "Update bill",
+                "operationId": "b55aa5f80a6819e5b9185c99e75721f4",
+                "parameters": [
+                    {
+                        "name": "billId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "referral_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "amount": {
+                                                        "type": "number",
+                                                        "format": "double"
+                                                    },
+                                                    "notes": {
+                                                        "type": "string"
+                                                    },
+                                                    "sent_to": {
+                                                        "type": "string"
+                                                    },
+                                                    "sent_date": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "bill_file": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/hospitals": {
             "get": {
                 "tags": [
