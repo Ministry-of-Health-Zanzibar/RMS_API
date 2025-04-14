@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\Bills\BillController;
 use App\Http\Controllers\API\Hospitals\HospitalController;
 use App\Http\Controllers\API\Referrals\ReferralController;
 use App\Http\Controllers\API\ReferralType\ReferralTypeController;
@@ -78,5 +79,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // RMS REASON APIs
     Route::resource('reasons', ReasonController::class);
     Route::patch('reasons/unBlock/{reasonsId}', [ReasonController::class, 'unBlockReason']);
+
+    // BILLS APIs
+    Route::resource('bills', BillController::class);
+    Route::patch('bills/unBlock/{billId}', [BillController::class, 'unBlockBill']);
+
 
 });

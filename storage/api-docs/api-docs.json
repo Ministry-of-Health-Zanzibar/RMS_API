@@ -12,6 +12,173 @@
         }
     ],
     "paths": {
+        "/api/bills": {
+            "get": {
+                "tags": [
+                    "bills"
+                ],
+                "summary": "Get all bills",
+                "operationId": "4f45ee4605af179b021a6c568e118a70",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "bill_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "referral_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "amount": {
+                                                        "type": "number",
+                                                        "format": "double"
+                                                    },
+                                                    "notes": {
+                                                        "type": "string"
+                                                    },
+                                                    "sent_to": {
+                                                        "type": "string"
+                                                    },
+                                                    "sent_date": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "bill_file": {
+                                                        "type": "string"
+                                                    },
+                                                    "created_by": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "deleted_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "bills"
+                ],
+                "summary": "Create bill",
+                "operationId": "ea146310330afe08936c49e3ff44c11c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "referral_id": {
+                                        "type": "integer"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "double"
+                                    },
+                                    "notes": {
+                                        "type": "string"
+                                    },
+                                    "sent_to": {
+                                        "type": "string"
+                                    },
+                                    "sent_date": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "bill_file": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": "201"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/hospitals": {
             "get": {
                 "tags": [
@@ -5073,6 +5240,10 @@
         }
     },
     "tags": [
+        {
+            "name": "bills",
+            "description": "bills"
+        },
         {
             "name": "hospitals",
             "description": "hospitals"
