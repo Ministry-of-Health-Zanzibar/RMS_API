@@ -195,9 +195,73 @@ class BillController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    /**
+     * @OA\Get(
+     *     path="/api/bills/{billId}",
+     *     summary="Find bill by ID",
+     *     tags={"bills"},
+     *     @OA\Parameter(
+     *         name="billId",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="bill_id", type="integer", example=1),
+     *                     @OA\Property(property="referral_id", type="integer"),
+     *                     @OA\Property(property="amount", type="double"),
+     *                     @OA\Property(property="notes", type="string"),
+     *                     @OA\Property(property="sent_to", type="string"),
+     *                     @OA\Property(property="sent_date", type="string", format="date-time"),
+     *                     @OA\Property(property="bill_file", type="string"),
+     *                     @OA\Property(property="created_by", type="integer", example=1),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="deleted_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     )
+     * )
+     */
+    public function show(int $id)
     {
-        //
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('View Bill')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $bill = Bill::withTrashed()->find($id);
+
+        if (!$bill) {
+            return response([
+                'message' => 'Bill not found',
+                'statusCode' => 404,
+            ]);
+        } else {
+            // Append full image URL 
+            if ($bill->bill_file) {
+                $bill->billDocumentUrl = asset('storage/' . $bill->bill_file);
+            } else {
+                $bill->billDocumentUrl = null;
+            }
+
+            return response([
+                'data' => $bill,
+                'statusCode' => 200,
+            ]);
+        }
+
     }
 
     /**
