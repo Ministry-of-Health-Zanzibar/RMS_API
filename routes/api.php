@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\Bills\BillController;
 use App\Http\Controllers\API\Hospitals\HospitalController;
 use App\Http\Controllers\API\Referrals\ReferralController;
 use App\Http\Controllers\API\ReferralType\ReferralTypeController;
@@ -82,7 +83,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // RMS Treatments APIs
     Route::resource('treatments', TreatmentController::class);
-    Route::post('treatments/update/{treatmentId}', [TreatmentController::class,'update']);
+    Route::post('treatments/update/{treatmentId}', [TreatmentController::class, 'update']);
     Route::patch('treatments/unBlock/{treatmentId}', [TreatmentController::class, 'unBlockTreatment']);
+
+    // BILLS APIs
+    Route::resource('bills', BillController::class);
+    Route::patch('bills/unBlock/{billId}', [BillController::class, 'unBlockBill']);
+
 
 });

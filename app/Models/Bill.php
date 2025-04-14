@@ -13,6 +13,34 @@ class Bill extends Model
 {
     use LogsActivity, HasFactory, SoftDeletes;
 
+
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'bills';
+
+    /**
+     * The primary key associated with the table.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'bill_id';
+
+    /**
+     * Indicates if the model's ID is not auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = true;
+
+    /**
+     * The data type of the auto-incrementing ID.
+     *
+     * @var string
+     */
+    protected $keyType = 'integer';
     protected $fillable = [
         'referral_id',
         'amount',
@@ -20,6 +48,7 @@ class Bill extends Model
         'sent_to',
         'sent_date',
         'bill_file',
+        'created_by'
     ];
 
     /**

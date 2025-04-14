@@ -193,6 +193,7 @@ class PatientController extends Controller
         if ($patient) {
             return response([
                 'data' => $patient,
+                'message' => 'Patient created successfully.',
                 'statusCode' => 201,
             ], status: 201);
         } else {
