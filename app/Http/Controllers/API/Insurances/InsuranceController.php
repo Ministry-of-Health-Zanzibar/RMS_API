@@ -1,28 +1,28 @@
 <?php
 
-namespace App\Http\Controllers\API\Insuarances;
+namespace App\Http\Controllers\API\Insurances;
 
 use App\Models\Insurance;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 
-class InsuaranceController extends Controller
+class InsuranceController extends Controller
 {
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Insuarance|Create Insuarance|View Insuarance|Update Insuarance|Delete Insuarance', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
+        $this->middleware('permission:View Insurance|Create Insurance|View Insurance|Update Insurance|Delete Insurance', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
     }
 
     /**
      * Display a listing of the resource.
      */
-    /** 
+    /**
      * @OA\Get(
-     *     path="/api/insuarances",
-     *     summary="Get all insuarances",
-     *     tags={"insuarances"},
+     *     path="/api/insurances",
+     *     summary="Get all insurances",
+     *     tags={"insurances"},
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -47,7 +47,7 @@ class InsuaranceController extends Controller
      *                     @OA\Property(property="insurance_code", type="string"),
      *                     @OA\Property(property="patient_id", type="integer"),
      *                     @OA\Property(property="insurance_provider_name", type="string"),
-     *                     @OA\Property(property="policy_number", type="string"),
+     *                     @OA\Property(property="card_number", type="string"),
      *                     @OA\Property(property="valid_until", type="string", format="date-time"),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="deleted_at", type="string", format="date-time"),
@@ -62,18 +62,18 @@ class InsuaranceController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View Insuarance')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View Insurance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $insuarances = Insurance::withTrashed()->get();
+        $insurances = Insurance::withTrashed()->get();
 
-        if ($insuarances) {
+        if ($insurances) {
             return response([
-                'data' => $insuarances,
+                'data' => $insurances,
                 'statusCode' => 200,
             ], 200);
         } else {
@@ -90,16 +90,16 @@ class InsuaranceController extends Controller
      */
     /**
      * @OA\Post(
-     *     path="/api/insuarances",
-     *     summary="Create insuarance",
-     *     tags={"insuarances"},
+     *     path="/api/insurances",
+     *     summary="Create insurance",
+     *     tags={"insurances"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="patient_id", type="integer"),
      *                     @OA\Property(property="insurance_provider_name", type="string"),
-     *                     @OA\Property(property="policy_number", type="string"),
+     *                     @OA\Property(property="card_number", type="string"),
      *                     @OA\Property(property="valid_until", type="string", format="date-time"),
      *         ),
      *     ),
@@ -127,7 +127,7 @@ class InsuaranceController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Create Insuarance')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Create Insurance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -137,23 +137,23 @@ class InsuaranceController extends Controller
         $data = $request->validate([
             'patient_id' => ['required', 'numeric'],
             'insurance_provider_name' => ['nullable', 'string'],
-            'policy_number' => ['nullable', 'string'],
+            'card_number' => ['nullable', 'string'],
             'valid_until' => ['nullable', 'date'],
         ]);
 
 
         // Create Insurance
-        $insuarance = Insurance::create([
+        $insurance = Insurance::create([
             'patient_id' => $data['patient_id'],
             'insurance_provider_name' => $data['insurance_provider_name'],
-            'policy_number' => $data['policy_number'],
+            'card_number' => $data['card_number'],
             'valid_until' => $data['valid_until'],
             'created_by' => Auth::id(),
         ]);
 
-        if ($insuarance) {
+        if ($insurance) {
             return response([
-                'data' => $insuarance,
+                'data' => $insurance,
                 'statusCode' => 201,
             ], status: 201);
         } else {
@@ -169,11 +169,11 @@ class InsuaranceController extends Controller
      */
     /**
      * @OA\Get(
-     *     path="/api/insuarances/{insuarance_id}",
-     *     summary="Find insuarance by ID",
-     *     tags={"insuarances"},
+     *     path="/api/insurances/{insurance_id}",
+     *     summary="Find insurance by ID",
+     *     tags={"insurances"},
      *     @OA\Parameter(
-     *         name="insuarance_id",
+     *         name="insurance_id",
      *         in="path",
      *         required=true,
      *         @OA\Schema(type="integer")
@@ -190,7 +190,7 @@ class InsuaranceController extends Controller
      *                     @OA\Property(property="insurance_code", type="string"),
      *                     @OA\Property(property="patient_id", type="integer"),
      *                     @OA\Property(property="insurance_provider_name", type="string"),
-     *                     @OA\Property(property="policy_number", type="string"),
+     *                     @OA\Property(property="card_number", type="string"),
      *                     @OA\Property(property="valid_until", type="string", format="date-time"),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="deleted_at", type="string", format="date-time"),
@@ -204,23 +204,23 @@ class InsuaranceController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View Insuarance')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View Insurance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $insuarance = Insurance::withTrashed()->find($id);
+        $insurance = Insurance::withTrashed()->find($id);
 
-        if (!$insuarance) {
+        if (!$insurance) {
             return response([
                 'message' => 'Insurance not found',
                 'statusCode' => 404,
             ]);
         } else {
             return response([
-                'data' => $insuarance,
+                'data' => $insurance,
                 'statusCode' => 200,
             ]);
         }
@@ -231,11 +231,11 @@ class InsuaranceController extends Controller
      */
     /**
      * @OA\Put(
-     *     path="/api/insuarances/{insuarance_id}",
-     *     summary="Update insuarance",
-     *     tags={"insuarances"},
+     *     path="/api/insurances/{insurance_id}",
+     *     summary="Update insurance",
+     *     tags={"insurances"},
      *      @OA\Parameter(
-     *         name="insuarance_id",
+     *         name="insurance_id",
      *         in="path",
      *         required=true,
      *         @OA\Schema(type="string")
@@ -262,7 +262,7 @@ class InsuaranceController extends Controller
      *                     type="object",
      *                    @OA\Property(property="patient_id", type="integer"),
      *                     @OA\Property(property="insurance_provider_name", type="string"),
-     *                     @OA\Property(property="policy_number", type="string"),
+     *                     @OA\Property(property="card_number", type="string"),
      *                     @OA\Property(property="valid_until", type="string", format="date-time"),
      *                 )
      *             ),
@@ -274,7 +274,7 @@ class InsuaranceController extends Controller
     public function update(Request $request, int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Create Insuarance')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Create Insurance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -284,24 +284,24 @@ class InsuaranceController extends Controller
         $data = $request->validate([
             'patient_id' => ['required', 'numeric'],
             'insurance_provider_name' => ['nullable', 'string'],
-            'policy_number' => ['nullable', 'string'],
+            'card_number' => ['nullable', 'string'],
             'valid_until' => ['nullable', 'date'],
         ]);
 
 
         // Update Insurance
-        $insuarance = Insurance::findOrFail($id);
-        $insuarance->update([
+        $insurance = Insurance::findOrFail($id);
+        $insurance->update([
             'patient_id' => $data['patient_id'],
             'insurance_provider_name' => $data['insurance_provider_name'],
-            'policy_number' => $data['policy_number'],
+            'card_number' => $data['card_number'],
             'valid_until' => $data['valid_until'],
             'created_by' => Auth::id(),
         ]);
 
-        if ($insuarance) {
+        if ($insurance) {
             return response([
-                'data' => $insuarance,
+                'data' => $insurance,
                 'message' => 'Insurance updated successfully',
                 'statusCode' => 201,
             ], status: 201);
@@ -318,11 +318,11 @@ class InsuaranceController extends Controller
      */
     /**
      * @OA\Delete(
-     *     path="/api/insuarances/{insuarance_id}",
-     *     summary="Delete insuarance",
-     *     tags={"insuarances"},
+     *     path="/api/insurances/{insurance_id}",
+     *     summary="Delete insurance",
+     *     tags={"insurances"},
      *     @OA\Parameter(
-     *         name="insuarance_id",
+     *         name="insurance_id",
      *         in="path",
      *         required=true,
      *         @OA\Schema(type="string")
@@ -351,7 +351,7 @@ class InsuaranceController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Delete Insuarance')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Delete Insurance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -362,7 +362,7 @@ class InsuaranceController extends Controller
 
         if (!$insuarance) {
             return response([
-                'message' => 'Insuarance not found',
+                'message' => 'Insurance not found',
                 'statusCode' => 404,
             ]);
         }
@@ -370,7 +370,7 @@ class InsuaranceController extends Controller
         $insuarance->delete();
 
         return response([
-            'message' => 'Insuarance blocked successfully',
+            'message' => 'Insurance blocked successfully',
             'statusCode' => 200,
         ], 200);
 
@@ -382,9 +382,9 @@ class InsuaranceController extends Controller
      */
     /**
      * @OA\Patch(
-     *     path="/api/insuarances/unBlock/{insuarance_id}",
+     *     path="/api/insurances/unBlock/{insuarance_id}",
      *     summary="Unblock insuarance",
-     *     tags={"insuarances"},
+     *     tags={"insurances"},
      *     @OA\Parameter(
      *         name="insuarance_id",
      *         in="path",
@@ -419,7 +419,7 @@ class InsuaranceController extends Controller
 
         if (!$insuarance) {
             return response([
-                'message' => 'Insuarance not found',
+                'message' => 'Insurance not found',
                 'statusCode' => 404,
             ], 404);
         }
@@ -427,7 +427,7 @@ class InsuaranceController extends Controller
         $insuarance->restore($id);
 
         return response([
-            'message' => 'Insuarance unbocked successfully',
+            'message' => 'Insurance unblocked successfully',
             'statusCode' => 200,
         ], 200);
     }

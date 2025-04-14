@@ -4,7 +4,7 @@ use App\Http\Controllers\API\Bills\BillController;
 use App\Http\Controllers\API\Hospitals\HospitalController;
 use App\Http\Controllers\API\Referrals\ReferralController;
 use App\Http\Controllers\API\ReferralType\ReferralTypeController;
-use App\Http\Controllers\API\Insuarances\InsuaranceController;
+use App\Http\Controllers\API\Insurances\InsuranceController;
 use App\Http\Controllers\API\Patients\PatientController;
 use App\Http\Controllers\API\Treatments\TreatmentController;
 use Illuminate\Http\Request;
@@ -69,9 +69,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('patients/update/{id}', [PatientController::class, 'updatePatient']);
     Route::patch('patients/unBlock/{id}', [PatientController::class, 'unBlockPatient']);
 
-    // INSUARANCES APIs
-    Route::resource('insuarances', InsuaranceController::class);
-    Route::patch('insuarances/unBlock/{hospitalId}', [InsuaranceController::class, 'unBlockInsuarance']);
+    // INSURANCES APIs
+    Route::resource('insurances', InsuranceController::class);
+    Route::patch('insurances/unBlock/{hospitalId}', [InsuranceController::class, 'unBlockInsuarance']);
 
     // REFERRAL APIs
     Route::resource('referrals', ReferralController::class);
