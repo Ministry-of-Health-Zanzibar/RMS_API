@@ -1290,6 +1290,384 @@
                 }
             }
         },
+        "/api/reasons": {
+            "get": {
+                "tags": [
+                    "reasons"
+                ],
+                "summary": "Get all reasons",
+                "operationId": "e4cf15d9921ebed66432ec8022d35c41",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "reason_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "referral_reason_name": {
+                                                        "type": "string"
+                                                    },
+                                                    "reason_descriptions": {
+                                                        "type": "string"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "deleted_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "reasons"
+                ],
+                "summary": "Create reasons",
+                "operationId": "ba34cb4e33be5b6434abfd7024594636",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "referral_reason_name": {
+                                        "type": "string"
+                                    },
+                                    "reason_descriptions": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/reasons/{id}": {
+            "get": {
+                "tags": [
+                    "reasons"
+                ],
+                "summary": "Find reason by ID",
+                "operationId": "b49924dafce47a228960e6f581b1a33a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "reason_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "referral_reason_name": {
+                                                    "type": "string"
+                                                },
+                                                "reason_descriptions": {
+                                                    "type": "string"
+                                                },
+                                                "created_by": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-04-10T10:44:31.000000Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-04-10T10:44:31.000000Z"
+                                                },
+                                                "deleted_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": null,
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "reasons"
+                ],
+                "summary": "Update reason",
+                "operationId": "4588bd8d2c39000493d5c1dbd37885d0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "referral_reason_name": {
+                                                        "type": "string"
+                                                    },
+                                                    "reason_descriptions": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "reasons"
+                ],
+                "summary": "Delete reason",
+                "operationId": "8901c3a6a1f5b870810cdc28f2c56405",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/reasons/unblock/{id}": {
+            "patch": {
+                "tags": [
+                    "reasons"
+                ],
+                "summary": "Unblock Reason",
+                "operationId": "d7c027249098319d4b30b93641e49176",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/referralTypes": {
             "get": {
                 "tags": [
@@ -1666,13 +2044,13 @@
                 }
             }
         },
-        "/api/reasons": {
+        "/api/referralLetters": {
             "get": {
                 "tags": [
-                    "reasons"
+                    "referralLetters"
                 ],
-                "summary": "Get all reasons",
-                "operationId": "e4cf15d9921ebed66432ec8022d35c41",
+                "summary": "Get all referralLetters",
+                "operationId": "5a2964d2e90461fcac961536292cc2e9",
                 "responses": {
                     "200": {
                         "description": "Successful operation",
@@ -1700,14 +2078,20 @@
                                             "type": "array",
                                             "items": {
                                                 "properties": {
-                                                    "reason_id": {
+                                                    "referral_letter_id": {
                                                         "type": "integer"
                                                     },
-                                                    "referral_reason_name": {
+                                                    "referral_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "referral_letter_code": {
                                                         "type": "string"
                                                     },
-                                                    "reason_descriptions": {
+                                                    "letter_text": {
                                                         "type": "string"
+                                                    },
+                                                    "is_printed": {
+                                                        "type": "boolean"
                                                     },
                                                     "created_at": {
                                                         "type": "string",
@@ -1739,20 +2123,20 @@
             },
             "post": {
                 "tags": [
-                    "reasons"
+                    "referralLetters"
                 ],
-                "summary": "Create reasons",
-                "operationId": "ba34cb4e33be5b6434abfd7024594636",
+                "summary": "Create referralLetters",
+                "operationId": "cc55bba5f1c1de01d889be0e45b09f47",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "referral_reason_name": {
-                                        "type": "string"
+                                    "referral_id": {
+                                        "type": "integer"
                                     },
-                                    "reason_descriptions": {
+                                    "letter_text": {
                                         "type": "string"
                                     }
                                 },
@@ -1799,16 +2183,16 @@
                 }
             }
         },
-        "/api/reasons/{id}": {
+        "/api/referralLetters/{referralLetters_id}": {
             "get": {
                 "tags": [
-                    "reasons"
+                    "referralLetters"
                 ],
-                "summary": "Find reason by ID",
-                "operationId": "b49924dafce47a228960e6f581b1a33a",
+                "summary": "Find referral Letters by ID",
+                "operationId": "12e7235df9115f9d878d19e9b1d205f0",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "referralLetters_id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -1825,35 +2209,32 @@
                                     "properties": {
                                         "data": {
                                             "properties": {
-                                                "reason_id": {
-                                                    "type": "integer",
-                                                    "example": 1
+                                                "referral_letter_id": {
+                                                    "type": "integer"
                                                 },
-                                                "referral_reason_name": {
+                                                "referral_id": {
+                                                    "type": "integer"
+                                                },
+                                                "referral_letter_code": {
                                                     "type": "string"
                                                 },
-                                                "reason_descriptions": {
+                                                "letter_text": {
                                                     "type": "string"
                                                 },
-                                                "created_by": {
-                                                    "type": "integer",
-                                                    "example": 1
+                                                "is_printed": {
+                                                    "type": "boolean"
                                                 },
                                                 "created_at": {
                                                     "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-04-10T10:44:31.000000Z"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-04-10T10:44:31.000000Z"
+                                                    "format": "date-time"
                                                 },
                                                 "deleted_at": {
                                                     "type": "string",
-                                                    "format": "date-time",
-                                                    "example": null,
-                                                    "nullable": true
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 }
                                             },
                                             "type": "object"
@@ -1872,13 +2253,13 @@
             },
             "put": {
                 "tags": [
-                    "reasons"
+                    "referralLetters"
                 ],
-                "summary": "Update reason",
-                "operationId": "4588bd8d2c39000493d5c1dbd37885d0",
+                "summary": "Update referralLetters",
+                "operationId": "38022579ab48e47f0465e99f8af0038a",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "referralLetters_id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -1913,11 +2294,14 @@
                                             "type": "array",
                                             "items": {
                                                 "properties": {
-                                                    "referral_reason_name": {
+                                                    "referral_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "letter_text": {
                                                         "type": "string"
                                                     },
-                                                    "reason_descriptions": {
-                                                        "type": "string"
+                                                    "is_printed": {
+                                                        "type": "boolean"
                                                     }
                                                 },
                                                 "type": "object"
@@ -1937,13 +2321,13 @@
             },
             "delete": {
                 "tags": [
-                    "reasons"
+                    "referralLetters"
                 ],
-                "summary": "Delete reason",
-                "operationId": "8901c3a6a1f5b870810cdc28f2c56405",
+                "summary": "Delete referralLetters",
+                "operationId": "501aa0db6c32055795c557675e2f571c",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "referralLetters_id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -1989,16 +2373,16 @@
                 }
             }
         },
-        "/api/reasons/unblock/{id}": {
+        "/api/referralLetters/unBlock/{Referral_letter_id}": {
             "patch": {
                 "tags": [
-                    "reasons"
+                    "referralLetters"
                 ],
-                "summary": "Unblock Reason",
-                "operationId": "d7c027249098319d4b30b93641e49176",
+                "summary": "Unblock referralLetters",
+                "operationId": "9e3a75ae5a2a6e97ee188349928c9819",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "referralLetters_id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -2006,6 +2390,176 @@
                         }
                     }
                 ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/referrals": {
+            "get": {
+                "tags": [
+                    "referrals"
+                ],
+                "summary": "Get all referrals",
+                "operationId": "dba17cd2008b967e4218d74c59b3087e",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "referral_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "patient_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "hospital_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "referral_type_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "reason_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "start_date": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "end_date": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "status": {
+                                                        "type": "string"
+                                                    },
+                                                    "confirmed_by": {
+                                                        "type": "string"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "deleted_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "referrals"
+                ],
+                "summary": "Create referral",
+                "operationId": "a4a9e6eca5353e029204fbd3b0d077a3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "patient_id": {
+                                        "type": "integer"
+                                    },
+                                    "hospital_id": {
+                                        "type": "integer"
+                                    },
+                                    "referral_type_id": {
+                                        "type": "integer"
+                                    },
+                                    "reason_id": {
+                                        "type": "integer"
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "status": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Successful operation",
@@ -4838,12 +5392,20 @@
             "description": "patients"
         },
         {
+            "name": "reasons",
+            "description": "reasons"
+        },
+        {
             "name": "referralTypes",
             "description": "referralTypes"
         },
         {
-            "name": "reasons",
-            "description": "reasons"
+            "name": "referralLetters",
+            "description": "referralLetters"
+        },
+        {
+            "name": "referrals",
+            "description": "referrals"
         },
         {
             "name": "countries",

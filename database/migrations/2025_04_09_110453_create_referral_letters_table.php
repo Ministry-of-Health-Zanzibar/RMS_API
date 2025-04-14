@@ -13,14 +13,15 @@ return new class extends Migration {
         Schema::create('referral_letters', function (Blueprint $table) {
             $table->bigIncrements('referral_letter_id');  // Auto-incrementing primary key
             $table->unsignedBigInteger('referral_id');  // Foreign key from the referrals table
+            $table->string('referral_letter_code')->unique();
             $table->text('letter_text');  // Text of the referral letter
-            $table->boolean('signed')->default(false);  // Default value for 'signed' is false
+            $table->boolean('is_printed')->default(false);  // Default value for 'signed' is false
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();
 
             // Foreign key constraints
-            $table->foreign('referral_id')->references('referral_id')->on('referrals')->onDelete('cascade');
+            $table->foreign('referral_id')->references('referral_id')->on('referrals');
         });
     }
 

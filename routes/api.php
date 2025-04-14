@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\Hospitals\HospitalController;
 use App\Http\Controllers\API\ReferralType\ReferralTypeController;
+use App\Http\Controllers\API\Referral_Letters\ReferralLettersController;
 use App\Http\Controllers\API\Insuarances\InsuaranceController;
 use App\Http\Controllers\API\Patients\PatientController;
 use Illuminate\Http\Request;
@@ -60,6 +61,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //REFERRAL TYPE
     Route::resource('referralTypes', ReferralTypeController::class);
     Route::patch('referralTypes/unblock/{id}', [ReferralTypeController::class, 'unBlockReferralType']);
+
+    //REFERRAL LETTERS
+    Route::resource('referralLetters', ReferralLettersController::class);
+    Route::patch('referralLetters/unBlock/{referralLettersId}', [ReferralLettersController::class, 'unBlockHospital']);
 
     Route::resource('patients', PatientController::class);
     Route::post('patients/update/{id}', [PatientController::class, 'updatePatient']);
