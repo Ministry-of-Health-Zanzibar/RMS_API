@@ -78,8 +78,8 @@ class HospitalController extends Controller
         } else {
             return response([
                 'message' => 'No data found',
-                'statusCode' => 500,
-            ], 500);
+                'statusCode' => 200,
+            ], 200);
         }
     }
 

@@ -79,8 +79,8 @@ class PatientController extends Controller
         if ($patients->isEmpty()) {
             return response([
                 'message' => 'No data found',
-                'statusCode' => 500,
-            ], 500);
+                'statusCode' => 200,
+            ], 200);
         } else {
 
             // Append full doc URL 
