@@ -46,7 +46,7 @@ class Insurance extends Model
 
     protected $fillable = [
         'insurance_provider_name',
-        'policy_number',
+        'card_number',
         'patient_id',
         'valid_until',
         'created_by'

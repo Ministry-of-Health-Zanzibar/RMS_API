@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->string('insurance_code')->unique();
             $table->unsignedBigInteger('patient_id');  // Foreign key from the patients table
             $table->string('insurance_provider_name');  // Name of the insurance provider
-            $table->string('policy_number')->unique();  // Unique policy number for the insurance
+            $table->string('card_number')->unique();  // Unique card number for the insurance
             $table->date('valid_until');  // Date until the insurance is valid
             $table->unsignedBigInteger('created_by');
             $table->timestamps();

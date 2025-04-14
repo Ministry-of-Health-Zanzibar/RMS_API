@@ -674,13 +674,13 @@
                 }
             }
         },
-        "/api/insuarances": {
+        "/api/insurances": {
             "get": {
                 "tags": [
-                    "insuarances"
+                    "insurances"
                 ],
-                "summary": "Get all insuarances",
-                "operationId": "b02cd95c26f59bcd32ec2326e472557d",
+                "summary": "Get all insurances",
+                "operationId": "72936218623e9053c6b286fd722c49c1",
                 "responses": {
                     "200": {
                         "description": "Successful operation",
@@ -720,7 +720,7 @@
                                                     "insurance_provider_name": {
                                                         "type": "string"
                                                     },
-                                                    "policy_number": {
+                                                    "card_number": {
                                                         "type": "string"
                                                     },
                                                     "valid_until": {
@@ -757,10 +757,10 @@
             },
             "post": {
                 "tags": [
-                    "insuarances"
+                    "insurances"
                 ],
-                "summary": "Create insuarance",
-                "operationId": "ce95a1b5760d77c4261ed01a6c5c330a",
+                "summary": "Create insurance",
+                "operationId": "e387214b419c7c9120d9cb095f95f248",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -773,7 +773,7 @@
                                     "insurance_provider_name": {
                                         "type": "string"
                                     },
-                                    "policy_number": {
+                                    "card_number": {
                                         "type": "string"
                                     },
                                     "valid_until": {
@@ -824,16 +824,16 @@
                 }
             }
         },
-        "/api/insuarances/{insuarance_id}": {
+        "/api/insurances/{insurance_id}": {
             "get": {
                 "tags": [
-                    "insuarances"
+                    "insurances"
                 ],
-                "summary": "Find insuarance by ID",
-                "operationId": "9c2e299faf22c026394fad099bcb2827",
+                "summary": "Find insurance by ID",
+                "operationId": "95f75d2d63c901ef574355fc8e14c200",
                 "parameters": [
                     {
-                        "name": "insuarance_id",
+                        "name": "insurance_id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -862,7 +862,7 @@
                                                 "insurance_provider_name": {
                                                     "type": "string"
                                                 },
-                                                "policy_number": {
+                                                "card_number": {
                                                     "type": "string"
                                                 },
                                                 "valid_until": {
@@ -898,13 +898,13 @@
             },
             "put": {
                 "tags": [
-                    "insuarances"
+                    "insurances"
                 ],
-                "summary": "Update insuarance",
-                "operationId": "7844594d5ac2f7a1fcfeeb350995ea84",
+                "summary": "Update insurance",
+                "operationId": "d0092885da80806d5811ab056e2565ae",
                 "parameters": [
                     {
-                        "name": "insuarance_id",
+                        "name": "insurance_id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -945,7 +945,7 @@
                                                     "insurance_provider_name": {
                                                         "type": "string"
                                                     },
-                                                    "policy_number": {
+                                                    "card_number": {
                                                         "type": "string"
                                                     },
                                                     "valid_until": {
@@ -970,13 +970,13 @@
             },
             "delete": {
                 "tags": [
-                    "insuarances"
+                    "insurances"
                 ],
-                "summary": "Delete insuarance",
-                "operationId": "9f3b2a45449689daf2c51a7391a8afd7",
+                "summary": "Delete insurance",
+                "operationId": "b591f2fb3f707d63888b66e333b0b90f",
                 "parameters": [
                     {
-                        "name": "insuarance_id",
+                        "name": "insurance_id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -1022,13 +1022,13 @@
                 }
             }
         },
-        "/api/insuarances/unBlock/{insuarance_id}": {
+        "/api/insurances/unBlock/{insuarance_id}": {
             "patch": {
                 "tags": [
-                    "insuarances"
+                    "insurances"
                 ],
                 "summary": "Unblock insuarance",
-                "operationId": "f3ba98f5fc6cff1cace0f19b420ce945",
+                "operationId": "95e3df5de674f39f23778a9591c31024",
                 "parameters": [
                     {
                         "name": "insuarance_id",
@@ -5950,8 +5950,8 @@
             "description": "hospitals"
         },
         {
-            "name": "insuarances",
-            "description": "insuarances"
+            "name": "insurances",
+            "description": "insurances"
         },
         {
             "name": "patients",

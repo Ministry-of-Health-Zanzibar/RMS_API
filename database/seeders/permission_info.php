@@ -70,10 +70,10 @@ class permission_info extends Seeder
             'Delete Reason',
             'View Reason',
 
-            'Create Insuarance',
-            'Update Insuarance',
-            'Delete Insuarance',
-            'View Insuarance',
+            'Create Insurance',
+            'Update Insurance',
+            'Delete Insurance',
+            'View Insurance',
 
             'Patient Module',
             'Create Patient',
