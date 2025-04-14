@@ -65,6 +65,11 @@ class permission_info extends Seeder
             'Delete ReferralType',
             'View ReferralType',
 
+            'Create ReferralLetter',
+            'Update ReferralLetter',
+            'Delete ReferralLetter',
+            'View ReferralLetter',
+
             'Create Reason',
             'Update Reason',
             'Delete Reason',

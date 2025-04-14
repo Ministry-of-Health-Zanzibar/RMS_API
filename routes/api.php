@@ -4,6 +4,7 @@ use App\Http\Controllers\API\Bills\BillController;
 use App\Http\Controllers\API\Hospitals\HospitalController;
 use App\Http\Controllers\API\Referrals\ReferralController;
 use App\Http\Controllers\API\ReferralType\ReferralTypeController;
+use App\Http\Controllers\API\Referral_Letters\ReferralLettersController;
 use App\Http\Controllers\API\Insurances\InsuranceController;
 use App\Http\Controllers\API\Patients\PatientController;
 use App\Http\Controllers\API\Treatments\TreatmentController;
@@ -63,6 +64,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //REFERRAL TYPE
     Route::resource('referralTypes', ReferralTypeController::class);
     Route::patch('referralTypes/unblock/{id}', [ReferralTypeController::class, 'unBlockReferralType']);
+
+    //REFERRAL LETTERS
+    Route::resource('referralLetters', ReferralLettersController::class);
+    Route::patch('referralLetters/unBlock/{referralLettersId}', [ReferralLettersController::class, 'unBlockHospital']);
+
+    //REFERRAL LETTERS
+    Route::resource('referralLetters', ReferralLettersController::class);
+    Route::patch('referralLetters/unBlock/{referralLettersId}', [ReferralLettersController::class, 'unBlockHospital']);
 
     // PATIENTS APIs
     Route::resource('patients', PatientController::class);
