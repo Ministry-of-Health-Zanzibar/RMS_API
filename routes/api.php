@@ -5,6 +5,7 @@ use App\Http\Controllers\API\Referrals\ReferralController;
 use App\Http\Controllers\API\ReferralType\ReferralTypeController;
 use App\Http\Controllers\API\Insuarances\InsuaranceController;
 use App\Http\Controllers\API\Patients\PatientController;
+use App\Http\Controllers\API\Treatments\TreatmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Reasons\ReasonController;
@@ -78,5 +79,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // RMS REASON APIs
     Route::resource('reasons', ReasonController::class);
     Route::patch('reasons/unBlock/{reasonsId}', [ReasonController::class, 'unBlockReason']);
+
+    // RMS Treatments APIs
+    Route::resource('treatments', TreatmentController::class);
+    Route::post('treatments/update/{treatmentId}', [TreatmentController::class,'update']);
+    Route::patch('treatments/unBlock/{treatmentId}', [TreatmentController::class, 'unBlockTreatment']);
 
 });

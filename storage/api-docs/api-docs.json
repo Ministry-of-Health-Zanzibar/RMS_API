@@ -4333,6 +4333,436 @@
                 }
             }
         },
+        "/api/treatments": {
+            "get": {
+                "tags": [
+                    "treatments"
+                ],
+                "summary": "Get all treatments",
+                "operationId": "42e11bb9f444d09e825bf42afd858b0b",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "referral_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "received_date": {
+                                                        "type": "string",
+                                                        "format": "date"
+                                                    },
+                                                    "started_date": {
+                                                        "type": "string",
+                                                        "format": "date"
+                                                    },
+                                                    "ended_date": {
+                                                        "type": "string",
+                                                        "format": "date"
+                                                    },
+                                                    "treatment_status": {
+                                                        "type": "string"
+                                                    },
+                                                    "measurements": {
+                                                        "type": "string"
+                                                    },
+                                                    "disease": {
+                                                        "type": "string"
+                                                    },
+                                                    "treatment_file": {
+                                                        "description": "Uploaded file name",
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "treatments"
+                ],
+                "summary": "Create treatment",
+                "operationId": "d99d8ff4152251b0f41e1f9816ca8027",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "referral_id": {
+                                        "type": "integer"
+                                    },
+                                    "received_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "started_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "ended_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "treatment_status": {
+                                        "type": "string"
+                                    },
+                                    "measurements": {
+                                        "type": "string"
+                                    },
+                                    "disease": {
+                                        "type": "string"
+                                    },
+                                    "treatment_file": {
+                                        "description": "Uploaded file name",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": "201"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/treatments/{treatmentId}": {
+            "get": {
+                "tags": [
+                    "treatments"
+                ],
+                "summary": "Find treatment by ID",
+                "operationId": "58df0b1b199b784056f63b89297123cc",
+                "parameters": [
+                    {
+                        "name": "treatmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "referral_id": {
+                                                    "type": "integer"
+                                                },
+                                                "received_date": {
+                                                    "type": "string",
+                                                    "format": "date"
+                                                },
+                                                "started_date": {
+                                                    "type": "string",
+                                                    "format": "date"
+                                                },
+                                                "ended_date": {
+                                                    "type": "string",
+                                                    "format": "date"
+                                                },
+                                                "treatment_status": {
+                                                    "type": "string"
+                                                },
+                                                "measurements": {
+                                                    "type": "string"
+                                                },
+                                                "disease": {
+                                                    "type": "string"
+                                                },
+                                                "treatment_file": {
+                                                    "description": "Uploaded file name",
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "treatments"
+                ],
+                "summary": "Delete treatment",
+                "operationId": "53fcfd2219ab0e4cc0b284b7cb3c6e5b",
+                "parameters": [
+                    {
+                        "name": "treatmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/treatments/update/{treatmentId}": {
+            "put": {
+                "tags": [
+                    "treatments"
+                ],
+                "summary": "Update treatment",
+                "operationId": "a62bf64ba696b7511f7c3c830cb9d522",
+                "parameters": [
+                    {
+                        "name": "treatmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "referral_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "received_date": {
+                                                        "type": "string",
+                                                        "format": "date"
+                                                    },
+                                                    "started_date": {
+                                                        "type": "string",
+                                                        "format": "date"
+                                                    },
+                                                    "ended_date": {
+                                                        "type": "string",
+                                                        "format": "date"
+                                                    },
+                                                    "treatment_status": {
+                                                        "type": "string"
+                                                    },
+                                                    "measurements": {
+                                                        "type": "string"
+                                                    },
+                                                    "disease": {
+                                                        "type": "string"
+                                                    },
+                                                    "treatment_file": {
+                                                        "description": "Uploaded file name",
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/treatments/unBlock/{treatmentId}": {
+            "patch": {
+                "tags": [
+                    "treatments"
+                ],
+                "summary": "Unblock treatment",
+                "operationId": "1dc38bb22ec2a8929484f0a345610ab6",
+                "parameters": [
+                    {
+                        "name": "treatmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/permissions": {
             "get": {
                 "tags": [
@@ -5309,6 +5739,10 @@
         {
             "name": "uploadTypes",
             "description": "uploadTypes"
+        },
+        {
+            "name": "treatments",
+            "description": "treatments"
         },
         {
             "name": "permissions",
