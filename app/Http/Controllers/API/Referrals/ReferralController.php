@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\Referrals;
 
 use App\Models\Insurance;
 use App\Models\Referral;
+use DB;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -73,7 +74,30 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        $referrals = Referral::withTrashed()->get();
+        // $referrals = Referral::withTrashed()->get();
+        $referrals = DB::table('referrals')
+            ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
+            ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
+            ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
+            ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
+            ->select(
+                "referrals.*",
+
+                "hospitals.hospital_name",
+                "hospitals.hospital_code",
+                "hospitals.hospital_address",
+
+                "patients.name as patient_name",
+                "patients.date_of_birth",
+                "patients.gender",
+                "patients.phone",
+
+                "referral_types.referral_type_name",
+                "referral_types.referral_type_code",
+
+                "reasons.referral_reason_name"
+            )
+            ->get();
 
         if ($referrals) {
             return response([
