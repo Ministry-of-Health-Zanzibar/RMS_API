@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
-class Referral_letter extends Model
+class ReferralLetter extends Model
 {
     use LogsActivity, HasFactory, SoftDeletes;
 
@@ -59,7 +59,7 @@ class Referral_letter extends Model
         return $this->belongsTo(Referral_letter::class);
     }
 
-   
+
     // Automatically generate insurance_code before creating
     protected static function boot()
     {

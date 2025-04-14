@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\API\Referral_Letters;
+namespace App\Http\Controllers\API\ReferralLetters;
 
-use App\Models\Referral_letter;
+use App\Models\ReferralLetter;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -14,10 +14,10 @@ class ReferralLettersController extends Controller
         $this->middleware('permission:View ReferralLetter|Create ReferralLetter|View ReferralLetter|Update ReferralLetter|Delete ReferralLetter', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
     }
 
-   /**
+    /**
      * Display a listing of the resource.
      */
-    /** 
+    /**
      * @OA\Get(
      *     path="/api/referralLetters",
      *     summary="Get all referralLetters",
@@ -68,7 +68,7 @@ class ReferralLettersController extends Controller
             ], 403);
         }
 
-        $Referral_letter = Referral_letter::withTrashed()->get();
+        $Referral_letter = ReferralLetter::withTrashed()->get();
 
         if ($Referral_letter) {
             return response([
@@ -83,7 +83,7 @@ class ReferralLettersController extends Controller
         }
     }
 
-     /**
+    /**
      * Store a newly created resource in storage.
      */
     /**
@@ -137,8 +137,8 @@ class ReferralLettersController extends Controller
 
 
         // Create Insurance
-        $Referral_letter = Referral_letter::create([
-            'referral_id' => $data['referral_id'],          
+        $Referral_letter = ReferralLetter::create([
+            'referral_id' => $data['referral_id'],
             'letter_text' => $data['letter_text'],
             'created_by' => Auth::id(),
         ]);
@@ -203,7 +203,7 @@ class ReferralLettersController extends Controller
             ], 403);
         }
 
-        $Referral_letter = Referral_letter::withTrashed()->find($id);
+        $Referral_letter = ReferralLetter::withTrashed()->find($id);
 
         if (!$Referral_letter) {
             return response([
@@ -218,7 +218,7 @@ class ReferralLettersController extends Controller
         }
     }
 
-   /**
+    /**
      * Update the specified resource in storage.
      */
     /**
@@ -274,14 +274,14 @@ class ReferralLettersController extends Controller
         }
 
         $data = $request->validate([
-           'referral_id' => ['required', 'numeric'],
+            'referral_id' => ['required', 'numeric'],
             'letter_text' => ['required','text'],
             'is_printed' => ['required'],
         ]);
 
 
         // Update referral letter
-        $Referral_letter = Referral_letter::findOrFail($id);
+        $Referral_letter = ReferralLetter::findOrFail($id);
         $Referral_letter->update([
             'referral_id' => $data['referral_id'],
             'letter_text' => $data['letter_text'],
@@ -303,7 +303,7 @@ class ReferralLettersController extends Controller
         }
     }
 
-   /**
+    /**
      * Remove the specified resource from storage.
      */
     /**
@@ -349,11 +349,11 @@ class ReferralLettersController extends Controller
             ], 403);
         }
 
-        $Referral_letter = Referral_letter::withTrashed()->find($id);
+        $Referral_letter = ReferralLetter::withTrashed()->find($id);
 
         if (!$Referral_letter) {
             return response([
-                'message' => 'Referral_letter not found',
+                'message' => 'Referral letter not found',
                 'statusCode' => 404,
             ]);
         }
@@ -405,11 +405,11 @@ class ReferralLettersController extends Controller
     public function unBlockReferralLetter(int $id)
     {
 
-        $Referral_letter = Referral_letter::withTrashed()->find($id);
+        $Referral_letter = ReferralLetter::withTrashed()->find($id);
 
         if (!$Referral_letter) {
             return response([
-                'message' => 'Referral_letter not found',
+                'message' => 'Referral letter not found',
                 'statusCode' => 404,
             ], 404);
         }
@@ -417,7 +417,7 @@ class ReferralLettersController extends Controller
         $Referral_letter->restore($id);
 
         return response([
-            'message' => 'Referral_letter unbocked successfully',
+            'message' => 'Referral_letter unblocked successfully',
             'statusCode' => 200,
         ], 200);
     }
