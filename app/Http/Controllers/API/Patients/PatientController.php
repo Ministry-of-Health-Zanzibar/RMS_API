@@ -497,7 +497,7 @@ class PatientController extends Controller
             ->select(
                 'p.patient_id','p.name','p.date_of_birth','p.gender','p.phone','p.location','p.job',
                 'p.position','p.referral_letter_file','i.insurance_code','i.insurance_provider_name',
-                'i.policy_number','i.valid_until'
+                'i.card_number','i.valid_until'
                     )
             ->get();
         if ($data->isEmpty()) {
