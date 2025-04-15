@@ -492,16 +492,10 @@ class PatientController extends Controller
 //ending point of patient and insuarence
     public function getAllPatientsWithInsurance()
     {
-        $data = DB::table('patients as p')
-            ->leftJoin('insurances as i', 'p.patient_id', '=', 'i.patient_id')
-            ->select(
-                'p.patient_id','p.name','p.date_of_birth','p.gender','p.phone','p.location','p.job',
-                'p.position','p.referral_letter_file','i.insurance_code','i.insurance_provider_name',
-                'i.card_number','i.valid_until'
-                    )
-            ->get();
+        $data = Patient::with(['insurances'])->get();
+
         if ($data->isEmpty()) {
-            return response()->json(['message' => 'No patients found'], 404);
+            return response()->json(['message' => 'No Patient with insurance found'], 404);
         }
         return response()->json($data);
     }
