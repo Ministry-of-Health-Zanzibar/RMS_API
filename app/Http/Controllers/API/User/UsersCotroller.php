@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use App\Models\User;
-use App\Models\UserHierarchies;
 use Exception;
 use Validator;
 use DB;
@@ -75,18 +74,16 @@ class UsersCotroller extends Controller
                 $staffs = DB::table('users')
                     ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
                     ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-                    ->join('user_hierarchies', 'user_hierarchies.user_id', '=', 'users.id')
-                    ->join('working_stations', 'working_stations.working_station_id', '=', 'user_hierarchies.working_station_id')
-                    ->select('users.id', 'users.first_name', 'users.middle_name', 'users.last_name', 'users.email', 'users.phone_no', 'users.address', 'users.gender', 'users.date_of_birth', 'users.deleted_at', 'roles.name as role_name', 'roles.id as role_id', 'working_stations.working_station_id', 'working_stations.working_station_name', 'user_hierarchies.user_hierarche_id')
+                    ->select('users.id', 'users.first_name', 'users.middle_name', 'users.last_name', 'users.email', 'users.phone_no', 'users.address', 'users.gender', 'users.date_of_birth', 'users.deleted_at', 'roles.name as role_name', 'roles.id as role_id')
                     ->where('model_has_roles.role_id', '!=', 1)
                     ->get();
 
-                $respose = [
+                $response = [
                     'data' => $staffs,
                     'statusCode' => 200
                 ];
 
-                return response()->json($respose);
+                return response()->json($response);
             } catch (Exception $e) {
                 $errorResponse = [
                     'message' => 'Internal Server Error',
@@ -101,19 +98,17 @@ class UsersCotroller extends Controller
                 $staffs = DB::table('users')
                     ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
                     ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-                    ->join('user_hierarchies', 'user_hierarchies.user_id', '=', 'users.id')
-                    ->join('working_stations', 'working_stations.working_station_id', '=', 'user_hierarchies.working_station_id')
-                    ->select('users.id', 'users.first_name', 'users.middle_name', 'users.last_name', 'users.email', 'users.phone_no', 'users.address', 'users.gender', 'users.date_of_birth', 'users.deleted_at', 'roles.name as role_name', 'roles.id as role_id', 'working_stations.working_station_id', 'working_stations.working_station_name', 'user_hierarchies.user_hierarche_id')
+                    ->select('users.id', 'users.first_name', 'users.middle_name', 'users.last_name', 'users.email', 'users.phone_no', 'users.address', 'users.gender', 'users.date_of_birth', 'users.deleted_at', 'roles.name as role_name', 'roles.id as role_id')
                     ->where('model_has_roles.role_id', '!=', 1)
                     ->where('roles.name', '!=', 'ROLE NATIONAL')
                     ->get();
 
-                $respose = [
+                $response = [
                     'data' => $staffs,
                     'statusCode' => 200
                 ];
 
-                return response()->json($respose);
+                return response()->json($response);
             } catch (Exception $e) {
                 $errorResponse = [
                     'message' => 'Internal Server Error',
@@ -213,16 +208,8 @@ class UsersCotroller extends Controller
 
                     $users->givePermissionTo($permissions);
 
-                    $UserHierarchies = UserHierarchies::create([
-                        'user_hierarche_id' => $auto_id,
-                        'working_station_id' => $request->working_station_id,
-                        'user_id' => $users->id,
-                        'status' => 1,
-                        'created_by' => $user_id,
-                    ]);
-
                     $successResponse = [
-                        'message' => 'User Account Created Successfuly',
+                        'message' => 'User Account Created Successfully',
                         'password' => $auto_id,
                         'email' => $request->email,
                         'statusCode' => 201
@@ -240,7 +227,7 @@ class UsersCotroller extends Controller
                 }
             } else {
                 $errorResponse = [
-                    'message' => 'Email Alread Exist',
+                    'message' => 'Email Already Exist',
                     'statusCode' => 400
                 ];
                 return response()->json($errorResponse);
@@ -308,14 +295,12 @@ class UsersCotroller extends Controller
             $staffs = DB::table('users')
                 ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
                 ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-                ->join('user_hierarchies', 'user_hierarchies.user_id', '=', 'users.id')
-                ->join('working_stations', 'working_stations.working_station_id', '=', 'user_hierarchies.working_station_id')
-                ->select('users.id', 'users.first_name', 'users.middle_name', 'users.last_name', 'users.email', 'users.phone_no', 'users.address', 'users.gender', 'users.date_of_birth', 'users.deleted_at', 'roles.name as role_name', 'roles.id as role_id', 'working_stations.working_station_id', 'working_stations.working_station_name', 'user_hierarchies.user_hierarche_id')
+                ->select('users.id', 'users.first_name', 'users.middle_name', 'users.last_name', 'users.email', 'users.phone_no', 'users.address', 'users.gender', 'users.date_of_birth', 'users.deleted_at', 'roles.name as role_name', 'roles.id as role_id')
                 ->where('model_has_roles.role_id', '!=', 1)
                 ->where('users.id', '=', $id)
                 ->get();
 
-            $respose = [
+            $response = [
                 'data' => $staffs,
                 'statusCode' => 200
             ];
@@ -383,7 +368,6 @@ class UsersCotroller extends Controller
     public function update(Request $request, string $id)
     {
         $user_id = auth()->user()->id;
-        $user_hierarche_id = $request->user_hierarche_id;
         if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Update User')) {
             try {
 
@@ -399,14 +383,8 @@ class UsersCotroller extends Controller
 
                 // $users->assignRole($request->roleID);
 
-                $UserHierarchies = UserHierarchies::find($user_hierarche_id);
-                $UserHierarchies->working_station_id = $request->working_station_id;
-                $UserHierarchies->user_id = $id;
-                $UserHierarchies->created_by = $user_id;
-                $UserHierarchies->update();
-
                 $successResponse = [
-                    'message' => 'User Account Updated Successfuly',
+                    'message' => 'User Account Updated Successfully',
                     'statusCode' => 201
                 ];
 
@@ -468,7 +446,7 @@ class UsersCotroller extends Controller
                     $delete->delete();
 
                     $successResponse = [
-                        'message' => 'User Account Blocked Successfuly',
+                        'message' => 'User Account Blocked Successfully',
                         'statusCode' => '200'
                     ];
 
