@@ -4,7 +4,7 @@ use App\Http\Controllers\API\Bills\BillController;
 use App\Http\Controllers\API\Hospitals\HospitalController;
 use App\Http\Controllers\API\Referrals\ReferralController;
 use App\Http\Controllers\API\ReferralType\ReferralTypeController;
-use App\Http\Controllers\API\Referral_Letters\ReferralLettersController;
+use App\Http\Controllers\API\ReferralLetters\ReferralLettersController;
 use App\Http\Controllers\API\Insurances\InsuranceController;
 use App\Http\Controllers\API\Patients\PatientController;
 use App\Http\Controllers\API\Report\ReportController;
