@@ -48,6 +48,11 @@ class Referral extends Model
         return $this->belongsTo(Reason::class);
     }
 
+    public function bills()
+    {
+        return $this->hasMany(Bill::class, 'referral_id', 'referral_id');
+    }
+
     public function confirmedBy()
     {
         return $this->belongsTo(User::class, 'confirmed_by');

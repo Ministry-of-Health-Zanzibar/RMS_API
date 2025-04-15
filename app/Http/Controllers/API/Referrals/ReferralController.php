@@ -478,4 +478,17 @@ class ReferralController extends Controller
             'statusCode' => 200,
         ], 200);
     }
+    // get all data of referral with bills
+    public function getReferralsWithBills()
+    {
+        $referrals = Referral::with(['bills'])->get();
+
+        if ($referrals->isEmpty()) {
+            return response()->json(['message' => 'No referrals with bills found'], 404);
+        }
+
+        return response()->json($referrals, 200);
+    }
+
+
 }
