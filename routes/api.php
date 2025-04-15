@@ -63,11 +63,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     //REFERRAL TYPE
     Route::resource('referralTypes', ReferralTypeController::class);
-    Route::patch('referralTypes/unblock/{id}', [ReferralTypeController::class, 'unBlockReferralType']);
+    Route::patch('referralTypes/unblock/{referralTypeId}', [ReferralTypeController::class, 'unBlockReferralType']);
 
     //REFERRAL LETTERS
     Route::resource('referralLetters', ReferralLettersController::class);
-    Route::patch('referralLetters/unBlock/{referralLettersId}', [ReferralLettersController::class, 'unBlockHospital']);
+    Route::patch('referralLetters/unBlock/{referralLetters_id}', [ReferralLettersController::class, 'unBlockReferralLetter']);
 
     //REFERRAL LETTERS
     Route::resource('referralLetters', ReferralLettersController::class);
