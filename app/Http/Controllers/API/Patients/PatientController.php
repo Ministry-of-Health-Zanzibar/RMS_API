@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use function PHPUnit\Framework\isEmpty;
+use Illuminate\Support\Facades\DB;
 
 class PatientController extends Controller
 {
@@ -487,4 +488,23 @@ class PatientController extends Controller
             'statusCode' => 200,
         ], 200);
     }
+
+//ending point of patient and insuarence
+    public function getAllPatientsWithInsurance()
+    {
+        $data = DB::table('patients as p')
+            ->leftJoin('insurances as i', 'p.patient_id', '=', 'i.patient_id')
+            ->select(
+                'p.patient_id','p.name','p.date_of_birth','p.gender','p.phone','p.location','p.job',
+                'p.position','p.referral_letter_file','i.insurance_code','i.insurance_provider_name',
+                'i.policy_number','i.valid_until'
+                    )
+            ->get();
+        if ($data->isEmpty()) {
+            return response()->json(['message' => 'No patients found'], 404);
+        }
+        return response()->json($data);
+    }
+
+
 }
