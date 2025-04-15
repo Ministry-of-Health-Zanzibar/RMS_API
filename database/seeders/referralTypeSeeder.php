@@ -24,7 +24,7 @@ class referralTypeSeeder extends Seeder
                 'updated_at' => \Carbon\Carbon::now()
             ),
             array(
-                'referral_type_name' => 'INLAND',
+                'referral_type_name' => 'ABROAD',
                 'referral_type_code' => 'REFTYPE2',
                 'created_by' => '1',
                 'created_at' => \Carbon\Carbon::now(),
