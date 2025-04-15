@@ -7,6 +7,7 @@ use App\Http\Controllers\API\ReferralType\ReferralTypeController;
 use App\Http\Controllers\API\Referral_Letters\ReferralLettersController;
 use App\Http\Controllers\API\Insurances\InsuranceController;
 use App\Http\Controllers\API\Patients\PatientController;
+use App\Http\Controllers\API\Report\ReportController;
 use App\Http\Controllers\API\Treatments\TreatmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -101,4 +102,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('bills', BillController::class);
     Route::post('bills/update/{id}', [BillController::class, 'updateBill']);
     Route::patch('bills/unBlock/{billId}', [BillController::class, 'unBlockBill']);
+
+
+    // REPORT APIs
+    Route::get('reports/referrals/{patientId}', [ReportController::class,'referralReport']);
 });
