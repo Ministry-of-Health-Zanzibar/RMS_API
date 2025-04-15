@@ -4,9 +4,10 @@ use App\Http\Controllers\API\Bills\BillController;
 use App\Http\Controllers\API\Hospitals\HospitalController;
 use App\Http\Controllers\API\Referrals\ReferralController;
 use App\Http\Controllers\API\ReferralType\ReferralTypeController;
-use App\Http\Controllers\API\Referral_Letters\ReferralLettersController;
+use App\Http\Controllers\API\ReferralLetters\ReferralLettersController;
 use App\Http\Controllers\API\Insurances\InsuranceController;
 use App\Http\Controllers\API\Patients\PatientController;
+use App\Http\Controllers\API\Report\ReportController;
 use App\Http\Controllers\API\Treatments\TreatmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -63,11 +64,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     //REFERRAL TYPE
     Route::resource('referralTypes', ReferralTypeController::class);
-    Route::patch('referralTypes/unblock/{id}', [ReferralTypeController::class, 'unBlockReferralType']);
+    Route::patch('referralTypes/unblock/{referralTypeId}', [ReferralTypeController::class, 'unBlockReferralType']);
 
     //REFERRAL LETTERS
     Route::resource('referralLetters', ReferralLettersController::class);
-    Route::patch('referralLetters/unBlock/{referralLettersId}', [ReferralLettersController::class, 'unBlockHospital']);
+    Route::patch('referralLetters/unBlock/{referralLetters_id}', [ReferralLettersController::class, 'unBlockReferralLetter']);
 
     //REFERRAL LETTERS
     Route::resource('referralLetters', ReferralLettersController::class);
@@ -77,6 +78,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('patients', PatientController::class);
     Route::post('patients/update/{id}', [PatientController::class, 'updatePatient']);
     Route::patch('patients/unBlock/{id}', [PatientController::class, 'unBlockPatient']);
+    Route::get('patients-withinsurance', [PatientController::class, 'getAllPatientsWithInsurance']);
+
 
     // INSURANCES APIs
     Route::resource('insurances', InsuranceController::class);
@@ -99,4 +102,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('bills', BillController::class);
     Route::post('bills/update/{id}', [BillController::class, 'updateBill']);
     Route::patch('bills/unBlock/{billId}', [BillController::class, 'unBlockBill']);
+
+
+    // REPORT APIs
+    Route::get('reports/referrals/{patientId}', [ReportController::class,'referralReport']);
 });
