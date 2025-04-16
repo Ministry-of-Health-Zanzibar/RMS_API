@@ -511,6 +511,12 @@ class PatientController extends Controller
             return response()->json(['message' => 'Patient not found'], 404);
         }
 
+        // Append full image URL 
+        if ($patient->referral_letter_file) {
+            $patient->documentUrl = asset('storage/' . $patient->referral_letter_file);
+        } else {
+            $patient->documentUrl = null;
+        }
         $patient->insurances = $patient->insurances ?? [];
         return response()->json($patient);
     }
