@@ -57,22 +57,6 @@ class AuthController extends Controller
                 }
             }
 
-            $working_station = DB::table('user_hierarchies')
-                                ->join('working_stations', 'working_stations.working_station_id', '=', 'user_hierarchies.working_station_id')
-                                ->select('working_stations.working_station_id', 'working_stations.working_station_name')
-                                ->where('user_id', auth()->user()->id)
-                               ->where('user_hierarchies.status',1)
-                                ->get();
-
-            if(sizeof($working_station) == 0){
-                $working_station_id = null;
-                $working_station_name = "National Level";
-            }else{
-                $working_station_id = $working_station[0]->working_station_id;
-                $working_station_name = $working_station[0]->working_station_name;
-            }
-
-            
              //return new UserResource(auth()->user());
             $token = auth()->user()->createToken('auth_token')->plainTextToken;
             $data = array(
@@ -80,8 +64,6 @@ class AuthController extends Controller
                 'email' => auth()->user()->email,
                 'full_name' => auth()->user()->first_name." ". auth()->user()->middle_name." ". auth()->user()->last_name,
                 'login_status' => auth()->user()->login_status,
-                'working_station_id' => $working_station_id,
-                'working_station_name' => $working_station_name,
                 'statusCode' => 200,
                 'token' => $token,
                 'roles' => $roles,

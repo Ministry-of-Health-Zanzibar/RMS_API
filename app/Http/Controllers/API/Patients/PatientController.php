@@ -20,7 +20,7 @@ class PatientController extends Controller
     /**
      * Display a listing of the resource.
      */
-    /** 
+    /**
      * @OA\Get(
      *     path="/api/patients",
      *     summary="Get all patients",
@@ -84,7 +84,7 @@ class PatientController extends Controller
             ], 200);
         } else {
 
-            // Append full doc URL 
+            // Append full doc URL
             $patients = $patients->map(function ($patient) {
                 $patient->documentUrl = $patient->referral_letter_file
                     ? asset('storage/' . $patient->referral_letter_file)
@@ -181,7 +181,7 @@ class PatientController extends Controller
         // Create Patient
         $patient = Patient::create([
             'name' => $data['name'],
-            'date_of_birth' => $data['date_of_birth'],
+            'date_of_birth' => date('Y-m-d', strtotime($data['date_of_birth'])),
             'gender' => $data['gender'],
             'phone' => $data['phone'],
             'location' => $data['location'],
@@ -264,7 +264,7 @@ class PatientController extends Controller
                 'statusCode' => 404,
             ]);
         } else {
-            // Append full image URL 
+            // Append full image URL
             if ($patient->referral_letter_file) {
                 $patient->documentUrl = asset('storage/' . $patient->referral_letter_file);
             } else {
@@ -498,71 +498,9 @@ class PatientController extends Controller
         if ($data->isEmpty()) {
             return response()->json(['message' => 'No Patient with  found'], 404);
         }
-        
+
         return response()->json($data);
-    }  */
-    public function getAllPatientsWithInsurance($patient_id)
-    {
-        $patient = Patient::with('insurances')
-            ->where('patient_id', $patient_id)
-            ->first();
-
-        if (!$patient) {
-            return response()->json(['message' => 'Patient not found'], 404);
-        }
-
-        // Append full image URL 
-        if ($patient->referral_letter_file) {
-            $patient->documentUrl = asset('storage/' . $patient->referral_letter_file);
-        } else {
-            $patient->documentUrl = null;
-        }
-        $patient->insurances = $patient->insurances ?? [];
-        return response()->json($patient);
-    }
-    /* 
-    public function getAllPatientsWithInsurance($patient_id)
-    {
-        $patient = Patient::with('insurances')
-            ->where('patient_id', $patient_id)
-            ->first();
-    
-        if (!$patient) {
-            return response()->json(['message' => 'No Patient found'], 404);
-        }
-    
-        $formatted = [
-            'patient_id' => $patient->patient_id,
-            'name' => $patient->name,
-            'date_of_birth' => $patient->date_of_birth,
-            'gender' => $patient->gender,
-            'phone' => $patient->phone,
-            'location' => $patient->location,
-            'job' => $patient->job,
-            'position' => $patient->position,
-            'referral_letter_file' => $patient->referral_letter_file,
-            'created_by' => $patient->created_by,
-            'created_at' => $patient->created_at,
-            'updated_at' => $patient->updated_at,
-            'deleted_at' => $patient->deleted_at,
-            'insurances' => $patient->insurances->map(function ($insurance) {
-                return [
-                    'insurance_id' => $insurance->insurance_id,
-                    'insurance_code' => $insurance->insurance_code,
-                    'patient_id' => $insurance->patient_id,
-                    'insurance_provider_name' => $insurance->insurance_provider_name,
-                    'card_number' => $insurance->card_number,
-                    'valid_until' => $insurance->valid_until,
-                    'created_by' => $insurance->created_by,
-                    'created_at' => $insurance->created_at,
-                    'updated_at' => $insurance->updated_at,
-                    'deleted_at' => $insurance->deleted_at,
-                ];
-            }),
-        ];
-    
-        return response()->json($formatted);
     }
 
- */
+
 }

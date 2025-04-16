@@ -70,13 +70,9 @@ class UsersCotroller extends Controller
     public function index()
     {
         if (auth()->user()->hasRole('ROLE ADMIN')) {
+
             try {
-                $staffs = DB::table('users')
-                    ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
-                    ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-                    ->select('users.id', 'users.first_name', 'users.middle_name', 'users.last_name', 'users.email', 'users.phone_no', 'users.address', 'users.gender', 'users.date_of_birth', 'users.deleted_at', 'roles.name as role_name', 'roles.id as role_id')
-                    ->where('model_has_roles.role_id', '!=', 1)
-                    ->get();
+                $staffs = DB::table('users')->where('users.id', '!=', 1)->get();
 
                 $response = [
                     'data' => $staffs,
@@ -84,6 +80,7 @@ class UsersCotroller extends Controller
                 ];
 
                 return response()->json($response);
+
             } catch (Exception $e) {
                 $errorResponse = [
                     'message' => 'Internal Server Error',
@@ -93,7 +90,9 @@ class UsersCotroller extends Controller
 
                 return response()->json($errorResponse);
             }
+
         } else if (auth()->user()->hasRole('ROLE NATIONAL')) {
+
             try {
                 $staffs = DB::table('users')
                     ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
@@ -118,9 +117,14 @@ class UsersCotroller extends Controller
 
                 return response()->json($errorResponse);
             }
+
         } else {
-            return response()
-                ->json(['message' => 'unAuthenticated', 'statusCode' => 401]);
+
+            return response()->json([
+                'message' => 'Unauthenticated',
+                'statusCode' => 401
+            ]);
+
         }
     }
 
@@ -180,7 +184,6 @@ class UsersCotroller extends Controller
         $auto_id = random_int(10000, 99999) . time();
         if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Create User')) {
             $check_value = DB::select("SELECT u.email FROM users u WHERE u.email = '$request->email'");
-
             if (sizeof($check_value) == 0) {
                 try {
                     $users = User::create([
@@ -191,7 +194,7 @@ class UsersCotroller extends Controller
                         'address' => $request->address,
                         'phone_no' => $request->phone_no,
                         'gender' => $request->gender,
-                        'date_of_birth' => $request->date_of_birth,
+                        'date_of_birth' => date('Y-m-d', strtotime($request->date_of_birth)),
                         'email' => $request->email,
                         'password' => Hash::make($auto_id),
                         'login_status' => '0'
