@@ -11,7 +11,7 @@ class ReportController extends Controller
     public function referralReport(int $patientId)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL'])) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF'])) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -56,7 +56,7 @@ class ReportController extends Controller
     public function referralReportByReferralType()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL'])) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF'])) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -93,7 +93,7 @@ class ReportController extends Controller
     public function referralsReportByReason()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL'])) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF'])) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -139,6 +139,88 @@ class ReportController extends Controller
                 'totalReferralsByUchunguziNaMatibabuZaidi' => $totalReferralsByUchunguziNaMatibabuZaidi,
                 'totalReferralsByUchunguziNaMatibabu' => $totalReferralsByUchunguziNaMatibabu,
                 'totalReferralsByParsPlanaVitrotomy' => $totalReferralsByParsPlanaVitrotomy,
+            ]);
+        } catch (\Throwable $e) {
+            return response()
+                ->json(['message' => $e->getMessage(), 'statusCode' => 401]);
+        }
+    }
+
+
+    /**
+     * Report by hospital
+     */
+    public function referralReportByHospital()
+    {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF'])) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        try {
+            $totalReferralsByLumumba = DB::table("referrals")
+                ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
+                ->whereNull("referrals.deleted_at")
+                ->where("hospitals.hospital_name", "=", "LUMUMBA")
+                ->count();
+
+            $totalReferralsByMuhimbiliOrthopaedicInstitute = DB::table("referrals")
+                ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
+                ->whereNull("referrals.deleted_at")
+                ->where("hospitals.hospital_name", "=", "Muhimbili Orthopaedic Institute (MOI)")
+                ->count();
+
+
+            $totalReferralsByJakayaKikweteCardiacInstitute = DB::table("referrals")
+                ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
+                ->whereNull("referrals.deleted_at")
+                ->where("hospitals.hospital_name", "=", "Jakaya Kikwete Cardiac Institute (JKCI)")
+                ->count();
+
+            $totalReferralsBySIMS = DB::table("referrals")
+                ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
+                ->whereNull("referrals.deleted_at")
+                ->where("hospitals.hospital_name", "=", "SIMS")
+                ->count();
+
+            $totalReferralsByMuhimbiliNationalHospital = DB::table("referrals")
+                ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
+                ->whereNull("referrals.deleted_at")
+                ->where("hospitals.hospital_name", "=", "Muhimbili National Hospital (MNH)")
+                ->count();
+
+            $totalReferralsByOceanRoadCancerInstitute = DB::table("referrals")
+                ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
+                ->whereNull("referrals.deleted_at")
+                ->where("hospitals.hospital_name", "=", "Ocean Road Cancer Institute (ORCI)")
+                ->count();
+
+            $totalReferralsByKilimanjaroChristianMedicalCentre = DB::table("referrals")
+                ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
+                ->whereNull("referrals.deleted_at")
+                ->where("hospitals.hospital_name", "=", "Kilimanjaro Christian Medical Centre (KCMC)")
+                ->count();
+
+
+            $totalReferralsByMadrasInstituteOfOrthopaedicsAndTraumatology = DB::table("referrals")
+                ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
+                ->whereNull("referrals.deleted_at")
+                ->where("hospitals.hospital_name", "=", "Madras Institute of Orthopaedics and Traumatology (MIOT)	")
+                ->count();
+
+
+            return response([
+                'totalReferralsByLumumba' => $totalReferralsByLumumba,
+                'totalReferralsByMuhimbiliOrthopaedicInstitute' => $totalReferralsByMuhimbiliOrthopaedicInstitute,
+                'totalReferralsByJakayaKikweteCardiacInstitute' => $totalReferralsByJakayaKikweteCardiacInstitute,
+                'totalReferralsBySIMS' => $totalReferralsBySIMS,
+                'totalReferralsByMuhimbiliNationalHospital' => $totalReferralsByMuhimbiliNationalHospital,
+                'totalReferralsByOceanRoadCancerInstitute' => $totalReferralsByOceanRoadCancerInstitute,
+                'totalReferralsByKilimanjaroChristianMedicalCentre' => $totalReferralsByKilimanjaroChristianMedicalCentre,
+                'totalReferralsByMadrasInstituteOfOrthopaedicsAndTraumatology' => $totalReferralsByMadrasInstituteOfOrthopaedicsAndTraumatology,
             ]);
         } catch (\Throwable $e) {
             return response()

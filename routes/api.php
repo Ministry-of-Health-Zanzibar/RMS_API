@@ -110,4 +110,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('reports/referrals/{patientId}', [ReportController::class, 'referralReport']);
     Route::get('reports/referralsByType', [ReportController::class, 'referralReportByReferralType']);
     Route::get('reports/referralsByReason', [ReportController::class, 'referralsReportByReason']);
+    Route::get('reports/referralByHospital', [ReportController::class, 'referralReportByHospital']);
 });
