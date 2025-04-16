@@ -306,6 +306,7 @@ class ReferralController extends Controller
      *                    @OA\Property(property="reason_id", type="integer"),
      *                    @OA\Property(property="start_date", type="string", format="date-time"),
      *                    @OA\Property(property="end_date", type="string", format="date-time"),
+     *                    @OA\Property(property="status"),
      *                 )
      *             ),
      *             @OA\Property(property="statusCode", type="integer", example=200)
@@ -330,6 +331,7 @@ class ReferralController extends Controller
             'reason_id' => ['required', 'numeric'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date'],
+            'status' => ['required', 'date'],
         ]);
 
 
@@ -341,7 +343,7 @@ class ReferralController extends Controller
             'reason_id' => $data['reason_id'],
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'],
-            'status' => 'Pending',
+            'status' => $data['status'],
             'confirmed_by' => Auth::id(),
             'created_by' => Auth::id(),
         ]);
@@ -494,11 +496,11 @@ class ReferralController extends Controller
         $referrals = Referral::with('bills')
             ->where('referral_id', $referral_id)
             ->first();
-    
+
         if (!$referrals) {
             return response()->json(['message' => 'No referrals with bills found'], 404);
         }
-    
+
         $referrals->bills = $referrals->bills ?? [];
         return response()->json($referrals);
     }
