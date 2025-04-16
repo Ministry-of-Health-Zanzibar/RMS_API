@@ -479,9 +479,9 @@ class ReferralController extends Controller
         ], 200);
     }
     // get all data of referral with bills
-    public function getReferralsWithBills()
+    public function getReferralsWithBills($referral_id)
     {
-        $referrals = Referral::with(['bills'])->get();
+        $referrals = Referral::with(['bills'])->where('referral_id', $referral_id)->get();
 
         if ($referrals->isEmpty()) {
             return response()->json(['message' => 'No referrals with bills found'], 404);
