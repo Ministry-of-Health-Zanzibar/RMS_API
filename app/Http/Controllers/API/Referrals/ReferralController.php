@@ -479,7 +479,7 @@ class ReferralController extends Controller
         ], 200);
     }
     // get all data of referral with bills
-    public function getReferralsWithBills($referral_id)
+    /* public function getReferralsWithBills($referral_id)
     {
         $referrals = Referral::with(['bills'])->where('referral_id', $referral_id)->get();
 
@@ -488,6 +488,19 @@ class ReferralController extends Controller
         }
 
         return response()->json($referrals, 200);
+    } */
+    public function getReferralsWithBills($referral_id)
+    {
+        $referrals = Referral::with('bills')
+            ->where('referral_id', $referral_id)
+            ->first();
+    
+        if (!$referrals) {
+            return response()->json(['message' => 'No referrals with bills found'], 404);
+        }
+    
+        $referrals->bills = $referrals->bills ?? [];
+        return response()->json($referrals);
     }
 
 
