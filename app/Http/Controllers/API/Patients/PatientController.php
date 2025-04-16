@@ -489,7 +489,7 @@ class PatientController extends Controller
         ], 200);
     }
 
-//ending point of patient and insuarence
+    //ending point of patient and insuarence
     public function getAllPatientsWithInsurance($patient_id)
     {
         $data = Patient::with('insurances')->where('patient_id', $patient_id)->get();
