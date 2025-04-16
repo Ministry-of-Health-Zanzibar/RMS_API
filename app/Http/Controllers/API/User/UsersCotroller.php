@@ -200,8 +200,8 @@ class UsersCotroller extends Controller
                         'login_status' => '0'
                     ]);
 
-                    $users->assignRole($request->roleID);
-                    $roleID = $request->roleID;
+                    $users->assignRole($request->role_id);
+                    $roleID = $request->role_id;
 
                     $permissions = DB::table('role_has_permissions')
                         ->join('permissions', 'permissions.id', '=', 'role_has_permissions.permission_id')
