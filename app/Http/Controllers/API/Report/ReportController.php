@@ -85,6 +85,64 @@ class ReportController extends Controller
             return response()
                 ->json(['message' => $e->getMessage(), 'statusCode' => 401]);
         }
+    }
 
+    /**
+     * Report by reason
+     */
+    public function referralsReportByReason()
+    {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL'])) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        try {
+            $totalReferralsByKufanyiwaUchunguzi = DB::table("referrals")
+                ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
+                ->whereNull("referrals.deleted_at")
+                ->where("reasons.referral_reason_name", "=", "Kufanyiwa uchunguzi")
+                ->count();
+
+
+            $totalReferralsByKupatiwaMatibabu = DB::table("referrals")
+                ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
+                ->whereNull("referrals.deleted_at")
+                ->where("reasons.referral_reason_name", "=", "Kupatiwa matibabu")
+                ->count();
+
+
+            $totalReferralsByUchunguziNaMatibabuZaidi = DB::table("referrals")
+                ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
+                ->whereNull("referrals.deleted_at")
+                ->where("reasons.referral_reason_name", "=", "Uchunguzi na matibabu zaidi")
+                ->count();
+
+            $totalReferralsByUchunguziNaMatibabu = DB::table("referrals")
+                ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
+                ->whereNull("referrals.deleted_at")
+                ->where("reasons.referral_reason_name", "=", "Uchunguzi na matibabu")
+                ->count();
+
+            $totalReferralsByParsPlanaVitrotomy = DB::table("referrals")
+                ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
+                ->whereNull("referrals.deleted_at")
+                ->where("reasons.referral_reason_name", "=", "Pars Plana Vitrotomy")
+                ->count();
+
+            return response([
+                'totalReferralsByKufanyiwaUchunguzi' => $totalReferralsByKufanyiwaUchunguzi,
+                'totalReferralsByKupatiwaMatibabu' => $totalReferralsByKupatiwaMatibabu,
+                'totalReferralsByUchunguziNaMatibabuZaidi' => $totalReferralsByUchunguziNaMatibabuZaidi,
+                'totalReferralsByUchunguziNaMatibabu' => $totalReferralsByUchunguziNaMatibabu,
+                'totalReferralsByParsPlanaVitrotomy' => $totalReferralsByParsPlanaVitrotomy,
+            ]);
+        } catch (\Throwable $e) {
+            return response()
+                ->json(['message' => $e->getMessage(), 'statusCode' => 401]);
+        }
     }
 }

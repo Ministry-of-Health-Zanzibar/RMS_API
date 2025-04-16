@@ -2490,13 +2490,13 @@
                 }
             }
         },
-        "/api/referralLetters": {
+        "/api/referralTypes": {
             "get": {
                 "tags": [
-                    "referralLetters"
+                    "referralTypes"
                 ],
-                "summary": "Get all referralLetters",
-                "operationId": "5a2964d2e90461fcac961536292cc2e9",
+                "summary": "Get all referral types",
+                "operationId": "3bb47ae75ded19c534a928f1e4c6935a",
                 "responses": {
                     "200": {
                         "description": "Successful operation",
@@ -2524,16 +2524,13 @@
                                             "type": "array",
                                             "items": {
                                                 "properties": {
-                                                    "referral_letter_id": {
+                                                    "referral_type_id": {
                                                         "type": "integer"
                                                     },
-                                                    "referral_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "referral_letter_code": {
+                                                    "referral_type_code": {
                                                         "type": "string"
                                                     },
-                                                    "letter_text": {
+                                                    "referral_type_name": {
                                                         "type": "string"
                                                     },
                                                     "created_at": {
@@ -2566,20 +2563,17 @@
             },
             "post": {
                 "tags": [
-                    "referralLetters"
+                    "referralTypes"
                 ],
-                "summary": "Create referralLetters",
-                "operationId": "cc55bba5f1c1de01d889be0e45b09f47",
+                "summary": "Create referral type",
+                "operationId": "ca2931ff812bec1ee395729e08cad322",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "referral_id": {
-                                        "type": "integer"
-                                    },
-                                    "letter_text": {
+                                    "referral_type_name": {
                                         "type": "string"
                                     }
                                 },
@@ -2628,16 +2622,16 @@
                 }
             }
         },
-        "/api/referralLetters/{referralLetters_id}": {
+        "/api/referralTypes/{id}": {
             "get": {
                 "tags": [
-                    "referralLetters"
+                    "referralTypes"
                 ],
-                "summary": "Find referral Letters by ID",
-                "operationId": "12e7235df9115f9d878d19e9b1d205f0",
+                "summary": "Find Referal type by ID",
+                "operationId": "0806e1801565dc31746e236837393505",
                 "parameters": [
                     {
-                        "name": "referralLetters_id",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -2654,20 +2648,21 @@
                                     "properties": {
                                         "data": {
                                             "properties": {
-                                                "referral_letter_id": {
-                                                    "type": "integer"
+                                                "referral_type_id": {
+                                                    "type": "integer",
+                                                    "example": 1
                                                 },
-                                                "referral_id": {
-                                                    "type": "integer"
+                                                "referral_type_code": {
+                                                    "type": "string",
+                                                    "example": "REFTYPE1"
                                                 },
-                                                "referral_letter_code": {
-                                                    "type": "string"
+                                                "referral_type_name": {
+                                                    "type": "string",
+                                                    "example": "MAINLAND"
                                                 },
-                                                "letter_text": {
-                                                    "type": "string"
-                                                },
-                                                "is_printed": {
-                                                    "type": "boolean"
+                                                "created_by": {
+                                                    "type": "integer",
+                                                    "example": 1
                                                 },
                                                 "created_at": {
                                                     "type": "string",
@@ -2702,13 +2697,13 @@
             },
             "put": {
                 "tags": [
-                    "referralLetters"
+                    "referralTypes"
                 ],
-                "summary": "Update referralLetters",
-                "operationId": "38022579ab48e47f0465e99f8af0038a",
+                "summary": "Update referral type",
+                "operationId": "282f336fd3d47b67ded0c301f79ca596",
                 "parameters": [
                     {
-                        "name": "referralLetters_id",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -2743,10 +2738,7 @@
                                             "type": "array",
                                             "items": {
                                                 "properties": {
-                                                    "referral_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "letter_text": {
+                                                    "referral_type_name": {
                                                         "type": "string"
                                                     }
                                                 },
@@ -2767,13 +2759,13 @@
             },
             "delete": {
                 "tags": [
-                    "referralLetters"
+                    "referralTypes"
                 ],
-                "summary": "Delete referralLetters",
-                "operationId": "501aa0db6c32055795c557675e2f571c",
+                "summary": "Delete Referral type",
+                "operationId": "31581fcaa49044c48d44671233d96fb2",
                 "parameters": [
                     {
-                        "name": "referralLetters_id",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -2819,16 +2811,16 @@
                 }
             }
         },
-        "/api/referralLetters/unBlock/{Referral_letter_id}": {
+        "/api/referralTypes/unblock/{referralTypeId}": {
             "patch": {
                 "tags": [
-                    "referralLetters"
+                    "referralTypes"
                 ],
-                "summary": "Unblock referralLetters",
-                "operationId": "9e3a75ae5a2a6e97ee188349928c9819",
+                "summary": "Unblock ReferralType",
+                "operationId": "c092fe93dec72c5c167fd33c6f73f432",
                 "parameters": [
                     {
-                        "name": "referralLetters_id",
+                        "name": "referralTypeId",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -3188,7 +3180,8 @@
                                                     "end_date": {
                                                         "type": "string",
                                                         "format": "date-time"
-                                                    }
+                                                    },
+                                                    "status": {}
                                                 },
                                                 "type": "object"
                                             }
@@ -6552,10 +6545,6 @@
         {
             "name": "referralTypes",
             "description": "referralTypes"
-        },
-        {
-            "name": "referralLetters",
-            "description": "referralLetters"
         },
         {
             "name": "referrals",
