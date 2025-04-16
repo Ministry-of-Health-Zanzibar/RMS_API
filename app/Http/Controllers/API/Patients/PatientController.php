@@ -20,7 +20,7 @@ class PatientController extends Controller
     /**
      * Display a listing of the resource.
      */
-    /** 
+    /**
      * @OA\Get(
      *     path="/api/patients",
      *     summary="Get all patients",
@@ -84,7 +84,7 @@ class PatientController extends Controller
             ], 200);
         } else {
 
-            // Append full doc URL 
+            // Append full doc URL
             $patients = $patients->map(function ($patient) {
                 $patient->documentUrl = $patient->referral_letter_file
                     ? asset('storage/' . $patient->referral_letter_file)
@@ -181,7 +181,7 @@ class PatientController extends Controller
         // Create Patient
         $patient = Patient::create([
             'name' => $data['name'],
-            'date_of_birth' => $data['date_of_birth'],
+            'date_of_birth' => date('Y-m-d', strtotime($data['date_of_birth'])),
             'gender' => $data['gender'],
             'phone' => $data['phone'],
             'location' => $data['location'],
@@ -264,7 +264,7 @@ class PatientController extends Controller
                 'statusCode' => 404,
             ]);
         } else {
-            // Append full image URL 
+            // Append full image URL
             if ($patient->referral_letter_file) {
                 $patient->documentUrl = asset('storage/' . $patient->referral_letter_file);
             } else {
