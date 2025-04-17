@@ -346,7 +346,8 @@ class PatientController extends Controller
             'location' => ['nullable', 'string'],
             'job' => ['nullable', 'string'],
             'position' => ['nullable', 'string'],
-            'referral_letter_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,png', 'max:1024'], // 1MB
+            'referral_letter_file' => ['nullable', 'string'], // 1MB
+            // 'referral_letter_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,png', 'max:1024'], // 1MB
         ]);
 
         $patient = Patient::findOrFail($id);
