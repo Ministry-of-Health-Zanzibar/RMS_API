@@ -251,7 +251,32 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        $referral = Referral::withTrashed()->find($id);
+        // $referral = Referral::withTrashed()->find($id);
+        $referral = DB::table('referrals')
+            ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
+            ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
+            ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
+            ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
+            ->select(
+                "referrals.*",
+
+                "hospitals.hospital_name",
+                "hospitals.hospital_code",
+                "hospitals.hospital_address",
+
+                "patients.name as patient_name",
+                "patients.date_of_birth",
+                "patients.gender",
+                "patients.phone",
+
+                "referral_types.referral_type_name",
+                "referral_types.referral_type_code",
+
+                "reasons.referral_reason_name"
+            )
+            ->where("referrals.referral_id", '=', $id)
+            ->get();
+
 
         if (!$referral) {
             return response([
@@ -509,6 +534,53 @@ class ReferralController extends Controller
 
         $referrals->bills = $referrals->bills ?? [];
         return response()->json($referrals);
+    }
+
+    public function getReferralById(int $referral_id){
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('View Referral')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $referral = DB::table('referrals')
+            ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
+            ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
+            ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
+            ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
+            ->select(
+                "referrals.*",
+
+                "hospitals.hospital_name",
+                "hospitals.hospital_code",
+                "hospitals.hospital_address",
+
+                "patients.name as patient_name",
+                "patients.date_of_birth",
+                "patients.gender",
+                "patients.phone",
+
+                "referral_types.referral_type_name",
+                "referral_types.referral_type_code",
+
+                "reasons.referral_reason_name"
+            )
+            ->where('referrals.referral_id','=',$referral_id)
+            ->first();
+
+        if ($referral) {
+            return response([
+                'data' => $referral,
+                'statusCode' => 200,
+            ], 200);
+        } else {
+            return response([
+                'message' => 'Referral not found',
+                'statusCode' => 404,
+            ], 200);
+        }
     }
 
 
