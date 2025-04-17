@@ -20,7 +20,7 @@ class PatientController extends Controller
     /**
      * Display a listing of the resource.
      */
-    /** 
+    /**
      * @OA\Get(
      *     path="/api/patients",
      *     summary="Get all patients",
@@ -84,7 +84,7 @@ class PatientController extends Controller
             ], 200);
         } else {
 
-            // Append full doc URL 
+            // Append full doc URL
             $patients = $patients->map(function ($patient) {
                 $patient->documentUrl = $patient->referral_letter_file
                     ? asset('storage/' . $patient->referral_letter_file)
@@ -181,7 +181,7 @@ class PatientController extends Controller
         // Create Patient
         $patient = Patient::create([
             'name' => $data['name'],
-            'date_of_birth' => $data['date_of_birth'],
+            'date_of_birth' => date('Y-m-d', strtotime($data['date_of_birth'])),
             'gender' => $data['gender'],
             'phone' => $data['phone'],
             'location' => $data['location'],
@@ -264,7 +264,7 @@ class PatientController extends Controller
                 'statusCode' => 404,
             ]);
         } else {
-            // Append full image URL 
+            // Append full image URL
             if ($patient->referral_letter_file) {
                 $patient->documentUrl = asset('storage/' . $patient->referral_letter_file);
             } else {
@@ -498,7 +498,7 @@ class PatientController extends Controller
         if ($data->isEmpty()) {
             return response()->json(['message' => 'No Patient with  found'], 404);
         }
-        
+
         return response()->json($data);
     }  */
     public function getAllPatientsWithInsurance($patient_id)
@@ -511,7 +511,7 @@ class PatientController extends Controller
             return response()->json(['message' => 'Patient not found'], 404);
         }
 
-        // Append full image URL 
+        // Append full image URL
         if ($patient->referral_letter_file) {
             $patient->documentUrl = asset('storage/' . $patient->referral_letter_file);
         } else {
@@ -520,17 +520,17 @@ class PatientController extends Controller
         $patient->insurances = $patient->insurances ?? [];
         return response()->json($patient);
     }
-    /* 
+    /*
     public function getAllPatientsWithInsurance($patient_id)
     {
         $patient = Patient::with('insurances')
             ->where('patient_id', $patient_id)
             ->first();
-    
+
         if (!$patient) {
             return response()->json(['message' => 'No Patient found'], 404);
         }
-    
+
         $formatted = [
             'patient_id' => $patient->patient_id,
             'name' => $patient->name,
@@ -560,7 +560,7 @@ class PatientController extends Controller
                 ];
             }),
         ];
-    
+
         return response()->json($formatted);
     }
 
