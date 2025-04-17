@@ -525,6 +525,12 @@ class ReferralController extends Controller
         if (!$referrals) {
             return response()->json(['message' => 'No referrals with bills found'], 404);
         }
+         // Append full image URL
+         if ($referrals->referral_letter_file) {
+            $referrals->documentUrl = asset('storage/' . $referrals->referral_letter_file);
+        } else {
+            $referrals->documentUrl = null;
+        }
 
         $referrals->bills = $referrals->bills ?? [];
         return response()->json($referrals);
