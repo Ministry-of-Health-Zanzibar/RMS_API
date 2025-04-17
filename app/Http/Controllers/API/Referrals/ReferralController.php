@@ -67,7 +67,7 @@ class ReferralController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('View Referral')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('View Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -158,7 +158,7 @@ class ReferralController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Create Referral')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('Create Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -244,7 +244,7 @@ class ReferralController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('View Referral')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('View Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -317,7 +317,7 @@ class ReferralController extends Controller
     public function update(Request $request, int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Update Referral')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('Update Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -400,7 +400,7 @@ class ReferralController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Delete Referral')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('Delete Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -505,16 +505,16 @@ class ReferralController extends Controller
         return response()->json($referrals);
     }
 
-    public function getReferralById(Request $request){
+    public function getReferralById(int $referral_id){
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('View Referral')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('View Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $referrals = DB::table('referrals')
+        $referral = DB::table('referrals')
             ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
             ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
             ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
@@ -536,18 +536,18 @@ class ReferralController extends Controller
 
                 "reasons.referral_reason_name"
             )
-            ->where('referrals.referral_id','=',$request->referral_id)
-            ->get();
+            ->where('referrals.referral_id','=',$referral_id)
+            ->first();
 
-        if ($referrals) {
+        if ($referral) {
             return response([
-                'data' => $referrals,
+                'data' => $referral,
                 'statusCode' => 200,
             ], 200);
         } else {
             return response([
-                'message' => 'No data found',
-                'statusCode' => 200,
+                'message' => 'Referral not found',
+                'statusCode' => 404,
             ], 200);
         }
     }
