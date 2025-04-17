@@ -8,6 +8,9 @@ use DB;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
+
 
 class ReferralController extends Controller
 {
@@ -476,7 +479,7 @@ class ReferralController extends Controller
         $referral->restore($id);
 
         return response([
-            'message' => 'Referral unbocked successfully',
+            'message' => 'Referral unblocked successfully',
             'statusCode' => 200,
         ], 200);
     }
@@ -550,6 +553,50 @@ class ReferralController extends Controller
                 'statusCode' => 404,
             ], 200);
         }
+    }
+
+
+
+    public function handleAction(Request $request){
+
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('View Referral')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $request->validate([
+            'referral_id' => 'required|exists:referrals,referral_id',
+            'start_date'  => 'required|date',
+        ]);
+
+        $referral = Referral::find($request->referral_id);
+
+        if (!$referral) {
+            return response([
+                'message' => 'Referral not found',
+                'statusCode' => 404,
+            ], 404);
+        }
+
+        $start_date = Carbon::parse($request->start_date)->format('Y-m-d');
+        $end_date   = Carbon::parse($request->start_date)->endOfMonth()->format('Y-m-d');
+
+        $referral->update([
+            'start_date'   => $start_date,
+            'end_date'     => $end_date,
+            'status'       => 'Confirmed',
+            'confirmed_by' => Auth::id(),
+        ]);
+
+        return response([
+            'data'       => $referral,
+            'message'    => 'Referral updated successfully.',
+            'statusCode' => 200,
+        ], 200);
+
     }
 
 
