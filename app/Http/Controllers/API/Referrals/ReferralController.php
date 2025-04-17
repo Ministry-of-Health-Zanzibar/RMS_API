@@ -20,7 +20,7 @@ class ReferralController extends Controller
     /**
      * Display a listing of the resource.
      */
-    /** 
+    /**
      * @OA\Get(
      *     path="/api/referrals",
      *     summary="Get all referrals",
@@ -67,7 +67,7 @@ class ReferralController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('View Referral')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('View Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -158,7 +158,7 @@ class ReferralController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Create Referral')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('Create Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -244,7 +244,7 @@ class ReferralController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('View Referral')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('View Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -317,7 +317,7 @@ class ReferralController extends Controller
     public function update(Request $request, int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Update Referral')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('Update Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -400,7 +400,7 @@ class ReferralController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Delete Referral')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('Delete Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -499,6 +499,12 @@ class ReferralController extends Controller
 
         if (!$referrals) {
             return response()->json(['message' => 'No referrals with bills found'], 404);
+        }
+         // Append full image URL
+         if ($referrals->referral_letter_file) {
+            $referrals->documentUrl = asset('storage/' . $referrals->referral_letter_file);
+        } else {
+            $referrals->documentUrl = null;
         }
 
         $referrals->bills = $referrals->bills ?? [];
