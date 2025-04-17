@@ -251,7 +251,32 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        $referral = Referral::withTrashed()->find($id);
+        // $referral = Referral::withTrashed()->find($id);
+        $referral = DB::table('referrals')
+            ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
+            ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
+            ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
+            ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
+            ->select(
+                "referrals.*",
+
+                "hospitals.hospital_name",
+                "hospitals.hospital_code",
+                "hospitals.hospital_address",
+
+                "patients.name as patient_name",
+                "patients.date_of_birth",
+                "patients.gender",
+                "patients.phone",
+
+                "referral_types.referral_type_name",
+                "referral_types.referral_type_code",
+
+                "reasons.referral_reason_name"
+            )
+            ->where("referrals.referral_id", '=', $id)
+            ->get();
+
 
         if (!$referral) {
             return response([
