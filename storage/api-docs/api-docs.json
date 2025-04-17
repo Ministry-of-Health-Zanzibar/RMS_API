@@ -2200,6 +2200,17 @@
                                     },
                                     "letter_text": {
                                         "type": "string"
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "status": {
+                                        "type": "string"
                                     }
                                 },
                                 "type": "object"

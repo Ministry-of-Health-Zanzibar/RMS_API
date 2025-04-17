@@ -275,7 +275,7 @@ class ReferralController extends Controller
                 "reasons.referral_reason_name"
             )
             ->where("referrals.referral_id", '=', $id)
-            ->get();
+            ->first();
 
 
         if (!$referral) {
@@ -530,7 +530,8 @@ class ReferralController extends Controller
         return response()->json($referrals);
     }
 
-    public function getReferralById(int $referral_id){
+    public function getReferralById(int $referral_id)
+    {
         $user = auth()->user();
         if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('View Referral')) {
             return response([
@@ -561,7 +562,7 @@ class ReferralController extends Controller
 
                 "reasons.referral_reason_name"
             )
-            ->where('referrals.referral_id','=',$referral_id)
+            ->where('referrals.referral_id', '=', $referral_id)
             ->first();
 
         if ($referral) {

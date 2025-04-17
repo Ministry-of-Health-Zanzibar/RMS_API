@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 
+use Illuminate\Support\Str;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
@@ -46,7 +47,8 @@ class ReferralLetter extends Model
     protected $fillable = [
         'referral_id',
         'letter_text',
-        'is_printed',
+        'start_date',
+        'end_date',
         'created_by'
     ];
 
@@ -60,27 +62,28 @@ class ReferralLetter extends Model
     }
 
 
-    // Automatically generate insurance_code before creating
+    // Automatically generate referral_letter_code before creating
     protected static function boot()
     {
         parent::boot();
 
-        static::creating(function ($referralLettersCodeNumber) {
-            if (empty($referralLettersCodeNumber->referral_letter_code)) {
-                $referralLettersCodeNumber->referral_letter_code = self::generatereferralLetterCodeNumber();
+        static::creating(function ($referalLetterCodeNumber) {
+            if (empty($referalLetterCodeNumber->referral_letter_code)) {
+                $referalLetterCodeNumber->referral_letter_code = self::generateReferalLetterCodeNumber();
             }
         });
     }
 
-    // Generate random unique insurance_code
-    private static function generatereferralLetterCodeNumber()
+    // Generate random unique referral_letter_code
+    private static function generateReferalLetterCodeNumber()
     {
         do {
-            $referralLettersCodeNumber = strtoupper(Str::random(10)); // Generates a 10-character random string
-        } while (self::where('referral_letter_code', $referralLettesrCodeNumber)->exists());
+            $referalLetterCodeNumber = strtoupper(Str::random(10)); // Generates a 10-character random string
+        } while (self::where('referral_letter_code', $referalLetterCodeNumber)->exists());
 
-        return $referralLettersCodeNumber;
+        return $referalLetterCodeNumber;
     }
+
 
     public function getActivitylogOptions(): LogOptions
     {

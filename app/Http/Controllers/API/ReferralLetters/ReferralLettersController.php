@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\API\ReferralLetters;
 
+use App\Models\Referral;
+use App\Models\ReferralType;
+use Illuminate\Http\Request;
 use App\Models\ReferralLetter;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ReferralLettersController extends Controller
 {
@@ -97,6 +100,9 @@ class ReferralLettersController extends Controller
      *             type="object",
      *            @OA\Property(property="referral_id", type="integer"),
      *            @OA\Property(property="letter_text", type="string"),
+     *            @OA\Property(property="start_date", type="string", format="date-time"),
+     *            @OA\Property(property="end_date", type="string", format="date-time"),
+     *            @OA\Property(property="status", type="string"),
      *         ),
      *     ),
      *     @OA\Response(
@@ -132,22 +138,41 @@ class ReferralLettersController extends Controller
 
         $data = $request->validate([
             'referral_id' => ['required', 'numeric'],
-            'letter_text' => ['required'],
+            'letter_text' => ['required', 'string'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date'],
+            'status' => ['required', 'string'],
         ]);
 
+        $referral = Referral::findOrFail($data['referral_id']);
 
-        // Create Insurance
-        $Referral_letter = ReferralLetter::create([
+
+        // Create referral Type
+        $ReferralType = ReferralLetter::create([
             'referral_id' => $data['referral_id'],
             'letter_text' => $data['letter_text'],
+            'start_date' => $data['start_date'],
+            'end_date' => $data['end_date'],
             'created_by' => Auth::id(),
         ]);
 
-        if ($Referral_letter) {
-            return response([
-                'data' => $Referral_letter,
-                'statusCode' => 201,
-            ], status: 201);
+        if ($ReferralType) {
+            $referral->update([
+                'status' => $data['status'],
+            ]);
+
+            if ($referral) {
+                return response([
+                    'data' => $ReferralType,
+                    'message' => "Referral type created successfully.",
+                    'statusCode' => 201,
+                ], status: 201);
+            } else {
+                return response([
+                    'message' => 'Failed to update referral status.',
+                    'statusCode' => 500,
+                ], 500);
+            }
         } else {
             return response([
                 'message' => 'Internal server error',
@@ -156,7 +181,7 @@ class ReferralLettersController extends Controller
         }
     }
 
-/**
+    /**
      * Display the specified resource.
      */
     /**
@@ -275,7 +300,7 @@ class ReferralLettersController extends Controller
 
         $data = $request->validate([
             'referral_id' => ['required', 'numeric'],
-            'letter_text' => ['required','text'],
+            'letter_text' => ['required', 'text'],
             'is_printed' => ['required'],
         ]);
 

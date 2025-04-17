@@ -63,23 +63,23 @@ class ReferralTypeController extends Controller
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
-        }else{
-
-        $ReferralType = ReferralType::withTrashed()->get();
-        if ($ReferralType) {
-            return response([
-                'data' => $ReferralType,
-                'statusCode' => 200,
-            ], 200);
         } else {
-            return response([
-                'message' => 'No data found',
-                'statusCode' => 500,
-            ], 500);
+
+            $ReferralType = ReferralType::withTrashed()->get();
+            if ($ReferralType) {
+                return response([
+                    'data' => $ReferralType,
+                    'statusCode' => 200,
+                ], 200);
+            } else {
+                return response([
+                    'message' => 'No data found',
+                    'statusCode' => 500,
+                ], 500);
+            }
         }
     }
-}
-    
+
     /**
      * Store a newly created resource in storage.
      */
@@ -256,7 +256,7 @@ class ReferralTypeController extends Controller
      *     )
      * )
      */
-    
+
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
@@ -352,15 +352,15 @@ class ReferralTypeController extends Controller
                 'message' => 'Referral Type not found',
                 'statusCode' => 404,
             ]);
-        }else{
+        } else {
 
-        $ReferralType->delete();
-        return response([
-            'message' => 'Referral Type Delete successfully',
-            'statusCode' => 200,
-        ], 200);
+            $ReferralType->delete();
+            return response([
+                'message' => 'Referral Type Delete successfully',
+                'statusCode' => 200,
+            ], 200);
+        }
     }
-}
 
     /**
      * Unblock
