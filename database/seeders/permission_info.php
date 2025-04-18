@@ -16,7 +16,6 @@ class permission_info extends Seeder
     public function run()
     {
         DB::table('permissions')->delete();
-        //  Permission::truncate();
 
         $permissions = [
 
@@ -97,6 +96,12 @@ class permission_info extends Seeder
             'Update Bill',
             'Delete Bill',
             'View Bill',
+
+            'Payment Module',
+            'Create Payment',
+            'Update Payment',
+            'Delete Payment',
+            'View Payment',
 
             'Treatment Module',
             'Create Treatment',

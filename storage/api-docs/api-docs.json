@@ -1728,6 +1728,151 @@
                 }
             }
         },
+        "/api/payments": {
+            "get": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get a list of payments",
+                "operationId": "bbe926ffa8ef29164b52bcc8b34c9d58",
+                "responses": {
+                    "200": {
+                        "description": "List of payments"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Create a new payment",
+                "operationId": "a0e07f9ef1949ae69e66af6a657de492",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "bill_id",
+                                    "amount_paid"
+                                ],
+                                "properties": {
+                                    "bill_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "amount_paid": {
+                                        "type": "number",
+                                        "example": 5000
+                                    },
+                                    "payment_method": {
+                                        "type": "string",
+                                        "example": "PBZ Bank"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Payment created successfully"
+                    }
+                }
+            }
+        },
+        "/api/payments/{id}": {
+            "get": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get a single payment by ID",
+                "operationId": "cd7a4e4760f729f6ae915b16dab442c9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment data"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Update a payment",
+                "operationId": "770fcba8273c277c679704c1dafc9f02",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount_paid"
+                                ],
+                                "properties": {
+                                    "amount_paid": {
+                                        "type": "number",
+                                        "example": 6000
+                                    },
+                                    "payment_method": {
+                                        "type": "string",
+                                        "example": "CASH"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment updated successfully"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Delete a payment",
+                "operationId": "2f1c123bde71fcf723d393edd3845b40",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment deleted successfully"
+                    }
+                }
+            }
+        },
         "/api/reasons": {
             "get": {
                 "tags": [
@@ -6529,6 +6674,10 @@
         }
     },
     "tags": [
+        {
+            "name": "Payments",
+            "description": "API Endpoints for Managing Payments"
+        },
         {
             "name": "bills",
             "description": "bills"

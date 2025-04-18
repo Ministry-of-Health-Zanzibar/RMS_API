@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->enum('sent_to', ['Insurance', 'Accountant']);  // Sent to either Insurance or Accountant
             $table->date('sent_date');  // Date when the bill was sent
             $table->string('bill_file')->nullable();  // Path to the uploaded bill file (optional)
+            $table->enum('bill_status', ['Pending', 'Partially Paid', 'Paid'])->default('Pending');
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();
