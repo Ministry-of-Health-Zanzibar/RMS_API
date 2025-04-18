@@ -12,6 +12,7 @@ use App\Http\Controllers\API\Treatments\TreatmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Reasons\ReasonController;
+use App\Http\Controllers\API\Payments\PaymentController;
 // use App\Http\Controllers\API\Auth\AuthController;
 
 /*
@@ -113,4 +114,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('reports/referralsByType', [ReportController::class, 'referralReportByReferralType']);
     Route::get('reports/referralsByReason', [ReportController::class, 'referralsReportByReason']);
     Route::get('reports/referralByHospital', [ReportController::class, 'referralReportByHospital']);
+
+    // PAYMENT  API
+    Route::resource('payments', PaymentController::class);
 });
