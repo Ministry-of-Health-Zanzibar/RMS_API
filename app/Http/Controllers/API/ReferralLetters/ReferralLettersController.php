@@ -64,7 +64,7 @@ class ReferralLettersController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View ReferralLetter')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('View ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -129,7 +129,7 @@ class ReferralLettersController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Create ReferralLetter')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Create ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -221,7 +221,7 @@ class ReferralLettersController extends Controller
     public function show(string $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View ReferralLetter')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('View ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -291,7 +291,7 @@ class ReferralLettersController extends Controller
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Create ReferralLetter')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Create ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -367,7 +367,7 @@ class ReferralLettersController extends Controller
     public function destroy(string $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Delete ReferralLetter')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Delete ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403

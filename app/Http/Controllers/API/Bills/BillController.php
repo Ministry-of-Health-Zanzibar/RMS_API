@@ -14,14 +14,14 @@ class BillController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Patient|Create Patient|View Patient|Update Patient|Delete Patient', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
+        $this->middleware('permission:View Bill|Create Bill|View Bill|Update Bill|Delete Bill', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
     }
 
 
     /**
      * Display a listing of the resource.
      */
-    /** 
+    /**
      * @OA\Get(
      *     path="/api/bills",
      *     summary="Get all bills",
@@ -83,7 +83,7 @@ class BillController extends Controller
             ], 200);
         } else {
 
-            // Append full doc URL 
+            // Append full doc URL
             $bills = $bills->map(function ($bill) {
                 $bill->billDocumentUrl = $bill->bill_file
                     ? asset('storage/' . $bill->bill_file)
@@ -249,7 +249,7 @@ class BillController extends Controller
                 'statusCode' => 404,
             ]);
         } else {
-            // Append full image URL 
+            // Append full image URL
             if ($bill->bill_file) {
                 $bill->billDocumentUrl = asset('storage/' . $bill->bill_file);
             } else {
