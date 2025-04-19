@@ -17,7 +17,7 @@ class ReferralTypeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    /** 
+    /**
      * @OA\Get(
      *     path="/api/referralTypes",
      *     summary="Get all referral types",
@@ -58,7 +58,7 @@ class ReferralTypeController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View ReferralType')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('View ReferralType')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -120,7 +120,7 @@ class ReferralTypeController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Create ReferralType')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Create ReferralType')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -192,7 +192,7 @@ class ReferralTypeController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('View ReferralType')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('View ReferralType')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -260,7 +260,7 @@ class ReferralTypeController extends Controller
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Update ReferralType')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Update ReferralType')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -338,7 +338,7 @@ class ReferralTypeController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL']) || !$user->can('Delete ReferralType')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Delete ReferralType')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
