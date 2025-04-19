@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             ReasonSeeder::class,
             HospitalSeeder::class,
             referralTypeSeeder::class,
+            AccountantRoleSeeder::class,
         ]);
     }
 }
