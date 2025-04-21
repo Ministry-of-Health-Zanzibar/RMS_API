@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
             HospitalSeeder::class,
             referralTypeSeeder::class,
             AccountantRoleSeeder::class,
+            SourceSeeder::class,
+            DocumentTypeSeeder::class,
         ]);
     }
 }
