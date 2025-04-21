@@ -67,7 +67,7 @@ class BillController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('View Bill')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF','ROLE DG OFFICER']) || !$user->can('View Bill')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -142,7 +142,7 @@ class BillController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Create Bill')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF','ROLE DG OFFICER']) || !$user->can('Create Bill')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -234,7 +234,7 @@ class BillController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('View Bill')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF','ROLE DG OFFICER']) || !$user->can('View Bill')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -314,7 +314,7 @@ class BillController extends Controller
     public function updateBill(Request $request, int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Update Bill')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF','ROLE DG OFFICER']) || !$user->can('Update Bill')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -389,7 +389,7 @@ class BillController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL, ROLE STAFF']) || !$user->can('Delete Bill')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF','ROLE DG OFFICER']) || !$user->can('Delete Bill')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403

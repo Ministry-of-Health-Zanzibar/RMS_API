@@ -88,6 +88,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // REFERRAL APIs
     Route::resource('referrals', ReferralController::class);
+    Route::get('referralwithbills', [ReferralController::class, 'getReferralwithBills']);
     Route::get('referral/{referral_id}', [ReferralController::class, 'getReferralById']);
     Route::post('referral/action', [ReferralController::class, 'handleAction']);
     Route::patch('referrals/unBlock/{referralId}', [ReferralController::class, 'unBlockReferral']);
