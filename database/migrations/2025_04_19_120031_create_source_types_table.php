@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('source_id');
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
+            $table->softDeletes(); // adds deleted_at column
 
             $table->foreign('source_id')->references('source_id')->on('sources');
         });

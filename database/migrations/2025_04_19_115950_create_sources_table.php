@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->string('source_code')->unique();
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
+            $table->softDeletes(); // adds deleted_at column
         });
     }
 

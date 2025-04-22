@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             AccountantRoleSeeder::class,
             SourceSeeder::class,
             DocumentTypeSeeder::class,
+            // AccountantInfoSeeder::class,
         ]);
     }
 }

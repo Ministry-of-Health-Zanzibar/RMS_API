@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\API\Accountants\CategoryController;
+use App\Http\Controllers\API\Accountants\DocumentTypeController;
+use App\Http\Controllers\API\Accountants\DocumentTypeFormController;
+use App\Http\Controllers\API\Accountants\SouceController;
+use App\Http\Controllers\API\Accountants\SourceTypeController;
 use App\Http\Controllers\API\Bills\BillController;
 use App\Http\Controllers\API\Hospitals\HospitalController;
 use App\Http\Controllers\API\Referrals\ReferralController;
@@ -118,4 +123,26 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // PAYMENT  API
     Route::resource('payments', PaymentController::class);
+
+    // SOURCE
+    Route::resource('sources', SouceController::class);
+    Route::patch('sources/unBlock/{sourceId}', [SouceController::class, 'unBlockSource']);
+
+
+    // SOURCE TYPE
+    Route::resource('sourceTypes', SourceTypeController::class);
+    Route::patch('sourceTypes/unBlock/{sourceId}', [SourceTypeController::class, 'unBlockSourceType']);
+
+    // CATEGORY
+    Route::resource('categories', CategoryController::class);
+    Route::patch('categories/unBlock/{categoryId}', [CategoryController::class, 'unBlockCategory']);
+
+    // DOCUMENT TYPE
+    Route::resource('documentTypes', DocumentTypeController::class);
+    Route::patch('documentTypes/unBlock/{documentTypeId}', [DocumentTypeController::class, 'unBlockDocumentType']);
+
+    // DOCUMENT FORM
+    Route::resource('documentForms', DocumentTypeFormController::class);
+    Route::patch('documentForms/unBlock/{documentTypeId}', [DocumentTypeFormController::class, 'unBlockDocumentForm']);
+
 });

@@ -44,7 +44,7 @@ class SourceType extends Model
 
     protected $fillable = [
         'source_type_name',
-        'source_id  ',
+        'source_id',
         'created_by'
     ];
 
