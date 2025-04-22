@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\API\Accountants\CategoryController;
+use App\Http\Controllers\API\Accountants\DocumentTypeController;
+use App\Http\Controllers\API\Accountants\DocumentTypeFormController;
+use App\Http\Controllers\API\Accountants\SouceController;
+use App\Http\Controllers\API\Accountants\SourceTypeController;
 use App\Http\Controllers\API\Bills\BillController;
 use App\Http\Controllers\API\Hospitals\HospitalController;
 use App\Http\Controllers\API\Referrals\ReferralController;
