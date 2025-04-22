@@ -4,6 +4,8 @@ namespace App\Http\Controllers\API\Referrals;
 
 use App\Models\Insurance;
 use App\Models\Referral;
+use App\Models\Bill;
+use App\Models\Payment;
 use DB;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -149,6 +151,7 @@ class ReferralController extends Controller
 
                 "reasons.referral_reason_name",
 
+                "bills.bill_id",
                 "bills.amount",
                 "bills.sent_to",
                 "bills.bill_status",
@@ -591,6 +594,26 @@ class ReferralController extends Controller
         $referrals->bills = $referrals->bills ?? [];
         return response()->json($referrals);
     }
+
+    // public function getReferralsWithBillPayment($bill_id)
+    // {
+    //     $referrals = Bill::with('payments')
+    //         ->where('bill_id', $bill_id)
+    //         ->first();
+
+    //     if (!$referrals) {
+    //         return response()->json(['message' => 'No referrals with bills found'], 404);
+    //     }
+    //      // Append full image URL
+    //      if ($referrals->referral_letter_file) {
+    //         $referrals->documentUrl = asset('storage/' . $referrals->referral_letter_file);
+    //     } else {
+    //         $referrals->documentUrl = null;
+    //     }
+
+    //     $referrals->bills = $referrals->bills ?? [];
+    //     return response()->json($referrals);
+    // }
 
     public function getReferralById(int $referral_id)
     {

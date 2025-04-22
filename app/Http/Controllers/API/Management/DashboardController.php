@@ -40,7 +40,7 @@ class DashboardController extends Controller
                                 ->where('employee_term_of_employments.term_of_employment_id','=', 4)
                                 ->where('employment_informations.status','=', 1)
                                 ->count();
-                
+
                 $parmanet_employee = DB::table('employment_informations')
                                     ->join('employment_positions', 'employment_positions.employment_information_id', '=', 'employment_informations.employment_information_id')
                                     ->join('employee_term_of_employments', 'employee_term_of_employments.employment_information_id', '=', 'employment_informations.employment_information_id')
@@ -129,7 +129,7 @@ class DashboardController extends Controller
                                 ->where('employee_term_of_employments.term_of_employment_id','=', 4)
                                 ->where('employment_informations.status','=', 1)
                                 ->count();
-                
+
                 $parmanet_employee = DB::table('employment_informations')
                                     ->join('employment_positions', 'employment_positions.employment_information_id', '=', 'employment_informations.employment_information_id')
                                     ->join('employee_term_of_employments', 'employee_term_of_employments.employment_information_id', '=', 'employment_informations.employment_information_id')
@@ -198,5 +198,59 @@ class DashboardController extends Controller
 
         return $this->head_count($year_id);
     }
-            
+
+    public function hospitalCountReport()
+    {
+        if (!auth()->user()->hasRole('ROLE ADMIN') && !auth()->user()->hasRole('ROLE NATIONAL') && !auth()->user()->hasRole('ROLE DG OFFICER') && !auth()->user()->hasRole('ROLE STAFF')) {
+            return response()
+                ->json(['message' => 'unAuthenticated', 'statusCode' => 401]);
+        }
+
+        // Complains by status
+        $hospitalCount = DB::table('referrals')
+            ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
+            ->select('hospital_name', DB::raw("COUNT(*) as total"))
+            ->whereNull('referrals.deleted_at')
+            ->groupBy('hospital_name')
+            ->get();
+
+        // Structure the response
+        $response = [
+            'hospital_count_report' => $hospitalCount,
+        ];
+
+        return response()->json($response);
+    }
+
+    public function referralPerMonthReport()
+    {
+        if (!auth()->user()->hasRole('ROLE ADMIN') && !auth()->user()->hasRole('ROLE NATIONAL') && !auth()->user()->hasRole('ROLE DG OFFICER') && !auth()->user()->hasRole('ROLE STAFF')) {
+            return response()
+                ->json(['message' => 'unAuthenticated', 'statusCode' => 401]);
+        }
+
+        // Get the database connection driver
+        $databaseDriver = config('database.default');
+
+        // Use appropriate date formatting based on database type
+        $dateColumn = ($databaseDriver === 'pgsql')
+            ? "TO_CHAR(created_at, 'YYYY-MM')"  // PostgreSQL format
+            : "DATE_FORMAT(created_at, '%Y-%m')"; // MySQL format
+
+        // Complains grouped by month
+        $referralPerMonth = DB::table('referrals')
+            ->select(DB::raw("$dateColumn as month"), DB::raw("COUNT(*) as total"))
+            ->whereNull('deleted_at')
+            ->groupBy('month')
+            ->orderBy('month', 'ASC')
+            ->get();
+
+        // Structure the response
+        $response = [
+            'referral_per_month' => $referralPerMonth,
+        ];
+
+        return response()->json($response);
+    }
+
 }

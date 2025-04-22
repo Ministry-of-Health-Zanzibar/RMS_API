@@ -93,7 +93,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('referral/action', [ReferralController::class, 'handleAction']);
     Route::patch('referrals/unBlock/{referralId}', [ReferralController::class, 'unBlockReferral']);
     Route::get('referrals-withbills/{referral_id}', [ReferralController::class, 'getReferralsWithBills']);
-
+    // Route::get('bill-payment/{bill_id}', [ReferralController::class, 'getReferralsWithBillPayment']);
 
     // RMS REASON APIs
     Route::resource('reasons', ReasonController::class);
@@ -118,4 +118,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // PAYMENT  API
     Route::resource('payments', PaymentController::class);
+
+    //Dashboard report
+    Route::get('hospitalCountReport', [App\Http\Controllers\API\Management\DashboardController::class, 'hospitalCountReport'])->name('hospitalCountReport');
+    Route::get('referralPerMonthReport', [App\Http\Controllers\API\Management\DashboardController::class, 'referralPerMonthReport'])->name('referralPerMonthReport');
 });
