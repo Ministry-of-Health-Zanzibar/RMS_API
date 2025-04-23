@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->double('amount');
             $table->string('tin_number');
             $table->string('year');
+            $table->string('document_file')->nullable();
             // $table->unsignedBigInteger('source_id');
             $table->unsignedBigInteger('source_type_id');
             $table->unsignedBigInteger('category_id');

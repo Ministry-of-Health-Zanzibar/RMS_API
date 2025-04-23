@@ -869,6 +869,9 @@
                                     "year": {
                                         "type": "string"
                                     },
+                                    "document": {
+                                        "type": "string"
+                                    },
                                     "source_type_id": {
                                         "type": "integer"
                                     },
@@ -1055,6 +1058,27 @@
                                                 "properties": {
                                                     "payee_name": {
                                                         "type": "string"
+                                                    },
+                                                    "amount": {
+                                                        "type": "integer"
+                                                    },
+                                                    "tin_number": {
+                                                        "type": "string"
+                                                    },
+                                                    "year": {
+                                                        "type": "string"
+                                                    },
+                                                    "document": {
+                                                        "type": "string"
+                                                    },
+                                                    "source_type_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "category_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "document_type_id": {
+                                                        "type": "integer"
                                                     }
                                                 },
                                                 "type": "object"

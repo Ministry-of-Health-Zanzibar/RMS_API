@@ -50,6 +50,8 @@ class DocumentTypeFormController extends Controller
      *                     @OA\Property(property="amount", type="integer"),
      *                     @OA\Property(property="tin_number", type="string"),
      *                     @OA\Property(property="year", type="string"),
+     *                     @OA\Property(property="document", type="string"),
+     *                     @OA\Property(property="documentFileUrl", type="string"),
      *                     @OA\Property(property="source_type_id", type="integer"),
      *                     @OA\Property(property="category_id", type="integer"),
      *                     @OA\Property(property="document_type_id", type="integer"),
@@ -100,6 +102,16 @@ class DocumentTypeFormController extends Controller
             ->get();
 
         if ($documentForms) {
+
+            // Append full doc URL
+            $documentForms = $documentForms->map(function ($document) {
+                $document->documentFileUrl = $document->document_file
+                    ? asset('storage/' . $document->document_file)
+                    : null;
+                return $document;
+            });
+
+
             return response([
                 'data' => $documentForms,
                 'statusCode' => 200,
@@ -128,7 +140,7 @@ class DocumentTypeFormController extends Controller
      *                     @OA\Property(property="amount", type="integer"),
      *                     @OA\Property(property="tin_number", type="string"),
      *                     @OA\Property(property="year", type="string"),
-
+     *                     @OA\Property(property="document_file", type="string"),
      *                     @OA\Property(property="source_type_id", type="integer"),
      *                     @OA\Property(property="category_id", type="integer"),
      *                     @OA\Property(property="document_type_id", type="integer"),
@@ -173,7 +185,15 @@ class DocumentTypeFormController extends Controller
             'source_type_id' => ['required', 'numeric'],
             'category_id' => ['required', 'numeric'],
             'document_type_id' => ['required', 'numeric'],
+            'document_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,png', 'max:5120'],
         ]);
+
+
+        // Only handle the file after validation passes
+        $path = null;
+        if (isset($data['document_file'])) {
+            $path = $data['document_file']->store('accountant_documents', 'public');
+        }
 
 
         // Create
@@ -182,6 +202,7 @@ class DocumentTypeFormController extends Controller
             'amount' => $data['amount'],
             'tin_number' => $data['tin_number'],
             'year' => $data['year'],
+            'document_file' => $path,
             'source_type_id' => $data['source_type_id'],
             'category_id' => $data['category_id'],
             'document_type_id' => $data['document_type_id'],
@@ -231,6 +252,7 @@ class DocumentTypeFormController extends Controller
      *                     @OA\Property(property="amount", type="integer"),
      *                     @OA\Property(property="tin_number", type="string"),
      *                     @OA\Property(property="year", type="string"),
+     *                     @OA\Property(property="documentFileUrl", type="string"),
      *                     @OA\Property(property="source_type_id", type="integer"),
      *                     @OA\Property(property="category_id", type="integer"),
      *                     @OA\Property(property="document_type_id", type="integer"),
@@ -287,6 +309,13 @@ class DocumentTypeFormController extends Controller
                 'statusCode' => 404,
             ]);
         } else {
+
+            // Append full doc URL
+            if ($documentForm->document_file) {
+                $documentForm->documentFileUrl = asset('storage/' . $documentForm->document_file);
+            } else {
+                $documentForm->documentFileUrl = null;
+            }
             return response([
                 'data' => $documentForm,
                 'statusCode' => 200,
@@ -298,8 +327,8 @@ class DocumentTypeFormController extends Controller
      * Update the specified resource in storage.
      */
     /**
-     * @OA\Put(
-     *     path="/api/documentForms/{documentFormId}",
+     * @OA\Post(
+     *     path="/api/documentForms/update/{documentFormId}",
      *     summary="Update document form",
      *     tags={"documentForms"},
      *      @OA\Parameter(
@@ -329,6 +358,13 @@ class DocumentTypeFormController extends Controller
      *                 @OA\Items(
      *                     type="object",
      *                     @OA\Property(property="payee_name", type="string"),
+     *                     @OA\Property(property="amount", type="integer"),
+     *                     @OA\Property(property="tin_number", type="string"),
+     *                     @OA\Property(property="year", type="string"),
+     *                     @OA\Property(property="document_file", type="string"),
+     *                     @OA\Property(property="source_type_id", type="integer"),
+     *                     @OA\Property(property="category_id", type="integer"),
+     *                     @OA\Property(property="document_type_id", type="integer"),
      *                 ),
      *             ),
      *             @OA\Property(property="statusCode", type="integer", example=200)
@@ -336,7 +372,7 @@ class DocumentTypeFormController extends Controller
      *     )
      * )
      */
-    public function update(Request $request, string $id)
+    public function updateDocumentForm(Request $request, string $id)
     {
         $user = auth()->user();
         if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE ACCOUNTANT']) || !$user->can('Update Document Type')) {
@@ -351,12 +387,13 @@ class DocumentTypeFormController extends Controller
             'amount' => ['required', 'numeric'],
             'tin_number' => ['required', 'string'],
             'year' => ['required', 'string'],
+            'document_file' => ['nullable', 'string'],
             'source_type_id' => ['required', 'numeric'],
             'category_id' => ['required', 'numeric'],
             'document_type_id' => ['required', 'numeric'],
         ]);
 
-        $documentForm = DocumentType::find($id);
+        $documentForm = DocumentForm::find($id);
 
         if (!$documentForm) {
             return response([
@@ -366,16 +403,18 @@ class DocumentTypeFormController extends Controller
         }
 
 
-        $documentForm->update([
-            'payee_name' => $data['payee_name'],
-            'amount' => $data['amount'],
-            'tin_number' => $data['tin_number'],
-            'year' => $data['year'],
-            'source_type_id' => $data['source_type_id'],
-            'category_id' => $data['category_id'],
-            'document_type_id' => $data['document_type_id'],
-            'created_by' => Auth::id(),
-        ]);
+
+        // Handle file upload if provided
+        if ($request->hasFile('document_file')) {
+            $path = $request->file('document_file')->store('accountant_documents', 'public');
+            $data['document_file'] = $path;
+        } else {
+            unset($data['document_file']);
+        }
+
+        $data['created_by'] = Auth::id();
+
+        $documentForm->update($data);
 
         if ($documentForm) {
             return response([
