@@ -72,7 +72,45 @@ class AccountantReportController extends Controller
         return response([
             'sourceSummary' => $sourceSummary,
         ]);
+    }
 
+
+    public function getDocumentFormsReport(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $startDate = $request->start_date;
+        $endDate = $request->end_date;
+
+        $report = DB::table('document_forms')
+            ->join('source_types', 'document_forms.source_type_id', '=', 'source_types.source_type_id')
+            ->join('sources', 'source_types.source_id', '=', 'sources.source_id')
+            ->join('categories', 'document_forms.category_id', '=', 'categories.category_id')
+            ->join('document_types', 'document_forms.document_type_id', '=', 'document_types.document_type_id')
+            ->select(
+                'document_forms.document_form_id',
+                'document_forms.document_form_code',
+                'document_forms.payee_name',
+                'document_forms.amount',
+                'document_forms.tin_number',
+                'document_forms.year',
+                'document_forms.created_at',
+                'sources.source_name',
+                'source_types.source_type_name',
+                'categories.category_name',
+                'document_types.document_type_name',
+            )
+            ->whereBetween('document_forms.created_at', [$startDate, $endDate])
+            ->orderBy('document_forms.created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'data' => $report,
+            'statusCode' => 200,
+        ]);
     }
 
 }
