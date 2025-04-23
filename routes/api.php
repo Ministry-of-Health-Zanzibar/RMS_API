@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\Accountants\AccountantReportController;
 use App\Http\Controllers\API\Accountants\CategoryController;
 use App\Http\Controllers\API\Accountants\DocumentTypeController;
 use App\Http\Controllers\API\Accountants\DocumentTypeFormController;
@@ -144,5 +145,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // DOCUMENT FORM
     Route::resource('documentForms', DocumentTypeFormController::class);
     Route::patch('documentForms/unBlock/{documentTypeId}', [DocumentTypeFormController::class, 'unBlockDocumentForm']);
-
+    Route::get('accountant/reports/reportPerMonthly', [AccountantReportController::class, 'reportPerMonthly']);
+    Route::get('accountant/reports/reportPerWeekly', [AccountantReportController::class, 'reportPerWeekly']);
+    Route::get('accountant/reports/reportPerDocumentType', [AccountantReportController::class, 'reportPerDocumentType']);
+    Route::get('accountant/reports/reportBySourceType', [AccountantReportController::class, 'reportBySourceType']);
 });
