@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\Accountants\AccountantReportController;
 use App\Http\Controllers\API\Accountants\CategoryController;
 use App\Http\Controllers\API\Accountants\DocumentTypeController;
 use App\Http\Controllers\API\Accountants\DocumentTypeFormController;
@@ -124,7 +125,28 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // PAYMENT  API
     Route::resource('payments', PaymentController::class);
 
-    //Dashboard report
-    Route::get('hospitalCountReport', [App\Http\Controllers\API\Management\DashboardController::class, 'hospitalCountReport'])->name('hospitalCountReport');
-    Route::get('referralPerMonthReport', [App\Http\Controllers\API\Management\DashboardController::class, 'referralPerMonthReport'])->name('referralPerMonthReport');
+    // SOURCE
+    Route::resource('sources', SouceController::class);
+    Route::patch('sources/unBlock/{sourceId}', [SouceController::class, 'unBlockSource']);
+
+
+    // SOURCE TYPE
+    Route::resource('sourceTypes', SourceTypeController::class);
+    Route::patch('sourceTypes/unBlock/{sourceId}', [SourceTypeController::class, 'unBlockSourceType']);
+
+    // CATEGORY
+    Route::resource('categories', CategoryController::class);
+    Route::patch('categories/unBlock/{categoryId}', [CategoryController::class, 'unBlockCategory']);
+
+    // DOCUMENT TYPE
+    Route::resource('documentTypes', DocumentTypeController::class);
+    Route::patch('documentTypes/unBlock/{documentTypeId}', [DocumentTypeController::class, 'unBlockDocumentType']);
+
+    // DOCUMENT FORM
+    Route::resource('documentForms', DocumentTypeFormController::class);
+    Route::patch('documentForms/unBlock/{documentTypeId}', [DocumentTypeFormController::class, 'unBlockDocumentForm']);
+    Route::get('accountant/reports/reportPerMonthly', [AccountantReportController::class, 'reportPerMonthly']);
+    Route::get('accountant/reports/reportPerWeekly', [AccountantReportController::class, 'reportPerWeekly']);
+    Route::get('accountant/reports/reportPerDocumentType', [AccountantReportController::class, 'reportPerDocumentType']);
+    Route::get('accountant/reports/reportBySourceType', [AccountantReportController::class, 'reportBySourceType']);
 });
