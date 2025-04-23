@@ -4,9 +4,11 @@ namespace App\Http\Controllers\API\Accountants;
 
 use App\Models\Hospital;
 use App\Models\SourceType;
+use DB;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use function Laravel\Prompts\select;
 
 class SourceTypeController extends Controller
 {
@@ -67,7 +69,15 @@ class SourceTypeController extends Controller
             ], 403);
         }
 
-        $sourceTypes = SourceType::withTrashed()->get();
+        // $sourceTypes = SourceType::withTrashed()->get();
+        $sourceTypes = DB::table('source_types')
+            ->join('sources', 'source_types.source_id', '=', 'sources.source_id')
+            ->select(
+                'source_types.*',
+                'sources.source_name'
+            )
+            ->get();
+
 
         if ($sourceTypes) {
             return response([
@@ -203,7 +213,14 @@ class SourceTypeController extends Controller
             ], 403);
         }
 
-        $sourceType = SourceType::withTrashed()->find($id);
+        // $sourceType = SourceType::withTrashed()->find($id);
+        $sourceType = DB::table('source_types')
+            ->join('sources', 'source_types.source_id', '=', 'sources.source_id')
+            ->select(
+                'source_types.*',
+                'sources.source_name'
+            )
+            ->first();
 
         if (!$sourceType) {
             return response([

@@ -144,6 +144,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // DOCUMENT FORM
     Route::resource('documentForms', DocumentTypeFormController::class);
+    Route::post('documentForms/update/{id}', [DocumentTypeFormController::class, 'updateDocumentForm']);
     Route::patch('documentForms/unBlock/{documentTypeId}', [DocumentTypeFormController::class, 'unBlockDocumentForm']);
     Route::get('accountant/reports/reportPerMonthly', [AccountantReportController::class, 'reportPerMonthly']);
     Route::get('accountant/reports/reportPerWeekly', [AccountantReportController::class, 'reportPerWeekly']);

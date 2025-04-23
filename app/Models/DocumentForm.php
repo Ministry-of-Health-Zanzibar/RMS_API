@@ -47,6 +47,7 @@ class DocumentForm extends Model
         'amount',
         'tin_number',
         'year',
+        'document_file',
         'source_id',
         'source_type_id',
         'category_id',
