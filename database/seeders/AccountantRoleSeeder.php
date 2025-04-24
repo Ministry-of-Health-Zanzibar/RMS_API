@@ -17,6 +17,7 @@ class AccountantRoleSeeder extends Seeder
         $role = Role::create(['name' => 'ROLE ACCOUNTANT']);
 
         $permissionNames = [
+            'Accountant Module',
             'Create Source',
             'Update Source',
             'Delete Source',
@@ -41,6 +42,7 @@ class AccountantRoleSeeder extends Seeder
             'Update Document Form',
             'Delete Document Form',
             'View Document Form',
+            'View Report'
         ];
         $permissions = Permission::whereIn('name', $permissionNames)->get();
 
