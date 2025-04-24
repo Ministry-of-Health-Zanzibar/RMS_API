@@ -62,7 +62,7 @@ class SourceTypeController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE ACCOUNTANT']) || !$user->can('View Source Type')) {
+        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Source Type')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -132,7 +132,7 @@ class SourceTypeController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE ACCOUNTANT']) || !$user->can('Create Source Type')) {
+        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('Create Source Type')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -206,7 +206,7 @@ class SourceTypeController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE ACCOUNTANT']) || !$user->can('View Source Type')) {
+        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Source Type')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -282,7 +282,7 @@ class SourceTypeController extends Controller
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE ACCOUNTANT']) || !$user->can('Update Source Type')) {
+        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('Update Source Type')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -363,7 +363,7 @@ class SourceTypeController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE ACCOUNTANT']) || !$user->can('Delete Source Type')) {
+        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('Delete Source Type')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403

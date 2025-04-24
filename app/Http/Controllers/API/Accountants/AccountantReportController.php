@@ -10,6 +10,15 @@ class AccountantReportController extends Controller
 {
     public function reportPerMonthly()
     {
+        $user = auth()->user();
+        if (!$user->hasRole('ROLE ACCOUNTANT')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+
         $monthlyData = DB::table('document_forms')
             ->selectRaw("TO_CHAR(created_at, 'YYYY-MM') AS month, SUM(amount) AS total_amount")
             ->whereNotNull('created_at')
@@ -25,6 +34,14 @@ class AccountantReportController extends Controller
 
     public function reportPerWeekly()
     {
+        $user = auth()->user();
+        if (!$user->hasRole('ROLE ACCOUNTANT')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $weeklyData = DB::table('document_forms')
             ->selectRaw("TO_CHAR(created_at, 'IYYY-IW') AS week, SUM(amount) AS total_amount")
             ->whereNotNull('created_at')
@@ -41,6 +58,15 @@ class AccountantReportController extends Controller
 
     public function reportPerDocumentType()
     {
+
+        $user = auth()->user();
+        if (!$user->hasRole('ROLE ACCOUNTANT')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $documentTypeSummary = DB::table('document_forms')
             ->join('document_types', 'document_forms.document_type_id', '=', 'document_types.document_type_id')
             ->select('document_types.document_type_name', DB::raw('COUNT(document_forms.document_form_id) as total'))
@@ -58,6 +84,15 @@ class AccountantReportController extends Controller
 
     public function reportBySourceType()
     {
+
+        $user = auth()->user();
+        if (!$user->hasRole('ROLE ACCOUNTANT')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $sourceSummary = DB::table('document_forms')
             ->join('source_types', 'document_forms.source_type_id', '=', 'source_types.source_type_id')
             ->join('sources', 'source_types.source_id', '=', 'sources.source_id')
@@ -77,6 +112,16 @@ class AccountantReportController extends Controller
 
     public function getDocumentFormsReport(Request $request)
     {
+        $user = auth()->user();
+        if (!$user->hasRole('ROLE ACCOUNTANT')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+
+
         $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
