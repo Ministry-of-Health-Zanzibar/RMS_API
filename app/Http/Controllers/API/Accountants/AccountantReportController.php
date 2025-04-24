@@ -11,7 +11,7 @@ class AccountantReportController extends Controller
     public function reportPerMonthly()
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT')) {
+        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -35,7 +35,7 @@ class AccountantReportController extends Controller
     public function reportPerWeekly()
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT')) {
+        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -60,7 +60,7 @@ class AccountantReportController extends Controller
     {
 
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT')) {
+        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -86,7 +86,7 @@ class AccountantReportController extends Controller
     {
 
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT')) {
+        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -113,7 +113,7 @@ class AccountantReportController extends Controller
     public function getDocumentFormsReport(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT')) {
+        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -157,5 +157,75 @@ class AccountantReportController extends Controller
             'statusCode' => 200,
         ]);
     }
+
+
+    public function searchReportByParameter(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Report')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $query = DB::table('document_forms')
+            ->join('source_types', 'document_forms.source_type_id', '=', 'source_types.source_type_id')
+            ->join('sources', 'source_types.source_id', '=', 'sources.source_id')
+            ->join('document_types', 'document_forms.document_type_id', '=', 'document_types.document_type_id')
+            ->join('categories', 'document_forms.category_id', '=', 'categories.category_id')
+            ->select(
+                'document_forms.*',
+                'sources.source_name',
+                'source_types.source_type_name',
+                'document_types.document_type_name',
+                'categories.category_name'
+            );
+
+        // Apply filters only if they exist in the request
+        if ($request->filled('document_form_code')) {
+            $query->where('document_forms.document_form_code', 'ILIKE', '%' . $request->document_form_code . '%');
+        }
+
+        if ($request->filled('payee_name')) {
+            $query->where('document_forms.payee_name', 'ILIKE', '%' . $request->payee_name . '%');
+        }
+
+        if ($request->filled('amount')) {
+            $query->where('document_forms.amount', $request->amount);
+        }
+
+        if ($request->filled('tin_number')) {
+            $query->where('document_forms.tin_number', 'ILIKE', '%' . $request->tin_number . '%');
+        }
+
+        if ($request->filled('year')) {
+            $query->where('document_forms.year', $request->year);
+        }
+
+        if ($request->filled('source_name')) {
+            $query->where('sources.source_name', 'ILIKE', '%' . $request->source_name . '%');
+        }
+
+        if ($request->filled('source_type_name')) {
+            $query->where('source_types.source_type_name', 'ILIKE', '%' . $request->source_type_name . '%');
+        }
+
+        if ($request->filled('document_type_name')) {
+            $query->where('document_types.document_type_name', 'ILIKE', '%' . $request->document_type_name . '%');
+        }
+
+        if ($request->filled('category_name')) {
+            $query->where('categories.category_name', 'ILIKE', '%' . $request->category_name . '%');
+        }
+
+        $results = $query->get();
+
+        return response()->json([
+            'data' => $results,
+            'statusCode' => 200
+        ]);
+    }
+
 
 }

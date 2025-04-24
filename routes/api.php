@@ -151,4 +151,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('accountant/reports/reportPerDocumentType', [AccountantReportController::class, 'reportPerDocumentType']);
     Route::get('accountant/reports/reportBySourceType', [AccountantReportController::class, 'reportBySourceType']);
     Route::post('accountant/reports/getDocumentFormReportByDate', [AccountantReportController::class, 'getDocumentFormsReport']);
+    Route::post('accountant/reports/searchReportByParameter', [AccountantReportController::class, 'searchReportByParameter']);
 });
