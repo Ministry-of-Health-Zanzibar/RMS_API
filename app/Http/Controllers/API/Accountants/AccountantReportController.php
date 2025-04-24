@@ -231,6 +231,14 @@ class AccountantReportController extends Controller
 
         $results = $query->get();
 
+        // Append full doc URL
+        $results = $results->map(function ($document) {
+            $document->documentFileUrl = $document->document_file
+                ? asset('storage/' . $document->document_file)
+                : null;
+            return $document;
+        });
+
         return response()->json([
             'data' => $results,
             'statusCode' => 200
