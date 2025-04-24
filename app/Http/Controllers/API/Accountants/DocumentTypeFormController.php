@@ -300,6 +300,7 @@ class DocumentTypeFormController extends Controller
                 'document_types.document_type_name',
                 'document_types.document_type_code',
             )
+            ->where('document_forms.document_form_id', '=', $id)
             ->first();
 
 
