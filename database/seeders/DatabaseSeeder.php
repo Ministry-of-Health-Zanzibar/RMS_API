@@ -22,9 +22,9 @@ class DatabaseSeeder extends Seeder
             ReasonSeeder::class,
             HospitalSeeder::class,
             referralTypeSeeder::class,
-                // AccountantRoleSeeder::class,
             SourceSeeder::class,
             DocumentTypeSeeder::class,
+            // AccountantRoleSeeder::class,
             // AccountantInfoSeeder::class,
         ]);
     }

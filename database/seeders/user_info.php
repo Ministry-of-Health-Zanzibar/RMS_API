@@ -85,6 +85,7 @@ class user_info extends Seeder
         $accountantRole = Role::create(['name' => 'ROLE ACCOUNTANT']);
 
         $accountantPermissions = Permission::whereIn('name', [
+            'Accountant Module',
             'Create Source',
             'Update Source',
             'Delete Source',
