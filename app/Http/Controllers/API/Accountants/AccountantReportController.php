@@ -142,6 +142,7 @@ class AccountantReportController extends Controller
                 'document_forms.amount',
                 'document_forms.tin_number',
                 'document_forms.year',
+                'document_forms.document_file',
                 'document_forms.created_at',
                 'sources.source_name',
                 'source_types.source_type_name',
@@ -151,6 +152,15 @@ class AccountantReportController extends Controller
             ->whereBetween('document_forms.created_at', [$startDate, $endDate])
             ->orderBy('document_forms.created_at', 'desc')
             ->get();
+
+        // Append full doc URL
+        $report = $report->map(function ($document) {
+            $document->documentFileUrl = $document->document_file
+                ? asset('storage/' . $document->document_file)
+                : null;
+            return $document;
+        });
+
 
         return response()->json([
             'data' => $report,
