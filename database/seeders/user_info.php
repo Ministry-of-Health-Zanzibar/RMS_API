@@ -108,6 +108,7 @@ class user_info extends Seeder
             'View Document Form',
 
             'View Report',
+            'View Dashboard',
         ])->get();
 
         $accountantRole->syncPermissions($accountantPermissions);
