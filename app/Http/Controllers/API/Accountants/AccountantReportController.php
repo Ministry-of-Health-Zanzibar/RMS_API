@@ -179,6 +179,73 @@ class AccountantReportController extends Controller
             ], 403);
         }
 
+        // $query = DB::table('document_forms')
+        //     ->join('source_types', 'document_forms.source_type_id', '=', 'source_types.source_type_id')
+        //     ->join('sources', 'source_types.source_id', '=', 'sources.source_id')
+        //     ->join('document_types', 'document_forms.document_type_id', '=', 'document_types.document_type_id')
+        //     ->join('categories', 'document_forms.category_id', '=', 'categories.category_id')
+        //     ->select(
+        //         'document_forms.*',
+        //         'sources.source_name',
+        //         'source_types.source_type_name',
+        //         'document_types.document_type_name',
+        //         'categories.category_name'
+        //     );
+
+        // // Apply filters only if they exist in the request
+        // if ($request->filled('document_form_code')) {
+        //     $query->where('document_forms.document_form_code', 'ILIKE', '%' . $request->document_form_code . '%');
+        // }
+
+        // if ($request->filled('payee_name')) {
+        //     $query->where('document_forms.payee_name', 'ILIKE', '%' . $request->payee_name . '%');
+        // }
+
+        // if ($request->filled('amount')) {
+        //     $query->where('document_forms.amount', $request->amount);
+        // }
+
+        // if ($request->filled('tin_number')) {
+        //     $query->where('document_forms.tin_number', 'ILIKE', '%' . $request->tin_number . '%');
+        // }
+
+        // if ($request->filled('year')) {
+        //     $query->where('document_forms.year', $request->year);
+        // }
+
+        // if ($request->filled('source_name')) {
+        //     $query->where('sources.source_name', 'ILIKE', '%' . $request->source_name . '%');
+        // }
+
+        // if ($request->filled('source_type_name')) {
+        //     $query->where('source_types.source_type_name', 'ILIKE', '%' . $request->source_type_name . '%');
+        // }
+
+        // if ($request->filled('document_type_name')) {
+        //     $query->where('document_types.document_type_name', 'ILIKE', '%' . $request->document_type_name . '%');
+        // }
+
+        // if ($request->filled('category_name')) {
+        //     $query->where('categories.category_name', 'ILIKE', '%' . $request->category_name . '%');
+        // }
+
+        // $results = $query->get();
+
+        // // Append full doc URL
+        // $results = $results->map(function ($document) {
+        //     $document->documentFileUrl = $document->document_file
+        //         ? asset('storage/' . $document->document_file)
+        //         : null;
+        //     return $document;
+        // });
+
+        // return response()->json([
+        //     'data' => $results,
+        //     'statusCode' => 200
+        // ]);
+
+
+        // NEW
         $query = DB::table('document_forms')
             ->join('source_types', 'document_forms.source_type_id', '=', 'source_types.source_type_id')
             ->join('sources', 'source_types.source_id', '=', 'sources.source_id')
@@ -192,46 +259,48 @@ class AccountantReportController extends Controller
                 'categories.category_name'
             );
 
-        // Apply filters only if they exist in the request
-        if ($request->filled('document_form_code')) {
-            $query->where('document_forms.document_form_code', 'ILIKE', '%' . $request->document_form_code . '%');
-        }
+        // Wrap OR filters
+        $query->where(function ($q) use ($request) {
+            if ($request->filled('document_form_code')) {
+                $q->orWhere('document_forms.document_form_code', 'ILIKE', '%' . $request->document_form_code . '%');
+            }
 
-        if ($request->filled('payee_name')) {
-            $query->where('document_forms.payee_name', 'ILIKE', '%' . $request->payee_name . '%');
-        }
+            if ($request->filled('payee_name')) {
+                $q->orWhere('document_forms.payee_name', 'ILIKE', '%' . $request->payee_name . '%');
+            }
 
-        if ($request->filled('amount')) {
-            $query->where('document_forms.amount', $request->amount);
-        }
+            if ($request->filled('amount')) {
+                $q->orWhere('document_forms.amount', $request->amount);
+            }
 
-        if ($request->filled('tin_number')) {
-            $query->where('document_forms.tin_number', 'ILIKE', '%' . $request->tin_number . '%');
-        }
+            if ($request->filled('tin_number')) {
+                $q->orWhere('document_forms.tin_number', 'ILIKE', '%' . $request->tin_number . '%');
+            }
 
-        if ($request->filled('year')) {
-            $query->where('document_forms.year', $request->year);
-        }
+            if ($request->filled('year')) {
+                $q->orWhere('document_forms.year', $request->year);
+            }
 
-        if ($request->filled('source_name')) {
-            $query->where('sources.source_name', 'ILIKE', '%' . $request->source_name . '%');
-        }
+            if ($request->filled('source_name')) {
+                $q->orWhere('sources.source_name', 'ILIKE', '%' . $request->source_name . '%');
+            }
 
-        if ($request->filled('source_type_name')) {
-            $query->where('source_types.source_type_name', 'ILIKE', '%' . $request->source_type_name . '%');
-        }
+            if ($request->filled('source_type_name')) {
+                $q->orWhere('source_types.source_type_name', 'ILIKE', '%' . $request->source_type_name . '%');
+            }
 
-        if ($request->filled('document_type_name')) {
-            $query->where('document_types.document_type_name', 'ILIKE', '%' . $request->document_type_name . '%');
-        }
+            if ($request->filled('document_type_name')) {
+                $q->orWhere('document_types.document_type_name', 'ILIKE', '%' . $request->document_type_name . '%');
+            }
 
-        if ($request->filled('category_name')) {
-            $query->where('categories.category_name', 'ILIKE', '%' . $request->category_name . '%');
-        }
+            if ($request->filled('category_name')) {
+                $q->orWhere('categories.category_name', 'ILIKE', '%' . $request->category_name . '%');
+            }
+        });
+
 
         $results = $query->get();
 
-        // Append full doc URL
         $results = $results->map(function ($document) {
             $document->documentFileUrl = $document->document_file
                 ? asset('storage/' . $document->document_file)
@@ -243,6 +312,7 @@ class AccountantReportController extends Controller
             'data' => $results,
             'statusCode' => 200
         ]);
+
     }
 
 
