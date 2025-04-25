@@ -44,7 +44,8 @@ class AccountantReportController extends Controller
         }
 
         $weeklyData = DB::table('document_forms')
-            ->selectRaw("TO_CHAR(created_at, 'IYYY-IW') AS week, SUM(amount) AS total_amount")
+            // ->selectRaw("TO_CHAR(created_at, 'IYYY-IW') AS week, SUM(amount) AS total_amount")
+            ->selectRaw("TO_CHAR(created_at, 'IYYY-IW') AS week, COUNT(amount) AS total")
             ->whereNotNull('created_at')
             ->groupBy('week')
             ->orderBy('week')
