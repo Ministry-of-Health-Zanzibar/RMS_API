@@ -20,7 +20,8 @@ class AccountantReportController extends Controller
 
 
         $monthlyData = DB::table('document_forms')
-            ->selectRaw("TO_CHAR(created_at, 'YYYY-MM') AS month, SUM(amount) AS total_amount")
+            // ->selectRaw("TO_CHAR(created_at, 'YYYY-MM') AS month, SUM(amount) AS total_amount")
+            ->selectRaw("TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS total")
             ->whereNotNull('created_at')
             ->groupBy('month')
             ->orderBy('month')
