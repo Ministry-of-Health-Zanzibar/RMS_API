@@ -134,7 +134,7 @@ class permission_info extends Seeder
             'Update Document Form',
             'Delete Document Form',
             'View Document Form',
-            'View Report'
+            'View Report',
         ];
 
         foreach ($permissions as $permission) {
