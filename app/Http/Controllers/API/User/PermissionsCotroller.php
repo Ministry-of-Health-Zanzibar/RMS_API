@@ -16,7 +16,7 @@ class PermissionsCotroller extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Permission|View Permission', ['only' => ['index','show']]);
+        $this->middleware('permission:View Permission|View Permission', ['only' => ['index', 'show']]);
     }
 
     /**
@@ -24,45 +24,44 @@ class PermissionsCotroller extends Controller
      *     path="/api/permissions",
      *     summary="Get a list of permissions",
      *     tags={"permissions"},
-    *     @OA\Response(
-    *         response=200,
-    *         description="Successful operation",
-    *         @OA\Header(
-    *             header="Cache-Control",
-    *             description="Cache control header",
-    *             @OA\Schema(type="string", example="no-cache, private")
-    *         ),
-    *         @OA\Header(
-    *             header="Content-Type",
-    *             description="Content type header",
-    *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
-    *         ),
-    *         @OA\JsonContent(
-    *             type="object",
-    *             @OA\Property(
-    *                 property="data",
-    *                 type="array",
-    *                 @OA\Items(
-    *                     type="object",
-    *                     @OA\Property(property="id", type="integer", example=2),
-    *                     @OA\Property(property="name", type="string", example="Create Permissioin"),
-    *                     @OA\Property(property="isSelected", type="boolean", example="true")
-    *                 )
-    *             ),
-    *             @OA\Property(property="statusCode", type="integer", example=200)
-    *         )
-    *     )
-    * )
-    */
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\Header(
+     *             header="Cache-Control",
+     *             description="Cache control header",
+     *             @OA\Schema(type="string", example="no-cache, private")
+     *         ),
+     *         @OA\Header(
+     *             header="Content-Type",
+     *             description="Content type header",
+     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+     *         ),
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=2),
+     *                     @OA\Property(property="name", type="string", example="Create Permissioin"),
+     *                     @OA\Property(property="isSelected", type="boolean", example="true")
+     *                 )
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     )
+     * )
+     */
     public function index()
     {
-        if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL'))
-        {
-            try{
-                $permission =  Permission::get(['id','name']);
+        if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->hasRole('ROLE ACCOUNTANT')) {
+            try {
+                $permission = Permission::get(['id', 'name']);
 
                 $permissions = [];
-                foreach($permission as $item){
+                foreach ($permission as $item) {
                     array_push($permissions, array(
                         'id' => $item->id,
                         'name' => $item->name,
@@ -71,26 +70,24 @@ class PermissionsCotroller extends Controller
                 }
 
 
-                $respose =[
+                $respose = [
                     'data' => $permissions,
-                    'statusCode'=> 200
+                    'statusCode' => 200
                 ];
 
                 return response()->json($respose);
-            }
-            catch (Exception $e){
+            } catch (Exception $e) {
                 $errorResponse = [
-                    'message'=>'Internal Server Error',
-                    'error'=>$e->getMessage(),
-                    'statusCode'=> 500
+                    'message' => 'Internal Server Error',
+                    'error' => $e->getMessage(),
+                    'statusCode' => 500
                 ];
 
                 return response()->json($errorResponse);
             }
-        }
-        else{
+        } else {
             return response()
-                ->json(['message' => 'unAuthenticated','status'=> 401]);
+                ->json(['message' => 'unAuthenticated', 'status' => 401]);
         }
     }
 
@@ -119,14 +116,14 @@ class PermissionsCotroller extends Controller
         $user_id = auth()->user()->id;
 
         $model_has_permissions = DB::table('model_has_roles')
-                                    ->join('role_has_permissions','role_has_permissions.role_id','=','model_has_roles.role_id')
-                                    ->join('permissions','permissions.id','=','role_has_permissions.permission_id')
-                                    ->select('permissions.id','permissions.name')
-                                    ->where('model_has_roles.model_id', '=',$user_id)
-                                    ->get();
-        $respose =[
+            ->join('role_has_permissions', 'role_has_permissions.role_id', '=', 'model_has_roles.role_id')
+            ->join('permissions', 'permissions.id', '=', 'role_has_permissions.permission_id')
+            ->select('permissions.id', 'permissions.name')
+            ->where('model_has_roles.model_id', '=', $user_id)
+            ->get();
+        $respose = [
             'data' => $model_has_permissions,
-            'statusCode'=> 200
+            'statusCode' => 200
         ];
 
         return response()->json($respose);
