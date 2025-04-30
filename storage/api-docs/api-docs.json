@@ -8637,6 +8637,98 @@
                     }
                 }
             }
+        },
+        "/api/users/createAccountantSupportUser": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "summary": "Create accountant support user",
+                "operationId": "162ed5c643144fbc8ca5059f5dc72014",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string"
+                                    },
+                                    "middle_name": {
+                                        "type": "string"
+                                    },
+                                    "last_name": {
+                                        "type": "string"
+                                    },
+                                    "phone_no": {
+                                        "type": "string"
+                                    },
+                                    "location_id": {
+                                        "type": "string"
+                                    },
+                                    "date_of_birth": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "gender": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User Account Created Successfully"
+                                        },
+                                        "password": {
+                                            "type": "string",
+                                            "example": "KiaSsbbaRCDWzZVo"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "emailname@sample.com"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 201
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "tags": [
@@ -8739,6 +8831,10 @@
         {
             "name": "userAccounts",
             "description": "userAccounts"
+        },
+        {
+            "name": "users",
+            "description": "users"
         }
     ]
 }

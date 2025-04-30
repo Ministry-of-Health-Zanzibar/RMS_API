@@ -41,6 +41,12 @@ class AccountantRoleSeeder extends Seeder
             'Create Document Form',
             'Update Document Form',
             'Delete Document Form',
+
+            'Create Accountant Support User',
+            'Update Accountant Support User',
+            'Delete Accountant Support User',
+            'View Accountant Support User',
+
             'View Document Form',
             'View Report'
         ];
