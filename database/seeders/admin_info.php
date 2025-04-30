@@ -44,6 +44,11 @@ class admin_info extends Seeder
                 'model_type' => 'App\Models\User',
                 'model_id' => 2,
             ],
+            [
+                'role_id' => 3,
+                'model_type' => 'App\Models\User',
+                'model_id' => 3,
+            ],
         ]);
     }
 

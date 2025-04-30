@@ -16,8 +16,32 @@ class dg_role extends Seeder
     public function run(): void
     {
         $role = Role::create(['name' => 'ROLE DG']);
+        $permissionNames = [
+            'Create ReferralLetter',
+            'Update ReferralLetter',
+            'Delete ReferralLetter',
+            'View ReferralLetter',
 
-        $permissions = Permission::whereIn('name', ['create user', 'edit user'])->get();
+            'Referral Module',
+            'Create Referral',
+            'Update Referral',
+            'Delete Referral',
+            'View Referral',
+
+            'Bill Module',
+            'Create Bill',
+            'Update Bill',
+            'Delete Bill',
+            'View Bill',
+
+            'Payment Module',
+            'Create Payment',
+            'Update Payment',
+            'Delete Payment',
+            'View Payment',
+        ];
+
+        $permissions = Permission::whereIn('name', $permissionNames)->get();
 
         $role->syncPermissions($permissions);
 

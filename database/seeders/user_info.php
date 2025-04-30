@@ -114,6 +114,50 @@ class user_info extends Seeder
         $accountantRole->syncPermissions($accountantPermissions);
         $accountant->givePermissionTo($accountantPermissions);
         $accountant->assignRole($accountantRole);
+
+         // 2. Create Accountant user
+         $dg = User::create([
+            'first_name' => 'DG',
+            'middle_name' => 'STAFF',
+            'last_name' => 'OFFICER',
+            'address' => 'Kilimani',
+            'gender' => 'Male',
+            'phone_no' => '0777783400',
+            'date_of_birth' => '1980-10-30',
+            'email' => 'dg@mohz.go.tz',
+            'password' => bcrypt('dg@123')
+        ]);
+
+        $dgRole = Role::create(['name' => 'ROLE DG']);
+
+        $dgPermissions = Permission::whereIn('name', [
+            'Create ReferralLetter',
+            'Update ReferralLetter',
+            'Delete ReferralLetter',
+            'View ReferralLetter',
+
+            'Referral Module',
+            'Create Referral',
+            'Update Referral',
+            'Delete Referral',
+            'View Referral',
+
+            'Bill Module',
+            'Create Bill',
+            'Update Bill',
+            'Delete Bill',
+            'View Bill',
+
+            'Payment Module',
+            'Create Payment',
+            'Update Payment',
+            'Delete Payment',
+            'View Payment',
+        ])->get();
+
+        $dgRole->syncPermissions($dgPermissions);
+        $dg->givePermissionTo($dgPermissions);
+        $dg->assignRole($dgRole);
     }
 
 }

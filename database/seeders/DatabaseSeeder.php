@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
             user_info::class,
             admin_info::class,
             national_role::class,
-            dg_role::class,
+            //dg_role::class,
             batch_year::class,
             ReasonSeeder::class,
             HospitalSeeder::class,
