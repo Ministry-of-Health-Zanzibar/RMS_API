@@ -136,12 +136,6 @@ class permission_info extends Seeder
             'Delete Document Form',
             'View Document Form',
             'View Report',
-
-
-            'Create Accountant Support User',
-            'Update Accountant Support User',
-            'Delete Accountant Support User',
-            'View Accountant Support User',
         ];
 
         foreach ($permissions as $permission) {

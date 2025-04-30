@@ -116,10 +116,9 @@ class user_info extends Seeder
             'Delete Role',
             'View Role',
 
-            'Create Accountant Support User',
-            'Update Accountant Support User',
-            'Delete Accountant Support User',
-            'View Accountant Support User',
+            'Create User',
+            'Update User',
+            'Delete User',
         ])->get();
 
         $accountantRole->syncPermissions($accountantPermissions);
