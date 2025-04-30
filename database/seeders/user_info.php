@@ -109,6 +109,7 @@ class user_info extends Seeder
 
             'View Report',
             'View Dashboard',
+            'View Permission',
 
             'Create Role',
             'Update Role',
@@ -125,8 +126,8 @@ class user_info extends Seeder
         $accountant->givePermissionTo($accountantPermissions);
         $accountant->assignRole($accountantRole);
 
-         // 2. Create Accountant user
-         $dg = User::create([
+        // 2. Create Accountant user
+        $dg = User::create([
             'first_name' => 'DG',
             'middle_name' => 'STAFF',
             'last_name' => 'OFFICER',
