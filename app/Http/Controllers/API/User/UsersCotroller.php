@@ -71,7 +71,7 @@ class UsersCotroller extends Controller
      */
     public function index()
     {
-        if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE ACCOUNTANT')) {
+        if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->can('View User')) {
 
             try {
                 $staffs = DB::table('users')->where('users.id', '!=', 1)->get();

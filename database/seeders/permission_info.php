@@ -28,6 +28,7 @@ class permission_info extends Seeder
             'Create User',
             'Update User',
             'Delete User',
+            'View User',
 
             'Create Role',
             'Update Role',
