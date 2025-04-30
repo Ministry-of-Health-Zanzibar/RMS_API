@@ -65,10 +65,10 @@ class AccountantInfoSeeder extends Seeder
             'Delete Category',
             'View Category',
 
-            'Create Document Type',
-            'Update Document Type',
-            'Delete Document Type',
-            'View Document Type',
+            // 'Create Document Type',
+            // 'Update Document Type',
+            // 'Delete Document Type',
+            // 'View Document Type',
 
             'Create Document Form',
             'Update Document Form',

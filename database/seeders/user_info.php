@@ -109,6 +109,16 @@ class user_info extends Seeder
 
             'View Report',
             'View Dashboard',
+
+            'Create Role',
+            'Update Role',
+            'Delete Role',
+            'View Role',
+
+            'Create Accountant Support User',
+            'Update Accountant Support User',
+            'Delete Accountant Support User',
+            'View Accountant Support User',
         ])->get();
 
         $accountantRole->syncPermissions($accountantPermissions);

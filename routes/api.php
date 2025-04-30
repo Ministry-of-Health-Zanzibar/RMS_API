@@ -152,4 +152,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('accountant/reports/reportBySourceType', [AccountantReportController::class, 'reportBySourceType']);
     Route::post('accountant/reports/getDocumentFormReportByDate', [AccountantReportController::class, 'getDocumentFormsReport']);
     Route::post('accountant/reports/searchReportByParameter', [AccountantReportController::class, 'searchReportByParameter']);
+
+    // Create Accountant Support User
+    Route::post('users/createAccountantSupportUser', [App\Http\Controllers\API\User\UsersCotroller::class, 'createAccountantSupportUser']);
+
 });

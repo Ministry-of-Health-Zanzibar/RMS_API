@@ -808,6 +808,12 @@
                                                     "year": {
                                                         "type": "string"
                                                     },
+                                                    "document": {
+                                                        "type": "string"
+                                                    },
+                                                    "documentFileUrl": {
+                                                        "type": "string"
+                                                    },
                                                     "source_type_id": {
                                                         "type": "integer"
                                                     },
@@ -869,7 +875,7 @@
                                     "year": {
                                         "type": "string"
                                     },
-                                    "document": {
+                                    "document_file": {
                                         "type": "string"
                                     },
                                     "source_type_id": {
@@ -969,6 +975,9 @@
                                                 "year": {
                                                     "type": "string"
                                                 },
+                                                "documentFileUrl": {
+                                                    "type": "string"
+                                                },
                                                 "source_type_id": {
                                                     "type": "integer"
                                                 },
@@ -1000,89 +1009,6 @@
                                                 }
                                             },
                                             "type": "object"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "tags": [
-                    "documentForms"
-                ],
-                "summary": "Update document form",
-                "operationId": "3fc8291928d6528268501e7aaf29fcdc",
-                "parameters": [
-                    {
-                        "name": "documentFormId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "payee_name": {
-                                                        "type": "string"
-                                                    },
-                                                    "amount": {
-                                                        "type": "integer"
-                                                    },
-                                                    "tin_number": {
-                                                        "type": "string"
-                                                    },
-                                                    "year": {
-                                                        "type": "string"
-                                                    },
-                                                    "document": {
-                                                        "type": "string"
-                                                    },
-                                                    "source_type_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "category_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "document_type_id": {
-                                                        "type": "integer"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
                                         },
                                         "statusCode": {
                                             "type": "integer",
@@ -1140,6 +1066,91 @@
                                         },
                                         "statusCode": {
                                             "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/documentForms/update/{documentFormId}": {
+            "post": {
+                "tags": [
+                    "documentForms"
+                ],
+                "summary": "Update document form",
+                "operationId": "de8c27b2c134f527103252405ffdb131",
+                "parameters": [
+                    {
+                        "name": "documentFormId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "payee_name": {
+                                                        "type": "string"
+                                                    },
+                                                    "amount": {
+                                                        "type": "integer"
+                                                    },
+                                                    "tin_number": {
+                                                        "type": "string"
+                                                    },
+                                                    "year": {
+                                                        "type": "string"
+                                                    },
+                                                    "document_file": {
+                                                        "type": "string"
+                                                    },
+                                                    "source_type_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "category_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "document_type_id": {
+                                                        "type": "integer"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
                                         }
                                     },
                                     "type": "object"
@@ -8626,6 +8637,98 @@
                     }
                 }
             }
+        },
+        "/api/users/createAccountantSupportUser": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "summary": "Create accountant support user",
+                "operationId": "162ed5c643144fbc8ca5059f5dc72014",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string"
+                                    },
+                                    "middle_name": {
+                                        "type": "string"
+                                    },
+                                    "last_name": {
+                                        "type": "string"
+                                    },
+                                    "phone_no": {
+                                        "type": "string"
+                                    },
+                                    "location_id": {
+                                        "type": "string"
+                                    },
+                                    "date_of_birth": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "gender": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User Account Created Successfully"
+                                        },
+                                        "password": {
+                                            "type": "string",
+                                            "example": "KiaSsbbaRCDWzZVo"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "emailname@sample.com"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 201
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "tags": [
@@ -8728,6 +8831,10 @@
         {
             "name": "userAccounts",
             "description": "userAccounts"
+        },
+        {
+            "name": "users",
+            "description": "users"
         }
     ]
 }
