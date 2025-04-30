@@ -57,7 +57,7 @@ class RolesCotroller extends Controller
      */
     public function index()
     {
-        if (auth()->user()->hasRole('ROLE ADMIN')) {
+        if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE ACCOUNTANT')) {
             try {
                 $roles = DB::table('roles')
                     ->select('roles.*')
