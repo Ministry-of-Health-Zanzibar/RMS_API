@@ -11,7 +11,7 @@ class AccountantReportController extends Controller
     public function reportPerMonthly()
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Report')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -36,7 +36,7 @@ class AccountantReportController extends Controller
     public function reportPerWeekly()
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Report')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -62,7 +62,7 @@ class AccountantReportController extends Controller
     {
 
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Report')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -88,7 +88,7 @@ class AccountantReportController extends Controller
     {
 
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Report')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -115,7 +115,7 @@ class AccountantReportController extends Controller
     public function getDocumentFormsReport(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Report')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -174,7 +174,7 @@ class AccountantReportController extends Controller
     public function searchReportByParameter(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Report')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403

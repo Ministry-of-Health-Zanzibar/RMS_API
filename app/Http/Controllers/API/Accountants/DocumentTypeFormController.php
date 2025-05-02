@@ -68,7 +68,7 @@ class DocumentTypeFormController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Document Type')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('View Document Type')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -170,7 +170,7 @@ class DocumentTypeFormController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('Create Document Type')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('Create Document Type')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -269,7 +269,7 @@ class DocumentTypeFormController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Document Type')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('View Document Type')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -376,7 +376,7 @@ class DocumentTypeFormController extends Controller
     public function updateDocumentForm(Request $request, string $id)
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('Update Document Type')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('Update Document Type')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -470,7 +470,7 @@ class DocumentTypeFormController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('Delete Document Type')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('Delete Document Type')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
