@@ -71,6 +71,65 @@ class user_info extends Seeder
         $admin->assignRole($adminRole);
 
         // 2. Create Accountant user
+        // $accountant = User::create([
+        //     'first_name' => 'Accountant',
+        //     'middle_name' => 'Accountant',
+        //     'last_name' => 'Accountant',
+        //     'address' => 'Kilimani',
+        //     'gender' => 'Male',
+        //     'phone_no' => '0777000003',
+        //     'date_of_birth' => '1990-10-30',
+        //     'email' => 'accountant@mohz.go.tz',
+        //     'password' => bcrypt('accountant@123'),
+        //     'created_by' => 2,
+        // ]);
+
+        // $accountantRole = Role::create(['name' => 'ROLE ACCOUNTANT', 'created_by' => 2]);
+
+        // $accountantPermissions = Permission::whereIn('name', [
+        //     'Accountant Module',
+        //     'Create Source',
+        //     'Update Source',
+        //     'Delete Source',
+        //     'View Source',
+        //     'Create Source Type',
+        //     'Update Source Type',
+        //     'Delete Source Type',
+        //     'View Source Type',
+        //     'Create Category',
+        //     'Update Category',
+        //     'Delete Category',
+        //     'View Category',
+        //     'Create Document Type',
+        //     'Update Document Type',
+        //     'Delete Document Type',
+        //     'View Document Type',
+        //     'Create Document Form',
+        //     'Update Document Form',
+        //     'Delete Document Form',
+        //     'View Document Form',
+
+        //     'View Report',
+        //     'View Dashboard',
+        //     'View Permission',
+
+        //     'Create Role',
+        //     'Update Role',
+        //     'Delete Role',
+        //     'View Role',
+
+        //     'Create User',
+        //     'Update User',
+        //     'Delete User',
+        //     'View User',
+        // ])->get();
+
+        // $accountantRole->syncPermissions($accountantPermissions);
+        // $accountant->givePermissionTo($accountantPermissions);
+        // $accountant->assignRole($accountantRole);
+
+
+        // Create the Accountant user
         $accountant = User::create([
             'first_name' => 'Accountant',
             'middle_name' => 'Accountant',
@@ -84,9 +143,11 @@ class user_info extends Seeder
             'created_by' => 2,
         ]);
 
-        $accountantRole = Role::create(['name' => 'ROLE ACCOUNTANT', 'created_by' => 2]);
+        // Create the Accountant role
+        $accountantRole = Role::firstOrCreate(['name' => 'ROLE ACCOUNTANT'], ['created_by' => 2]);
 
-        $accountantPermissions = Permission::whereIn('name', [
+        // Define all permissions for Accountant
+        $permissions = [
             'Accountant Module',
             'Create Source',
             'Update Source',
@@ -108,22 +169,27 @@ class user_info extends Seeder
             'Update Document Form',
             'Delete Document Form',
             'View Document Form',
-
             'View Report',
             'View Dashboard',
             'View Permission',
-
             'Create Role',
             'Update Role',
             'Delete Role',
             'View Role',
-
             'Create User',
             'Update User',
             'Delete User',
             'View User',
-        ])->get();
+        ];
 
+        // Create permissions if they don't exist and collect them
+        $accountantPermissions = collect();
+        foreach ($permissions as $permName) {
+            $permission = Permission::firstOrCreate(['name' => $permName]);
+            $accountantPermissions->push($permission);
+        }
+
+        // Assign permissions to role and user
         $accountantRole->syncPermissions($accountantPermissions);
         $accountant->givePermissionTo($accountantPermissions);
         $accountant->assignRole($accountantRole);
