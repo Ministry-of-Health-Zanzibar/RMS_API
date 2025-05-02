@@ -17,6 +17,9 @@ class SourceTypeController extends Controller
         $this->middleware('auth:sanctum');
         $this->middleware('permission:View Source Type|Create Source Type|View Source Type|Update Source Type|Delete Source Type', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
     }
+
+
+
     /**
      * Display a listing of the resource.
      */
@@ -442,5 +445,80 @@ class SourceTypeController extends Controller
             'message' => 'Source type unblocked successfully',
             'statusCode' => 200,
         ], 200);
+    }
+
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/sourceTypes/source/{sourceName}",
+     *     summary="Get all source types by source type name",
+     *     tags={"sourceTypes"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\Header(
+     *             header="Cache-Control",
+     *             description="Cache control header",
+     *             @OA\Schema(type="string", example="no-cache, private")
+     *         ),
+     *         @OA\Header(
+     *             header="Content-Type",
+     *             description="Content type header",
+     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+     *         ),
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="source_type_id", type="integer"),
+     *                     @OA\Property(property="source_type_code", type="string"),
+     *                     @OA\Property(property="source_type_name", type="string"),
+     *                     @OA\Property(property="source_id", type="integer"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="deleted_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     )
+     * )
+     */
+    public function getAllSourceTypesBySourceName(string $sourceName)
+    {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('View Source Type')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // $sourceTypes = SourceType::withTrashed()->get();
+        $sourceTypes = DB::table('source_types')
+            ->join('sources', 'source_types.source_id', '=', 'sources.source_id')
+            ->select(
+                'source_types.*',
+                'sources.source_name'
+            )
+            ->where('sources.source_name', '=', $sourceName)
+            ->get();
+
+
+        if ($sourceTypes) {
+            return response([
+                'data' => $sourceTypes,
+                'statusCode' => 200,
+            ], 200);
+        } else {
+            return response([
+                'message' => 'No data found',
+                'statusCode' => 200,
+            ], 200);
+        }
     }
 }

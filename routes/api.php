@@ -132,6 +132,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // SOURCE TYPE
     Route::resource('sourceTypes', SourceTypeController::class);
+    Route::get('sourceTypes/source/{sourceName}', [SourceTypeController::class, 'getAllSourceTypesBySourceName']);
     Route::patch('sourceTypes/unBlock/{sourceId}', [SourceTypeController::class, 'unBlockSourceType']);
 
     // CATEGORY
