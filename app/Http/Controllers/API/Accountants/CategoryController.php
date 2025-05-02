@@ -58,7 +58,7 @@ class CategoryController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Category')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('View Category')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -119,7 +119,7 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('Create Category')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('Create Category')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -190,7 +190,7 @@ class CategoryController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('View Category')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('View Category')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -258,7 +258,7 @@ class CategoryController extends Controller
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('Update Category')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('Update Category')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -337,7 +337,7 @@ class CategoryController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasRole('ROLE ACCOUNTANT') || !$user->can('Delete Category')) {
+        if (!$user->hasAnyRole(['ROLE ACCOUNTANT', 'ROLE ACCOUNTANT SUPPORT']) || !$user->can('Delete Category')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
