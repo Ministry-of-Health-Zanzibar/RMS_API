@@ -20,14 +20,21 @@ class SourceSeeder extends Seeder
             array(
                 'source_name' => 'SMZ',
                 'source_code' => 'XJSJJD765Z',
-                'created_by' => '1',
+                'created_by' => '2',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),
             array(
                 'source_name' => 'PRIVATE',
                 'source_code' => 'MDJS527JHS',
-                'created_by' => '1',
+                'created_by' => '2',
+                'created_at' => \Carbon\Carbon::now(),
+                'updated_at' => \Carbon\Carbon::now()
+            ),
+            array(
+                'source_name' => 'UNICEF',
+                'source_code' => 'MDJS927JHS',
+                'created_by' => '2',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),
