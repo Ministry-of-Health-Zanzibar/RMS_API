@@ -20,14 +20,28 @@ class DocumentTypeSeeder extends Seeder
             array(
                 'document_type_name' => 'Voucher',
                 'document_type_code' => 'BXKDN67DJSBD',
-                'created_by' => '1',
+                'created_by' => 2,
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),
             array(
-                'document_type_name' => 'Dodoso',
+                'document_type_name' => 'Dokezo',
                 'document_type_code' => 'XNMDLSHDO9',
-                'created_by' => '1',
+                'created_by' => 2,
+                'created_at' => \Carbon\Carbon::now(),
+                'updated_at' => \Carbon\Carbon::now()
+            ),
+            array(
+                'document_type_name' => 'Mfuko Mkuu',
+                'document_type_code' => 'XNMD2SHDO9',
+                'created_by' => 2,
+                'created_at' => \Carbon\Carbon::now(),
+                'updated_at' => \Carbon\Carbon::now()
+            ),
+            array(
+                'document_type_name' => 'Ubani',
+                'document_type_code' => 'XNMPLSHDO9',
+                'created_by' => 2,
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),

@@ -71,10 +71,13 @@ class UsersCotroller extends Controller
      */
     public function index()
     {
-        if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->can('View User')) {
+        if (auth()->user()->hasRole('ROLE ADMIN')) {
 
             try {
-                $staffs = DB::table('users')->where('users.id', '!=', 1)->get();
+                $staffs = DB::table('users')
+                    ->where('users.id', '!=', 1)
+                    ->where('users.created_by', '=', Auth::id())
+                    ->get();
 
                 $response = [
                     'data' => $staffs,
@@ -101,6 +104,35 @@ class UsersCotroller extends Controller
                     ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
                     ->select('users.id', 'users.first_name', 'users.middle_name', 'users.last_name', 'users.email', 'users.phone_no', 'users.address', 'users.gender', 'users.date_of_birth', 'users.deleted_at', 'roles.name as role_name', 'roles.id as role_id')
                     ->where('model_has_roles.role_id', '!=', 1)
+                    ->where('users.created_by', '=', Auth::id())
+                    ->where('roles.name', '!=', 'ROLE NATIONAL')
+                    ->get();
+
+                $response = [
+                    'data' => $staffs,
+                    'statusCode' => 200
+                ];
+
+                return response()->json($response);
+            } catch (Exception $e) {
+                $errorResponse = [
+                    'message' => 'Internal Server Error',
+                    'error' => $e->getMessage(),
+                    'statusCode' => 500
+                ];
+
+                return response()->json($errorResponse);
+            }
+
+        } else if (auth()->user()->hasRole('ROLE ACCOUNTANT')) {
+
+            try {
+                $staffs = DB::table('users')
+                    ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+                    ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                    ->select('users.id', 'users.first_name', 'users.middle_name', 'users.last_name', 'users.email', 'users.phone_no', 'users.address', 'users.gender', 'users.date_of_birth', 'users.deleted_at', 'roles.name as role_name', 'roles.id as role_id')
+                    ->where('model_has_roles.role_id', '!=', 1)
+                    ->where('users.created_by', '=', 2)
                     ->where('roles.name', '!=', 'ROLE NATIONAL')
                     ->get();
 
@@ -199,7 +231,8 @@ class UsersCotroller extends Controller
                         'date_of_birth' => date('Y-m-d', strtotime($request->date_of_birth)),
                         'email' => $request->email,
                         'password' => Hash::make($auto_id),
-                        'login_status' => '0'
+                        'login_status' => '0',
+                        'created_by' => Auth::id(),
                     ]);
 
                     $users->assignRole($request->role_id);

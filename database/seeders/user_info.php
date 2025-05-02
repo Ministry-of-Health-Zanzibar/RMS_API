@@ -59,10 +59,11 @@ class user_info extends Seeder
             'phone_no' => '0777000001',
             'date_of_birth' => '1990-10-30',
             'email' => 'info@mohz.go.tz',
-            'password' => bcrypt('admin@123')
+            'password' => bcrypt('admin@123'),
+            'created_by' => 1,
         ]);
 
-        $adminRole = Role::create(['name' => 'ROLE ADMIN']);
+        $adminRole = Role::create(['name' => 'ROLE ADMIN', 'created_by' => 1]);
         $allPermissions = Permission::pluck('id')->all();
 
         $adminRole->syncPermissions($allPermissions);
@@ -79,10 +80,11 @@ class user_info extends Seeder
             'phone_no' => '0777000003',
             'date_of_birth' => '1990-10-30',
             'email' => 'accountant@mohz.go.tz',
-            'password' => bcrypt('accountant@123')
+            'password' => bcrypt('accountant@123'),
+            'created_by' => 2,
         ]);
 
-        $accountantRole = Role::create(['name' => 'ROLE ACCOUNTANT']);
+        $accountantRole = Role::create(['name' => 'ROLE ACCOUNTANT', 'created_by' => 2]);
 
         $accountantPermissions = Permission::whereIn('name', [
             'Accountant Module',
@@ -136,10 +138,11 @@ class user_info extends Seeder
             'phone_no' => '0777783400',
             'date_of_birth' => '1980-10-30',
             'email' => 'dg@mohz.go.tz',
-            'password' => bcrypt('dg@123')
+            'password' => bcrypt('dg@123'),
+            'created_by' => 1,
         ]);
 
-        $dgRole = Role::create(['name' => 'ROLE DG']);
+        $dgRole = Role::create(['name' => 'ROLE DG', 'created_by' => 1]);
 
         $dgPermissions = Permission::whereIn('name', [
             'Create ReferralLetter',

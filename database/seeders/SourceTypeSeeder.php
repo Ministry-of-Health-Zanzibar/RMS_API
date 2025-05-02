@@ -21,7 +21,7 @@ class SourceTypeSeeder extends Seeder
                 'source_type_name' => 'Elimu ya Afya',
                 'source_type_code' => 'XJSOJD7W5Z',
                 'source_id' => 3,
-                'created_by' => '2',
+                'created_by' => 2,
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),
@@ -29,7 +29,7 @@ class SourceTypeSeeder extends Seeder
                 'source_type_name' => 'EPI',
                 'source_type_code' => 'MDJS527JHQ',
                 'source_id' => 3,
-                'created_by' => '2',
+                'created_by' => 2,
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),
@@ -37,7 +37,7 @@ class SourceTypeSeeder extends Seeder
                 'source_type_name' => 'MAZINGIRA',
                 'source_type_code' => 'MDJSS27JHS',
                 'source_id' => 3,
-                'created_by' => '2',
+                'created_by' => 2,
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),
@@ -45,7 +45,7 @@ class SourceTypeSeeder extends Seeder
                 'source_type_name' => 'UKIMWI',
                 'source_type_code' => 'MDJMS27JHS',
                 'source_id' => 3,
-                'created_by' => '2',
+                'created_by' => 2,
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),
@@ -53,7 +53,7 @@ class SourceTypeSeeder extends Seeder
                 'source_type_name' => 'KINGA',
                 'source_type_code' => 'MDJSKN27JHS',
                 'source_id' => 3,
-                'created_by' => '2',
+                'created_by' => 2,
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),
@@ -61,7 +61,7 @@ class SourceTypeSeeder extends Seeder
                 'source_type_name' => 'MIPANGO',
                 'source_type_code' => 'MDXBD27JHS',
                 'source_id' => 3,
-                'created_by' => '2',
+                'created_by' => 2,
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),
@@ -69,7 +69,7 @@ class SourceTypeSeeder extends Seeder
                 'source_type_name' => 'UTUMISHI',
                 'source_type_code' => 'MDJVC27JHS',
                 'source_id' => 3,
-                'created_by' => '2',
+                'created_by' => 2,
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),
@@ -77,7 +77,7 @@ class SourceTypeSeeder extends Seeder
                 'source_type_name' => 'MNAZI MMOJA',
                 'source_type_code' => 'MDJV237JHS',
                 'source_id' => 3,
-                'created_by' => '2',
+                'created_by' => 2,
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),

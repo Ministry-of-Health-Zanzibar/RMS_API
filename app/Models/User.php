@@ -31,14 +31,15 @@ class User extends Authenticatable
         'email',
         'gender',
         'password',
-        'login_status'
+        'login_status',
+        'created_by'
     ];
 
     /**
-    * The attributes that should be mutated to dates.
-    *
-    * @var array
-    */
+     * The attributes that should be mutated to dates.
+     *
+     * @var array
+     */
     protected $dates = ['deleted_at'];
 
     /**
@@ -63,7 +64,7 @@ class User extends Authenticatable
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-        ->logOnly(['*']);
+            ->logOnly(['*']);
         // Chain fluent methods for configuration options
     }
 

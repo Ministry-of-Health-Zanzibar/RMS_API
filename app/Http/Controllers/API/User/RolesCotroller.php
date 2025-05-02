@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\API\Setup\GeneralController;
+use Auth;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Exception;
@@ -63,6 +64,7 @@ class RolesCotroller extends Controller
                     ->select('roles.*')
                     ->whereNotIn('name', ['ROLE ADMIN'])
                     ->orderBy('id', 'asc')
+                    ->where("roles.created_by", '=', Auth::id())
                     ->get();
 
                 $respose = [
@@ -165,7 +167,8 @@ class RolesCotroller extends Controller
                 try {
                     $role = Role::create([
                         'name' => $rolename,
-                        'guard_name' => 'web'
+                        'guard_name' => 'web',
+                        'created_by' => Auth::id(),
                     ]);
 
                     $role->syncPermissions($permission);
@@ -446,4 +449,6 @@ class RolesCotroller extends Controller
                 ->json(['message' => 'unAuthenticated', 'statusCode' => 401]);
         }
     }
+
+
 }

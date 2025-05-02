@@ -15,7 +15,7 @@ class national_role extends Seeder
      */
     public function run(): void
     {
-        $role = Role::create(['name' => 'ROLE NATIONAL']);
+        $role = Role::create(['name' => 'ROLE NATIONAL', 'created_by' => 1]);
 
         $permissions = Permission::pluck('id', 'id')->all();
 
