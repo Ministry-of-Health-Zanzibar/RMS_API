@@ -1978,6 +1978,81 @@
                 }
             }
         },
+        "/api/sourceTypes/source/{sourceName}": {
+            "get": {
+                "tags": [
+                    "sourceTypes"
+                ],
+                "summary": "Get all source types by source type name",
+                "operationId": "b276351c0a7cd6dda4566256478f55cc",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "source_type_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "source_type_code": {
+                                                        "type": "string"
+                                                    },
+                                                    "source_type_name": {
+                                                        "type": "string"
+                                                    },
+                                                    "source_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "deleted_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/bills": {
             "get": {
                 "tags": [
@@ -4312,14 +4387,6 @@
                                     "letter_text": {
                                         "type": "string"
                                     },
-                                    "start_date": {
-                                        "type": "string",
-                                        "format": "date-time"
-                                    },
-                                    "end_date": {
-                                        "type": "string",
-                                        "format": "date-time"
-                                    },
                                     "status": {
                                         "type": "string"
                                     }
@@ -4602,6 +4669,85 @@
                                         },
                                         "statusCode": {
                                             "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/referralLetters/comment/referral/{referralId}": {
+            "get": {
+                "tags": [
+                    "referralLetters"
+                ],
+                "summary": "Get all referral comment by referral id",
+                "operationId": "d0c0ed9ab7a4abca4c5d6fcfc1a5c8c1",
+                "parameters": [
+                    {
+                        "name": "referralId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "referral_letter_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "letter_text": {
+                                                        "type": "string"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "deleted_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
                                         }
                                     },
                                     "type": "object"
@@ -8637,98 +8783,6 @@
                     }
                 }
             }
-        },
-        "/api/users/createAccountantSupportUser": {
-            "post": {
-                "tags": [
-                    "users"
-                ],
-                "summary": "Create accountant support user",
-                "operationId": "162ed5c643144fbc8ca5059f5dc72014",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "first_name": {
-                                        "type": "string"
-                                    },
-                                    "middle_name": {
-                                        "type": "string"
-                                    },
-                                    "last_name": {
-                                        "type": "string"
-                                    },
-                                    "phone_no": {
-                                        "type": "string"
-                                    },
-                                    "location_id": {
-                                        "type": "string"
-                                    },
-                                    "date_of_birth": {
-                                        "type": "string",
-                                        "format": "date"
-                                    },
-                                    "email": {
-                                        "type": "string"
-                                    },
-                                    "gender": {
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "User Account Created Successfully"
-                                        },
-                                        "password": {
-                                            "type": "string",
-                                            "example": "KiaSsbbaRCDWzZVo"
-                                        },
-                                        "email": {
-                                            "type": "string",
-                                            "example": "emailname@sample.com"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 201
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     },
     "tags": [
@@ -8831,10 +8885,6 @@
         {
             "name": "userAccounts",
             "description": "userAccounts"
-        },
-        {
-            "name": "users",
-            "description": "users"
         }
     ]
 }

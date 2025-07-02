@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\ReferralLetters;
 
 use App\Models\Referral;
 use App\Models\ReferralType;
+use DB;
 use Illuminate\Http\Request;
 use App\Models\ReferralLetter;
 use App\Http\Controllers\Controller;
@@ -439,5 +440,84 @@ class ReferralLettersController extends Controller
             'message' => 'Referral_letter unblocked successfully',
             'statusCode' => 200,
         ], 200);
+    }
+
+
+
+    // Get comment by referral id
+    /**
+     * @OA\Get(
+     *     path="/api/referralLetters/comment/referral/{referralId}",
+     *     summary="Get all referral comment by referral id",
+     *     tags={"referralLetters"},
+     *  @OA\Parameter(
+     *         name="referralId",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\Header(
+     *             header="Cache-Control",
+     *             description="Cache control header",
+     *             @OA\Schema(type="string", example="no-cache, private")
+     *         ),
+     *         @OA\Header(
+     *             header="Content-Type",
+     *             description="Content type header",
+     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+     *         ),
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="referral_letter_id", type="integer"),
+     *                     @OA\Property(property="letter_text", type="string"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="deleted_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     )
+     * )
+     */
+    public function getReferralCommentByReferralId(int $referralId)
+    {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View ReferralLetter')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $comment = DB::table('referral_letters')
+            ->join('referrals', 'referrals.referral_id', '=', 'referral_letters.referral_id')
+            ->select(
+                "referral_letters.referral_letter_id",
+                "referral_letters.letter_text",
+            )
+            ->where('referrals.referral_id', '=', $referralId)
+            ->first();
+
+
+        if ($comment) {
+            return response([
+                'data' => $comment,
+                'statusCode' => 200,
+            ], 200);
+        } else {
+            return response([
+                'message' => 'No data found',
+                'statusCode' => 500,
+            ], 500);
+        }
     }
 }

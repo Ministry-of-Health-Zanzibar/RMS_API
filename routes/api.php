@@ -79,6 +79,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     //REFERRAL LETTERS
     Route::resource('referralLetters', ReferralLettersController::class);
+    Route::get('referralLetters/comment/referral/{referralId}', [ReferralLettersController::class, 'getReferralCommentByReferralId']);
     Route::patch('referralLetters/unBlock/{referralLettersId}', [ReferralLettersController::class, 'unBlockHospital']);
 
     // PATIENTS APIs
