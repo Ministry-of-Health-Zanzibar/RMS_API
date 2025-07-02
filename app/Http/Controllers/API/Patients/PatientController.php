@@ -521,49 +521,8 @@ class PatientController extends Controller
         $patient->insurances = $patient->insurances ?? [];
         return response()->json($patient);
     }
-    /*
-    public function getAllPatientsWithInsurance($patient_id)
-    {
-        $patient = Patient::with('insurances')
-            ->where('patient_id', $patient_id)
-            ->first();
 
-        if (!$patient) {
-            return response()->json(['message' => 'No Patient found'], 404);
-        }
 
-        $formatted = [
-            'patient_id' => $patient->patient_id,
-            'name' => $patient->name,
-            'date_of_birth' => $patient->date_of_birth,
-            'gender' => $patient->gender,
-            'phone' => $patient->phone,
-            'location' => $patient->location,
-            'job' => $patient->job,
-            'position' => $patient->position,
-            'referral_letter_file' => $patient->referral_letter_file,
-            'created_by' => $patient->created_by,
-            'created_at' => $patient->created_at,
-            'updated_at' => $patient->updated_at,
-            'deleted_at' => $patient->deleted_at,
-            'insurances' => $patient->insurances->map(function ($insurance) {
-                return [
-                    'insurance_id' => $insurance->insurance_id,
-                    'insurance_code' => $insurance->insurance_code,
-                    'patient_id' => $insurance->patient_id,
-                    'insurance_provider_name' => $insurance->insurance_provider_name,
-                    'card_number' => $insurance->card_number,
-                    'valid_until' => $insurance->valid_until,
-                    'created_by' => $insurance->created_by,
-                    'created_at' => $insurance->created_at,
-                    'updated_at' => $insurance->updated_at,
-                    'deleted_at' => $insurance->deleted_at,
-                ];
-            }),
-        ];
 
-        return response()->json($formatted);
-    }
 
- */
 }

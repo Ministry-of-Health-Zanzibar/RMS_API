@@ -2491,6 +2491,107 @@
                 }
             }
         },
+        "/api/bills/getPatientBillAndPaymentByBillId/{billId}": {
+            "get": {
+                "tags": [
+                    "bills"
+                ],
+                "summary": "Get all bills, patient and payment",
+                "operationId": "681be629b61fe24d68f65c60ac2edeeb",
+                "parameters": [
+                    {
+                        "name": "billId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "bill_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "referral_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "amount": {
+                                                        "type": "number",
+                                                        "format": "double"
+                                                    },
+                                                    "notes": {
+                                                        "type": "string"
+                                                    },
+                                                    "sent_to": {
+                                                        "type": "string"
+                                                    },
+                                                    "sent_date": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "bill_file": {
+                                                        "type": "string"
+                                                    },
+                                                    "created_by": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "deleted_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/hospitals": {
             "get": {
                 "tags": [
