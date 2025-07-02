@@ -15,8 +15,6 @@ return new class extends Migration {
             $table->unsignedBigInteger('referral_id');  // Foreign key from the referrals table
             $table->string('referral_letter_code')->unique();
             $table->text('letter_text');
-            $table->date('start_date');
-            $table->date('end_date');
             $table->boolean('is_printed')->default(false);  // Default value for 'signed' is false
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
