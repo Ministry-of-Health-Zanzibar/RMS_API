@@ -50,7 +50,7 @@ class AccountantInfoSeeder extends Seeder
         // $permissions = Permission::pluck('id', 'id')->all();
 
         $permissionNames = [
-            'View Referral Dashboard',
+            'View Dashboard',
             'Create Source',
             'Update Source',
             'Delete Source',

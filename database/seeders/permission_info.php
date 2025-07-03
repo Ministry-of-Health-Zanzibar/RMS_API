@@ -18,8 +18,7 @@ class permission_info extends Seeder
         DB::table('permissions')->delete();
 
         $permissions = [
-
-            'View Dashboard',
+            'View Referral Dashboard',
             'View Permission',
             'System Audit',
             'Report Management',
