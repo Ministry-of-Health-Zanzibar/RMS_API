@@ -7,6 +7,7 @@ use App\Http\Controllers\API\Accountants\DocumentTypeFormController;
 use App\Http\Controllers\API\Accountants\SouceController;
 use App\Http\Controllers\API\Accountants\SourceTypeController;
 use App\Http\Controllers\API\Bills\BillController;
+use App\Http\Controllers\API\Bills\MonthlyBillController;
 use App\Http\Controllers\API\Hospitals\HospitalController;
 use App\Http\Controllers\API\Referrals\ReferralController;
 use App\Http\Controllers\API\ReferralType\ReferralTypeController;
@@ -156,5 +157,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('accountant/reports/getDocumentFormReportByDate', [AccountantReportController::class, 'getDocumentFormsReport']);
     Route::post('accountant/reports/searchReportByParameter', [AccountantReportController::class, 'searchReportByParameter']);
 
-
+    //  MONTHLY BILL APIs
+    Route::resource('monthly-bills', MonthlyBillController::class);
+    Route::patch('monthly-bills/unBlock/{monthlyId}', [MonthlyBillController::class, 'unBlockMonthlyBill']);
 });

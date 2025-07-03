@@ -20,6 +20,7 @@ class permission_info extends Seeder
         $permissions = [
 
             'View Dashboard',
+            'View Referral Dashboard',
             'View Permission',
             'System Audit',
             'Report Management',
@@ -110,6 +111,12 @@ class permission_info extends Seeder
             'Update Treatment',
             'Delete Treatment',
             'View Treatment',
+
+            'Monthly Bill Module',
+            'Create Monthly Bill',
+            'Update Monthly Bill',
+            'Delete Monthly Bill',
+            'View Monthly Bill',
 
             // 'Accountant Module',
             // 'Create Source',
