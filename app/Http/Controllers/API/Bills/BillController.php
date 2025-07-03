@@ -522,6 +522,58 @@ class BillController extends Controller
      *     )
      * )
      */
+    // public function getPatientBillAndPaymentByBillId(int $billId)
+    // {
+    //     $user = auth()->user();
+    //     if (
+    //         !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
+    //         !$user->can('View Patient')
+    //     ) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $data = DB::table('bills')
+    //         ->join('referrals', 'referrals.referral_id', '=', 'bills.referral_id')
+    //         ->join('patients', 'patients.patient_id', '=', 'referrals.patient_id')
+    //         ->leftJoin('payments', 'payments.bill_id', '=', 'bills.bill_id')
+    //         ->where('bills.bill_id', $billId)
+    //         ->select(
+    //             'patients.patient_id',
+    //             'patients.name as patient_name',
+    //             'patients.date_of_birth',
+    //             'patients.gender',
+    //             'patients.phone',
+    //             'patients.location',
+    //             'patients.job',
+    //             'patients.position',
+    //             'bills.bill_id',
+    //             'bills.amount as bill_amount',
+    //             'bills.sent_to',
+    //             'bills.sent_date',
+    //             'bills.bill_status',
+    //             'bills.bill_file',
+    //             'payments.payment_id',
+    //             'payments.amount_paid',
+    //             'payments.payment_method',
+    //             'payments.created_at as payment_date'
+    //         )
+    //         ->get();
+
+    //     if ($data->isEmpty()) {
+    //         return response([
+    //             'message' => 'No data found',
+    //             'statusCode' => 404,
+    //         ], 404);
+    //     }
+
+    //     return response([
+    //         'data' => $data,
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
     public function getPatientBillAndPaymentByBillId(int $billId)
     {
         $user = auth()->user();
@@ -535,10 +587,10 @@ class BillController extends Controller
             ], 403);
         }
 
-        $data = DB::table('bills')
+        // Fetch the bill with patient and referral info
+        $bill = DB::table('bills')
             ->join('referrals', 'referrals.referral_id', '=', 'bills.referral_id')
             ->join('patients', 'patients.patient_id', '=', 'referrals.patient_id')
-            ->leftJoin('payments', 'payments.bill_id', '=', 'bills.bill_id')
             ->where('bills.bill_id', $billId)
             ->select(
                 'patients.patient_id',
@@ -554,25 +606,54 @@ class BillController extends Controller
                 'bills.sent_to',
                 'bills.sent_date',
                 'bills.bill_status',
-                'bills.bill_file',
-                'payments.payment_id',
-                'payments.amount_paid',
-                'payments.payment_method',
-                'payments.created_at as payment_date'
+                'bills.bill_file'
             )
-            ->get();
+            ->first();
 
-        if ($data->isEmpty()) {
+        if (!$bill) {
             return response([
                 'message' => 'No data found',
                 'statusCode' => 404,
             ], 404);
         }
 
+        // Fetch payments for this bill
+        $payments = DB::table('payments')
+            ->where('bill_id', $billId)
+            ->select(
+                'payment_id',
+                'amount_paid',
+                'payment_method',
+                'created_at as payment_date'
+            )
+            ->get();
+
+        // Format response
+        $response = [
+            'bill_id' => $bill->bill_id,
+            'bill_amount' => $bill->bill_amount,
+            'sent_to' => $bill->sent_to,
+            'sent_date' => $bill->sent_date,
+            'bill_status' => $bill->bill_status,
+            'bill_file' => $bill->bill_file,
+            'patient' => [
+                'patient_id' => $bill->patient_id,
+                'name' => $bill->patient_name,
+                'date_of_birth' => $bill->date_of_birth,
+                'gender' => $bill->gender,
+                'phone' => $bill->phone,
+                'location' => $bill->location,
+                'job' => $bill->job,
+                'position' => $bill->position,
+            ],
+            'payments' => $payments,
+        ];
+
         return response([
-            'data' => $data,
+            'data' => $response,
             'statusCode' => 200,
         ], 200);
     }
+
 
 }
