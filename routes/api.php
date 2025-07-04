@@ -118,6 +118,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('bills/getPatientBillAndPaymentByBillId/{billId}', [BillController::class, 'getPatientBillAndPaymentByBillId']);
     Route::patch('bills/unBlock/{billId}', [BillController::class, 'unBlockBill']);
 
+    //  MONTHLY BILL APIs
+    Route::resource('monthly-bills', MonthlyBillController::class);
+    Route::post('monthly-bills/update/{id}', [MonthlyBillController::class, 'updateMonthlyBill']);
+    Route::patch('monthly-bills/unBlock/{monthlyId}', [MonthlyBillController::class, 'unBlockMonthlyBill']);
 
     // REPORT APIs
     Route::get('reports/referrals/{patientId}', [ReportController::class, 'referralReport']);
@@ -159,7 +163,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('accountant/reports/getDocumentFormReportByDate', [AccountantReportController::class, 'getDocumentFormsReport']);
     Route::post('accountant/reports/searchReportByParameter', [AccountantReportController::class, 'searchReportByParameter']);
 
-    //  MONTHLY BILL APIs
-    Route::resource('monthly-bills', MonthlyBillController::class);
-    Route::patch('monthly-bills/unBlock/{monthlyId}', [MonthlyBillController::class, 'unBlockMonthlyBill']);
+
 });

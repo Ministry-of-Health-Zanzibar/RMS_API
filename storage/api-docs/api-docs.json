@@ -2806,77 +2806,6 @@
                     }
                 }
             },
-            "put": {
-                "tags": [
-                    "monthly-bills"
-                ],
-                "summary": "Update monthly-bill",
-                "operationId": "730fb27d13b1fc4068e00a4f67d0ebd0",
-                "parameters": [
-                    {
-                        "name": "monthlyBillId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "current_monthly_bill_amount": {
-                                                        "type": "integer"
-                                                    },
-                                                    "after_audit_monthly_bill_amount": {
-                                                        "type": "integer"
-                                                    },
-                                                    "contact_number": {
-                                                        "type": "string"
-                                                    },
-                                                    "hospital_email": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
             "delete": {
                 "tags": [
                     "monthly-bills"
@@ -2921,6 +2850,83 @@
                                         },
                                         "statusCode": {
                                             "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/monthly-bills/update/{monthlyBillId}": {
+            "post": {
+                "tags": [
+                    "monthly-bills"
+                ],
+                "summary": "Update monthly-bill",
+                "operationId": "49581264dcc181b294c087420f4b81f3",
+                "parameters": [
+                    {
+                        "name": "monthlyBillId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Cache control header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-cache, private"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "Content type header",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/json; charset=UTF-8"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "current_monthly_bill_amount": {
+                                                        "type": "integer"
+                                                    },
+                                                    "after_audit_monthly_bill_amount": {
+                                                        "type": "integer"
+                                                    },
+                                                    "hospital_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "bill_date": {
+                                                        "type": "string",
+                                                        "format": "date"
+                                                    },
+                                                    "bill_file": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
                                         }
                                     },
                                     "type": "object"

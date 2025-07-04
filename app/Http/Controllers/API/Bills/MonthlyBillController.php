@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\Bills;
 
 use App\Http\Controllers\Controller;
 use App\Models\MonthlyBill;
+use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -65,7 +66,14 @@ class MonthlyBillController extends Controller
             ], 403);
         }
 
-        $monthlyBills = MonthlyBill::withTrashed()->get();
+        // $monthlyBills = MonthlyBill::withTrashed()->get();
+        $monthlyBills = DB::table('monthly_bills')
+            ->join('hospitals', 'hospitals.hospital_id', '=', 'monthly_bills.hospital_id')
+            ->select(
+                'monthly_bills.*',
+                'hospitals.hospital_name',
+            )
+            ->get();
 
         if ($monthlyBills) {
             return response([
@@ -223,6 +231,13 @@ class MonthlyBillController extends Controller
                 'statusCode' => 404,
             ]);
         } else {
+            // Append full image URL
+            if ($monthlyBill->bill_file) {
+                $monthlyBill->billUrl = asset('storage/' . $monthlyBill->bill_file);
+            } else {
+                $monthlyBill->billUrl = null;
+            }
+
             return response([
                 'data' => $monthlyBill,
                 'statusCode' => 200,
@@ -235,8 +250,8 @@ class MonthlyBillController extends Controller
      * Update the specified resource in storage.
      */
     /**
-     * @OA\Put(
-     *     path="/api/monthly-bills/{monthlyBillId}",
+     * @OA\Post(
+     *     path="/api/monthly-bills/update/{monthlyBillId}",
      *     summary="Update monthly-bill",
      *     tags={"monthly-bills"},
      *      @OA\Parameter(
@@ -267,8 +282,9 @@ class MonthlyBillController extends Controller
      *                     type="object",
      *                 @OA\Property(property="current_monthly_bill_amount", type="integer"),
      *                 @OA\Property(property="after_audit_monthly_bill_amount", type="integer" ),
-     *                 @OA\Property(property="contact_number", type="string"),
-     *                 @OA\Property(property="hospital_email", type="string"),
+     * @OA\Property(property="hospital_id", type="integer"),
+     *             @OA\Property(property="bill_date", type="date"),
+     *             @OA\Property(property="bill_file", type="string"),
      *                 )
      *             ),
      *             @OA\Property(property="statusCode", type="integer", example=200)
@@ -276,7 +292,7 @@ class MonthlyBillController extends Controller
      *     ),
      * ),
      */
-    public function update(Request $request, string $id)
+    public function updateMonthlyBill(Request $request, string $id)
     {
         $user = auth()->user();
         if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('Update Monthly Bill')) {
@@ -289,36 +305,31 @@ class MonthlyBillController extends Controller
         $data = $request->validate([
             'current_monthly_bill_amount' => ['required', 'numeric'],
             'after_audit_monthly_bill_amount' => ['nullable', 'numeric'],
+            'hospital_id' => ['numeric'],
+            'bill_date' => ['nullable', 'date'],
+            'bill_file' => ['nullable', 'mimes:pdf,doc,docx,jpg,png'],
         ]);
 
-        $monthlyBill = MonthlyBill::find($id);
-
-        if (!$monthlyBill) {
-            return response([
-                'message' => 'MonthlyBill not found',
-                'statusCode' => 404,
-            ]);
-        }
+        // $monthlyBill = MonthlyBill::find($id);
+        $monthlyBill = MonthlyBill::findOrFail($id);
 
 
-        $monthlyBill->update([
-            'current_monthly_bill_amount' => $data['current_monthly_bill_amount'],
-            'after_audit_monthly_bill_amount' => $data['after_audit_monthly_bill_amount'],
-            'created_by' => Auth::id(),
-        ]);
-
-        if ($monthlyBill) {
-            return response([
-                'data' => $monthlyBill,
-                'message' => 'MonthlyBill updated successfully',
-                'statusCode' => 200,
-            ], 201);
+        // Handle file upload if provided
+        if ($request->hasFile('bill_file')) {
+            $path = $request->file('bill_file')->store('documents', 'public');
+            $data['bill_file'] = $path;
         } else {
-            return response([
-                'message' => 'Internal server error',
-                'statusCode' => 500,
-            ], 500);
+            unset($data['bill_file']);
         }
+
+        $data['created_by'] = Auth::id();
+
+        $monthlyBill->update($data);
+
+        return response([
+            'data' => $monthlyBill,
+            'statusCode' => 200,
+        ], 200);
 
     }
 
