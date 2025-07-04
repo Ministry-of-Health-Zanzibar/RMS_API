@@ -45,6 +45,9 @@ class MonthlyBill extends Model
     protected $fillable = [
         'current_monthly_bill_amount',
         'after_audit_monthly_bill_amount',
+        'hospital_id',
+        'bill_date',
+        'bill_file',
         'created_by'
     ];
 

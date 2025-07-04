@@ -94,6 +94,9 @@ class MonthlyBillController extends Controller
      *             type="object",
      *             @OA\Property(property="current_monthly_bill_amount", type="integer"),
      *             @OA\Property(property="after_audit_monthly_bill_amount", type="integer"),
+     *             @OA\Property(property="hospital_id", type="integer"),
+     *             @OA\Property(property="bill_date", type="date"),
+     *             @OA\Property(property="bill_file", type="string"),
      *         )
      *     ),
      *     @OA\Response(
@@ -130,12 +133,25 @@ class MonthlyBillController extends Controller
         $data = $request->validate([
             'current_monthly_bill_amount' => ['required', 'numeric'],
             'after_audit_monthly_bill_amount' => ['nullable', 'numeric'],
+            'hospital_id' => ['numeric'],
+            'bill_date' => ['nullable', 'date'],
+            'bill_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,png', 'max:5120'], // 5MB max
         ]);
+
+
+        // Only handle the file after validation passes
+        $path = null;
+        if (isset($data['bill_file'])) {
+            $path = $data['bill_file']->store('documents', 'public');
+        }
 
 
         $monthlyBill = MonthlyBill::create([
             'current_monthly_bill_amount' => $data['current_monthly_bill_amount'],
             'after_audit_monthly_bill_amount' => $data['after_audit_monthly_bill_amount'],
+            'hospital_id' => $data['hospital_id'],
+            'bill_date' => $data['bill_date'],
+            'bill_file' => $path,
             'created_by' => Auth::id(),
         ]);
 

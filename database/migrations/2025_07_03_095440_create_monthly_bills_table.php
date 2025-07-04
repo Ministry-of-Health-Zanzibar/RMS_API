@@ -14,9 +14,14 @@ return new class extends Migration {
             $table->bigIncrements('monthly_bill_id');
             $table->decimal('current_monthly_bill_amount', 15, 2);
             $table->decimal('after_audit_monthly_bill_amount', 15, 2)->nullable();
+            $table->unsignedBigInteger('hospital_id');
+            $table->date('bill_date');
+            $table->string('bill_file')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('hospital_id')->references('hospital_id')->on('hospitals');
         });
     }
 

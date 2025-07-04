@@ -2680,6 +2680,16 @@
                                     },
                                     "after_audit_monthly_bill_amount": {
                                         "type": "integer"
+                                    },
+                                    "hospital_id": {
+                                        "type": "integer"
+                                    },
+                                    "bill_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "bill_file": {
+                                        "type": "string"
                                     }
                                 },
                                 "type": "object"
