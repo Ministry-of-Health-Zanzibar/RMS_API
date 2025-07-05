@@ -415,7 +415,7 @@ class ReferralController extends Controller
             'reason_id' => ['required', 'numeric'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date'],
-            'status' => ['required', 'date'],
+            // 'status' => ['required', 'date'],
         ]);
 
 
@@ -427,7 +427,7 @@ class ReferralController extends Controller
             'reason_id' => $data['reason_id'],
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'],
-            'status' => $data['status'],
+            // 'status' => $data['status'],
             'confirmed_by' => Auth::id(),
             'created_by' => Auth::id(),
         ]);

@@ -59,7 +59,7 @@ class MonthlyBillController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('View Monthly Bill')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Monthly Bill')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -131,7 +131,7 @@ class MonthlyBillController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('Create Monthly Bill')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Create Monthly Bill')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -216,7 +216,7 @@ class MonthlyBillController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('View Monthly Bill')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Monthly Bill')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -295,7 +295,7 @@ class MonthlyBillController extends Controller
     public function updateMonthlyBill(Request $request, string $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('Update Monthly Bill')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Update Monthly Bill')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -371,7 +371,7 @@ class MonthlyBillController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('Delete Monthly Bill')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Delete Monthly Bill')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403

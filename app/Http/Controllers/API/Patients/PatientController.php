@@ -154,7 +154,7 @@ class PatientController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string'],
-            'date_of_birth' => ['nullable', 'date'],
+            'date_of_birth' => ['nullable', 'string'],
             'gender' => ['nullable', 'string'],
             'phone' => ['nullable', 'string'],
             'location' => ['nullable', 'string'],
@@ -181,7 +181,8 @@ class PatientController extends Controller
         // Create Patient
         $patient = Patient::create([
             'name' => $data['name'],
-            'date_of_birth' => date('Y-m-d', strtotime($data['date_of_birth'])),
+            // 'date_of_birth' => date('Y-m-d', strtotime($data['date_of_birth'])),
+             'date_of_birth' => $data['date_of_birth'],
             'gender' => $data['gender'],
             'phone' => $data['phone'],
             'location' => $data['location'],

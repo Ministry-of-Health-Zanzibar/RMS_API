@@ -128,7 +128,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('reports/referralsByType', [ReportController::class, 'referralReportByReferralType']);
     Route::get('reports/referralsByReason', [ReportController::class, 'referralsReportByReason']);
     Route::get('reports/referralByHospital', [ReportController::class, 'referralReportByHospital']);
-    Route::get('reports/getBillsBetweenDates', [ReportController::class, 'getBillsBetweenDates']);
+    Route::post('reports/getBillsBetweenDates', [ReportController::class, 'getBillsBetweenDates']);
     Route::get('reports/searchReferralReport', [ReportController::class, 'searchReferralReport']);
 
     // PAYMENT  API
