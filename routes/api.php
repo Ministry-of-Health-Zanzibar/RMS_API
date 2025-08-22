@@ -122,6 +122,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('monthly-bills', MonthlyBillController::class);
     Route::post('monthly-bills/update/{id}', [MonthlyBillController::class, 'updateMonthlyBill']);
     Route::patch('monthly-bills/unBlock/{monthlyId}', [MonthlyBillController::class, 'unBlockMonthlyBill']);
+    Route::get('monthly-bills/by-hospital/{hospitalId}', [MonthlyBillController::class, 'viewBillsByHospitalId']);
 
     // REPORT APIs
     Route::get('reports/referrals/{patientId}', [ReportController::class, 'referralReport']);
