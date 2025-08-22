@@ -66,13 +66,15 @@ class MonthlyBillController extends Controller
             ], 403);
         }
 
-        // $monthlyBills = MonthlyBill::withTrashed()->get();
         $monthlyBills = DB::table('monthly_bills')
             ->join('hospitals', 'hospitals.hospital_id', '=', 'monthly_bills.hospital_id')
             ->select(
-                'monthly_bills.*',
                 'hospitals.hospital_name',
+                'monthly_bills.hospital_id',
+                DB::raw('SUM(current_monthly_bill_amount) as total_monthly_bill'),
+                DB::raw('SUM(after_audit_monthly_bill_amount) as total_after_audit_monthly_bill')
             )
+            ->groupBy('monthly_bills.hospital_id', 'hospitals.hospital_name')
             ->get();
 
         if ($monthlyBills) {
