@@ -354,7 +354,8 @@ class ReportController extends Controller
                 'hospitals.hospital_address',
                 'referral_types.referral_type_name',
                 'reasons.referral_reason_name',
-                'insurances.insurance_provider_name'
+                'insurances.insurance_provider_name',
+               
             );
 
         // Optional filters
