@@ -58,7 +58,7 @@ class ReferralTypeController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('View ReferralType')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF','ROLE DG OFFICER']) || !$user->can('View ReferralType')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
