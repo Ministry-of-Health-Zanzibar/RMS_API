@@ -69,6 +69,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //HOSPITALS
     Route::resource('hospitals', HospitalController::class);
     Route::patch('hospitals/unBlock/{hospitalId}', [HospitalController::class, 'unBlockHospital']);
+    Route::get('hospitals/reffered-hospitals', [HospitalController::class, 'getReferredHospitals']);
 
     //REFERRAL TYPE
     Route::resource('referralTypes', ReferralTypeController::class);

@@ -34,30 +34,57 @@ class PaymentController extends Controller
         return response()->json($payments);
     }
 
+    
     /**
      * @OA\Post(
      *     path="/api/payments",
      *     tags={"Payments"},
      *     summary="Create a new payment",
+     *     description="Create a payment for a monthly bill, including optional reference and voucher numbers",
+     *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"bill_id","amount_paid"},
-     *             @OA\Property(property="bill_id", type="integer", example=1),
-     *             @OA\Property(property="amount_paid", type="number", example=5000),
-     *             @OA\Property(property="payment_method", type="string", example="PBZ Bank")
+     *             required={"monthly_bill_id","amount_paid"},
+     *             @OA\Property(property="monthly_bill_id", type="integer", example=1, description="ID of the monthly bill"),
+     *             @OA\Property(property="amount_paid", type="number", format="float", example=5000),
+     *             @OA\Property(property="payment_method", type="string", example="PBZ Bank"),
+     *             @OA\Property(property="reference_number", type="string", example="REF20250822001", description="External payment reference"),
+     *             @OA\Property(property="voucher_number", type="string", example="VCH-00123", description="Internal voucher number")
      *         )
      *     ),
-     *     @OA\Response(response=201, description="Payment created successfully")
+     *     @OA\Response(
+     *         response=201,
+     *         description="Payment created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Payment created successfully."),
+     *             @OA\Property(property="payment", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
      * )
      */
     public function store(Request $request)
     {
+        $user = auth()->user(); // get current logged-in user
+
         $validated = $request->validate([
-            'bill_id' => 'required|exists:bills,bill_id',
+            'monthly_bill_id' => 'required|exists:monthly_bills,monthly_bill_id',
             'amount_paid' => 'required|numeric|min:0',
             'payment_method' => 'nullable|string|max:255',
+            'reference_number' => 'nullable|string|max:255',
+            'voucher_number' => 'nullable|string|max:255',
         ]);
+
+        // Automatically assign the current user as the one recording the payment
+        $validated['paid_by'] = $user->id;
 
         $payment = Payment::create($validated);
 
@@ -66,6 +93,7 @@ class PaymentController extends Controller
             'payment' => $payment,
         ], 201);
     }
+
 
     /**
      * @OA\Get(
@@ -92,21 +120,39 @@ class PaymentController extends Controller
      *     path="/api/payments/{id}",
      *     tags={"Payments"},
      *     summary="Update a payment",
+     *     description="Update an existing payment's amount, method, reference number, and voucher number",
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
-     *         @OA\Schema(type="integer")
+     *         description="Payment ID",
+     *         @OA\Schema(type="integer", example=1)
      *     ),
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             required={"amount_paid"},
-     *             @OA\Property(property="amount_paid", type="number", example=6000),
-     *             @OA\Property(property="payment_method", type="string", example="CASH")
+     *             @OA\Property(property="amount_paid", type="number", format="float", example=6000),
+     *             @OA\Property(property="payment_method", type="string", example="CASH"),
+     *             @OA\Property(property="reference_number", type="string", example="REF20250822001"),
+     *             @OA\Property(property="voucher_number", type="string", example="VCH-00123")
      *         )
      *     ),
-     *     @OA\Response(response=200, description="Payment updated successfully")
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Payment updated successfully."),
+     *             @OA\Property(property="payment", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Payment not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Payment not found")
+     *         )
+     *     )
      * )
      */
     public function update(Request $request, string $id)
@@ -116,6 +162,9 @@ class PaymentController extends Controller
         $validated = $request->validate([
             'amount_paid' => 'required|numeric|min:0',
             'payment_method' => 'nullable|string|max:255',
+            'reference_number' => 'nullable|string|max:255',
+            'voucher_number' => 'nullable|string|max:255',
+            // 'paid_by' should usually not be updated
         ]);
 
         $payment->update($validated);

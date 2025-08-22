@@ -442,4 +442,75 @@ class HospitalController extends Controller
             'statusCode' => 200,
         ], 200);
     }
+    /**
+    * @OA\Get(
+     *     path="/api/reffered-hospitals",
+     *     summary="Get all hospitals",
+     *     tags={"hospitals"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\Header(
+     *             header="Cache-Control",
+     *             description="Cache control header",
+     *             @OA\Schema(type="string", example="no-cache, private")
+     *         ),
+     *         @OA\Header(
+     *             header="Content-Type",
+     *             description="Content type header",
+     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+     *         ),
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="hospital_id", type="integer"),
+     *                     @OA\Property(property="hospital_code", type="string"),
+     *                     @OA\Property(property="hospital_name", type="string"),
+     *                     @OA\Property(property="hospital_address", type="string"),
+     *                     @OA\Property(property="contact_number", type="string"),
+     *                     @OA\Property(property="hospital_email", type="string"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="deleted_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     )
+     * )
+     */
+    public function getReferredHospitals()
+    {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('View Hospital')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $hospitals = DB::table('referrals')
+            ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
+            ->select(
+                "hospitals.*",
+            )
+            ->distinct()
+            ->get();
+
+        if ($hospitals) {
+            return response([
+                'data' => $hospitals,
+                'statusCode' => 200,
+            ], 200);
+        } else {
+            return response([
+                'message' => 'No data found',
+                'statusCode' => 200,
+            ], 200);
+        }
+    }
 }

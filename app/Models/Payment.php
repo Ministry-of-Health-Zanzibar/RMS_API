@@ -24,6 +24,9 @@ class Payment extends Model
         'monthly_bill_id',
         'amount_paid',
         'payment_method',
+        'reference_number',
+        'voucher_number',
+        'paid_by',
     ];
 
     protected $dates = ['deleted_at'];

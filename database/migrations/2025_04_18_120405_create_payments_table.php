@@ -16,10 +16,14 @@ return new class extends Migration
             $table->unsignedBigInteger('monthly_bill_id');
             $table->decimal('amount_paid', 12, 2);
             $table->string('payment_method')->nullable();
+            $table->string('reference_number')->nullable(); // external payment reference
+            $table->string('voucher_number')->nullable(); // internal ledger/voucher number
+            $table->unsignedBigInteger('paid_by');
             $table->timestamps();
             $table->softDeletes();
 
             $table->foreign('monthly_bill_id')->references('monthly_bill_id')->on('monthly_bills');
+            $table->foreign('paid_by')->references('id')->on('users'); 
         });
     }
 
