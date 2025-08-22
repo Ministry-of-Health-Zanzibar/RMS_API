@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\Bills;
 
 use App\Http\Controllers\Controller;
 use App\Models\MonthlyBill;
+use App\Models\Hospital;
 use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -452,5 +453,112 @@ class MonthlyBillController extends Controller
             'message' => 'MonthlyBill unblocked successfully',
             'statusCode' => 200,
         ], 200);
+    }
+
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/monthly-bills/by-hospital/{hospitalId}",
+     *     tags={"monthly-bills"},
+     *     summary="Get all monthly bills by hospital ID",
+     *     description="Returns hospital details and all monthly bills for the specified hospital.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="hospitalId",
+     *         in="path",
+     *         required=true,
+     *         description="Hospital ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="hospital",
+     *                     type="object",
+     *                     @OA\Property(property="hospital_id", type="integer", example=1),
+     *                     @OA\Property(property="hospital_name", type="string", example="Mnazi Mmoja Hospital")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="all_bills",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="monthly_bill_id", type="integer", example=101),
+     *                         @OA\Property(property="current_monthly_bill_amount", type="number", format="float", example="500000.00"),
+     *                         @OA\Property(property="after_audit_monthly_bill_amount", type="number", format="float", example="480000.00"),
+     *                         @OA\Property(property="bill_date", type="string", format="date", example="2025-01-15"),
+     *                         @OA\Property(property="bill_file", type="string", example="jan_bill.pdf"),
+     *                     )
+     *                 )
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden - user does not have permission",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Forbidden"),
+     *             @OA\Property(property="statusCode", type="integer", example=403)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Hospital not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Hospital not found"),
+     *             @OA\Property(property="statusCode", type="integer", example=404)
+     *         )
+     *     )
+     * )
+     */
+    public function viewBillsByHospitalId(int $hospitalId)
+    {
+        $user = auth()->user();
+        if (
+            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
+            !$user->can('View Monthly Bill')
+        ) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // Fetch hospital
+        $hospital = Hospital::find($hospitalId);
+
+        if (!$hospital) {
+            return response([
+                'message' => 'Hospital not found',
+                'statusCode' => 404,
+            ], 404);
+        }
+
+        // Fetch all bills for this hospital
+        $hospitalBills = MonthlyBill::withTrashed()
+            ->where('hospital_id', $hospitalId)
+            ->get()
+            ->map(function ($bill) {
+                $bill->billUrl = $bill->bill_file ? asset('storage/' . $bill->bill_file) : null;
+                return $bill;
+            });
+
+        return response([
+            'data' => [
+                'hospital' => $hospital,       // hospital details
+                'all_bills' => $hospitalBills  // all bills for that hospital
+            ],
+            'statusCode' => 200,
+        ]);
     }
 }

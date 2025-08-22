@@ -21,7 +21,7 @@ class Payment extends Model
     protected $keyType = 'int';
 
     protected $fillable = [
-        'bill_id',
+        'monthly_bill_id',
         'amount_paid',
         'payment_method',
     ];
