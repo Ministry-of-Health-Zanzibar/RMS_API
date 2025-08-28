@@ -466,18 +466,6 @@ class PatientController extends Controller
         ], 200);
     }
 
-    //ending point of patient and insuarence
-
-    /*  public function getAllPatientsWithInsurance($patient_id)
-    {
-        $data = Patient::with('insurances')->where('patient_id', $patient_id)->get();
-
-        if ($data->isEmpty()) {
-            return response()->json(['message' => 'No Patient with  found'], 404);
-        }
-
-        return response()->json($data);
-    }  */
     public function getAllPatientsWithInsurance($patient_id)
     {
         $patient = Patient::with('insurances')
@@ -497,6 +485,8 @@ class PatientController extends Controller
         $patient->insurances = $patient->insurances ?? [];
         return response()->json($patient);
     }
+
+
 
 
 

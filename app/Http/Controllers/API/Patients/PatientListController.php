@@ -6,6 +6,7 @@ use App\Models\PatientList;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class PatientListController extends Controller
@@ -157,5 +158,40 @@ class PatientListController extends Controller
             'message' => 'Patient list restored successfully',
             'statusCode' => 200
         ], 200);
+    }
+
+
+    // Get patient by patient list id
+    public function getAllPatientsByPatientListId(int $patientListId)
+    {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Patient')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // $patients = Patient::withTrashed()->get();
+        $patients = DB::table('patients')
+            ->join('patient_lists', 'patient_lists.patient_list_id', '=', 'patients.patient_list_id')
+            ->select('patients.*', 'patient_lists.patient_list_title', 'patient_lists.patient_list_file')
+            ->where('patient_lists.patient_list_id', '=', $patientListId)
+            ->get();
+
+
+        if ($patients->isEmpty()) {
+            return response([
+                'message' => 'No data found',
+                'statusCode' => 200,
+            ], 200);
+        } else {
+
+
+            return response([
+                'data' => $patients,
+                'statusCode' => 200,
+            ], 200);
+        }
     }
 }
