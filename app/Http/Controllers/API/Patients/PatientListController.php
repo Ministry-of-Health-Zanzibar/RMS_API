@@ -21,7 +21,7 @@ class PatientListController extends Controller
      */
     public function index()
     {
-        $lists = PatientList::with('creator')->get();
+        $lists = PatientList::withTrashed()->get();
 
         if ($lists->isEmpty()) {
             return response([
@@ -43,7 +43,7 @@ class PatientListController extends Controller
     {
         $request->validate([
             'patient_list_title' => ['required', 'string', 'max:255'],
-            'patient_list_file'  => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'patient_list_file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
         ]);
 
         // store file
@@ -51,7 +51,7 @@ class PatientListController extends Controller
 
         $list = PatientList::create([
             'patient_list_title' => $request->patient_list_title,
-            'patient_list_file'  => $filePath,
+            'patient_list_file' => $filePath,
             'created_by' => Auth::id(),
         ]);
 
@@ -85,13 +85,13 @@ class PatientListController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function updatePatientList(Request $request, $id)
     {
         $list = PatientList::findOrFail($id);
 
         $request->validate([
             'patient_list_title' => ['required', 'string', 'max:255'],
-            'patient_list_file'  => ['sometimes', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'patient_list_file' => ['sometimes', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
         ]);
 
         // check if file update requested
@@ -140,7 +140,7 @@ class PatientListController extends Controller
     /**
      * Restore a soft-deleted patient list.
      */
-    public function restore($id)
+    public function unBlockParentList($id)
     {
         $list = PatientList::withTrashed()->find($id);
 

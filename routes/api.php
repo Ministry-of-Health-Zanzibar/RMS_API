@@ -168,6 +168,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Patient Lis
     Route::resource('patient-lists', PatientListController::class);
-
-
+    Route::post('patient-lists/update/{id}', [PatientListController::class, 'updatePatientList']);
+    Route::patch('patient-lists/unblock/{id}', [PatientListController::class, 'unBlockParentList']);
 });
