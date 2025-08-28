@@ -76,21 +76,40 @@ class PaymentController extends Controller
         $user = auth()->user(); // get current logged-in user
 
         $validated = $request->validate([
-            'monthly_bill_id' => 'required|exists:monthly_bills,monthly_bill_id',
-            'amount_paid' => 'required|numeric|min:0',
-            'payment_method' => 'nullable|string|max:255',
-            'reference_number' => 'nullable|string|max:255',
-            'voucher_number' => 'nullable|string|max:255',
+            'monthly_bill_id'   => 'required', // can be single or array
+            'amount_paid'       => 'required|numeric|min:0',
+            'payment_method'    => 'nullable|string|max:255',
+            'reference_number'  => 'nullable|string|max:255',
+            'voucher_number'    => 'nullable|string|max:255',
         ]);
 
-        // Automatically assign the current user as the one recording the payment
         $validated['paid_by'] = $user->id;
 
-        $payment = Payment::create($validated);
+        $payments = [];
+
+        // If it's an array → multiple payments
+        if (is_array($request->monthly_bill_id)) {
+            foreach ($request->monthly_bill_id as $billId) {
+                // validate each bill exists
+                if (!\App\Models\MonthlyBill::where('monthly_bill_id', $billId)->exists()) {
+                    return response()->json([
+                        'message' => "Monthly bill with ID {$billId} not found."
+                    ], 422);
+                }
+
+                $data = $validated;
+                $data['monthly_bill_id'] = $billId;
+
+                $payments[] = Payment::create($data);
+            }
+        } else {
+            // Single payment
+            $payments[] = Payment::create($validated);
+        }
 
         return response()->json([
-            'message' => 'Payment created successfully.',
-            'payment' => $payment,
+            'message' => 'Payment(s) created successfully.',
+            'payments' => $payments,
         ], 201);
     }
 

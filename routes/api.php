@@ -16,6 +16,7 @@ use App\Http\Controllers\API\Insurances\InsuranceController;
 use App\Http\Controllers\API\Patients\PatientController;
 use App\Http\Controllers\API\Report\ReportController;
 use App\Http\Controllers\API\Treatments\TreatmentController;
+use App\Http\Controllers\API\Patients\PatientListController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Reasons\ReasonController;
@@ -164,6 +165,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('accountant/reports/reportBySourceType', [AccountantReportController::class, 'reportBySourceType']);
     Route::post('accountant/reports/getDocumentFormReportByDate', [AccountantReportController::class, 'getDocumentFormsReport']);
     Route::post('accountant/reports/searchReportByParameter', [AccountantReportController::class, 'searchReportByParameter']);
+
+    // Patient Lis
+    Route::resource('patient-lists', PatientListController::class);
 
 
 });

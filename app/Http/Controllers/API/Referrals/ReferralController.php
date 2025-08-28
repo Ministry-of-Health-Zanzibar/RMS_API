@@ -226,7 +226,7 @@ class ReferralController extends Controller
 
         $data = $request->validate([
             'patient_id' => ['required', 'numeric'],
-            'hospital_id' => ['required', 'numeric'],
+            'hospital_id' => ['nullable', 'numeric'],
             'referral_type_id' => ['required', 'numeric'],
             'reason_id' => ['required', 'numeric'],
             'start_date' => ['required', 'date'],

@@ -43,7 +43,7 @@ class MonthlyBill extends Model
     protected $keyType = 'integer';
 
     protected $fillable = [
-        'current_monthly_bill_amount',
+        'current_monthly_bill_amount', 
         'after_audit_monthly_bill_amount',
         'hospital_id',
         'bill_date',

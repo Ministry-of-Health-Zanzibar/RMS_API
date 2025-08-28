@@ -13,14 +13,14 @@ return new class extends Migration {
         Schema::create('referrals', function (Blueprint $table) {
             $table->bigIncrements('referral_id');
             $table->unsignedBigInteger('patient_id');
-            $table->unsignedBigInteger('hospital_id');
+            $table->unsignedBigInteger('hospital_id')->nullable();
             $table->unsignedBigInteger('referral_type_id');
             $table->unsignedBigInteger('reason_id');
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->enum('status', ['Pending', 'Confirmed', 'Cancelled', 'Expired']);
             $table->unsignedBigInteger('confirmed_by')->nullable();  // DG user ID who confirmed the referral
-            $table->unsignedBigInteger('created_by');  // DG user ID who confirmed the referral
+            $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();
 
