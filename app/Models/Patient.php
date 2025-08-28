@@ -27,7 +27,8 @@ class Patient extends Model
         'location',
         'job',
         'position',
-        'referral_letter_file',
+        // 'referral_letter_file',
+        'patient_list_id',
         'created_by',
     ];
 

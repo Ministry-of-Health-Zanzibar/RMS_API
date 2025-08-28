@@ -53,7 +53,7 @@ class PatientController extends Controller
      *                     @OA\Property(property="location", type="string"),
      *                     @OA\Property(property="job", type="string"),
      *                     @OA\Property(property="position", type="string"),
-     *                     @OA\Property(property="referral_letter_file", type="string"),
+     *                     @OA\Property(property="patient_list_id", type="integer"),
      *                     @OA\Property(property="created_by", type="integer", example=1),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="deleted_at", type="string", format="date-time"),
@@ -68,14 +68,19 @@ class PatientController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF','ROLE DG OFFICER']) || !$user->can('View Patient')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $patients = Patient::withTrashed()->get();
+        // $patients = Patient::withTrashed()->get();
+        $patients = DB::table('patients')
+            ->join('patient_lists', 'patient_lists.patient_list_id', '=', 'patients.patient_list_id')
+            ->select('patients.*', 'patient_lists.patient_list_title', 'patient_lists.patient_list_file')
+            ->get();
+
 
         if ($patients->isEmpty()) {
             return response([
@@ -84,13 +89,6 @@ class PatientController extends Controller
             ], 200);
         } else {
 
-            // Append full doc URL
-            $patients = $patients->map(function ($patient) {
-                $patient->documentUrl = $patient->referral_letter_file
-                    ? asset('storage/' . $patient->referral_letter_file)
-                    : null;
-                return $patient;
-            });
 
             return response([
                 'data' => $patients,
@@ -118,7 +116,7 @@ class PatientController extends Controller
      *              @OA\Property(property="location", type="string"),
      *              @OA\Property(property="job", type="string"),
      *              @OA\Property(property="position", type="string"),
-     *              @OA\Property(property="referral_letter_file", type="string"),
+     *              @OA\Property(property="patient_list_id", type="integer"),
      *         )
      *     ),
      *     @OA\Response(
@@ -160,35 +158,20 @@ class PatientController extends Controller
             'location' => ['nullable', 'string'],
             'job' => ['nullable', 'string'],
             'position' => ['nullable', 'string'],
-            'referral_letter_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,png', 'max:5120'], // 5MB max
-            // 'referral_letter_file' => ['nullable', 'string'],
+            'patient_list_id' => ['required', 'numeric'],
         ]);
-
-
-        // Handle file upload
-        // $path = null;
-        // if ($request->hasFile('referral_letter_file')) {
-        //     $path = $request->file('referral_letter_file')->store('documents', 'public');
-        // }
-
-        // Only handle the file after validation passes
-        $path = null;
-        if (isset($data['referral_letter_file'])) {
-            $path = $data['referral_letter_file']->store('documents', 'public');
-        }
 
 
         // Create Patient
         $patient = Patient::create([
             'name' => $data['name'],
-            // 'date_of_birth' => date('Y-m-d', strtotime($data['date_of_birth'])),
-             'date_of_birth' => $data['date_of_birth'],
+            'date_of_birth' => $data['date_of_birth'],
             'gender' => $data['gender'],
             'phone' => $data['phone'],
             'location' => $data['location'],
             'job' => $data['job'],
             'position' => $data['position'],
-            'referral_letter_file' => $path,
+            'patient_list_id' => $data['patient_list_id'],
             'created_by' => Auth::id(),
         ]);
 
@@ -236,7 +219,7 @@ class PatientController extends Controller
      *                 @OA\Property(property="location", type="string"),
      *                 @OA\Property(property="job", type="string"),
      *                 @OA\Property(property="position", type="string"),
-     *                 @OA\Property(property="referral_letter_file", type="string"),
+     *                 @OA\Property(property="patient_list_id", type="integer"),
      *                 @OA\Property(property="created_by", type="integer", example=1),
      *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-04-10T10:44:31.000000Z"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-04-10T10:44:31.000000Z"),
@@ -257,7 +240,13 @@ class PatientController extends Controller
             ], 403);
         }
 
-        $patient = Patient::withTrashed()->find($id);
+        // $patient = Patient::withTrashed()->find($id);
+        $patient = DB::table('patients')
+            ->join('patient_lists', 'patient_lists.patient_list_id', '=', 'patients.patient_list_id')
+            ->select('patients.*', 'patient_lists.patient_list_title', 'patient_lists.patient_list_file')
+            ->where('patients.patient_id', '=', $id)
+            ->get();
+
 
         if (!$patient) {
             return response([
@@ -265,12 +254,7 @@ class PatientController extends Controller
                 'statusCode' => 404,
             ]);
         } else {
-            // Append full image URL
-            if ($patient->referral_letter_file) {
-                $patient->documentUrl = asset('storage/' . $patient->referral_letter_file);
-            } else {
-                $patient->documentUrl = null;
-            }
+
 
             return response([
                 'data' => $patient,
@@ -321,7 +305,7 @@ class PatientController extends Controller
      *                 @OA\Property(property="location", type="string"),
      *                 @OA\Property(property="job", type="string"),
      *                 @OA\Property(property="position", type="string"),
-     *                 @OA\Property(property="referral_letter_file", type="string"),
+     *                 @OA\Property(property="patient_list_id", type="integer"),
      *                 )
      *             ),
      *             @OA\Property(property="statusCode", type="integer", example=200)
@@ -347,19 +331,10 @@ class PatientController extends Controller
             'location' => ['nullable', 'string'],
             'job' => ['nullable', 'string'],
             'position' => ['nullable', 'string'],
-            'referral_letter_file' => ['nullable', 'string'], // 1MB
-            // 'referral_letter_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,png', 'max:1024'], // 1MB
+            'patient_list_id' => ['required', 'numeric'],
         ]);
 
         $patient = Patient::findOrFail($id);
-
-        // Handle file upload if provided
-        if ($request->hasFile('referral_letter_file')) {
-            $path = $request->file('referral_letter_file')->store('documents', 'public');
-            $data['referral_letter_file'] = $path;
-        } else {
-            unset($data['referral_letter_file']);
-        }
 
         $data['created_by'] = Auth::id();
 
@@ -514,8 +489,8 @@ class PatientController extends Controller
         }
 
         // Append full image URL
-        if ($patient->referral_letter_file) {
-            $patient->documentUrl = asset('storage/' . $patient->referral_letter_file);
+        if ($patient->patient_list_id) {
+            $patient->documentUrl = asset('storage/' . $patient->patient_list_id);
         } else {
             $patient->documentUrl = null;
         }

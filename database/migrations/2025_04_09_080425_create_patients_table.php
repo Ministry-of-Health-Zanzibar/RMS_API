@@ -19,10 +19,13 @@ return new class extends Migration {
             $table->string('location')->nullable();
             $table->string(column: 'job')->nullable();
             $table->string(column: 'position')->nullable();
-            $table->string('referral_letter_file')->nullable(); // path or filename
+            // $table->string('referral_letter_file')->nullable(); // path or filename
+            $table->unsignedBigInteger('patient_list_id');
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
-            $table->softDeletes(); // if you want to allow soft deletes
+            $table->softDeletes();
+
+            $table->foreign('patient_list_id')->references('patient_list_id')->on('patient_lists');
         });
     }
 

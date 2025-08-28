@@ -12,11 +12,11 @@ return new class extends Migration {
     {
         Schema::create('patient_lists', function (Blueprint $table) {
             $table->bigIncrements('patient_list_id');
-            $table->string('patient_list_title'); // NOT NULL by default
+            $table->string('patient_list_title');
             $table->string('patient_list_file');
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
-            $table->softDeletes(); // if you want to allow soft deletes
+            $table->softDeletes();
 
             $table->foreign('created_by')->references('id')->on('users');
         });
