@@ -21,8 +21,6 @@ class Referral extends Model
         'hospital_id',
         'referral_type_id',
         'reason_id',
-        'start_date',
-        'end_date',
         'status',
         'confirmed_by',
         'created_by',
