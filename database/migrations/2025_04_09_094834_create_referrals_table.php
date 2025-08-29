@@ -14,7 +14,6 @@ return new class extends Migration {
             $table->bigIncrements('referral_id');
             $table->unsignedBigInteger('patient_id');
             $table->unsignedBigInteger('hospital_id')->nullable();
-            $table->unsignedBigInteger('referral_type_id');
             $table->unsignedBigInteger('reason_id');
             $table->enum('status', ['Pending', 'Confirmed', 'Cancelled', 'Expired']);
             $table->unsignedBigInteger('confirmed_by')->nullable();  // DG user ID who confirmed the referral
@@ -24,7 +23,6 @@ return new class extends Migration {
 
             // Foreign key constraints (if applicable)
             $table->foreign('patient_id')->references('patient_id')->on('patients');
-            $table->foreign('referral_type_id')->references('referral_type_id')->on('referral_types');
             $table->foreign('reason_id')->references('reason_id')->on('reasons');
             $table->foreign('confirmed_by')->references('id')->on('users');
         });

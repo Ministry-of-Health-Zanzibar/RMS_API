@@ -19,7 +19,6 @@ class Referral extends Model
     protected $fillable = [
         'patient_id',
         'hospital_id',
-        'referral_type_id',
         'reason_id',
         'status',
         'confirmed_by',

@@ -18,8 +18,11 @@ return new class extends Migration {
             $table->string('contact_number', 20)->nullable();
             $table->string('hospital_email')->nullable();
             $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('referral_type_id');
             $table->timestamps();
             $table->softDeletes(); // adds deleted_at column
+
+            $table->foreign('referral_type_id')->references('referral_type_id')->on('referral_types');
         });
     }
 

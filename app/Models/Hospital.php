@@ -48,6 +48,7 @@ class Hospital extends Model
         'contact_number',
         'hospital_email',
         'created_by',
+        'referral_type_id',
     ];
 
     protected $dates = [
