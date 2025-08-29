@@ -6053,9 +6053,6 @@
                                     "patient_id": {
                                         "type": "integer"
                                     },
-                                    "hospital_id": {
-                                        "type": "integer"
-                                    },
                                     "referral_type_id": {
                                         "type": "integer"
                                     },
@@ -6149,22 +6146,11 @@
                                                 "patient_id": {
                                                     "type": "integer"
                                                 },
-                                                "hospital_id": {
-                                                    "type": "integer"
-                                                },
                                                 "referral_type_id": {
                                                     "type": "integer"
                                                 },
                                                 "reason_id": {
                                                     "type": "integer"
-                                                },
-                                                "start_date": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                },
-                                                "end_date": {
-                                                    "type": "string",
-                                                    "format": "date-time"
                                                 },
                                                 "status": {
                                                     "type": "string"
@@ -6245,22 +6231,11 @@
                                                     "patient_id": {
                                                         "type": "integer"
                                                     },
-                                                    "hospital_id": {
-                                                        "type": "integer"
-                                                    },
                                                     "referral_type_id": {
                                                         "type": "integer"
                                                     },
                                                     "reason_id": {
                                                         "type": "integer"
-                                                    },
-                                                    "start_date": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "end_date": {
-                                                        "type": "string",
-                                                        "format": "date-time"
                                                     },
                                                     "status": {}
                                                 },
