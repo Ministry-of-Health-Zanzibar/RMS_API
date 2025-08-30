@@ -53,7 +53,6 @@ class ReferralController extends Controller
      *                     @OA\Property(property="referral_id", type="integer"),
      *                     @OA\Property(property="patient_id", type="integer"),
      *                     @OA\Property(property="hospital_id", type="integer"),
-     *                     @OA\Property(property="referral_type_id", type="integer"),
      *                     @OA\Property(property="reason_id", type="integer"),
      *                     @OA\Property(property="start_date", type="string", format="date-time"),
      *                     @OA\Property(property="end_date", type="string", format="date-time"),
@@ -169,7 +168,6 @@ class ReferralController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="patient_id", type="integer"),
-     *             @OA\Property(property="referral_type_id", type="integer"),
      *             @OA\Property(property="reason_id", type="integer"),
      *             @OA\Property(property="start_date", type="string", format="date-time"),
      *             @OA\Property(property="end_date", type="string", format="date-time"),
@@ -209,14 +207,12 @@ class ReferralController extends Controller
 
         $data = $request->validate([
             'patient_id' => ['required', 'numeric'],
-            'referral_type_id' => ['required', 'numeric'],
             'reason_id' => ['required', 'numeric'],
         ]);
 
 
         $referral = Referral::create([
             'patient_id' => $data['patient_id'],
-            'referral_type_id' => $data['referral_type_id'],
             'reason_id' => $data['reason_id'],
             'status' => 'Pending',
             'confirmed_by' => Auth::id(),
@@ -261,7 +257,6 @@ class ReferralController extends Controller
      *                 type="object",
      *                 @OA\Property(property="referral_id", type="integer"),
      *                     @OA\Property(property="patient_id", type="integer"),
-     *                     @OA\Property(property="referral_type_id", type="integer"),
      *                     @OA\Property(property="reason_id", type="integer"),
      *                     @OA\Property(property="status", type="string"),
      *                     @OA\Property(property="confirmed_by", type="string"),
@@ -350,7 +345,6 @@ class ReferralController extends Controller
      *                 @OA\Items(
      *                     type="object",
      *                    @OA\Property(property="patient_id", type="integer"),
-     *                    @OA\Property(property="referral_type_id", type="integer"),
      *                    @OA\Property(property="reason_id", type="integer"),
      *                    @OA\Property(property="status"),
      *                 )
@@ -372,7 +366,6 @@ class ReferralController extends Controller
 
         $data = $request->validate([
             'patient_id' => ['required', 'numeric'],
-            'referral_type_id' => ['required', 'numeric'],
             'reason_id' => ['required', 'numeric'],
         ]);
 
@@ -380,7 +373,6 @@ class ReferralController extends Controller
         $referral = Referral::findOrFail($id);
         $referral->update([
             'patient_id' => $data['patient_id'],
-            'referral_type_id' => $data['referral_type_id'],
             'reason_id' => $data['reason_id'],
             'confirmed_by' => Auth::id(),
             'created_by' => Auth::id(),

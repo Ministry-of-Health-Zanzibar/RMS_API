@@ -17,7 +17,7 @@ use App\Http\Controllers\API\Patients\PatientController;
 use App\Http\Controllers\API\Report\ReportController;
 use App\Http\Controllers\API\Treatments\TreatmentController;
 use App\Http\Controllers\API\Patients\PatientListController;
-use App\Http\Controllers\API\HospitalLetter\HospitalLetterController;
+use App\Http\Controllers\API\HospitalLetters\HospitalLetterController;
 use App\Http\Controllers\API\Followups\FollowupController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
