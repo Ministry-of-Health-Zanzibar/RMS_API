@@ -92,10 +92,10 @@ class PatientListController extends Controller
 
         $request->validate([
             'patient_list_title' => ['required', 'string', 'max:255'],
-            'patient_list_file' => ['sometimes', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'patient_list_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
         ]);
 
-        // check if file update requested
+        // If a new file is uploaded, replace the old one
         if ($request->hasFile('patient_list_file')) {
             // delete old file if exists
             if ($list->patient_list_file && Storage::disk('public')->exists($list->patient_list_file)) {
@@ -106,8 +106,11 @@ class PatientListController extends Controller
             $list->patient_list_file = $filePath;
         }
 
-        $list->patient_list_title = $request->patient_list_title;
-        $list->save();
+        $list->update([
+            'patient_list_title' => $request->patient_list_title,
+            'patient_list_file'  => $list->patient_list_file, // keep old file if no new one
+            'updated_by'         => Auth::id(),
+        ]);
 
         return response([
             'data' => $list,
