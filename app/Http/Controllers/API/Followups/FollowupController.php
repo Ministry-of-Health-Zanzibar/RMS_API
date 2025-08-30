@@ -12,7 +12,7 @@ class FollowupController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Followup|Create Followup|Update Followup|Delete Followup', ['only' => ['index','store','show','update','destroy']]);
+        $this->middleware('permission:View FollowUp|Create FollowUp|Update FollowUp|Delete FollowUp', ['only' => ['index','store','show','update','destroy']]);
     }
 
     /**
@@ -21,7 +21,7 @@ class FollowupController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View Followup')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View FollowUp')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -42,7 +42,7 @@ class FollowupController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('Create Followup')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('Create FollowUp')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -72,7 +72,7 @@ class FollowupController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View Followup')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View FollowUp')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -100,7 +100,7 @@ class FollowupController extends Controller
     public function update(Request $request, $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('Update Followup')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('Update FollowUp')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -137,7 +137,7 @@ class FollowupController extends Controller
     public function destroy($id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('Delete Followup')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('Delete FollowUp')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403

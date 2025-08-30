@@ -90,25 +90,31 @@ class PatientListController extends Controller
     {
         $list = PatientList::findOrFail($id);
 
-        $request->validate([
+        // Validate input
+        $data = $request->validate([
             'patient_list_title' => ['required', 'string', 'max:255'],
             'patient_list_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
         ]);
 
-        // If a new file is uploaded, replace the old one
+        // Handle file upload
         if ($request->hasFile('patient_list_file')) {
-            // delete old file if exists
+            // Delete old file if exists
             if ($list->patient_list_file && Storage::disk('public')->exists($list->patient_list_file)) {
                 Storage::disk('public')->delete($list->patient_list_file);
             }
 
+            // Store new file
             $filePath = $request->file('patient_list_file')->store('patient_lists', 'public');
-            $list->patient_list_file = $filePath;
+            $data['patient_list_file'] = $filePath;
+        } else {
+            // Keep existing file if no new file uploaded
+            $data['patient_list_file'] = $list->patient_list_file;
         }
 
+        // Update patient list
         $list->update([
-            'patient_list_title' => $request->patient_list_title,
-            'patient_list_file'  => $list->patient_list_file, // keep old file if no new one
+            'patient_list_title' => $data['patient_list_title'],
+            'patient_list_file'  => $data['patient_list_file'],
             'updated_by'         => Auth::id(),
         ]);
 

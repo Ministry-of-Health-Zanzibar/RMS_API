@@ -12,6 +12,7 @@ class FollowUp extends Model
 {
     use LogsActivity, HasFactory, SoftDeletes;
 
+    protected $table = 'followups';
     protected $primaryKey = 'followup_id';
     public $incrementing = true;   // id() is auto-increment
     protected $keyType = 'int';
