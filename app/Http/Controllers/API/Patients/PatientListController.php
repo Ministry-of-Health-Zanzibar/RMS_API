@@ -172,12 +172,13 @@ class PatientListController extends Controller
             ], 403);
         }
 
-        $patients = DB::table('patients')
-            ->leftJoin('patient_lists', 'patient_lists.patient_list_id', '=', 'patients.patient_list_id')
+        $patients = DB::table('patient_lists')
+            ->leftJoin('patients','patients.patient_list_id','patient_lists.patient_list_id')
             ->select(
-                'patients.*',
                 'patient_lists.patient_list_title',
-                'patient_lists.patient_list_file'
+                'patient_lists.patient_list_file',
+                'patients.*'
+
             )
             ->where('patient_lists.patient_list_id', '=', $patientListId)
             ->get();
@@ -189,8 +190,6 @@ class PatientListController extends Controller
                 'statusCode' => 200,
             ], 200);
         } else {
-
-
             return response([
                 'data' => $patients,
                 'statusCode' => 200,
