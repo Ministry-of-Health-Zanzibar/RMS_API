@@ -138,6 +138,7 @@ class HospitalController extends Controller
             'hospital_address' => ['nullable', 'string'],
             'contact_number' => ['nullable', 'string'],
             'hospital_email' => ['nullable', 'email'],
+            'referral_type_id' => ['nullable', 'exists:referral_types,referral_type_id'],
         ]);
 
 
@@ -146,7 +147,8 @@ class HospitalController extends Controller
             'hospital_name' => $data['hospital_name'],
             'hospital_address' => $data['hospital_address'],
             'contact_number' => $data['contact_number'],
-            'hospital_email' => $data['hospital_email'],
+            'hospital_email' => $data['hospital_email'] ?? null,
+            'referral_type_id' => $data['referral_type_id'] ?? null,
             'created_by' => Auth::id(),
             // 'created_by' => auth()->id(),
         ]);
