@@ -172,28 +172,54 @@ class PatientListController extends Controller
             ], 403);
         }
 
-        $patients = DB::table('patient_lists')
-            ->leftJoin('patients','patients.patient_list_id','patient_lists.patient_list_id')
+        $rows = DB::table('patient_lists')
+            ->leftJoin('patients', 'patients.patient_list_id', '=', 'patient_lists.patient_list_id')
             ->select(
+                'patient_lists.patient_list_id',
                 'patient_lists.patient_list_title',
                 'patient_lists.patient_list_file',
-                'patients.*'
-
+                'patients.patient_id',
+                'patients.name',
+                'patients.date_of_birth',
+                'patients.gender',
+                'patients.phone',
+                'patients.location',
+                'patients.job',
+                'patients.position'
             )
             ->where('patient_lists.patient_list_id', '=', $patientListId)
             ->get();
 
+        // Transform into nested structure
+        $patientList = [
+            'patient_list_title' => null,
+            'patient_list_file' => null,
+            'patients' => []
+        ];
 
-        if ($patients->isEmpty()) {
-            return response([
-                'message' => 'No data found',
-                'statusCode' => 200,
-            ], 200);
-        } else {
-            return response([
-                'data' => $patients,
-                'statusCode' => 200,
-            ], 200);
+        if (!$rows->isEmpty()) {
+            $patientList['patient_list_title'] = $rows[0]->patient_list_title;
+            $patientList['patient_list_file'] = $rows[0]->patient_list_file;
+
+            $patients = $rows->filter(fn($row) => $row->patient_id !== null)
+                            ->map(fn($row) => [
+                                'patient_id' => $row->patient_id,
+                                'name' => $row->name,
+                                'date_of_birth' => $row->date_of_birth,
+                                'gender' => $row->gender,
+                                'phone' => $row->phone,
+                                'location' => $row->location,
+                                'job' => $row->job,
+                                'position' => $row->position,
+                            ])
+                            ->values(); // reset keys
+
+            $patientList['patients'] = $patients;
         }
+
+        return response()->json([
+            'data' => $patientList,
+            'statusCode' => 200,
+        ]);
     }
 }
