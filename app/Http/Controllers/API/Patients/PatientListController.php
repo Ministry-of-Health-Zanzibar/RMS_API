@@ -172,10 +172,13 @@ class PatientListController extends Controller
             ], 403);
         }
 
-        // $patients = Patient::withTrashed()->get();
         $patients = DB::table('patients')
-            ->join('patient_lists', 'patient_lists.patient_list_id', '=', 'patients.patient_list_id')
-            ->select('patients.*', 'patient_lists.patient_list_title', 'patient_lists.patient_list_file')
+            ->leftJoin('patient_lists', 'patient_lists.patient_list_id', '=', 'patients.patient_list_id')
+            ->select(
+                'patients.*',
+                'patient_lists.patient_list_title',
+                'patient_lists.patient_list_file'
+            )
             ->where('patient_lists.patient_list_id', '=', $patientListId)
             ->get();
 

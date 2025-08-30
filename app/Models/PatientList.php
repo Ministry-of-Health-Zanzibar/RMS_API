@@ -32,6 +32,11 @@ class PatientList extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function patients()
+    {
+        return $this->hasMany(Patient::class, 'patient_list_id', 'patient_list_id');
+    }
+
     /**
      * Configure Spatie Activity Log
      */

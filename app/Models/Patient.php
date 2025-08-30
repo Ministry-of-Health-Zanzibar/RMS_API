@@ -42,6 +42,11 @@ class Patient extends Model
         return $this->hasMany(Insurance::class, 'patient_id', 'patient_id');
     }
 
+    public function patientList()
+    {
+        return $this->belongsTo(PatientList::class, 'patient_list_id', 'patient_list_id');
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['*']);
