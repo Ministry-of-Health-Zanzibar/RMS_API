@@ -5197,11 +5197,22 @@
                                     "referral_id": {
                                         "type": "integer"
                                     },
+                                    "hospital_id": {
+                                        "type": "integer"
+                                    },
                                     "letter_text": {
                                         "type": "string"
                                     },
                                     "status": {
                                         "type": "string"
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -5361,11 +5372,23 @@
                                                     "referral_id": {
                                                         "type": "integer"
                                                     },
+                                                    "hospital_id": {
+                                                        "type": "integer",
+                                                        "nullable": true
+                                                    },
                                                     "letter_text": {
                                                         "type": "string"
                                                     },
                                                     "is_printed": {
                                                         "type": "boolean"
+                                                    },
+                                                    "start_date": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "end_date": {
+                                                        "type": "string",
+                                                        "nullable": true
                                                     }
                                                 },
                                                 "type": "object"
@@ -5990,9 +6013,6 @@
                                                     "hospital_id": {
                                                         "type": "integer"
                                                     },
-                                                    "referral_type_id": {
-                                                        "type": "integer"
-                                                    },
                                                     "reason_id": {
                                                         "type": "integer"
                                                     },
@@ -6051,9 +6071,6 @@
                             "schema": {
                                 "properties": {
                                     "patient_id": {
-                                        "type": "integer"
-                                    },
-                                    "referral_type_id": {
                                         "type": "integer"
                                     },
                                     "reason_id": {
@@ -6146,9 +6163,6 @@
                                                 "patient_id": {
                                                     "type": "integer"
                                                 },
-                                                "referral_type_id": {
-                                                    "type": "integer"
-                                                },
                                                 "reason_id": {
                                                     "type": "integer"
                                                 },
@@ -6229,9 +6243,6 @@
                                             "items": {
                                                 "properties": {
                                                     "patient_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "referral_type_id": {
                                                         "type": "integer"
                                                     },
                                                     "reason_id": {

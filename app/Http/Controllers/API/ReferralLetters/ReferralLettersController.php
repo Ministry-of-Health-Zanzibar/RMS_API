@@ -100,8 +100,11 @@ class ReferralLettersController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *            @OA\Property(property="referral_id", type="integer"),
+     *            @OA\Property(property="hospital_id", type="integer"),
      *            @OA\Property(property="letter_text", type="string"),
      *            @OA\Property(property="status", type="string"),
+     *            @OA\Property(property="start_date", type="string", nullable=true),
+     *            @OA\Property(property="end_date", type="string", nullable=true),
      *         ),
      *     ),
      *     @OA\Response(
@@ -128,52 +131,54 @@ class ReferralLettersController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Create ReferralLetter')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) 
+            || !$user->can('Create ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
+        // Validate request
         $data = $request->validate([
             'referral_id' => ['required', 'numeric'],
+            'hospital_id' => ['required', 'numeric'],
             'letter_text' => ['required', 'string'],
             'status' => ['required', 'string'],
+            'start_date' => ['nullable', 'string'],
+            'end_date' => ['nullable', 'string'],
         ]);
 
+        // Find referral
         $referral = Referral::findOrFail($data['referral_id']);
 
-
-        // Create referral Type
-        $ReferralType = ReferralLetter::create([
-            'referral_id' => $data['referral_id'],
-            'letter_text' => $data['letter_text'],
-            'created_by' => Auth::id(),
+        // Update hospital_id and status in the referral
+        $referral->update([
+            'hospital_id' => $data['hospital_id'],
+            'status' => $data['status'],
         ]);
 
-        if ($ReferralType) {
-            $referral->update([
-                'status' => $data['status'],
-            ]);
+        // Create referral letter
+        $ReferralLetter = ReferralLetter::create([
+            'referral_id' => $data['referral_id'],
+            'letter_text' => $data['letter_text'],
+            'start_date' => $data['start_date'] ?? null,
+            'end_date' => $data['end_date'] ?? null,
+            'created_by' => $user->id,
+        ]);
 
-            if ($referral) {
-                return response([
-                    'data' => $ReferralType,
-                    'message' => "Referral type created successfully.",
-                    'statusCode' => 201,
-                ], status: 201);
-            } else {
-                return response([
-                    'message' => 'Failed to update referral status.',
-                    'statusCode' => 500,
-                ], 500);
-            }
-        } else {
+        if (!$ReferralLetter) {
             return response([
                 'message' => 'Internal server error',
                 'statusCode' => 500,
             ], 500);
         }
+
+        return response([
+            'data' => $ReferralLetter,
+            'message' => "Referral Letter created successfully.",
+            'statusCode' => 201,
+        ], 201);
     }
 
     /**
@@ -273,8 +278,11 @@ class ReferralLettersController extends Controller
      *                 @OA\Items(
      *                     type="object",
      *                    @OA\Property(property="referral_id", type="integer"),
-     *                     @OA\Property(property="letter_text", type="string"),
-     *                     @OA\Property(property="is_printed", type="boolean"),
+     *                    @OA\Property(property="hospital_id", type="integer", nullable=true),
+     *                    @OA\Property(property="letter_text", type="string"),
+     *                    @OA\Property(property="is_printed", type="boolean"),
+     *                    @OA\Property(property="start_date", type="string", nullable=true),
+     *                    @OA\Property(property="end_date", type="string", nullable=true),
      *                 )
      *             ),
      *             @OA\Property(property="statusCode", type="integer", example=200)
@@ -286,41 +294,52 @@ class ReferralLettersController extends Controller
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Create ReferralLetter')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) 
+            || !$user->can('Create ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
+        // Validate request
         $data = $request->validate([
             'referral_id' => ['required', 'numeric'],
-            'letter_text' => ['required', 'text'],
-            'is_printed' => ['required'],
+            'hospital_id' => ['nullable', 'numeric'],   // optional hospital_id
+            'letter_text' => ['required', 'string'],
+            'is_printed' => ['required', 'boolean'],
+            'start_date' => ['nullable', 'string'],
+            'end_date' => ['nullable', 'string'],
         ]);
 
+        // Find referral letter
+        $Referral_letter = ReferralLetter::findOrFail($id);
 
         // Update referral letter
-        $Referral_letter = ReferralLetter::findOrFail($id);
         $Referral_letter->update([
             'referral_id' => $data['referral_id'],
             'letter_text' => $data['letter_text'],
             'is_printed' => $data['is_printed'],
-            'created_by' => Auth::id(),
+            'start_date' => $data['start_date'] ?? null,
+            'end_date' => $data['end_date'] ?? null,
+            'created_by' => $user->id,
         ]);
 
-        if ($Referral_letter) {
-            return response([
-                'data' => $Referral_letter,
-                'message' => 'Referral_letter updated successfully',
-                'statusCode' => 201,
-            ], status: 201);
-        } else {
-            return response([
-                'message' => 'Internal server error',
-                'statusCode' => 500,
-            ], 500);
+        // Optionally update hospital_id in the referral if provided
+        if (!empty($data['hospital_id'])) {
+            $referral = Referral::find($data['referral_id']);
+            if ($referral) {
+                $referral->update([
+                    'hospital_id' => $data['hospital_id'],
+                ]);
+            }
         }
+
+        return response([
+            'data' => $Referral_letter,
+            'message' => 'Referral letter updated successfully',
+            'statusCode' => 201,
+        ], 201);
     }
 
     /**
