@@ -198,6 +198,7 @@ class PatientListController extends Controller
         ];
 
         if (!$rows->isEmpty()) {
+            $patientList['patient_list_id'] = $rows[0]->patient_list_id;
             $patientList['patient_list_title'] = $rows[0]->patient_list_title;
             $patientList['patient_list_file'] = $rows[0]->patient_list_file;
 
