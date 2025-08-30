@@ -80,8 +80,10 @@ class ReferralController extends Controller
 
         // $referrals = Referral::withTrashed()->get();
         $referrals = DB::table('referrals')
-            ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
-            ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
+            ->leftJoin("patients", "patients.patient_id", '=', "referrals.patient_id")
+            ->leftJoin("reasons", "reasons.reason_id", '=', "referrals.reason_id")
+            ->leftJoin("hospitals", "hospitals.hospital_id", '=', "referrals.hospital_id")
+            ->leftJoin("referral_letters", "referral_letters.referral_id", '=', "referrals.referral_id")
             ->select(
                 "referrals.*",
 
@@ -90,11 +92,15 @@ class ReferralController extends Controller
                 "patients.gender",
                 "patients.phone",
 
-                "reasons.referral_reason_name"
+                "reasons.referral_reason_name",
+
+                "referral_letters.*",
+
+                "hospitals.*",
             )
             ->get();
 
-        if ($referrals) {
+        if ($referrals->isNotEmpty()) {
             return response([
                 'data' => $referrals,
                 'statusCode' => 200,
