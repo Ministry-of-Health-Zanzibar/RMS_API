@@ -17,6 +17,8 @@ use App\Http\Controllers\API\Patients\PatientController;
 use App\Http\Controllers\API\Report\ReportController;
 use App\Http\Controllers\API\Treatments\TreatmentController;
 use App\Http\Controllers\API\Patients\PatientListController;
+use App\Http\Controllers\API\HospitalLetter\HospitalLetterController;
+use App\Http\Controllers\API\Followups\FollowupController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Reasons\ReasonController;
@@ -171,5 +173,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('patient-lists/update/{id}', [PatientListController::class, 'updatePatientList']);
     Route::patch('patient-lists/unblock/{id}', [PatientListController::class, 'unBlockParentList']);
     Route::get('patient-lists/body-form/{id}', [PatientListController::class, 'getAllPatientsByPatientListId']);
+
+    //Hospital Letters
+    Route::resource('hospital-letters', HospitalLetterController::class);
+
+    //Followups
+    Route::resource('followups', FollowupController::class);
 
 });

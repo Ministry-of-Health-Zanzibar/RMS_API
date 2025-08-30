@@ -18,7 +18,7 @@ return new class extends Migration {
             $table->string('contact_number', 20)->nullable();
             $table->string('hospital_email')->nullable();
             $table->unsignedBigInteger('created_by');
-            $table->unsignedBigInteger('referral_type_id');
+            $table->unsignedBigInteger('referral_type_id')->nullable();
             $table->timestamps();
             $table->softDeletes(); // adds deleted_at column
 
