@@ -22,6 +22,7 @@ class HospitalSeeder extends Seeder
                 'hospital_address' => 'Zanzibar',
                 'contact_number' => '000 000 000',
                 'hospital_email' => 'hospital@gmail.com',
+                'referral_type_id' => 1, // MAINLAND
                 'created_by' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
@@ -32,6 +33,7 @@ class HospitalSeeder extends Seeder
                 'hospital_address' => 'Dar es Salaam, Tanzania',
                 'contact_number' => '000 000 000',
                 'hospital_email' => 'hospital@gmail.com',
+                'referral_type_id' => 1, // MAINLAND
                 'created_by' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
@@ -42,6 +44,7 @@ class HospitalSeeder extends Seeder
                 'hospital_address' => 'Dar es Salaam, Tanzania',
                 'contact_number' => '000 000 000',
                 'hospital_email' => 'hospital@gmail.com',
+                'referral_type_id' => 1, // MAINLAND
                 'created_by' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
@@ -52,17 +55,18 @@ class HospitalSeeder extends Seeder
                 'hospital_address' => 'Address',
                 'contact_number' => '000 000 000',
                 'hospital_email' => 'hospital@gmail.com',
+                'referral_type_id' => 1, // MAINLAND
                 'created_by' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),
-
             array(
                 'hospital_name' => 'Muhimbili National Hospital (MNH)',
                 'hospital_code' => 'HOSP005',
                 'hospital_address' => 'Dar es Salaam, Tanzania',
                 'contact_number' => '000 000 000',
                 'hospital_email' => 'hospital@gmail.com',
+                'referral_type_id' => 1, // MAINLAND
                 'created_by' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
@@ -73,6 +77,7 @@ class HospitalSeeder extends Seeder
                 'hospital_address' => 'Dar es Salaam, Tanzania',
                 'contact_number' => '000 000 000',
                 'hospital_email' => 'hospital@gmail.com',
+                'referral_type_id' => 1, // MAINLAND
                 'created_by' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
@@ -83,16 +88,18 @@ class HospitalSeeder extends Seeder
                 'hospital_address' => 'Address',
                 'contact_number' => '000 000 000',
                 'hospital_email' => 'hospital@gmail.com',
+                'referral_type_id' => 1, // MAINLAND
                 'created_by' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),
             array(
-                'hospital_name' => ' Madras Institute of Orthopaedics and Traumatology (MIOT)',
+                'hospital_name' => 'Madras Institute of Orthopaedics and Traumatology (MIOT)',
                 'hospital_code' => 'HOSP008',
                 'hospital_address' => 'India',
                 'contact_number' => '000 000 000',
                 'hospital_email' => 'hospital@gmail.com',
+                'referral_type_id' => 2, // ABROAD
                 'created_by' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
