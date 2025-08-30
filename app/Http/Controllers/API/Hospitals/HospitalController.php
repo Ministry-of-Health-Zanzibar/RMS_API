@@ -150,7 +150,6 @@ class HospitalController extends Controller
             'hospital_email' => $data['hospital_email'] ?? null,
             'referral_type_id' => $data['referral_type_id'] ?? null,
             'created_by' => Auth::id(),
-            // 'created_by' => auth()->id(),
         ]);
 
         if ($hospital) {

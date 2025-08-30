@@ -82,7 +82,6 @@ class ReferralController extends Controller
         // $referrals = Referral::withTrashed()->get();
         $referrals = DB::table('referrals')
             ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
-            ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
             ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
             ->select(
                 "referrals.*",
@@ -91,9 +90,6 @@ class ReferralController extends Controller
                 "patients.date_of_birth",
                 "patients.gender",
                 "patients.phone",
-
-                "referral_types.referral_type_name",
-                "referral_types.referral_type_code",
 
                 "reasons.referral_reason_name"
             )
@@ -125,7 +121,6 @@ class ReferralController extends Controller
         // $referrals = Referral::withTrashed()->get();
         $referrals = DB::table('referrals')
             ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
-            ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
             ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
             ->leftjoin("bills", "bills.referral_id", '=', 'referrals.referral_id')
             ->select(
@@ -137,9 +132,6 @@ class ReferralController extends Controller
                 "patients.date_of_birth",
                 "patients.gender",
                 "patients.phone",
-
-                "referral_types.referral_type_name",
-                "referral_types.referral_type_code",
 
                 "reasons.referral_reason_name",
 
@@ -295,7 +287,6 @@ class ReferralController extends Controller
         // $referral = Referral::withTrashed()->find($id);
         $referral = DB::table('referrals')
             ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
-            ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
             ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
             ->select(
                 "referrals.*",
@@ -304,9 +295,6 @@ class ReferralController extends Controller
                 "patients.date_of_birth",
                 "patients.gender",
                 "patients.phone",
-
-                "referral_types.referral_type_name",
-                "referral_types.referral_type_code",
 
                 "reasons.referral_reason_name"
             )
@@ -565,7 +553,6 @@ class ReferralController extends Controller
 
         $referral = DB::table('referrals')
             ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
-            ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
             ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
             ->select(
                 "referrals.*",
@@ -574,9 +561,6 @@ class ReferralController extends Controller
                 "patients.date_of_birth",
                 "patients.gender",
                 "patients.phone",
-
-                "referral_types.referral_type_name",
-                "referral_types.referral_type_code",
 
                 "reasons.referral_reason_name"
             )
