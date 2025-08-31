@@ -78,23 +78,22 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        // $referrals = Referral::withTrashed()->get();
         $referrals = DB::table('referrals')
             ->leftJoin("patients", "patients.patient_id", '=', "referrals.patient_id")
             ->leftJoin("reasons", "reasons.reason_id", '=', "referrals.reason_id")
             ->leftJoin("hospitals", "hospitals.hospital_id", '=', "referrals.hospital_id")
             ->leftJoin("referral_letters", "referral_letters.referral_id", '=', "referrals.referral_id")
             ->select(
-                "referrals.*",
+                "referrals.referral_id as referral_id",
+                "referrals.created_at as referral_created_at",
+                "referrals.updated_at as referral_updated_at",
 
                 "patients.name as patient_name",
                 "patients.date_of_birth",
                 "patients.gender",
                 "patients.phone",
 
-                "reasons.referral_reason_name",
-
-                "referral_letters.*",
+                "reasons.*",
 
                 "hospitals.*",
             )
@@ -278,42 +277,46 @@ class ReferralController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Referral')) {
-            return response([
+
+        // Permission check
+        if (
+            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER'])
+            || !$user->can('View Referral')
+        ) {
+            return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        // $referral = Referral::withTrashed()->find($id);
+        // Fetch referral with joins
         $referral = DB::table('referrals')
             ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
             ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
             ->select(
                 "referrals.*",
-
                 "patients.name as patient_name",
                 "patients.date_of_birth",
                 "patients.gender",
                 "patients.phone",
-
                 "reasons.referral_reason_name"
             )
             ->where("referrals.referral_id", '=', $id)
             ->first();
 
-
+        // Handle missing referral
         if (!$referral) {
-            return response([
+            return response()->json([
                 'message' => 'Referral not found',
                 'statusCode' => 404,
-            ]);
-        } else {
-            return response([
-                'data' => $referral,
-                'statusCode' => 200,
-            ]);
+            ], 404);
         }
+
+        // Success
+        return response()->json([
+            'data' => $referral,
+            'statusCode' => 200,
+        ], 200);
     }
 
     /**
