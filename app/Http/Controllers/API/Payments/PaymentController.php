@@ -40,17 +40,19 @@ class PaymentController extends Controller
      *     path="/api/payments",
      *     tags={"Payments"},
      *     summary="Create a new payment",
-     *     description="Create a payment for a monthly bill, including optional reference and voucher numbers",
-     *     security={{"bearerAuth":{}}},
+     *     description="Create a payment with payer, amount, currency, method, reference number, voucher number, and payment date",
+     *     security={{"bearerAuth":{}}}, 
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"monthly_bill_id","amount_paid"},
-     *             @OA\Property(property="monthly_bill_id", type="integer", example=1, description="ID of the monthly bill"),
-     *             @OA\Property(property="amount_paid", type="number", format="float", example=5000),
-     *             @OA\Property(property="payment_method", type="string", example="PBZ Bank"),
+     *             required={"amount_paid"},
+     *             @OA\Property(property="payer", type="string", example="John Doe", description="Who made the payment"),
+     *             @OA\Property(property="amount_paid", type="number", format="float", example=5000, description="Amount paid"),
+     *             @OA\Property(property="currency", type="string", example="USD", description="Currency code"),
+     *             @OA\Property(property="payment_method", type="string", example="PBZ Bank", description="Payment method or bank name"),
      *             @OA\Property(property="reference_number", type="string", example="REF20250822001", description="External payment reference"),
-     *             @OA\Property(property="voucher_number", type="string", example="VCH-00123", description="Internal voucher number")
+     *             @OA\Property(property="voucher_number", type="string", example="VCH-00123", description="Internal voucher number"),
+     *             @OA\Property(property="payment_date", type="string", format="date", example="2025-08-31", description="Date when payment was made")
      *         )
      *     ),
      *     @OA\Response(
@@ -76,40 +78,27 @@ class PaymentController extends Controller
         $user = auth()->user(); // get current logged-in user
 
         $validated = $request->validate([
-            'monthly_bill_id'   => 'required', // can be single or array
+            'payer'             => 'required|string|max:255',
             'amount_paid'       => 'required|numeric|min:0',
+            'currency'          => 'required|string|max:10', // e.g. TZS, USD
             'payment_method'    => 'nullable|string|max:255',
             'reference_number'  => 'nullable|string|max:255',
             'voucher_number'    => 'nullable|string|max:255',
+            'payment_date'      => 'nullable|string', // defaults to today if not provided
         ]);
 
-        $validated['paid_by'] = $user->id;
+        $validated['created_by'] = $user->id;
 
-        $payments = [];
-
-        // If it's an array → multiple payments
-        if (is_array($request->monthly_bill_id)) {
-            foreach ($request->monthly_bill_id as $billId) {
-                // validate each bill exists
-                if (!\App\Models\MonthlyBill::where('monthly_bill_id', $billId)->exists()) {
-                    return response()->json([
-                        'message' => "Monthly bill with ID {$billId} not found."
-                    ], 422);
-                }
-
-                $data = $validated;
-                $data['monthly_bill_id'] = $billId;
-
-                $payments[] = Payment::create($data);
-            }
-        } else {
-            // Single payment
-            $payments[] = Payment::create($validated);
+        // set default payment_date if not provided
+        if (empty($validated['payment_date'])) {
+            $validated['payment_date'] = now();
         }
 
+        $payment = Payment::create($validated);
+
         return response()->json([
-            'message' => 'Payment(s) created successfully.',
-            'payments' => $payments,
+            'message' => 'Payment created successfully.',
+            'payment' => $payment,
         ], 201);
     }
 
@@ -139,7 +128,7 @@ class PaymentController extends Controller
      *     path="/api/payments/{id}",
      *     tags={"Payments"},
      *     summary="Update a payment",
-     *     description="Update an existing payment's amount, method, reference number, and voucher number",
+     *     description="Update an existing payment details like payer, amount, currency, method, reference number, voucher number, and payment date",
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -151,10 +140,13 @@ class PaymentController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             required={"amount_paid"},
+     *             @OA\Property(property="payer", type="string", example="John Doe"),
      *             @OA\Property(property="amount_paid", type="number", format="float", example=6000),
+     *             @OA\Property(property="currency", type="string", example="USD"),
      *             @OA\Property(property="payment_method", type="string", example="CASH"),
      *             @OA\Property(property="reference_number", type="string", example="REF20250822001"),
-     *             @OA\Property(property="voucher_number", type="string", example="VCH-00123")
+     *             @OA\Property(property="voucher_number", type="string", example="VCH-00123"),
+     *             @OA\Property(property="payment_date", type="string", format="date", example="2025-08-31")
      *         )
      *     ),
      *     @OA\Response(
@@ -179,11 +171,13 @@ class PaymentController extends Controller
         $payment = Payment::findOrFail($id);
 
         $validated = $request->validate([
-            'amount_paid' => 'required|numeric|min:0',
-            'payment_method' => 'nullable|string|max:255',
-            'reference_number' => 'nullable|string|max:255',
-            'voucher_number' => 'nullable|string|max:255',
-            // 'paid_by' should usually not be updated
+            'payer'             => 'sometimes|string|max:255',
+            'amount_paid'       => 'required|numeric|min:0',
+            'currency'          => 'sometimes|string|max:10',
+            'payment_method'    => 'nullable|string|max:255',
+            'reference_number'  => 'nullable|string|max:255',
+            'voucher_number'    => 'nullable|string|max:255',
+            'payment_date'      => 'nullable|string',
         ]);
 
         $payment->update($validated);
@@ -191,7 +185,7 @@ class PaymentController extends Controller
         return response()->json([
             'message' => 'Payment updated successfully.',
             'payment' => $payment,
-        ]);
+        ], 200);
     }
 
     /**

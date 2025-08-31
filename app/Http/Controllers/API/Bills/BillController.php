@@ -49,9 +49,9 @@ class BillController extends Controller
      *                     type="object",
      *                     @OA\Property(property="bill_id", type="integer", example=1),
      *                     @OA\Property(property="referral_id", type="integer"),
-     *                     @OA\Property(property="amount", type="double"),
-     *                     @OA\Property(property="notes", type="string"),
-     *                     @OA\Property(property="sent_to", type="string"),
+     *                     @OA\Property(property="total_amount", type="double"),
+     *                     @OA\Property(property="bill_period_start", type="string"),
+     *                     @OA\Property(property="bill_period_end", type="string"),
      *                     @OA\Property(property="sent_date", type="string", format="date-time"),
      *                     @OA\Property(property="bill_file", type="string"),
      *                     @OA\Property(property="created_by", type="integer", example=1),
@@ -112,9 +112,9 @@ class BillController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *                     @OA\Property(property="referral_id", type="integer"),
-     *                     @OA\Property(property="amount", type="double"),
-     *                     @OA\Property(property="notes", type="string"),
-     *                     @OA\Property(property="sent_to", type="string"),
+     *                     @OA\Property(property="total_amount", type="double"),
+     *                     @OA\Property(property="bill_period_start", type="string"),
+     *                     @OA\Property(property="bill_period_end", type="string"),
      *                     @OA\Property(property="sent_date", type="string", format="date-time"),
      *                     @OA\Property(property="bill_file", type="string"),
      *         )
@@ -152,9 +152,9 @@ class BillController extends Controller
 
         $data = $request->validate([
             'referral_id' => ['required', 'numeric'],
-            'amount' => ['required', 'numeric'],
-            'notes' => ['nullable', 'string'],
-            'sent_to' => ['nullable', 'string'],
+            'total_amount' => ['required', 'numeric'],
+            'bill_period_start' => ['nullable', 'string'],
+            'bill_period_end' => ['nullable', 'string'],
             'bill_file_id' => ['required', 'numeric'],
         ]);
 
@@ -171,9 +171,9 @@ class BillController extends Controller
         // Create Bill
         $billData = [
             'referral_id' => $data['referral_id'],
-            'amount' => $data['amount'] ?? 0,
-            'notes' => $data['notes'] ?? null,
-            'sent_to' => $data['sent_to'] ?? 'Insurance',
+            'total_amount' => $data['total_amount'] ?? 0,
+            'bill_period_start' => $data['bill_period_start'] ?? null,
+            'bill_period_end' => $data['bill_period_end'] ?? 'Insurance',
             'sent_date' => Carbon::now(),
             'bill_file_id' => $data['bill_file_id'] ?? null,
             'bill_status' => 'Pending', // default status
@@ -222,9 +222,9 @@ class BillController extends Controller
      *                 type="object",
      *                 @OA\Property(property="bill_id", type="integer", example=1),
      *                     @OA\Property(property="referral_id", type="integer"),
-     *                     @OA\Property(property="amount", type="double"),
-     *                     @OA\Property(property="notes", type="string"),
-     *                     @OA\Property(property="sent_to", type="string"),
+     *                     @OA\Property(property="total_amount", type="double"),
+     *                     @OA\Property(property="bill_period_start", type="string"),
+     *                     @OA\Property(property="bill_period_end", type="string"),
      *                     @OA\Property(property="sent_date", type="string", format="date-time"),
      *                     @OA\Property(property="bill_file", type="string"),
      *                     @OA\Property(property="created_by", type="integer", example=1),
@@ -305,9 +305,9 @@ class BillController extends Controller
      *                 @OA\Items(
      *                     type="object",
      *                 @OA\Property(property="referral_id", type="integer"),
-     *                     @OA\Property(property="amount", type="double"),
-     *                     @OA\Property(property="notes", type="string"),
-     *                     @OA\Property(property="sent_to", type="string"),
+     *                     @OA\Property(property="total_amount", type="double"),
+     *                     @OA\Property(property="bill_period_start", type="string"),
+     *                     @OA\Property(property="bill_period_end", type="string"),
      *                     @OA\Property(property="sent_date", type="string", format="date-time"),
      *                     @OA\Property(property="bill_file", type="string"),
      *                 ),
@@ -336,9 +336,9 @@ class BillController extends Controller
         // Validate input
         $data = $request->validate([
             'referral_id' => ['required', 'numeric'],
-            'amount' => ['nullable', 'numeric'],
-            'notes' => ['nullable', 'string'],
-            'sent_to' => ['nullable', 'string'],
+            'total_amount' => ['nullable', 'numeric'],
+            'bill_period_start' => ['nullable', 'string'],
+            'bill_period_end' => ['nullable', 'string'],
             'bill_file_id' => ['nullable', 'numeric', 'exists:bill_files,bill_file_id'],
             'bill_status' => ['nullable', 'string', 'in:Pending,Partially Paid,Paid'],
         ]);
@@ -510,9 +510,9 @@ class BillController extends Controller
      *                     type="object",
      *                     @OA\Property(property="bill_id", type="integer", example=1),
      *                     @OA\Property(property="referral_id", type="integer"),
-     *                     @OA\Property(property="amount", type="double"),
-     *                     @OA\Property(property="notes", type="string"),
-     *                     @OA\Property(property="sent_to", type="string"),
+     *                     @OA\Property(property="total_amount", type="double"),
+     *                     @OA\Property(property="bill_period_start", type="string"),
+     *                     @OA\Property(property="bill_period_end", type="string"),
      *                     @OA\Property(property="sent_date", type="string", format="date-time"),
      *                     @OA\Property(property="bill_file", type="string"),
      *                     @OA\Property(property="created_by", type="integer", example=1),
@@ -554,8 +554,8 @@ class BillController extends Controller
     //             'patients.job',
     //             'patients.position',
     //             'bills.bill_id',
-    //             'bills.amount as bill_amount',
-    //             'bills.sent_to',
+    //             'bills.total_amount as bill_total_amount',
+    //             'bills.bill_period_end',
     //             'bills.sent_date',
     //             'bills.bill_status',
     //             'bills.bill_file',
@@ -606,8 +606,8 @@ class BillController extends Controller
                 'patients.job',
                 'patients.position',
                 'bills.bill_id',
-                'bills.amount as bill_amount',
-                'bills.sent_to',
+                'bills.total_amount as bill_total_amount',
+                'bills.bill_period_end',
                 'bills.sent_date',
                 'bills.bill_status',
                 'bills.bill_file'
@@ -635,8 +635,8 @@ class BillController extends Controller
         // Format response
         $response = [
             'bill_id' => $bill->bill_id,
-            'bill_amount' => $bill->bill_amount,
-            'sent_to' => $bill->sent_to,
+            'bill_total_amount' => $bill->bill_total_amount,
+            'bill_period_end' => $bill->bill_period_end,
             'sent_date' => $bill->sent_date,
             'bill_status' => $bill->bill_status,
             'bill_file' => $bill->bill_file,

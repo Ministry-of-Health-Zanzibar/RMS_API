@@ -13,17 +13,18 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->bigIncrements('payment_id');
-            $table->unsignedBigInteger('monthly_bill_id');
-            $table->decimal('amount_paid', 12, 2);
-            $table->string('payment_method')->nullable();
+            $table->string('payer'); // e.g., NHIF, Patient, Insurance, Patient, Employer, Ministry of Health (GOV)
+            $table->decimal('amount_paid', 15, 2);
+            $table->string('currency')->default('TZS');
+            $table->enum('payment_method', ['Cash', 'Bank Transfer', 'Mobile Money'])->nullable(); // e.g., Bank Transfer, Cash
             $table->string('reference_number')->nullable(); // external payment reference
             $table->string('voucher_number')->nullable(); // internal ledger/voucher number
-            $table->unsignedBigInteger('paid_by');
+            $table->string('payment_date');
+            $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('monthly_bill_id')->references('monthly_bill_id')->on('monthly_bills');
-            $table->foreign('paid_by')->references('id')->on('users'); 
+            $table->foreign('created_by')->references('id')->on('users'); 
         });
     }
 

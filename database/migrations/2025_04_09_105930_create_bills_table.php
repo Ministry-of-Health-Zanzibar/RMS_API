@@ -13,12 +13,13 @@ return new class extends Migration {
         Schema::create('bills', function (Blueprint $table) {
             $table->bigIncrements('bill_id');
             $table->unsignedBigInteger('referral_id')->nullable();
-            $table->decimal('amount', 10, 2);
-            $table->text('notes')->nullable();
-            $table->enum('sent_to', ['Insurance', 'Accountant']);
-            $table->date('sent_date');
             $table->unsignedBigInteger('bill_file_id');
+
+            $table->decimal('total_amount', 12, 2);
+            $table->date('bill_period_start');
+            $table->date('bill_period_end');
             $table->enum('bill_status', ['Pending', 'Partially Paid', 'Paid'])->default('Pending');
+    
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();

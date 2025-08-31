@@ -20,6 +20,8 @@ use App\Http\Controllers\API\Patients\PatientListController;
 use App\Http\Controllers\API\HospitalLetters\HospitalLetterController;
 use App\Http\Controllers\API\Followups\FollowupController;
 use App\Http\Controllers\API\BillFiles\BillFileController;
+use App\Http\Controllers\API\BillItems\BillItemController;
+use App\Http\Controllers\API\BillPayments\BillPaymentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Reasons\ReasonController;
@@ -183,5 +185,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     //Bill Files
     Route::resource('bill-files', BillFileController::class);
+
+    //Bill Items
+    Route::resource('bill-items', BillItemController::class);
+
+    //Bill Payments
+    Route::resource('bill-payments', BillPaymentController::class);
+
 
 });

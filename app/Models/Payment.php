@@ -22,19 +22,20 @@ class Payment extends Model
 
     protected $fillable = [
         'monthly_bill_id',
+        'payer',
         'amount_paid',
+        'currency',
         'payment_method',
         'reference_number',
         'voucher_number',
-        'paid_by',
+        'payment_date',
+        'created_by',
     ];
 
     protected $dates = ['deleted_at'];
 
-    // Relationships
-    public function bill()
-    {
-        return $this->belongsTo(Bill::class, 'bill_id', 'bill_id');
+    public function bills() {
+        return $this->belongsToMany(Bill::class, 'bill_payments')->withPivot('allocated_amount', 'allocation_date', 'status');
     }
 
     public function getActivitylogOptions(): LogOptions

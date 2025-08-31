@@ -9,27 +9,26 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
-class Bill extends Model
+class BillItem extends Model
 {
     use LogsActivity, HasFactory, SoftDeletes;
-
 
     /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table = 'bills';
+    protected $table = 'bill_items';
 
     /**
      * The primary key associated with the table.
      *
      * @var string
      */
-    protected $primaryKey = 'bill_id';
+    protected $primaryKey = 'bill_item_id';
 
     /**
-     * Indicates if the model's ID is not auto-incrementing.
+     * Indicates if the model's ID is auto-incrementing.
      *
      * @var bool
      */
@@ -41,33 +40,31 @@ class Bill extends Model
      * @var string
      */
     protected $keyType = 'integer';
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
     protected $fillable = [
-        'referral_id',
-        'total_amount',
-        'bill_period_start',
-        'bill_period_end',
-        'bill_file_id',
-        'bill_status',
-        'created_by',
+        'bill_id',
+        'description',
+        'amount',
     ];
 
     /**
-     * Relationship with the Referral model.
+     * Relationship: Each BillItem belongs to a Bill.
      */
-    public function referral()
+    public function bill()
     {
-        return $this->belongsTo(Referral::class, 'referral_id', 'referral_id');
+        return $this->belongsTo(Bill::class, 'bill_id', 'bill_id');
     }
 
-    public function billItems() {
-        return $this->hasMany(BillItem::class, 'bill_id');
-    }
-
-    public function payments() {
-        return $this->belongsToMany(Payment::class, 'bill_payments')
-                    ->withPivot('allocated_amount', 'allocation_date', 'status');
-    }
-
+    /**
+     * Spatie activity log options.
+     *
+     * @return \Spatie\Activitylog\LogOptions
+     */
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['*']);
