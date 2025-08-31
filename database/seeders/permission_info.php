@@ -131,6 +131,11 @@ class permission_info extends Seeder
             'Delete Hospital Letter',
             'View Hospital Letter',
 
+            'View BillFile',
+            'Create BillFile',
+            'Update BillFile',
+            'Delete BillFile',
+
             // 'Accountant Module',
             // 'Create Source',
             // 'Update Source',

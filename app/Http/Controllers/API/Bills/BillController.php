@@ -152,38 +152,43 @@ class BillController extends Controller
 
         $data = $request->validate([
             'referral_id' => ['required', 'numeric'],
-            'amount' => ['nullable', 'numeric'],
+            'amount' => ['required', 'numeric'],
             'notes' => ['nullable', 'string'],
             'sent_to' => ['nullable', 'string'],
-            'bill_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,png', 'max:1024'],
+            'bill_file_id' => ['required', 'numeric'],
         ]);
-
 
         // Only handle the file after validation passes
-        $path = null;
-        if (isset($data['bill_file'])) {
-            $path = $data['bill_file']->store('documents', 'public');
+        $referral = Referral::find($data['referral_id']);
+
+        if (!$referral) {
+            return response([
+                'message' => 'Referral not found',
+                'statusCode' => 404,
+            ], 404);
         }
 
-        Referral::findOrFail($data['referral_id']);
-
         // Create Bill
-        $bill = Bill::create([
+        $billData = [
             'referral_id' => $data['referral_id'],
-            'amount' => $data['amount'],
-            'notes' => $data['notes'],
-            'sent_to' => $data['sent_to'],
+            'amount' => $data['amount'] ?? 0,
+            'notes' => $data['notes'] ?? null,
+            'sent_to' => $data['sent_to'] ?? 'Insurance',
             'sent_date' => Carbon::now(),
-            'bill_file' => $path,
+            'bill_file_id' => $data['bill_file_id'] ?? null,
+            'bill_status' => 'Pending', // default status
             'created_by' => Auth::id(),
-        ]);
+        ];
+
+        // Create the bill in the database
+        $bill = Bill::create($billData);
 
         if ($bill) {
             return response([
                 'data' => $bill,
                 'message' => 'Bill created successfully',
                 'statusCode' => 201,
-            ], status: 201);
+            ], 201);
         } else {
             return response([
                 'message' => 'Internal server error',
@@ -315,37 +320,36 @@ class BillController extends Controller
     public function updateBill(Request $request, int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Update Bill')) {
-            return response([
+
+        // Ensure user has role AND permission
+        if (!($user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) 
+            && $user->can('Update Bill'))) {
+            return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
+        // Find the Bill
+        $bill = Bill::findOrFail($id);
+
+        // Validate input
         $data = $request->validate([
             'referral_id' => ['required', 'numeric'],
             'amount' => ['nullable', 'numeric'],
             'notes' => ['nullable', 'string'],
             'sent_to' => ['nullable', 'string'],
-            // 'bill_file' => ['nullable', 'string'],
-            'bill_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,png', 'max:1024'],
+            'bill_file_id' => ['nullable', 'numeric', 'exists:bill_files,bill_file_id'],
+            'bill_status' => ['nullable', 'string', 'in:Pending,Partially Paid,Paid'],
         ]);
 
-        $bill = Bill::findOrFail($id);
-
-        // Handle file upload if provided
-        if ($request->hasFile('bill_file')) {
-            $path = $request->file('bill_file')->store('documents', 'public');
-            $data['bill_file'] = $path;
-        } else {
-            unset($data['bill_file']);
-        }
-
+        // Update created_by to the current user
         $data['created_by'] = Auth::id();
 
+        // Update the bill
         $bill->update($data);
 
-        return response([
+        return response()->json([
             'data' => $bill,
             'message' => 'Bill updated successfully.',
             'statusCode' => 200,

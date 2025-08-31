@@ -47,7 +47,8 @@ class Bill extends Model
         'notes',
         'sent_to',
         'sent_date',
-        'bill_file',
+        'bill_file_id',
+        'bill_status',
         'created_by'
     ];
 
