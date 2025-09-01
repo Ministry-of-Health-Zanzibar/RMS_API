@@ -14,7 +14,6 @@ return new class extends Migration {
             $table->bigIncrements('patient_list_id');
             $table->string('patient_list_title');
             $table->string('patient_list_file');
-            $table->string('patient_list_total_amount');
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();
