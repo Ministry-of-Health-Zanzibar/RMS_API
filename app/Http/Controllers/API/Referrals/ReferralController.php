@@ -271,7 +271,7 @@ class ReferralController extends Controller
      *     )
      * )
      */
-    public function show($id)
+    public function show(int $id)
     {
         $user = auth()->user();
 
