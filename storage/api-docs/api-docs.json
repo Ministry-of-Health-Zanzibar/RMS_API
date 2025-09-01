@@ -2949,7 +2949,7 @@
         "/api/bills": {
             "get": {
                 "tags": [
-                    "bills"
+                    "Bills"
                 ],
                 "summary": "Get all bills",
                 "operationId": "4f45ee4605af179b021a6c568e118a70",
@@ -3131,7 +3131,7 @@
         "/api/bills/{billId}": {
             "get": {
                 "tags": [
-                    "bills"
+                    "Bills"
                 ],
                 "summary": "Find bill by ID",
                 "operationId": "6b6d7a86adaf95d498b31a3a602fddaa",
@@ -3338,7 +3338,7 @@
             },
             "delete": {
                 "tags": [
-                    "bills"
+                    "Bills"
                 ],
                 "summary": "Delete patient",
                 "operationId": "ea91f0c24bead257556017342087e330",
@@ -3393,7 +3393,7 @@
         "/api/bills/unblock/{billId}": {
             "patch": {
                 "tags": [
-                    "bills"
+                    "Bills"
                 ],
                 "summary": "Unblock bill",
                 "operationId": "602fcebc159926cd3c0506101bf4e68e",
@@ -10790,10 +10790,6 @@
         {
             "name": "Bill Items",
             "description": "Bill Items"
-        },
-        {
-            "name": "bills",
-            "description": "bills"
         },
         {
             "name": "Bills",

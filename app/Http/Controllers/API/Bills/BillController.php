@@ -26,7 +26,7 @@ class BillController extends Controller
      * @OA\Get(
      *     path="/api/bills",
      *     summary="Get all bills",
-     *     tags={"bills"},
+     *     tags={"Bills"},
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -194,7 +194,7 @@ class BillController extends Controller
      * @OA\Get(
      *     path="/api/bills/{billId}",
      *     summary="Find bill by ID",
-     *     tags={"bills"},
+     *     tags={"Bills"},
      *     @OA\Parameter(
      *         name="billId",
      *         in="path",
@@ -352,7 +352,7 @@ class BillController extends Controller
      * @OA\Delete(
      *     path="/api/bills/{billId}",
      *     summary="Delete patient",
-     *     tags={"bills"},
+     *     tags={"Bills"},
      *     @OA\Parameter(
      *         name="billId",
      *         in="path",
@@ -416,7 +416,7 @@ class BillController extends Controller
      * @OA\Patch(
      *     path="/api/bills/unblock/{billId}",
      *     summary="Unblock bill",
-     *     tags={"bills"},
+     *     tags={"Bills"},
      *     @OA\Parameter(
      *         name="billId",
      *         in="path",
