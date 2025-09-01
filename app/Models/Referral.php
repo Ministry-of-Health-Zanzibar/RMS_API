@@ -18,27 +18,13 @@ class Referral extends Model
 
     protected $fillable = [
         'patient_id',
+        'referral_number',
         'hospital_id',
         'reason_id',
         'status',
         'confirmed_by',
         'created_by',
     ];
-
-    // public function patient()
-    // {
-    //     return $this->belongsTo(Patient::class);
-    // }
-
-    // public function hospital()
-    // {
-    //     return $this->belongsTo(Hospital::class);
-    // }
-
-    // public function reason()
-    // {
-    //     return $this->belongsTo(Reason::class);
-    // }
 
     public function referral()
     {

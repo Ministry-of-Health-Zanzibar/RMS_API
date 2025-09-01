@@ -12,6 +12,7 @@ return new class extends Migration {
     {
         Schema::create('referrals', function (Blueprint $table) {
             $table->bigIncrements('referral_id');
+            $table->string('referral_number')->unique()->after('referral_id');
             $table->unsignedBigInteger('patient_id');
             $table->unsignedBigInteger('hospital_id')->nullable();
             $table->unsignedBigInteger('reason_id');
@@ -23,6 +24,7 @@ return new class extends Migration {
 
             // Foreign key constraints (if applicable)
             $table->foreign('patient_id')->references('patient_id')->on('patients');
+            $table->foreign('hospital_id')->references('hospital_id')->on('hospitals');
             $table->foreign('reason_id')->references('reason_id')->on('reasons');
             $table->foreign('confirmed_by')->references('id')->on('users');
         });

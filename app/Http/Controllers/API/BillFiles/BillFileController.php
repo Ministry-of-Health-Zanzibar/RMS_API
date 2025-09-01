@@ -104,6 +104,7 @@ class BillFileController extends Controller
      *                 @OA\Property(property="bill_file_title", type="string", example="Lumumba Hospital Bill August 2025"),
      *                 @OA\Property(property="bill_file", type="string", example="bill_files/file.pdf"),
      *                 @OA\Property(property="bill_file_amount", type="string", example="50,000,000"),
+     *                 @OA\Property(property="hospital_id", type="integer", example="1"),
      *                 @OA\Property(property="created_by", type="integer", example=1),
      *                 @OA\Property(property="created_at", type="string", format="date-time"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time")
@@ -137,6 +138,7 @@ class BillFileController extends Controller
             'bill_file_title' => ['required','string','max:255'],
             'bill_file' => ['required','file','mimes:pdf,jpg,jpeg,png','max:2048'],
             'bill_file_amount' => ['required','string'],
+            'hospital_id' => ['required', 'numeric']
         ]);
 
         $path = $request->file('bill_file')->store('bill_files', 'public');
@@ -243,7 +245,8 @@ class BillFileController extends Controller
      *             @OA\Schema(
      *                 @OA\Property(property="bill_file_title", type="string", example="Lumumba Hospital Bill August 2024"),
      *                 @OA\Property(property="bill_file", type="string", format="binary"),
-     *                 @OA\Property(property="bill_file_amount", type="string", example="55,000,000")
+     *                 @OA\Property(property="bill_file_amount", type="string", example="55,000,000"),
+     *                 @OA\Property(property="hospital_id", type="integer", example="1")
      *             )
      *         )
      *     ),
@@ -285,6 +288,7 @@ class BillFileController extends Controller
             'bill_file_title' => ['sometimes','string','max:255'],
             'bill_file' => ['sometimes','file','mimes:pdf,jpg,jpeg,png','max:2048'],
             'bill_file_amount' => ['sometimes','string'],
+            'hospital_id' => ['required', 'numeric']
         ]);
 
         if ($request->hasFile('bill_file')) {

@@ -200,7 +200,9 @@ class ReferralController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Create Referral')) {
+        if (
+            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Create Referral')
+        ) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -209,27 +211,32 @@ class ReferralController extends Controller
 
         $data = $request->validate([
             'patient_id' => ['required', 'numeric'],
-            'reason_id' => ['required', 'numeric'],
+            'reason_id'  => ['required', 'numeric'],
         ]);
 
+        // --- Generate referral number ---
+        $today = now()->format('Y-m-d'); // e.g. 2025-09-01
+        $count = Referral::whereDate('created_at', $today)->count() + 1;
+        $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
 
         $referral = Referral::create([
-            'patient_id' => $data['patient_id'],
-            'reason_id' => $data['reason_id'],
-            'status' => 'Pending',
-            'confirmed_by' => Auth::id(),
-            'created_by' => Auth::id(),
+            'patient_id'       => $data['patient_id'],
+            'reason_id'        => $data['reason_id'],
+            'status'           => 'Pending',
+            'referral_number'  => $referralNumber,
+            'confirmed_by'     => Auth::id(),
+            'created_by'       => Auth::id(),
         ]);
 
         if ($referral) {
             return response([
-                'data' => $referral,
-                'message' => 'Referral created successfully.',
+                'data'       => $referral,
+                'message'    => 'Referral created successfully.',
                 'statusCode' => 201,
-            ], status: 201);
+            ], 201);
         } else {
             return response([
-                'message' => 'Internal server error',
+                'message'    => 'Internal server error',
                 'statusCode' => 500,
             ], 500);
         }
@@ -373,6 +380,7 @@ class ReferralController extends Controller
         $data = $request->validate([
             'patient_id' => ['required', 'numeric'],
             'reason_id' => ['required', 'numeric'],
+            'hospital_id' => ['required', 'numeric']
         ]);
 
 
@@ -380,6 +388,7 @@ class ReferralController extends Controller
         $referral->update([
             'patient_id' => $data['patient_id'],
             'reason_id' => $data['reason_id'],
+            'hospital_id' => $data['hospital_id'],
             'confirmed_by' => Auth::id(),
             'created_by' => Auth::id(),
         ]);

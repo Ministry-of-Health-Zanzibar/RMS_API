@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('bill_files', function (Blueprint $table) {
             $table->bigIncrements('bill_file_id'); // Primary Key
+            $table->unsignedBigInteger('hospital_id')->nullable();
             $table->string('bill_file_title');     // Title of the bill file
             $table->string('bill_file');           // Path or filename of the uploaded file
             $table->string('bill_file_amount');
@@ -20,6 +21,7 @@ return new class extends Migration
             $table->timestamps();                  // created_at & updated_at
             $table->softDeletes();
 
+            $table->foreign('hospital_id')->references('hospital_id')->on('hospitals');
             $table->foreign('created_by')->references('id')->on('users');
         });
     }

@@ -51,6 +51,7 @@ class BillFile extends Model
         'bill_file',
         'bill_file_amount',
         'created_by',
+        'hospital_id',
     ];
 
     /**

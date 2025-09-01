@@ -2200,6 +2200,10 @@
                                                     "type": "string",
                                                     "example": "50,000,000"
                                                 },
+                                                "hospital_id": {
+                                                    "type": "integer",
+                                                    "example": "1"
+                                                },
                                                 "created_by": {
                                                     "type": "integer",
                                                     "example": 1
@@ -2386,6 +2390,10 @@
                                     "bill_file_amount": {
                                         "type": "string",
                                         "example": "55,000,000"
+                                    },
+                                    "hospital_id": {
+                                        "type": "integer",
+                                        "example": "1"
                                     }
                                 },
                                 "type": "object"
