@@ -82,21 +82,12 @@ class BillController extends Controller
                 'message' => 'No data found',
                 'statusCode' => 200,
             ], 200);
-        } else {
-
-            // Append full doc URL
-            $bills = $bills->map(function ($bill) {
-                $bill->billDocumentUrl = $bill->bill_file
-                    ? asset('storage/' . $bill->bill_file)
-                    : null;
-                return $bill;
-            });
-
-            return response([
-                'data' => $bills,
-                'statusCode' => 200,
-            ], 200);
         }
+
+        return response([
+            'data' => $bills,
+            'statusCode' => 200,
+        ], 200);
     }
 
     /**
@@ -254,19 +245,12 @@ class BillController extends Controller
                 'message' => 'Bill not found',
                 'statusCode' => 404,
             ]);
-        } else {
-            // Append full image URL
-            if ($bill->bill_file) {
-                $bill->billDocumentUrl = asset('storage/' . $bill->bill_file);
-            } else {
-                $bill->billDocumentUrl = null;
-            }
-
-            return response([
-                'data' => $bill,
-                'statusCode' => 200,
-            ]);
         }
+
+        return response([
+            'data' => $bill,
+            'statusCode' => 200,
+        ]);
 
     }
 

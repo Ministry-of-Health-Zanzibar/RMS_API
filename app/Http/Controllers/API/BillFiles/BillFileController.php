@@ -19,6 +19,42 @@ class BillFileController extends Controller
     /**
      * Display a listing of the resource.
      */
+    /**
+     * @OA\Get(
+     *     path="/api/bill-files",
+     *     summary="Get all bill files",
+     *     tags={"Bill Files"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Bill files retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="bill_file_id", type="integer", example=1),
+     *                     @OA\Property(property="bill_file_title", type="string", example="Lumumba Hospital Bill August 2025"),
+     *                     @OA\Property(property="bill_file", type="string", example="bill_files/file.pdf"),
+     *                     @OA\Property(property="bill_file_amount", type="string", example="50,000,000"),
+     *                     @OA\Property(property="created_by", type="integer", example=1),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Forbidden"),
+     *             @OA\Property(property="statusCode", type="integer", example=403)
+     *         )
+     *     )
+     * )
+     */
     public function index()
     {
         $user = auth()->user();
@@ -39,6 +75,53 @@ class BillFileController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     */
+    /**
+     * @OA\Post(
+     *     path="/api/bill-files",
+     *     summary="Create a bill file",
+     *     tags={"Bill Files"},
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"bill_file_title","bill_file","bill_file_amount"},
+     *                 @OA\Property(property="bill_file_title", type="string", example="Lumumba Hospital Bill August 2025"),
+     *                 @OA\Property(property="bill_file", type="string", format="binary"),
+     *                 @OA\Property(property="bill_file_amount", type="string", example="50,000,000")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Bill file created successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="bill_file_id", type="integer", example=1),
+     *                 @OA\Property(property="bill_file_title", type="string", example="Lumumba Hospital Bill August 2025"),
+     *                 @OA\Property(property="bill_file", type="string", example="bill_files/file.pdf"),
+     *                 @OA\Property(property="bill_file_amount", type="string", example="50,000,000"),
+     *                 @OA\Property(property="created_by", type="integer", example=1),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Bill file created successfully"),
+     *             @OA\Property(property="statusCode", type="integer", example=201)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Forbidden"),
+     *             @OA\Property(property="statusCode", type="integer", example=403)
+     *         )
+     *     )
+     * )
      */
     public function store(Request $request)
     {
@@ -73,6 +156,46 @@ class BillFileController extends Controller
     /**
      * Display the specified resource.
      */
+    /**
+     * @OA\Get(
+     *     path="/api/bill-files/{id}",
+     *     summary="Get a specific bill file",
+     *     tags={"Bill Files"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Bill file retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="bill_file_id", type="integer", example=1),
+     *                 @OA\Property(property="bill_file_title", type="string", example="Lumumba Hospital Bill August 2025"),
+     *                 @OA\Property(property="bill_file", type="string", example="bill_files/file.pdf"),
+     *                 @OA\Property(property="bill_file_amount", type="string", example="50,000,000"),
+     *                 @OA\Property(property="created_by", type="integer", example=1),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="BillFile not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="BillFile not found"),
+     *             @OA\Property(property="statusCode", type="integer", example=404)
+     *         )
+     *     )
+     * )
+     */
     public function show($id)
     {
         $user = auth()->user();
@@ -100,6 +223,50 @@ class BillFileController extends Controller
 
     /**
      * Update the specified resource in storage.
+     */
+    /**
+     * @OA\Put(
+     *     path="/api/bill-files/{id}",
+     *     summary="Update a bill file",
+     *     tags={"Bill Files"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(property="bill_file_title", type="string", example="Lumumba Hospital Bill August 2024"),
+     *                 @OA\Property(property="bill_file", type="string", format="binary"),
+     *                 @OA\Property(property="bill_file_amount", type="string", example="55,000,000")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Bill file updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="data", type="object"),
+     *             @OA\Property(property="message", type="string", example="BillFile updated successfully"),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="BillFile not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="BillFile not found"),
+     *             @OA\Property(property="statusCode", type="integer", example=404)
+     *         )
+     *     )
+     * )
      */
     public function update(Request $request, $id)
     {
@@ -139,6 +306,38 @@ class BillFileController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     */
+    /**
+     * @OA\Delete(
+     *     path="/api/bill-files/{id}",
+     *     summary="Delete a bill file",
+     *     tags={"Bill Files"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Bill file deleted successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="BillFile deleted successfully"),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="BillFile not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="BillFile not found"),
+     *             @OA\Property(property="statusCode", type="integer", example=404)
+     *         )
+     *     )
+     * )
      */
     public function destroy($id)
     {

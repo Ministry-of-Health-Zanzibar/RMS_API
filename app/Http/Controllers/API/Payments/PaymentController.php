@@ -30,8 +30,13 @@ class PaymentController extends Controller
      */
     public function index()
     {
-        $payments = Payment::latest()->paginate(10);
-        return response()->json($payments);
+        // $payments = Payment::latest()->paginate(10);
+        $payments = Payment::latest()->get(); // <- get() executes the query
+
+        return response()->json([
+            'data' => $payments,
+            'statusCode' => 200
+        ]);
     }
 
     
@@ -99,7 +104,8 @@ class PaymentController extends Controller
         return response()->json([
             'message' => 'Payment created successfully.',
             'payment' => $payment,
-        ], 201);
+            'statusCode' => 200,
+        ], 200);
     }
 
 
@@ -185,6 +191,7 @@ class PaymentController extends Controller
         return response()->json([
             'message' => 'Payment updated successfully.',
             'payment' => $payment,
+            'statusCode' => 200,
         ], 200);
     }
 
@@ -207,6 +214,9 @@ class PaymentController extends Controller
         $payment = Payment::findOrFail($id);
         $payment->delete();
 
-        return response()->json(['message' => 'Payment deleted successfully.']);
+        return response()->json([
+            'message' => 'Payment deleted successfully.',
+            'statusCode' => 200,
+        ]);
     }
 }

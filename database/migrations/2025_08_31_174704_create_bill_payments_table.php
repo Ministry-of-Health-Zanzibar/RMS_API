@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('allocation_date')->nullable();
             $table->enum('status', ['Pending', 'Partial', 'Settled'])->default('Pending');
             $table->timestamps();
+            $table->softDeletes();
+
 
             // Foreign keys
             $table->foreign('bill_id')->references('bill_id')->on('bills');

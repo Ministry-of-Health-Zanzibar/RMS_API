@@ -136,6 +136,11 @@ class permission_info extends Seeder
             'Update BillFile',
             'Delete BillFile',
 
+            'View Bill Item',
+            'Create Bill Item',
+            'Update Bill Item',
+            'Delete Bill Item',
+
             // 'Accountant Module',
             // 'Create Source',
             // 'Update Source',

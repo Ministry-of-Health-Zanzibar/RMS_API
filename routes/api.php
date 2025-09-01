@@ -177,19 +177,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::patch('patient-lists/unblock/{id}', [PatientListController::class, 'unBlockParentList']);
     Route::get('patient-lists/body-form/{id}', [PatientListController::class, 'getAllPatientsByPatientListId']);
 
-    //Hospital Letters
+    // Hospital Letters
     Route::resource('hospital-letters', HospitalLetterController::class);
 
-    //Followups
+    // Followups
     Route::resource('followups', FollowupController::class);
 
-    //Bill Files
+    // Bill Files
     Route::resource('bill-files', BillFileController::class);
 
-    //Bill Items
+    // Bill Items
     Route::resource('bill-items', BillItemController::class);
 
-    //Bill Payments
+    // Bill Payments
     Route::resource('bill-payments', BillPaymentController::class);
 
 });

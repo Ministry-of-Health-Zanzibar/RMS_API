@@ -3,18 +3,66 @@
 namespace App\Http\Controllers\API\BillItems;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\BillItem;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class BillItemController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+        $this->middleware('permission:View Bill Item|Create Bill Item|Update Bill Item|Delete Bill Item', ['only' => ['index', 'store', 'show', 'update', 'destroy', 'restore']]);
+    }
+
     /**
-     * Display a listing of all Bill Items.
+     * @OA\Get(
+     *     path="/api/bill-items",
+     *     summary="Get all bill items",
+     *     tags={"Bill Items"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="bill_item_id", type="integer", example=1),
+     *                     @OA\Property(property="bill_id", type="integer", example=1),
+     *                     @OA\Property(property="description", type="string", example="X-ray Charges"),
+     *                     @OA\Property(property="amount", type="number", format="float", example=5000),
+     *                     @OA\Property(property="created_by", type="integer", example=1),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                     @OA\Property(property="deleted_at", type="string", format="date-time", nullable=true)
+     *                 )
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Bill items retrieved successfully"),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     )
+     * )
      */
     public function index()
     {
-        $billItems = BillItem::with('bill')->get();
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Bill Item')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $billItems = BillItem::withTrashed()->with('bill')->get();
+
+        if ($billItems->isEmpty()) {
+            return response()->json([
+                'message' => 'No data found',
+                'statusCode' => 200
+            ], 200);
+        }
 
         return response()->json([
             'data' => $billItems,
@@ -24,14 +72,57 @@ class BillItemController extends Controller
     }
 
     /**
-     * Store a newly created Bill Item.
+     * @OA\Post(
+     *     path="/api/bill-items",
+     *     summary="Create a new bill item",
+     *     tags={"Bill Items"},
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"bill_id","description","amount"},
+     *             @OA\Property(property="bill_id", type="integer", example=1),
+     *             @OA\Property(property="description", type="string", example="Laboratory Fee"),
+     *             @OA\Property(property="amount", type="number", format="float", example=2500)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Bill item created successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="data", type="object"),
+     *             @OA\Property(property="message", type="string", example="Bill item created successfully"),
+     *             @OA\Property(property="statusCode", type="integer", example=201)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Validation error"),
+     *             @OA\Property(property="errors", type="object"),
+     *             @OA\Property(property="statusCode", type="integer", example=422)
+     *         )
+     *     )
+     * )
      */
     public function store(Request $request)
     {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Create Bill Item')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
-            'bill_id'     => 'required|exists:bills,bill_id',
+            'bill_id' => 'required|exists:bills,bill_id',
             'description' => 'required|string|max:255',
-            'amount'      => 'required|numeric|min:0',
+            'amount' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -42,7 +133,7 @@ class BillItemController extends Controller
             ], 422);
         }
 
-        $billItem = BillItem::create($validator->validated());
+        $billItem = BillItem::create($validator->validated() + ['created_by' => Auth::id()]);
 
         return response()->json([
             'data' => $billItem,
@@ -52,11 +143,60 @@ class BillItemController extends Controller
     }
 
     /**
-     * Display the specified Bill Item.
+     * @OA\Get(
+     *     path="/api/bill-items/{id}",
+     *     summary="Get a specific bill item",
+     *     tags={"Bill Items"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Bill item retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="bill_item_id", type="integer", example=1),
+     *                 @OA\Property(property="bill_id", type="integer", example=1),
+     *                 @OA\Property(property="description", type="string", example="X-ray Charges"),
+     *                 @OA\Property(property="amount", type="number", format="float", example=5000),
+     *                 @OA\Property(property="created_by", type="integer", example=1),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                 @OA\Property(property="deleted_at", type="string", format="date-time", nullable=true)
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Bill item retrieved successfully"),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Bill item not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Bill item not found"),
+     *             @OA\Property(property="statusCode", type="integer", example=404)
+     *         )
+     *     )
+     * )
      */
-    public function show(string $id)
+    public function show(int $id)
     {
-        $billItem = BillItem::with('bill')->find($id);
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Bill Item')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $billItem = BillItem::withTrashed()->with('bill')->find($id);
 
         if (!$billItem) {
             return response()->json([
@@ -73,12 +213,49 @@ class BillItemController extends Controller
     }
 
     /**
-     * Update the specified Bill Item.
+     * @OA\Put(
+     *     path="/api/bill-items/{id}",
+     *     summary="Update a bill item",
+     *     tags={"Bill Items"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="bill_id", type="integer", example=1),
+     *             @OA\Property(property="description", type="string", example="Updated description"),
+     *             @OA\Property(property="amount", type="number", format="float", example=3000)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Bill item updated successfully",
+     *         @OA\JsonContent(type="object")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Bill item not found",
+     *         @OA\JsonContent(type="object")
+     *     )
+     * )
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, int $id)
     {
-        $billItem = BillItem::find($id);
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Update Bill Item')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
 
+        $billItem = BillItem::find($id);
         if (!$billItem) {
             return response()->json([
                 'message' => 'Bill item not found',
@@ -87,9 +264,9 @@ class BillItemController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'bill_id'     => 'sometimes|exists:bills,bill_id',
+            'bill_id' => 'sometimes|exists:bills,bill_id',
             'description' => 'sometimes|string|max:255',
-            'amount'      => 'sometimes|numeric|min:0',
+            'amount' => 'sometimes|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -110,11 +287,40 @@ class BillItemController extends Controller
     }
 
     /**
-     * Remove the specified Bill Item.
+     * @OA\Delete(
+     *     path="/api/bill-items/{id}",
+     *     summary="Delete a bill item",
+     *     tags={"Bill Items"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Bill item deleted successfully",
+     *         @OA\JsonContent(type="object")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Bill item not found",
+     *         @OA\JsonContent(type="object")
+     *     )
+     * )
      */
-    public function destroy(string $id)
+    public function destroy(int $id)
     {
-        $billItem = BillItem::find($id);
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Delete Bill Item')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $billItem = BillItem::withTrashed()->find($id);
 
         if (!$billItem) {
             return response()->json([
@@ -127,6 +333,57 @@ class BillItemController extends Controller
 
         return response()->json([
             'message' => 'Bill item deleted successfully',
+            'statusCode' => 200
+        ], 200);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/bill-items/restore/{id}",
+     *     summary="Restore a soft-deleted bill item",
+     *     tags={"Bill Items"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Bill item restored successfully",
+     *         @OA\JsonContent(type="object")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Bill item not found",
+     *         @OA\JsonContent(type="object")
+     *     )
+     * )
+     */
+    public function restore(int $id)
+    {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Update Bill Item')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $billItem = BillItem::withTrashed()->find($id);
+
+        if (!$billItem) {
+            return response()->json([
+                'message' => 'Bill item not found',
+                'statusCode' => 404
+            ], 404);
+        }
+
+        $billItem->restore();
+
+        return response()->json([
+            'message' => 'Bill item restored successfully',
             'statusCode' => 200
         ], 200);
     }

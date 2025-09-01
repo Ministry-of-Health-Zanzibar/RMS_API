@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('description'); // e.g., Lab Test, Ward, Surgery
             $table->decimal('amount', 12, 2);
             $table->timestamps();
+            $table->softDeletes();
 
             $table->foreign('bill_id')->references('bill_id')->on('bills');
         });
