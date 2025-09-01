@@ -25,42 +25,104 @@ class BillController extends Controller
     /**
      * @OA\Get(
      *     path="/api/bills",
-     *     summary="Get all bills",
      *     tags={"Bills"},
+     *     summary="Get list of bills with related information",
+     *     description="Retrieve all bills including bill items, bill file, payments, referral details, patients, reasons, and hospitals.",
+     *     security={{"bearerAuth":{}}},
      *     @OA\Response(
      *         response=200,
-     *         description="Successful operation",
-     *         @OA\Header(
-     *             header="Cache-Control",
-     *             description="Cache control header",
-     *             @OA\Schema(type="string", example="no-cache, private")
-     *         ),
-     *         @OA\Header(
-     *             header="Content-Type",
-     *             description="Content type header",
-     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
-     *         ),
+     *         description="Bills retrieved successfully OR no data found",
      *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(
+     *             oneOf={
+     *                 @OA\Schema(
      *                     type="object",
-     *                     @OA\Property(property="bill_id", type="integer", example=1),
-     *                     @OA\Property(property="referral_id", type="integer"),
-     *                     @OA\Property(property="total_amount", type="double"),
-     *                     @OA\Property(property="bill_period_start", type="string"),
-     *                     @OA\Property(property="bill_period_end", type="string"),
-     *                     @OA\Property(property="sent_date", type="string", format="date-time"),
-     *                     @OA\Property(property="bill_file", type="string"),
-     *                     @OA\Property(property="created_by", type="integer", example=1),
-     *                     @OA\Property(property="created_at", type="string", format="date-time"),
-     *                     @OA\Property(property="deleted_at", type="string", format="date-time"),
-     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                     @OA\Property(property="statusCode", type="integer", example=200),
+     *                     @OA\Property(
+     *                         property="data",
+     *                         type="array",
+     *                         @OA\Items(
+     *                             type="object",
+     *                             @OA\Property(property="bill_id", type="integer", example=1),
+     *                             @OA\Property(property="referral_id", type="integer", example=5),
+     *                             @OA\Property(property="total_amount", type="number", format="float", example=15000),
+     *                             @OA\Property(property="bill_status", type="string", example="PENDING"),
+     *                             @OA\Property(
+     *                                 property="billItems",
+     *                                 type="array",
+     *                                 @OA\Items(
+     *                                     type="object",
+     *                                     @OA\Property(property="item_id", type="integer", example=10),
+     *                                     @OA\Property(property="description", type="string", example="X-ray service"),
+     *                                     @OA\Property(property="amount", type="number", example=5000)
+     *                                 )
+     *                             ),
+     *                             @OA\Property(
+     *                                 property="billFile",
+     *                                 type="object",
+     *                                 nullable=true,
+     *                                 @OA\Property(property="bill_file_id", type="integer", example=2),
+     *                                 @OA\Property(property="bill_file_title", type="string", example="Mnazi Mmoja Hospital August 2025 Bill"),
+     *                                 @OA\Property(property="bill_file", type="string", example="uploads/bills/august2025.pdf")
+     *                             ),
+     *                             @OA\Property(
+     *                                 property="payments",
+     *                                 type="array",
+     *                                 @OA\Items(
+     *                                     type="object",
+     *                                     @OA\Property(property="payment_id", type="integer", example=10),
+     *                                     @OA\Property(property="amount_paid", type="number", example=6000),
+     *                                     @OA\Property(property="currency", type="string", example="USD"),
+     *                                     @OA\Property(property="payment_method", type="string", example="CASH")
+     *                                 )
+     *                             ),
+     *                             @OA\Property(
+     *                                 property="referral",
+     *                                 type="object",
+     *                                 @OA\Property(property="referral_id", type="integer", example=5),
+     *                                 @OA\Property(
+     *                                     property="patient",
+     *                                     type="object",
+     *                                     nullable=true,
+     *                                     @OA\Property(property="patient_id", type="integer", example=101),
+     *                                     @OA\Property(property="first_name", type="string", example="Jane"),
+     *                                     @OA\Property(property="last_name", type="string", example="Doe"),
+     *                                     @OA\Property(property="dob", type="string", format="date", example="1990-02-15"),
+     *                                     @OA\Property(property="gender", type="string", example="Female")
+     *                                 ),
+     *                                 @OA\Property(
+     *                                     property="reason",
+     *                                     type="object",
+     *                                     nullable=true,
+     *                                     @OA\Property(property="reason_id", type="integer", example=12),
+     *                                     @OA\Property(property="description", type="string", example="Surgery Treatment")
+     *                                 ),
+     *                                 @OA\Property(
+     *                                     property="hospital",
+     *                                     type="object",
+     *                                     @OA\Property(property="hospital_id", type="integer", example=3),
+     *                                     @OA\Property(property="hospital_name", type="string", example="Mnazi Mmoja Hospital"),
+     *                                     @OA\Property(property="hospital_code", type="string", example="MMH001"),
+     *                                     @OA\Property(property="address", type="string", example="Stone Town, Zanzibar"),
+     *                                     @OA\Property(property="phone", type="string", example="+255 777 123 456")
+     *                                 )
+     *                             )
+     *                         )
+     *                     )
+     *                 ),
+     *                 @OA\Schema(
+     *                     type="object",
+     *                     @OA\Property(property="statusCode", type="integer", example=200),
+     *                     @OA\Property(property="message", type="string", example="No data found")
      *                 )
-     *             ),
-     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *             }
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="statusCode", type="integer", example=403),
+     *             @OA\Property(property="message", type="string", example="Forbidden")
      *         )
      *     )
      * )
@@ -68,14 +130,32 @@ class BillController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Bill')) {
+        if (
+            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
+            !$user->can('View Bill')
+        ) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $bills = Bill::withTrashed()->get();
+        $bills = Bill::with([
+            'billItems',
+            'billFile',
+            'payments',
+            'referral.patient',
+            'referral.reason',
+            'referral.hospital'
+        ])->withTrashed()->get();
+
+        // Transform each bill to ensure arrays
+        $bills = $bills->map(function($bill) {
+            $bill->patient = $bill->patient;
+            $bill->reason = $bill->reason;
+            $bill->hospital = $bill->hospital;
+            return $bill;
+        });
 
         if ($bills->isEmpty()) {
             return response([
@@ -193,35 +273,108 @@ class BillController extends Controller
     /**
      * @OA\Get(
      *     path="/api/bills/{billId}",
-     *     summary="Find bill by ID",
      *     tags={"Bills"},
+     *     summary="Find bill by ID with related information",
+     *     description="Retrieve a single bill including bill items, bill file, payments, referral details, patients, reasons, and hospitals.",
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="billId",
      *         in="path",
      *         required=true,
-     *         @OA\Schema(type="integer")
+     *         description="ID of the bill to retrieve",
+     *         @OA\Schema(type="integer", example=1)
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Successful operation",
+     *         description="Bill retrieved successfully",
      *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="object",
-     *                 @OA\Property(property="bill_id", type="integer", example=1),
-     *                     @OA\Property(property="referral_id", type="integer"),
-     *                     @OA\Property(property="total_amount", type="double"),
-     *                     @OA\Property(property="bill_period_start", type="string"),
-     *                     @OA\Property(property="bill_period_end", type="string"),
-     *                     @OA\Property(property="sent_date", type="string", format="date-time"),
-     *                     @OA\Property(property="bill_file", type="string"),
-     *                     @OA\Property(property="created_by", type="integer", example=1),
-     *                     @OA\Property(property="created_at", type="string", format="date-time"),
-     *                     @OA\Property(property="deleted_at", type="string", format="date-time"),
-     *                     @OA\Property(property="updated_at", type="string", format="date-time")
-     *             ),
-     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *             oneOf={
+     *                 @OA\Schema(
+     *                     type="object",
+     *                     @OA\Property(property="statusCode", type="integer", example=200),
+     *                     @OA\Property(
+     *                         property="data",
+     *                         type="object",
+     *                         @OA\Property(property="bill_id", type="integer", example=1),
+     *                         @OA\Property(property="referral_id", type="integer", example=5),
+     *                         @OA\Property(property="total_amount", type="number", format="float", example=15000),
+     *                         @OA\Property(property="bill_status", type="string", example="PENDING"),
+     *                         @OA\Property(
+     *                             property="billItems",
+     *                             type="array",
+     *                             @OA\Items(
+     *                                 type="object",
+     *                                 @OA\Property(property="item_id", type="integer", example=10),
+     *                                 @OA\Property(property="description", type="string", example="X-ray service"),
+     *                                 @OA\Property(property="amount", type="number", example=5000)
+     *                             )
+     *                         ),
+     *                         @OA\Property(
+     *                             property="billFile",
+     *                             type="object",
+     *                             nullable=true,
+     *                             @OA\Property(property="bill_file_id", type="integer", example=2),
+     *                             @OA\Property(property="bill_file_title", type="string", example="August 2025 Bill"),
+     *                             @OA\Property(property="bill_file", type="string", example="uploads/bills/august2025.pdf")
+     *                         ),
+     *                         @OA\Property(
+     *                             property="payments",
+     *                             type="array",
+     *                             @OA\Items(
+     *                                 type="object",
+     *                                 @OA\Property(property="payment_id", type="integer", example=10),
+     *                                 @OA\Property(property="amount_paid", type="number", example=6000),
+     *                                 @OA\Property(property="currency", type="string", example="USD"),
+     *                                 @OA\Property(property="payment_method", type="string", example="CASH")
+     *                             )
+     *                         ),
+     *                         @OA\Property(
+     *                             property="referral",
+     *                             type="object",
+     *                             @OA\Property(property="referral_id", type="integer", example=5),
+     *                             @OA\Property(
+     *                                 property="patient",
+     *                                 type="object",
+     *                                 nullable=true,
+     *                                 @OA\Property(property="patient_id", type="integer", example=101),
+     *                                 @OA\Property(property="first_name", type="string", example="Jane"),
+     *                                 @OA\Property(property="last_name", type="string", example="Doe"),
+     *                                 @OA\Property(property="dob", type="string", format="date", example="1990-02-15"),
+     *                                 @OA\Property(property="gender", type="string", example="Female")
+     *                             ),
+     *                             @OA\Property(
+     *                                 property="reason",
+     *                                 type="object",
+     *                                 nullable=true,
+     *                                 @OA\Property(property="reason_id", type="integer", example=12),
+     *                                 @OA\Property(property="description", type="string", example="Surgery Treatment")
+     *                             ),
+     *                             @OA\Property(
+     *                                 property="hospital",
+     *                                 type="object",
+     *                                 @OA\Property(property="hospital_id", type="integer", example=3),
+     *                                 @OA\Property(property="hospital_name", type="string", example="Mnazi Mmoja Hospital"),
+     *                                 @OA\Property(property="hospital_code", type="string", example="MMH001"),
+     *                                 @OA\Property(property="address", type="string", example="Stone Town, Zanzibar"),
+     *                                 @OA\Property(property="phone", type="string", example="+255 777 123 456")
+     *                             )
+     *                         )
+     *                     )
+     *                 ),
+     *                 @OA\Schema(
+     *                     type="object",
+     *                     @OA\Property(property="statusCode", type="integer", example=404),
+     *                     @OA\Property(property="message", type="string", example="Bill not found")
+     *                 )
+     *             }
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="statusCode", type="integer", example=403),
+     *             @OA\Property(property="message", type="string", example="Forbidden")
      *         )
      *     )
      * )
@@ -229,27 +382,36 @@ class BillController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Bill')) {
+        if (
+            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
+            !$user->can('View Bill')
+        ) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $bill = Bill::withTrashed()->find($id);
+        $bill = Bill::with([
+            'billItems',
+            'billFile',
+            'payments',
+            'referral.patient',
+            'referral.reason',
+            'referral.hospital'
+        ])->withTrashed()->find($id);
 
         if (!$bill) {
             return response([
                 'message' => 'Bill not found',
                 'statusCode' => 404,
-            ]);
+            ], 404);
         }
 
         return response([
             'data' => $bill,
             'statusCode' => 200,
-        ]);
-
+        ], 200);
     }
 
     /**

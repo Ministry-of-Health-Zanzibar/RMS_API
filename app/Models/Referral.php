@@ -25,24 +25,49 @@ class Referral extends Model
         'created_by',
     ];
 
+    // public function patient()
+    // {
+    //     return $this->belongsTo(Patient::class);
+    // }
+
+    // public function hospital()
+    // {
+    //     return $this->belongsTo(Hospital::class);
+    // }
+
+    // public function reason()
+    // {
+    //     return $this->belongsTo(Reason::class);
+    // }
+
+    public function referral()
+    {
+        return $this->belongsTo(Referral::class, 'referral_id', 'referral_id')
+                    ->with(['patient', 'reason', 'hospital']);
+    }
+
+    /**
+     * Referral belongs to a patient
+     */
     public function patient()
     {
-        return $this->belongsTo(Patient::class);
+        return $this->belongsTo(Patient::class, 'patient_id', 'patient_id');
     }
 
+    /**
+     * Referral belongs to a hospital
+     */
     public function hospital()
     {
-        return $this->belongsTo(Hospital::class);
+        return $this->belongsTo(Hospital::class, 'hospital_id', 'hospital_id');
     }
 
-    public function referralType()
-    {
-        return $this->belongsTo(ReferralType::class);
-    }
-
+    /**
+     * Referral has a reason
+     */
     public function reason()
     {
-        return $this->belongsTo(Reason::class);
+        return $this->belongsTo(Reason::class, 'reason_id', 'reason_id');
     }
 
     public function bills()
