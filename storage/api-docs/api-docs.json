@@ -3038,35 +3038,42 @@
             },
             "post": {
                 "tags": [
-                    "bills"
+                    "Bills"
                 ],
-                "summary": "Create bill",
+                "summary": "Create a new bill",
+                "description": "Create a new bill for a referral linked to a bill file",
                 "operationId": "ea146310330afe08936c49e3ff44c11c",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "referral_id",
+                                    "total_amount",
+                                    "bill_file_id"
+                                ],
                                 "properties": {
                                     "referral_id": {
-                                        "type": "integer"
+                                        "type": "integer",
+                                        "example": 1
                                     },
                                     "total_amount": {
                                         "type": "number",
-                                        "format": "double"
+                                        "format": "float",
+                                        "example": 5000
                                     },
                                     "bill_period_start": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "2025-08-01"
                                     },
                                     "bill_period_end": {
-                                        "type": "string"
-                                    },
-                                    "sent_date": {
                                         "type": "string",
-                                        "format": "date-time"
+                                        "example": "2025-08-31"
                                     },
-                                    "bill_file": {
-                                        "type": "string"
+                                    "bill_file_id": {
+                                        "type": "integer",
+                                        "example": 2
                                     }
                                 },
                                 "type": "object"
@@ -3075,34 +3082,42 @@
                     }
                 },
                 "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
+                    "201": {
+                        "description": "Bill created successfully",
+                        "content": {
+                            "application/json": {
                                 "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Bill created successfully"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 201
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
-                        },
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "example": "Forbidden"
                                         },
                                         "statusCode": {
                                             "type": "integer",
-                                            "example": "201"
+                                            "example": 403
                                         }
                                     },
                                     "type": "object"
@@ -3194,6 +3209,133 @@
                     }
                 }
             },
+            "put": {
+                "tags": [
+                    "Bills"
+                ],
+                "summary": "Update an existing bill",
+                "description": "Update a bill's referral, amount, period, status, or bill file",
+                "operationId": "b21e76e646622d24027c81bd8f3654ae",
+                "parameters": [
+                    {
+                        "name": "billId",
+                        "in": "path",
+                        "description": "Bill ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "referral_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "total_amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5500
+                                    },
+                                    "bill_period_start": {
+                                        "type": "string",
+                                        "example": "2025-08-01"
+                                    },
+                                    "bill_period_end": {
+                                        "type": "string",
+                                        "example": "2025-08-31"
+                                    },
+                                    "bill_file_id": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "bill_status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Pending",
+                                            "Partially Paid",
+                                            "Paid"
+                                        ],
+                                        "example": "Pending"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Bill updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Bill updated successfully."
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Forbidden"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 403
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Bill not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Bill not found"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 404
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "delete": {
                 "tags": [
                     "bills"
@@ -3238,87 +3380,6 @@
                                         },
                                         "statusCode": {
                                             "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/bills/update/{billId}": {
-            "put": {
-                "tags": [
-                    "bills"
-                ],
-                "summary": "Update bill",
-                "operationId": "b55aa5f80a6819e5b9185c99e75721f4",
-                "parameters": [
-                    {
-                        "name": "billId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "referral_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "total_amount": {
-                                                        "type": "number",
-                                                        "format": "double"
-                                                    },
-                                                    "bill_period_start": {
-                                                        "type": "string"
-                                                    },
-                                                    "bill_period_end": {
-                                                        "type": "string"
-                                                    },
-                                                    "sent_date": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "bill_file": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
                                         }
                                     },
                                     "type": "object"
@@ -3387,94 +3448,163 @@
         "/api/bills/getPatientBillAndPaymentByBillId/{billId}": {
             "get": {
                 "tags": [
-                    "bills"
+                    "Bills"
                 ],
-                "summary": "Get all bills, patient and payment",
+                "summary": "Get patient, bill and payments by bill ID",
                 "operationId": "681be629b61fe24d68f65c60ac2edeeb",
                 "parameters": [
                     {
                         "name": "billId",
                         "in": "path",
+                        "description": "Bill ID",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "bill_id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "referral_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "total_amount": {
-                                                        "type": "number",
-                                                        "format": "double"
-                                                    },
-                                                    "bill_period_start": {
-                                                        "type": "string"
-                                                    },
-                                                    "bill_period_end": {
-                                                        "type": "string"
-                                                    },
-                                                    "sent_date": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "bill_file": {
-                                                        "type": "string"
-                                                    },
-                                                    "created_by": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "deleted_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    }
+                                            "properties": {
+                                                "bill_id": {
+                                                    "type": "integer",
+                                                    "example": 1
                                                 },
-                                                "type": "object"
-                                            }
+                                                "bill_total_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 5000
+                                                },
+                                                "bill_period_end": {
+                                                    "type": "string",
+                                                    "example": "2025-08-31"
+                                                },
+                                                "sent_date": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "bill_status": {
+                                                    "type": "string",
+                                                    "example": "Pending"
+                                                },
+                                                "bill_file": {
+                                                    "type": "string"
+                                                },
+                                                "patient": {
+                                                    "properties": {
+                                                        "patient_id": {
+                                                            "type": "integer",
+                                                            "example": 10
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "John Doe"
+                                                        },
+                                                        "date_of_birth": {
+                                                            "type": "string",
+                                                            "example": "1990-01-01"
+                                                        },
+                                                        "gender": {
+                                                            "type": "string",
+                                                            "example": "Male"
+                                                        },
+                                                        "phone": {
+                                                            "type": "string",
+                                                            "example": "255712345678"
+                                                        },
+                                                        "location": {
+                                                            "type": "string",
+                                                            "example": "Dar es Salaam"
+                                                        },
+                                                        "job": {
+                                                            "type": "string",
+                                                            "example": "Teacher"
+                                                        },
+                                                        "position": {
+                                                            "type": "string",
+                                                            "example": "Senior"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "payments": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "payment_id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "amount_paid": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 2000
+                                                            },
+                                                            "payment_method": {
+                                                                "type": "string",
+                                                                "example": "CASH"
+                                                            },
+                                                            "payment_date": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
                                         },
                                         "statusCode": {
                                             "type": "integer",
                                             "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Forbidden"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 403
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No data found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No data found"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 404
                                         }
                                     },
                                     "type": "object"
@@ -5395,54 +5525,55 @@
                 "tags": [
                     "Payments"
                 ],
-                "summary": "Create a new payment",
-                "description": "Create a payment with payer, amount, currency, method, reference number, voucher number, and payment date",
+                "summary": "Create a payment and allocate to bills from a bill file",
                 "operationId": "a0e07f9ef1949ae69e66af6a657de492",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "amount_paid"
-                                ],
                                 "properties": {
+                                    "bill_file_id": {
+                                        "description": "ID of the bill file from which bills will be fetched",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "payer": {
-                                        "description": "Who made the payment",
+                                        "description": "Ministry of Health Zanzibar",
                                         "type": "string",
                                         "example": "John Doe"
                                     },
                                     "amount_paid": {
-                                        "description": "Amount paid",
+                                        "description": "Amount paid by the payer",
                                         "type": "number",
                                         "format": "float",
-                                        "example": 5000
+                                        "example": 500000
                                     },
                                     "currency": {
-                                        "description": "Currency code",
+                                        "description": "Currency of the payment",
                                         "type": "string",
-                                        "example": "USD"
+                                        "example": "TZS"
                                     },
                                     "payment_method": {
-                                        "description": "Payment method or bank name",
+                                        "description": "Optional payment method",
                                         "type": "string",
-                                        "example": "PBZ Bank"
+                                        "example": "Bank Transfer"
                                     },
                                     "reference_number": {
-                                        "description": "External payment reference",
+                                        "description": "Optional reference number",
                                         "type": "string",
-                                        "example": "REF20250822001"
+                                        "example": "REF12345"
                                     },
                                     "voucher_number": {
-                                        "description": "Internal voucher number",
+                                        "description": "Optional voucher number",
                                         "type": "string",
-                                        "example": "VCH-00123"
+                                        "example": "VCH98765"
                                     },
                                     "payment_date": {
-                                        "description": "Date when payment was made",
+                                        "description": "Optional payment date; defaults to now if not provided",
                                         "type": "string",
-                                        "format": "date",
-                                        "example": "2025-08-31"
+                                        "format": "date-time",
+                                        "example": "2025-09-01T10:00:00"
                                     }
                                 },
                                 "type": "object"
@@ -5451,18 +5582,104 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "Payment created successfully",
+                    "200": {
+                        "description": "Payment created and allocated successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Payment created successfully."
+                                            "example": "Payment created and allocated successfully."
                                         },
                                         "payment": {
+                                            "properties": {
+                                                "payment_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "payer": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "amount_paid": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 500000
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "example": "TZS"
+                                                },
+                                                "payment_method": {
+                                                    "type": "string",
+                                                    "example": "Bank Transfer"
+                                                },
+                                                "reference_number": {
+                                                    "type": "string",
+                                                    "example": "REF12345"
+                                                },
+                                                "voucher_number": {
+                                                    "type": "string",
+                                                    "example": "VCH98765"
+                                                },
+                                                "payment_date": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-09-01T10:00:00"
+                                                },
+                                                "created_by": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
                                             "type": "object"
+                                        },
+                                        "bill_allocations": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "bill_payment_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "bill_id": {
+                                                        "type": "integer",
+                                                        "example": 101
+                                                    },
+                                                    "payment_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "allocated_amount": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 250000
+                                                    },
+                                                    "allocation_date": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-09-01T10:05:00"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "Partial"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
                                         }
                                     },
                                     "type": "object"
@@ -5482,6 +5699,30 @@
                                         },
                                         "errors": {
                                             "type": "object"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 422
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Forbidden"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 403
                                         }
                                     },
                                     "type": "object"
@@ -5492,7 +5733,7 @@
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             }
@@ -5524,8 +5765,8 @@
                 "tags": [
                     "Payments"
                 ],
-                "summary": "Update a payment",
-                "description": "Update an existing payment details like payer, amount, currency, method, reference number, voucher number, and payment date",
+                "summary": "Update a payment and optionally re-allocate across bills",
+                "description": "Update an existing payment details like payer, amount, currency, method, reference number, voucher number, payment date, and optionally re-allocate payment across bills linked to a bill file.",
                 "operationId": "770fcba8273c277c679704c1dafc9f02",
                 "parameters": [
                     {
@@ -5548,6 +5789,11 @@
                                     "amount_paid"
                                 ],
                                 "properties": {
+                                    "bill_file_id": {
+                                        "description": "Optional: Bill file ID to re-allocate payment across bills referencing this file",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
                                     "payer": {
                                         "type": "string",
                                         "example": "John Doe"
@@ -5586,17 +5832,23 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Payment updated successfully",
+                        "description": "Payment updated and re-allocated successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Payment updated successfully."
+                                            "example": "Payment updated and re-allocated successfully."
                                         },
                                         "payment": {
                                             "type": "object"
+                                        },
+                                        "bill_allocations": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
                                         }
                                     },
                                     "type": "object"
@@ -5613,6 +5865,10 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Payment not found"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 404
                                         }
                                     },
                                     "type": "object"
@@ -10538,6 +10794,10 @@
         {
             "name": "bills",
             "description": "bills"
+        },
+        {
+            "name": "Bills",
+            "description": "Bills"
         },
         {
             "name": "monthly-bills",
