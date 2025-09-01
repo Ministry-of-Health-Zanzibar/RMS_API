@@ -192,5 +192,4 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //Bill Payments
     Route::resource('bill-payments', BillPaymentController::class);
 
-
 });

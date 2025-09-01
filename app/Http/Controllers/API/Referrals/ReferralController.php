@@ -87,6 +87,7 @@ class ReferralController extends Controller
                 "referrals.referral_id as referral_id",
                 "referrals.created_at as referral_created_at",
                 "referrals.updated_at as referral_updated_at",
+                "referrals.status as referral_status",
 
                 "patients.name as patient_name",
                 "patients.date_of_birth",
@@ -122,7 +123,6 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        // $referrals = Referral::withTrashed()->get();
         $referrals = DB::table('referrals')
             ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
             ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
