@@ -139,10 +139,7 @@ class ReferralController extends Controller
 
                 "reasons.referral_reason_name",
 
-                "bills.bill_id",
-                "bills.amount",
-                "bills.sent_to",
-                "bills.bill_status",
+                "bills.*",
             )
             ->get();
 

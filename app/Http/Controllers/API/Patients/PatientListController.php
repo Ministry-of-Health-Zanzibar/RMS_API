@@ -6,7 +6,6 @@ use App\Models\PatientList;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class PatientListController extends Controller
@@ -14,7 +13,8 @@ class PatientListController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Patient List|Create Patient List|Update Patient List|Delete Patient List', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
+        $this->middleware('permission:View Patient List|Create Patient List|Update Patient List|Delete Patient List', 
+            ['only' => ['index', 'store', 'show', 'updatePatientList', 'destroy', 'unBlockParentList', 'getAllPatientsByPatientListId']]);
     }
 
     /**
@@ -22,7 +22,9 @@ class PatientListController extends Controller
      */
     public function index()
     {
-        $lists = PatientList::withTrashed()->get();
+        $lists = PatientList::withTrashed()
+            ->with(['creator', 'patients'])
+            ->get();
 
         if ($lists->isEmpty()) {
             return response([
@@ -44,7 +46,7 @@ class PatientListController extends Controller
     {
         $request->validate([
             'patient_list_title' => ['required', 'string', 'max:255'],
-            'patient_list_file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'patient_list_file'  => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
         ]);
 
         // store file
@@ -52,12 +54,12 @@ class PatientListController extends Controller
 
         $list = PatientList::create([
             'patient_list_title' => $request->patient_list_title,
-            'patient_list_file' => $filePath,
-            'created_by' => Auth::id(),
+            'patient_list_file'  => $filePath,
+            'created_by'         => Auth::id(),
         ]);
 
         return response([
-            'data' => $list,
+            'data' => $list->load(['creator', 'patients']),
             'message' => 'Patient list created successfully',
             'statusCode' => 201
         ], 201);
@@ -68,7 +70,7 @@ class PatientListController extends Controller
      */
     public function show($id)
     {
-        $list = PatientList::with('creator')->find($id);
+        $list = PatientList::with(['creator', 'patients'])->find($id);
 
         if (!$list) {
             return response([
@@ -93,25 +95,21 @@ class PatientListController extends Controller
         // Validate input
         $data = $request->validate([
             'patient_list_title' => ['required', 'string', 'max:255'],
-            'patient_list_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'patient_list_file'  => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
         ]);
 
         // Handle file upload
         if ($request->hasFile('patient_list_file')) {
-            // Delete old file if exists
             if ($list->patient_list_file && Storage::disk('public')->exists($list->patient_list_file)) {
                 Storage::disk('public')->delete($list->patient_list_file);
             }
 
-            // Store new file
             $filePath = $request->file('patient_list_file')->store('patient_lists', 'public');
             $data['patient_list_file'] = $filePath;
         } else {
-            // Keep existing file if no new file uploaded
             $data['patient_list_file'] = $list->patient_list_file;
         }
 
-        // Update patient list
         $list->update([
             'patient_list_title' => $data['patient_list_title'],
             'patient_list_file'  => $data['patient_list_file'],
@@ -119,7 +117,7 @@ class PatientListController extends Controller
         ]);
 
         return response([
-            'data' => $list,
+            'data' => $list->load(['creator', 'patients']),
             'message' => 'Patient list updated successfully',
             'statusCode' => 200
         ], 200);
@@ -169,67 +167,32 @@ class PatientListController extends Controller
         ], 200);
     }
 
-
-    // Get patient by patient list id
+    /**
+     * Get patients by patient list id using relationship.
+     */
     public function getAllPatientsByPatientListId(int $patientListId)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Patient')) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) 
+            || !$user->can('View Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $rows = DB::table('patient_lists')
-            ->leftJoin('patients', 'patients.patient_list_id', '=', 'patient_lists.patient_list_id')
-            ->select(
-                'patient_lists.patient_list_id',
-                'patient_lists.patient_list_title',
-                'patient_lists.patient_list_file',
-                'patients.patient_id',
-                'patients.name',
-                'patients.date_of_birth',
-                'patients.gender',
-                'patients.phone',
-                'patients.location',
-                'patients.job',
-                'patients.position'
-            )
-            ->where('patient_lists.patient_list_id', '=', $patientListId)
-            ->get();
+        $list = PatientList::with('patients')->find($patientListId);
 
-        // Transform into nested structure
-        $patientList = [
-            'patient_list_title' => null,
-            'patient_list_file' => null,
-            'patients' => []
-        ];
-
-        if (!$rows->isEmpty()) {
-            $patientList['patient_list_id'] = $rows[0]->patient_list_id;
-            $patientList['patient_list_title'] = $rows[0]->patient_list_title;
-            $patientList['patient_list_file'] = $rows[0]->patient_list_file;
-
-            $patients = $rows->filter(fn($row) => $row->patient_id !== null)
-                            ->map(fn($row) => [
-                                'patient_id' => $row->patient_id,
-                                'name' => $row->name,
-                                'date_of_birth' => $row->date_of_birth,
-                                'gender' => $row->gender,
-                                'phone' => $row->phone,
-                                'location' => $row->location,
-                                'job' => $row->job,
-                                'position' => $row->position,
-                            ])
-                            ->values(); // reset keys
-
-            $patientList['patients'] = $patients;
+        if (!$list) {
+            return response([
+                'message' => 'Patient list not found',
+                'statusCode' => 404
+            ], 404);
         }
 
-        return response()->json([
-            'data' => $patientList,
+        return response([
+            'data' => $list,
             'statusCode' => 200,
-        ]);
+        ], 200);
     }
 }
