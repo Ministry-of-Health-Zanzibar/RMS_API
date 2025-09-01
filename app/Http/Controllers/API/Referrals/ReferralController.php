@@ -87,7 +87,7 @@ class ReferralController extends Controller
                 "referrals.referral_id as referral_id",
                 "referrals.created_at as referral_created_at",
                 "referrals.updated_at as referral_updated_at",
-                "referrals.status as referral_status",
+                "referrals.status",
 
                 "patients.name as patient_name",
                 "patients.date_of_birth",
