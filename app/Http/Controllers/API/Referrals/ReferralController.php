@@ -323,6 +323,51 @@ class ReferralController extends Controller
         ], 200);
     }
 
+    public function getReferralsByHospitalId(int $id)
+    {
+        $user = auth()->user();
+
+        // Permission check
+        if (
+            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER'])
+            || !$user->can('View Referral')
+        ) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // Fetch referrals with joins
+        $referrals = DB::table('referrals')
+            ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
+            ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
+            ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
+            ->select(
+                "referrals.referral_id",
+                "referrals.referral_number",
+                "patients.name as patient_name",
+                // "reasons.reason_name",
+                // "hospitals.hospital_name"
+            )
+            ->where("hospitals.hospital_id", '=', $id)
+            ->get();
+
+        // Handle missing referrals
+        if ($referrals->isEmpty()) {
+            return response()->json([
+                'message' => 'No referrals found for this hospital',
+                'statusCode' => 404,
+            ], 404);
+        }
+
+        // Success
+        return response()->json([
+            'data' => $referrals,
+            'statusCode' => 200,
+        ], 200);
+    }
+
     /**
      * Update the specified resource in storage.
      */
@@ -382,7 +427,6 @@ class ReferralController extends Controller
             'reason_id' => ['required', 'numeric'],
             'hospital_id' => ['required', 'numeric']
         ]);
-
 
         $referral = Referral::findOrFail($id);
         $referral->update([

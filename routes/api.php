@@ -108,6 +108,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('referral/action', [ReferralController::class, 'handleAction']);
     Route::patch('referrals/unBlock/{referralId}', [ReferralController::class, 'unBlockReferral']);
     Route::get('referrals-withbills/{referral_id}', [ReferralController::class, 'getReferralsWithBills']);
+    Route::get('referrals-by-hospital/{hospital_id}', [ReferralController::class, 'getReferralsByHospitalId']);
     // Route::get('bill-payment/{bill_id}', [ReferralController::class, 'getReferralsWithBillPayment']);
 
     // RMS REASON APIs
