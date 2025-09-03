@@ -549,7 +549,7 @@ class BillController extends Controller
         ->get();
 
 
-        if (!$bill) {
+        if (!$bills) {
             return response([
                 'message' => 'Bill file not found',
                 'statusCode' => 404,
@@ -557,7 +557,7 @@ class BillController extends Controller
         }
 
         return response([
-            'data' => $bill,
+            'data' => $bills,
             'statusCode' => 200,
         ], 200);
     }
