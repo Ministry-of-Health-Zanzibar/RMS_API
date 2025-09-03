@@ -78,27 +78,11 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        $referrals = DB::table('referrals')
-            ->leftJoin("patients", "patients.patient_id", '=', "referrals.patient_id")
-            ->leftJoin("reasons", "reasons.reason_id", '=', "referrals.reason_id")
-            ->leftJoin("hospitals", "hospitals.hospital_id", '=', "referrals.hospital_id")
-            ->leftJoin("referral_letters", "referral_letters.referral_id", '=', "referrals.referral_id")
-            ->select(
-                "referrals.referral_id as referral_id",
-                "referrals.created_at as referral_created_at",
-                "referrals.updated_at as referral_updated_at",
-                "referrals.status",
-
-                "patients.name as patient_name",
-                "patients.date_of_birth",
-                "patients.gender",
-                "patients.phone",
-
-                "reasons.*",
-
-                "hospitals.*",
-            )
-            ->get();
+        $referrals = Referral::with([
+            'patient',
+            'reason',
+            'hospital',
+        ])->get();
 
         if ($referrals->isNotEmpty()) {
             return response([
@@ -129,8 +113,6 @@ class ReferralController extends Controller
             ->leftjoin("bills", "bills.referral_id", '=', 'referrals.referral_id')
             ->select(
                 "referrals.*",
-
-
 
                 "patients.name as patient_name",
                 "patients.date_of_birth",
@@ -293,19 +275,11 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        // Fetch referral with joins
-        $referral = DB::table('referrals')
-            ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
-            ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
-            ->select(
-                "referrals.*",
-                "patients.name as patient_name",
-                "patients.date_of_birth",
-                "patients.gender",
-                "patients.phone",
-                "reasons.referral_reason_name"
-            )
-            ->where("referrals.referral_id", '=', $id)
+        $referral = Referral::with([
+                'patient',
+                'reason'
+            ])
+            ->where('referral_id', $id)
             ->first();
 
         // Handle missing referral

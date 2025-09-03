@@ -13,8 +13,6 @@ class Reason extends Model
 {
     use LogsActivity, HasFactory, SoftDeletes;
 
-    use LogsActivity, HasFactory, SoftDeletes;
-
     /**
      * The table associated with the model.
      *
@@ -54,11 +52,10 @@ class Reason extends Model
         'deleted_at',
     ];
 
-    // Optional: Define relationships here if needed
     // e.g., A hospital has many referrals
     public function referrals()
     {
-        return $this->hasMany(Referral::class);
+        return $this->hasMany(Referral::class, 'reason_id', 'reason_id');
     }
 
     public function getActivitylogOptions(): LogOptions

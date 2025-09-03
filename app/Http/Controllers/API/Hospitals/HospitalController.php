@@ -495,13 +495,20 @@ class HospitalController extends Controller
             ], 403);
         }
 
-        $hospitals = DB::table('referrals')
-            ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
-            ->select(
-                "hospitals.*",
-            )
-            ->distinct()
-            ->get();
+        $hospitals = Hospital::whereHas('referrals')
+            ->with([
+                'referrals',            // load all referrals for the hospital
+                'referralType',         // load the referral type of the hospital
+            ])
+            ->withTrashed()
+            ->get([
+                'hospital_id', 
+                'hospital_name', 
+                'hospital_address', 
+                'hospital_code', 
+                'referral_type_id'     // from hospitals
+            ]);
+
 
         if ($hospitals) {
             return response([

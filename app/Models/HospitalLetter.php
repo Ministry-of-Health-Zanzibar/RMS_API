@@ -25,11 +25,6 @@ class HospitalLetter extends Model
         'outcome',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relationships
-    |--------------------------------------------------------------------------
-    */
     public function referral()
     {
         return $this->belongsTo(Referral::class, 'referral_id', 'referral_id');
@@ -40,11 +35,6 @@ class HospitalLetter extends Model
         return $this->hasMany(FollowUp::class, 'letter_id', 'letter_id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Activity Log
-    |--------------------------------------------------------------------------
-    */
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['*']);
