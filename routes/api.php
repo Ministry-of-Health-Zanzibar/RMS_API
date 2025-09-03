@@ -123,6 +123,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // BILLS APIs
     Route::resource('bills', BillController::class);
     Route::post('bills/update/{id}', [BillController::class, 'updateBill']);
+    Route::get('bills-by-bill-file/{billFileId}', [BillController::class, 'getBillsByBillFile']);
     Route::get('bills/getPatientBillAndPaymentByBillId/{billId}', [BillController::class, 'getPatientBillAndPaymentByBillId']);
     Route::patch('bills/unBlock/{billId}', [BillController::class, 'unBlockBill']);
 
