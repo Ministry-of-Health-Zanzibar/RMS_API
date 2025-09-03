@@ -19,7 +19,6 @@ return new class extends Migration {
             $table->string('location')->nullable();
             $table->string(column: 'job')->nullable();
             $table->string(column: 'position')->nullable();
-            // $table->string('referral_letter_file')->nullable(); // path or filename
             $table->unsignedBigInteger('patient_list_id');
             $table->unsignedBigInteger('created_by');
             $table->timestamps();

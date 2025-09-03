@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\Patients;
 
 use App\Models\Patient;
+use App\Models\PatientFile;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -68,33 +69,36 @@ class PatientController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Patient')) {
+
+        if (
+            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
+            !$user->can('View Patient')
+        ) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        // $patients = Patient::withTrashed()->get();
-        $patients = DB::table('patients')
-            ->join('patient_lists', 'patient_lists.patient_list_id', '=', 'patients.patient_list_id')
-            ->select('patients.*', 'patient_lists.patient_list_title', 'patient_lists.patient_list_file')
-            ->get();
-
+        $patients = Patient::with([
+            'patientList',          // patient list info
+            'files',                // all patient files
+            'referrals.reason',     // referrals + reason
+            'referrals.hospital',   // referrals + hospital
+            'referrals.createdBy',  // referral created by user
+        ])->get();
 
         if ($patients->isEmpty()) {
             return response([
                 'message' => 'No data found',
                 'statusCode' => 200,
             ], 200);
-        } else {
-
-
-            return response([
-                'data' => $patients,
-                'statusCode' => 200,
-            ], 200);
         }
+
+        return response([
+            'data' => $patients,
+            'statusCode' => 200,
+        ], 200);
     }
 
     /**
@@ -107,37 +111,43 @@ class PatientController extends Controller
      *     tags={"patients"},
      *     @OA\RequestBody(
      *         required=true,
-     *         @OA\JsonContent(
-     *             type="object",
-     *              @OA\Property(property="name", type="string"),
-     *              @OA\Property(property="date_of_birth", type="string", format="date-time"),
-     *              @OA\Property(property="gender", type="string"),
-     *              @OA\Property(property="phone", type="string"),
-     *              @OA\Property(property="location", type="string"),
-     *              @OA\Property(property="job", type="string"),
-     *              @OA\Property(property="position", type="string"),
-     *              @OA\Property(property="patient_list_id", type="integer"),
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"name","patient_list_id"},
+     *                 @OA\Property(property="name", type="string"),
+     *                 @OA\Property(property="date_of_birth", type="string", format="date"),
+     *                 @OA\Property(property="gender", type="string"),
+     *                 @OA\Property(property="phone", type="string"),
+     *                 @OA\Property(property="location", type="string"),
+     *                 @OA\Property(property="job", type="string"),
+     *                 @OA\Property(property="position", type="string"),
+     *                 @OA\Property(property="patient_list_id", type="integer"),
+     *                 @OA\Property(
+     *                     property="file",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="Optional patient file (PDF, Image, Doc, etc.)"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="description",
+     *                     type="string",
+     *                     description="Optional file description"
+     *                 )
+     *             )
      *         )
      *     ),
      *     @OA\Response(
-     *         response=200,
-     *         description="Successful operation",
-     *         @OA\Header(
-     *             header="Cache-Control",
-     *             description="Cache control header",
-     *             @OA\Schema(type="string", example="no-cache, private")
-     *         ),
-     *         @OA\Header(
-     *             header="Content-Type",
-     *             description="Content type header",
-     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
-     *         ),
+     *         response=201,
+     *         description="Patient created successfully",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="message", type="string"),
-     *             @OA\Property(property="statusCode", type="integer", example="201")
+     *             @OA\Property(property="message", type="string", example="Patient created successfully."),
+     *             @OA\Property(property="statusCode", type="integer", example=201)
      *         )
-     *     )
+     *     ),
+     *     @OA\Response(response=403, description="Forbidden"),
+     *     @OA\Response(response=500, description="Internal Server Error")
      * )
      */
     public function store(Request $request)
@@ -159,8 +169,9 @@ class PatientController extends Controller
             'job' => ['nullable', 'string'],
             'position' => ['nullable', 'string'],
             'patient_list_id' => ['required', 'numeric'],
+            'file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'], // add file validation
+            'description' => ['nullable', 'string'],
         ]);
-
 
         // Create Patient
         $patient = Patient::create([
@@ -175,12 +186,27 @@ class PatientController extends Controller
             'created_by' => Auth::id(),
         ]);
 
+        // Handle File Upload if exists
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $filePath = $file->store('patient_files', 'public'); // saves in storage/app/public/patient_files
+
+            PatientFile::create([
+                'patient_id' => $patient->patient_id,
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $filePath,
+                'file_type' => $file->getClientMimeType(),
+                'description' => $data['description'] ?? null,
+                'uploaded_by' => Auth::id(),
+            ]);
+        }
+
         if ($patient) {
             return response([
-                'data' => $patient,
-                'message' => 'Patient created successfully.',
+                'data' => $patient->load('files'), // load files relationship if needed
+                'message' => 'Patient created successfully with file.',
                 'statusCode' => 201,
-            ], status: 201);
+            ], 201);
         } else {
             return response([
                 'message' => 'Internal server error',
@@ -240,7 +266,6 @@ class PatientController extends Controller
             ], 403);
         }
 
-        // $patient = Patient::withTrashed()->find($id);
         $patient = DB::table('patients')
             ->join('patient_lists', 'patient_lists.patient_list_id', '=', 'patients.patient_list_id')
             ->select('patients.*', 'patient_lists.patient_list_title', 'patient_lists.patient_list_file')
@@ -272,45 +297,51 @@ class PatientController extends Controller
      *     path="/api/patients/update/{patientId}",
      *     summary="Update patient",
      *     tags={"patients"},
-     *      @OA\Parameter(
+     *     @OA\Parameter(
      *         name="patientId",
      *         in="path",
      *         required=true,
-     *         @OA\Schema(type="string")
-     *      ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful operation",
-     *         @OA\Header(
-     *             header="Cache-Control",
-     *             description="Cache control header",
-     *             @OA\Schema(type="string", example="no-cache, private")
-     *         ),
-     *         @OA\Header(
-     *             header="Content-Type",
-     *             description="Content type header",
-     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
-     *         ),
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(
-     *                     type="object",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
      *                 @OA\Property(property="name", type="string"),
-     *                 @OA\Property(property="date_of_birth", type="string", format="date-time"),
+     *                 @OA\Property(property="date_of_birth", type="string", format="date"),
      *                 @OA\Property(property="gender", type="string"),
      *                 @OA\Property(property="phone", type="string"),
      *                 @OA\Property(property="location", type="string"),
      *                 @OA\Property(property="job", type="string"),
      *                 @OA\Property(property="position", type="string"),
      *                 @OA\Property(property="patient_list_id", type="integer"),
+     *                 @OA\Property(
+     *                     property="file",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="Optional new file to attach"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="description",
+     *                     type="string",
+     *                     description="Optional file description"
      *                 )
-     *             ),
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Patient updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Patient updated successfully."),
      *             @OA\Property(property="statusCode", type="integer", example=200)
      *         )
-     *     )
+     *     ),
+     *     @OA\Response(response=403, description="Forbidden"),
+     *     @OA\Response(response=404, description="Patient not found"),
+     *     @OA\Response(response=500, description="Internal Server Error")
      * )
      */
     public function updatePatient(Request $request, int $id)
@@ -332,20 +363,38 @@ class PatientController extends Controller
             'job' => ['nullable', 'string'],
             'position' => ['nullable', 'string'],
             'patient_list_id' => ['required', 'numeric'],
+            'file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
+            'description' => ['nullable', 'string'],
         ]);
 
         $patient = Patient::findOrFail($id);
 
         $data['created_by'] = Auth::id();
 
+        // Update patient
         $patient->update($data);
 
+        // Handle file upload if exists
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $filePath = $file->store('patient_files', 'public');
+
+            PatientFile::create([
+                'patient_id' => $patient->patient_id,
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $filePath,
+                'file_type' => $file->getClientMimeType(),
+                'description' => $data['description'] ?? null,
+                'uploaded_by' => Auth::id(),
+            ]);
+        }
+
         return response([
-            'data' => $patient,
+            'data' => $patient->load('files'),
+            'message' => 'Patient updated successfully.',
             'statusCode' => 200,
         ], 200);
     }
-
 
     /**
      * Remove the specified resource from storage.

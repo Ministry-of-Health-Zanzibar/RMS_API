@@ -14,8 +14,15 @@ class Patient extends Model
 {
     use LogsActivity, HasFactory, SoftDeletes;
 
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'patients';
+
     protected $primaryKey = 'patient_id'; // custom PK
-    public $incrementing = false;         // no auto-increment
+    public $incrementing = true;         // no auto-increment
     protected $keyType = 'string';        // not an integer
 
     protected $fillable = [
@@ -27,15 +34,15 @@ class Patient extends Model
         'location',
         'job',
         'position',
-        // 'referral_letter_file',
         'patient_list_id',
         'created_by',
     ];
 
     public function referrals()
     {
-        return $this->hasMany(Referral::class);
+        return $this->hasMany(Referral::class, 'patient_id', 'patient_id');
     }
+
 
     public function insurances()
     {
@@ -46,6 +53,12 @@ class Patient extends Model
     {
         return $this->belongsTo(PatientList::class, 'patient_list_id', 'patient_list_id');
     }
+
+    public function files()
+    {
+        return $this->hasMany(PatientFile::class, 'patient_id', 'patient_id');
+    }
+
 
     public function getActivitylogOptions(): LogOptions
     {

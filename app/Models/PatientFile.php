@@ -5,14 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
-class Reason extends Model
+class PatientFile extends Model
 {
-    use LogsActivity, HasFactory, SoftDeletes;
-
     use LogsActivity, HasFactory, SoftDeletes;
 
     /**
@@ -20,17 +17,17 @@ class Reason extends Model
      *
      * @var string
      */
-    protected $table = 'reasons';
+    protected $table = 'patient_files';
 
     /**
      * The primary key associated with the table.
      *
      * @var string
      */
-    protected $primaryKey = 'reason_id';
+    protected $primaryKey = 'file_id';
 
     /**
-     * Indicates if the model's ID is not auto-incrementing.
+     * Indicates if the model's ID is auto-incrementing.
      *
      * @var bool
      */
@@ -43,24 +40,48 @@ class Reason extends Model
      */
     protected $keyType = 'integer';
 
-
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
-        'referral_reason_name',
-        'reason_descriptions',
-        'created_by',
+        'patient_id',
+        'file_name',
+        'file_path',
+        'file_type',
+        'description',
+        'uploaded_by',
     ];
 
+    /**
+     * The attributes that should be mutated to dates.
+     *
+     * @var array<string>
+     */
     protected $dates = [
         'deleted_at',
     ];
 
-    // Optional: Define relationships here if needed
-    // e.g., A hospital has many referrals
-    public function referrals()
+    /**
+     * Relationships
+     */
+
+    // Each file belongs to one patient
+    public function patient()
     {
-        return $this->hasMany(Referral::class);
+        return $this->belongsTo(Patient::class, 'patient_id', 'patient_id');
     }
 
+    // Each file was uploaded by a specific system user
+    public function uploader()
+    {
+        return $this->belongsTo(User::class, 'uploaded_by', 'id');
+    }
+
+    /**
+     * Activity Log Options
+     */
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['*']);

@@ -426,15 +426,14 @@ class ReferralController extends Controller
         $data = $request->validate([
             'patient_id' => ['required', 'numeric'],
             'reason_id' => ['required', 'numeric'],
-            'hospital_id' => ['required', 'numeric']
+            'hospital_id' => ['nullable', 'numeric']
         ]);
 
         $referral = Referral::findOrFail($id);
         $referral->update([
             'patient_id' => $data['patient_id'],
             'reason_id' => $data['reason_id'],
-            'hospital_id' => $data['hospital_id'],
-            'confirmed_by' => Auth::id(),
+            'hospital_id' => $data['hospital_id'] ?? null,
             'created_by' => Auth::id(),
         ]);
 
@@ -442,6 +441,41 @@ class ReferralController extends Controller
             return response([
                 'data' => $referral,
                 'message' => 'Referral updated successfully.',
+                'statusCode' => 201,
+            ], status: 201);
+        } else {
+            return response([
+                'message' => 'Internal server error',
+                'statusCode' => 500,
+            ], 500);
+        }
+    }
+
+    public function chooseHospitalAndConfirmReferral(Request $request, int $id)
+    {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Update Referral')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $data = $request->validate([
+            'hospital_id' => ['required', 'numeric']
+        ]);
+
+        $referral = Referral::findOrFail($id);
+        $referral->update([
+            'hospital_id' => $data['hospital_id'],
+            'status' => 'Confirmed',
+            'confirmed_by' => Auth::id(),
+        ]);
+
+        if ($referral) {
+            return response([
+                'data' => $referral,
+                'message' => 'Referral confirmed successfully.',
                 'statusCode' => 201,
             ], status: 201);
         } else {

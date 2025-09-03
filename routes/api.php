@@ -106,6 +106,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('referralwithbills', [ReferralController::class, 'getReferralwithBills']);
     Route::get('referral/{referral_id}', [ReferralController::class, 'getReferralById']);
     Route::post('referral/action', [ReferralController::class, 'handleAction']);
+    Route::post('referrals/confirm-referral-by-id/{referral_id}', [ReferralController::class, 'chooseHospitalAndConfirmReferral']);
     Route::patch('referrals/unBlock/{referralId}', [ReferralController::class, 'unBlockReferral']);
     Route::get('referrals-withbills/{referral_id}', [ReferralController::class, 'getReferralsWithBills']);
     Route::get('referrals-by-hospital/{hospital_id}/{bill_file_id}', [ReferralController::class, 'getReferralsByHospitalId']);
