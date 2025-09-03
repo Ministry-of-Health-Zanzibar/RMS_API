@@ -181,7 +181,7 @@ class PatientListController extends Controller
             ], 403);
         }
 
-        $list = PatientList::with('patients')->find($patientListId);
+        $list = PatientList::with(['patients.files'])->find($patientListId);
 
         if (!$list) {
             return response([
