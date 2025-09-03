@@ -15,23 +15,23 @@ class PatientFileController extends Controller
     {
         $request->validate([
             'patient_id' => 'required|numeric|exists:patients,id',
-            'file' => 'required|file|mimes:pdf,jpg,png,doc,docx',
+            'patient_file' => 'required|file|mimes:pdf,jpg,png,doc,docx',
             'description' => 'nullable|string',
         ]);
 
-        $path = $request->file('file')->store('patient_files', 'public');
+        $path = $request->file('patient_file')->store('patient_files', 'public');
 
         $patientFile = PatientFile::create([
             'patient_id' => $request->patient_id,
-            'file_name' => $request->file('file')->getClientOriginalName(),
+            'file_name' => $request->file('patient_file')->getClientOriginalName(),
             'file_path' => $path,
-            'file_type' => $request->file('file')->getClientOriginalExtension(),
+            'file_type' => $request->file('patient_file')->getClientOriginalExtension(),
             'description' => $request->description,
             'uploaded_by' => Auth::id(),
         ]);
 
         return response()->json([
-            'message' => 'File uploaded successfully',
+            'message' => 'patient_file uploaded successfully',
             'data' => $patientFile,
         ], 201);
     }

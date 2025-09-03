@@ -169,7 +169,7 @@ class PatientController extends Controller
             'job' => ['nullable', 'string'],
             'position' => ['nullable', 'string'],
             'patient_list_id' => ['required', 'numeric'],
-            'file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'], // add file validation
+            'patient_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'], // add file validation
             'description' => ['nullable', 'string'],
         ]);
 
@@ -187,8 +187,8 @@ class PatientController extends Controller
         ]);
 
         // Handle File Upload if exists
-        if ($request->hasFile('file')) {
-            $file = $request->file('file');
+        if ($request->hasFile('patient_file')) {
+            $file = $request->file('patient_file');
             $filePath = $file->store('patient_files', 'public'); // saves in storage/app/public/patient_files
 
             PatientFile::create([
@@ -363,7 +363,7 @@ class PatientController extends Controller
             'job' => ['nullable', 'string'],
             'position' => ['nullable', 'string'],
             'patient_list_id' => ['required', 'numeric'],
-            'file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
+            'patient_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
             'description' => ['nullable', 'string'],
         ]);
 
@@ -375,8 +375,8 @@ class PatientController extends Controller
         $patient->update($data);
 
         // Handle file upload if exists
-        if ($request->hasFile('file')) {
-            $file = $request->file('file');
+        if ($request->hasFile('patient_file')) {
+            $file = $request->file('patient_file');
             $filePath = $file->store('patient_files', 'public');
 
             PatientFile::create([

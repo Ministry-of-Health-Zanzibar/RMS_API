@@ -59,6 +59,11 @@ class Patient extends Model
         return $this->hasMany(PatientFile::class, 'patient_id', 'patient_id');
     }
 
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by', 'id');
+    }
+
 
     public function getActivitylogOptions(): LogOptions
     {
