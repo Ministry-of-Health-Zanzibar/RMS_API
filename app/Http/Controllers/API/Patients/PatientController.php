@@ -265,11 +265,14 @@ class PatientController extends Controller
                 'statusCode' => 403
             ], 403);
         }
-
-        $patient = DB::table('patients')
-            ->join('patient_lists', 'patient_lists.patient_list_id', '=', 'patients.patient_list_id')
-            ->select('patients.*', 'patient_lists.patient_list_title', 'patient_lists.patient_list_file')
-            ->where('patients.patient_id', '=', $id)
+        
+        $patient = Patient::with([
+                'patientList',          // patient list info
+                'files',                // all patient files
+                'referrals.reason',     // referrals + reason
+                'referrals.hospital',   // referrals + hospital
+                'referrals.creator',    // referral created by user
+            ])->where('patient_id', $id)
             ->get();
 
 
