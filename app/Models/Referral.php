@@ -66,6 +66,11 @@ class Referral extends Model
         return $this->belongsTo(User::class, 'confirmed_by');
     }
 
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by', 'id');
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['*']);

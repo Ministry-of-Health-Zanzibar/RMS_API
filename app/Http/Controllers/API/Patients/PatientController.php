@@ -85,7 +85,7 @@ class PatientController extends Controller
             'files',                // all patient files
             'referrals.reason',     // referrals + reason
             'referrals.hospital',   // referrals + hospital
-            'referrals.createdBy',  // referral created by user
+            'referrals.creator',  // referral created by user
         ])->get();
 
         if ($patients->isEmpty()) {
