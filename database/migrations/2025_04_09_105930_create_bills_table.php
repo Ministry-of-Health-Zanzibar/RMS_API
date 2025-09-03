@@ -26,6 +26,7 @@ return new class extends Migration {
 
             $table->foreign('referral_id')->references('referral_id')->on('referrals');
             $table->foreign('bill_file_id')->references('bill_file_id')->on('bill_files');
+            $table->unique(['referral_id', 'bill_file_id']); // Ensure referral cannot be billed twice in the same bill_file
         });
     }
 

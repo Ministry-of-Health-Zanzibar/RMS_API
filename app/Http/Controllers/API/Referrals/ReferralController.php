@@ -323,7 +323,7 @@ class ReferralController extends Controller
         ], 200);
     }
 
-    public function getReferralsByHospitalId(int $id)
+    public function getReferralsByHospitalId(int $hospitalId, int $billFileId)
     {
         $user = auth()->user();
 
@@ -338,22 +338,24 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        // Fetch referrals with joins
+        // Fetch referrals that have NOT been billed in this bill file
         $referrals = DB::table('referrals')
             ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
             ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
             ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
+            ->leftJoin("bills", function ($join) use ($billFileId) {
+                $join->on("bills.referral_id", '=', "referrals.referral_id")
+                    ->where("bills.bill_file_id", '=', $billFileId);
+            })
             ->select(
                 "referrals.referral_id",
                 "referrals.referral_number",
-                "patients.name as patient_name",
-                // "reasons.reason_name",
-                // "hospitals.hospital_name"
+                "patients.name as patient_name"
             )
-            ->where("hospitals.hospital_id", '=', $id)
+            ->where("hospitals.hospital_id", '=', $hospitalId)
+            ->whereNull("bills.referral_id") // exclude referrals already billed in this file
             ->get();
 
-        // Handle missing referrals
         if ($referrals->isEmpty()) {
             return response()->json([
                 'message' => 'No referrals found for this hospital',
@@ -361,7 +363,6 @@ class ReferralController extends Controller
             ], 404);
         }
 
-        // Success
         return response()->json([
             'data' => $referrals,
             'statusCode' => 200,
