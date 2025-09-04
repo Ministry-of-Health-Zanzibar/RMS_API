@@ -212,6 +212,26 @@ class BillItemController extends Controller
         ], 200);
     }
 
+    public function getBillItemsByBillId($billId)
+    {
+        $billItems = BillItem::withTrashed()
+            ->with('bill')
+            ->where('bill_id', $billId)
+            ->get();
+
+        if ($billItems->isEmpty()) {
+            return response([
+                'message' => 'No bill items found for this bill.',
+                'statusCode' => 404
+            ], 404);
+        }
+
+        return response([
+            'data' => $billItems,
+            'statusCode' => 200
+        ]);
+    }
+
     /**
      * @OA\Put(
      *     path="/api/bill-items/{id}",
