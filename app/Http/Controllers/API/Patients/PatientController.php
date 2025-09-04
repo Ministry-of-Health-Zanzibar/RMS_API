@@ -302,7 +302,7 @@ class PatientController extends Controller
      *     )
      * )
      */
-    public function show(int $id)
+    public function show($id)
     {
         $user = auth()->user();
         if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('View Patient')) {
@@ -319,7 +319,7 @@ class PatientController extends Controller
                 'referrals.reason',     // referrals + reason
                 'referrals.hospital',   // referrals + hospital
                 'referrals.creator',    // referral created by user
-            ])->where('patient_id', $id)
+            ])->where('patient_id', (int)$id)
             ->get();
 
 
