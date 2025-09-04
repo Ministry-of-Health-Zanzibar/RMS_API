@@ -102,6 +102,49 @@ class PatientController extends Controller
         ], 200);
     }
 
+    public function getAllowedPatientsToGetReferral()
+    {
+        $user = auth()->user();
+
+        if (
+            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
+            !$user->can('View Patient')
+        ) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $patients = Patient::with([
+            'patientList',
+            'files',
+            'geographicalLocation',
+            'referrals.reason',
+            'referrals.hospital',
+            'referrals.creator',
+        ])
+        ->where(function($query) {
+            $query->whereDoesntHave('referrals') // patients with no referrals
+                ->orWhereHas('referrals', function($q) {
+                    $q->whereIn('status', ['Cancelled', 'Expired', 'Closed']); // referrals with cancelled, expired, or closed status
+                });
+        })
+        ->get();
+
+        if ($patients->isEmpty()) {
+            return response([
+                'message' => 'No data found',
+                'statusCode' => 200,
+            ], 200);
+        }
+
+        return response([
+            'data' => $patients,
+            'statusCode' => 200,
+        ], 200);
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -230,7 +273,7 @@ class PatientController extends Controller
      *         name="patientId",
      *         in="path",
      *         required=true,
-     *         @OA\Schema(type="integer")
+     *         @OA\Schema(type="string")
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -520,7 +563,7 @@ class PatientController extends Controller
         ], 200);
     }
 
-    public function getAllPatientsWithInsurance($patient_id)
+    public function getAllPatientsWithInsurance(int $patient_id)
     {
         $patient = Patient::with('insurances')
             ->where('patient_id', $patient_id)
@@ -530,7 +573,6 @@ class PatientController extends Controller
             return response()->json(['message' => 'Patient not found'], 404);
         }
 
-        // Append full image URL
         if ($patient->patient_list_id) {
             $patient->documentUrl = asset('storage/' . $patient->patient_list_id);
         } else {
@@ -539,10 +581,4 @@ class PatientController extends Controller
         $patient->insurances = $patient->insurances ?? [];
         return response()->json($patient);
     }
-
-
-
-
-
-
 }

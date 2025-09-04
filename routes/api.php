@@ -92,6 +92,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // PATIENTS APIs
     Route::resource('patients', PatientController::class);
+    Route::get('patients/patients-for-referral', [PatientController::class, 'getAllowedPatientsToGetReferral']);
     Route::post('patients/update/{id}', [PatientController::class, 'updatePatient']);
     Route::patch('patients/unBlock/{id}', [PatientController::class, 'unBlockPatient']);
     Route::get('patients-withinsurance/{id}', [PatientController::class, 'getAllPatientsWithInsurance']);
