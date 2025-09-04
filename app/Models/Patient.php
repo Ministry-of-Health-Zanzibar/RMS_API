@@ -5,25 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
-
+use App\Models\GeographicalLocations;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
-
 
 class Patient extends Model
 {
     use LogsActivity, HasFactory, SoftDeletes;
 
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
     protected $table = 'patients';
-
-    protected $primaryKey = 'patient_id'; // custom PK
-    public $incrementing = true;         // no auto-increment
-    protected $keyType = 'string';        // not an integer
+    protected $primaryKey = 'patient_id';
+    public $incrementing = true;
+    protected $keyType = 'string';
 
     protected $fillable = [
         'patient_id',
@@ -31,18 +24,22 @@ class Patient extends Model
         'date_of_birth',
         'gender',
         'phone',
-        'location',
+        'location_id',
         'job',
         'position',
         'patient_list_id',
         'created_by',
     ];
 
+    public function geographicalLocation()
+    {
+        return $this->belongsTo(GeographicalLocations::class, 'location_id', 'location_id');
+    }
+
     public function referrals()
     {
         return $this->hasMany(Referral::class, 'patient_id', 'patient_id');
     }
-
 
     public function insurances()
     {
@@ -63,7 +60,6 @@ class Patient extends Model
     {
         return $this->belongsTo(User::class, 'created_by', 'id');
     }
-
 
     public function getActivitylogOptions(): LogOptions
     {

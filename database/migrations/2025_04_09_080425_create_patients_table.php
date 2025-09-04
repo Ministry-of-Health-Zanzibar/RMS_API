@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->date('date_of_birth')->nullable();
             $table->string('gender', 20)->nullable();
             $table->string('phone', 20)->nullable();
-            $table->string('location')->nullable();
+            $table->string('location_id')->nullable();
             $table->string(column: 'job')->nullable();
             $table->string(column: 'position')->nullable();
             $table->unsignedBigInteger('patient_list_id');
@@ -24,6 +24,7 @@ return new class extends Migration {
             $table->timestamps();
             $table->softDeletes();
 
+            $table->foreign('location_id')->references('location_id')->on('geographical_locations');
             $table->foreign('patient_list_id')->references('patient_list_id')->on('patient_lists');
         });
     }
