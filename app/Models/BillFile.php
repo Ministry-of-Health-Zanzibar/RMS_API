@@ -63,9 +63,14 @@ class BillFile extends Model
         'deleted_at',
     ];
 
+    public function hospital()
+    {
+        return $this->belongsTo(Hospital::class, 'hospital_id', 'hospital_id');
+    }
+
     public function created_by()
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by', 'id');
+        return $this->belongsTo(User::class, 'created_by', 'id');
     }
 
 

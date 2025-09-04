@@ -65,7 +65,10 @@ class BillFileController extends Controller
             ], 403);
         }
 
-        $billFiles = BillFile::with(['created_by'])->latest()->get();
+        $billFiles = BillFile::with([
+            'hospital',
+            'created_by'
+            ])->latest()->get();
 
         return response()->json([
             'data' => $billFiles,

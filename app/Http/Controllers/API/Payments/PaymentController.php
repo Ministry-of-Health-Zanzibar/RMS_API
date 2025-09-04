@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\Payments;
 
 use App\Models\Payment;
+use App\Models\Bill;
 use App\Models\BillPayment;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;

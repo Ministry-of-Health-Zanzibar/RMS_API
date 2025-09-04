@@ -66,6 +66,11 @@ class Hospital extends Model
         return $this->belongsTo(ReferralType::class, 'referral_type_id', 'referral_type_id');
     }
 
+    public function billFiles()
+    {
+        return $this->hasMany(BillFile::class, 'hospital_id', 'hospital_id');
+    }
+
     // Automatically generate hospital_code before creating
     protected static function boot()
     {
