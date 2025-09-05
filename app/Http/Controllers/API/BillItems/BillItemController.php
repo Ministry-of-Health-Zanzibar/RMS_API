@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\BillItems;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bill;
 use App\Models\BillItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -112,7 +113,10 @@ class BillItemController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Create Bill Item')) {
+        if (
+            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
+            !$user->can('Create Bill Item')
+        ) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -133,7 +137,24 @@ class BillItemController extends Controller
             ], 422);
         }
 
-        $billItem = BillItem::create($validator->validated() + ['created_by' => Auth::id()]);
+        $data = $validator->validated();
+
+        // Fetch the bill
+        $bill = Bill::find($data['bill_id']);
+
+        // Calculate total of existing bill items
+        $currentTotal = BillItem::where('bill_id', $bill->bill_id)->sum('amount');
+
+        // Check if new item would exceed the bill total
+        if ($currentTotal + $data['amount'] > $bill->total_amount) {
+            return response()->json([
+                'message' => 'Bill items total cannot exceed the bill total amount of ' . $bill->total_amount,
+                'statusCode' => 422
+            ], 422);
+        }
+
+        // Create Bill Item
+        $billItem = BillItem::create($data + ['created_by' => Auth::id()]);
 
         return response()->json([
             'data' => $billItem,
