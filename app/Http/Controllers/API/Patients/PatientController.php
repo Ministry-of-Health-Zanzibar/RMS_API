@@ -209,14 +209,14 @@ class PatientController extends Controller
             'date_of_birth' => ['nullable', 'string'],
             'gender' => ['nullable', 'string'],
             'phone' => ['nullable', 'string'],
-            'location_id' => ['nullable', 'string', 'exists:geographical_locations,location_id'],
+            'location_id' => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
             'job' => ['nullable', 'string'],
             'position' => ['nullable', 'string'],
             'patient_list_id' => ['required', 'numeric'],
             'patient_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'], // add file validation
             'description' => ['nullable', 'string'],
         ]);
-        
+
         $location_id = $request->location_id;
 
         // Create Patient
@@ -311,7 +311,7 @@ class PatientController extends Controller
                 'statusCode' => 403
             ], 403);
         }
-        
+
         $patient = Patient::with([
                 'patientList',          // patient list info
                 'files',                // all patient files
