@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\Bills;
 
 use Carbon\Carbon;
 use App\Models\Bill;
+use App\Models\BillFile;
 use App\Models\Referral;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -212,7 +213,10 @@ class BillController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Create Bill')) {
+        if (
+            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
+            !$user->can('Create Bill')
+        ) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -227,9 +231,8 @@ class BillController extends Controller
             'bill_file_id' => ['required', 'numeric'],
         ]);
 
-        // Only handle the file after validation passes
+        // Ensure referral exists
         $referral = Referral::find($data['referral_id']);
-
         if (!$referral) {
             return response([
                 'message' => 'Referral not found',
@@ -237,19 +240,39 @@ class BillController extends Controller
             ], 404);
         }
 
+        // Ensure bill_file exists
+        $billFile = BillFile::find($data['bill_file_id']);
+        if (!$billFile) {
+            return response([
+                'message' => 'Bill file not found',
+                'statusCode' => 404,
+            ], 404);
+        }
+
+        // Calculate already used amount in this bill_file
+        $usedAmount = Bill::where('bill_file_id', $data['bill_file_id'])
+            ->sum('total_amount');
+
+        // Check if adding this bill would exceed the limit
+        if ($usedAmount + $data['total_amount'] > $billFile->bill_file_amount) {
+            return response([
+                'message' => 'The total amount exceeds the allowed bill file amount of ' . $billFile->bill_file_amount,
+                'statusCode' => 422
+            ], 422);
+        }
+
         // Create Bill
         $billData = [
             'referral_id' => $data['referral_id'],
             'total_amount' => $data['total_amount'] ?? 0,
             'bill_period_start' => $data['bill_period_start'] ?? null,
-            'bill_period_end' => $data['bill_period_end'] ?? 'Insurance',
+            'bill_period_end' => $data['bill_period_end'] ?? null,
             'sent_date' => Carbon::now(),
             'bill_file_id' => $data['bill_file_id'] ?? null,
-            'bill_status' => 'Pending', // default status
+            'bill_status' => 'Pending',
             'created_by' => Auth::id(),
         ];
 
-        // Create the bill in the database
         $bill = Bill::create($billData);
 
         if ($bill) {
@@ -258,12 +281,12 @@ class BillController extends Controller
                 'message' => 'Bill created successfully',
                 'statusCode' => 201,
             ], 201);
-        } else {
-            return response([
-                'message' => 'Internal server error',
-                'statusCode' => 500,
-            ], 500);
         }
+
+        return response([
+            'message' => 'Internal server error',
+            'statusCode' => 500,
+        ], 500);
     }
 
 
