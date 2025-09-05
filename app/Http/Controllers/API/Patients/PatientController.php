@@ -538,4 +538,45 @@ class PatientController extends Controller
         $patient->insurances = $patient->insurances ?? [];
         return response()->json($patient);
     }
+
+    public function getAllPatients()
+    {
+        $user = auth()->user();
+
+        if (
+            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
+            !$user->can('View Patient')
+        ) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $patients = Patient::with([
+            'patientList',
+            'files',
+            'geographicalLocation',
+            'referrals.reason',
+            'referrals.hospital',
+            'referrals.creator',
+        ])
+        ->whereDoesntHave('referrals') // patients with no referrals
+        ->orWhereHas('referrals', function ($query) {
+            $query->whereIn('status', ['Cancelled', 'Expired', 'Closed']);
+        })
+        ->get();
+
+        if ($patients->isEmpty()) {
+            return response([
+                'message' => 'No data found',
+                'statusCode' => 200,
+            ], 200);
+        }
+
+        return response([
+            'data' => $patients,
+            'statusCode' => 200,
+        ], 200);
+    }
 }

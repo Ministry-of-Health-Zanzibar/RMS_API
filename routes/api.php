@@ -95,7 +95,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('patients/update/{id}', [PatientController::class, 'updatePatient']);
     Route::patch('patients/unBlock/{id}', [PatientController::class, 'unBlockPatient']);
     Route::get('patients-withinsurance/{id}', [PatientController::class, 'getAllPatientsWithInsurance']);
-    Route::get('patients/for-referral', [PatientController::class, 'getPatients']);
+    Route::get('patients/for-referral/allowed', [PatientController::class, 'getAllPatients']);
 
 
     // INSURANCES APIs
@@ -193,7 +193,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Bill Items
     Route::resource('bill-items', BillItemController::class);
     Route::get('bill-items/by-bill-id/{bill_id}', [BillItemController::class, 'getBillItemsByBillId']);
-
 
     // Bill Payments
     Route::resource('bill-payments', BillPaymentController::class);
