@@ -23,8 +23,14 @@ class PatientListController extends Controller
     public function index()
     {
         $lists = PatientList::withTrashed()
-            ->with(['creator', 'patients'])
-            ->get();
+        ->with([
+            'creator', // user who created the list
+            'patients' => function ($q) {
+                $q->with('geographicalLocation'); // each patient with their geographical location
+            }
+        ])
+        ->get();
+
 
         if ($lists->isEmpty()) {
             return response([
