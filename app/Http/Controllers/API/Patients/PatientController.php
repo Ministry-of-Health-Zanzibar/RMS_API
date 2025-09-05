@@ -166,14 +166,14 @@ class PatientController extends Controller
             'date_of_birth' => ['nullable', 'string'],
             'gender' => ['nullable', 'string'],
             'phone' => ['nullable', 'string'],
-            'location_id' => ['nullable', 'string', 'exists:geographical_locations,location_id'],
+            'location_id' => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
             'job' => ['nullable', 'string'],
             'position' => ['nullable', 'string'],
             'patient_list_id' => ['required', 'numeric'],
             'patient_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'], // add file validation
             'description' => ['nullable', 'string'],
         ]);
-        
+
         $location_id = $request->location_id;
 
         // Create Patient
@@ -268,7 +268,7 @@ class PatientController extends Controller
                 'statusCode' => 403
             ], 403);
         }
-        
+
         $patient = Patient::with([
                 'patientList',          // patient list info
                 'files',                // all patient files
@@ -538,46 +538,4 @@ class PatientController extends Controller
         $patient->insurances = $patient->insurances ?? [];
         return response()->json($patient);
     }
-
-    public function getPatients()
-    {
-        $user = auth()->user();
-
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-            !$user->can('View Patient')
-        ) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
-
-
-        $patients = DB::table('patients')
-            ->leftJoin('patient_lists', 'patients.patient_list_id', '=', 'patient_lists.id')
-            ->leftJoin('files', 'patients.patient_id', '=', 'files.patient_id')
-            ->leftJoin('geographical_locations', 'patients.location_id', '=', 'geographical_locations.id')
-            ->select(
-                'patients.*',
-                'patient_lists.name as patient_list_name',
-                'geographical_locations.name as location_name',
-                DB::raw('GROUP_CONCAT(files.file_path) as file_paths')
-            )
-            ->groupBy('patients.patient_id')
-            ->get();
-
-        if ($patients->isEmpty()) {
-            return response([
-                'message' => 'No data found',
-                'statusCode' => 200,
-            ], 200);
-        }
-
-        return response([
-            'data' => $patients,
-            'statusCode' => 200,
-        ], 200);
-    }
-
 }
