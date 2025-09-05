@@ -102,49 +102,6 @@ class PatientController extends Controller
         ], 200);
     }
 
-    public function getAllowedPatientsToGetReferral()
-    {
-        $user = auth()->user();
-
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-            !$user->can('View Patient')
-        ) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
-
-        $patients = Patient::with([
-            'patientList',
-            'files',
-            'geographicalLocation',
-            'referrals.reason',
-            'referrals.hospital',
-            'referrals.creator',
-        ])
-        ->where(function($query) {
-            $query->whereDoesntHave('referrals') // patients with no referrals
-                ->orWhereHas('referrals', function($q) {
-                    $q->whereIn('status', ['Cancelled', 'Expired', 'Closed']); // referrals with cancelled, expired, or closed status
-                });
-        })
-        ->get();
-
-        if ($patients->isEmpty()) {
-            return response([
-                'message' => 'No data found',
-                'statusCode' => 200,
-            ], 200);
-        }
-
-        return response([
-            'data' => $patients,
-            'statusCode' => 200,
-        ], 200);
-    }
-
     /**
      * Store a newly created resource in storage.
      */
@@ -581,4 +538,46 @@ class PatientController extends Controller
         $patient->insurances = $patient->insurances ?? [];
         return response()->json($patient);
     }
+
+    public function getPatients()
+    {
+        $user = auth()->user();
+
+        if (
+            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
+            !$user->can('View Patient')
+        ) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+
+        $patients = DB::table('patients')
+            ->leftJoin('patient_lists', 'patients.patient_list_id', '=', 'patient_lists.id')
+            ->leftJoin('files', 'patients.patient_id', '=', 'files.patient_id')
+            ->leftJoin('geographical_locations', 'patients.location_id', '=', 'geographical_locations.id')
+            ->select(
+                'patients.*',
+                'patient_lists.name as patient_list_name',
+                'geographical_locations.name as location_name',
+                DB::raw('GROUP_CONCAT(files.file_path) as file_paths')
+            )
+            ->groupBy('patients.patient_id')
+            ->get();
+
+        if ($patients->isEmpty()) {
+            return response([
+                'message' => 'No data found',
+                'statusCode' => 200,
+            ], 200);
+        }
+
+        return response([
+            'data' => $patients,
+            'statusCode' => 200,
+        ], 200);
+    }
+
 }

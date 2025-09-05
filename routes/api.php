@@ -51,9 +51,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::resource('uploadTypes', App\Http\Controllers\API\Setup\UploadTypesController::class);
     Route::resource('locations', App\Http\Controllers\API\Setup\GeographicalLocationsController::class);
-    Route::resource('workStations', App\Http\Controllers\API\Setup\WorkingStationsController::class);
+    // Route::resource('workStations', App\Http\Controllers\API\Setup\WorkingStationsController::class);
     Route::resource('identifications', App\Http\Controllers\API\Setup\IdentificationsController::class);
-    Route::resource('senorities', App\Http\Controllers\API\Setup\SenoritiesController::class);
+    // Route::resource('senorities', App\Http\Controllers\API\Setup\SenoritiesController::class);
     Route::resource('countries', App\Http\Controllers\API\Setup\CountriesController::class);
 
     Route::resource('userAccounts', App\Http\Controllers\API\User\UsersCotroller::class);
@@ -92,10 +92,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // PATIENTS APIs
     Route::resource('patients', PatientController::class);
-    Route::get('patients/patients-for-referral', [PatientController::class, 'getAllowedPatientsToGetReferral']);
     Route::post('patients/update/{id}', [PatientController::class, 'updatePatient']);
     Route::patch('patients/unBlock/{id}', [PatientController::class, 'unBlockPatient']);
     Route::get('patients-withinsurance/{id}', [PatientController::class, 'getAllPatientsWithInsurance']);
+    Route::get('patients/for-referral', [PatientController::class, 'getPatients']);
 
 
     // INSURANCES APIs
