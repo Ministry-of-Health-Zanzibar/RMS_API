@@ -4698,6 +4698,85 @@
                 ]
             }
         },
+        "/api/hospital-letters": {
+            "post": {
+                "tags": [
+                    "Hospital Letters"
+                ],
+                "summary": "Create a new hospital letter",
+                "operationId": "f39c933dbfbd876973a1ab71a95d52bd",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "referral_id",
+                                    "received_date",
+                                    "outcome"
+                                ],
+                                "properties": {
+                                    "referral_id": {
+                                        "type": "integer"
+                                    },
+                                    "received_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "content_summary": {
+                                        "type": "string"
+                                    },
+                                    "next_appointment_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "letter_file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "outcome": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Follow-up",
+                                            "Finished",
+                                            "Transferred",
+                                            "Death"
+                                        ]
+                                    },
+                                    "followup_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "notes": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Hospital Letter created successfully"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Referral not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/hospitals": {
             "get": {
                 "tags": [
@@ -5789,7 +5868,7 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -11361,6 +11440,10 @@
         {
             "name": "monthly-bills",
             "description": "monthly-bills"
+        },
+        {
+            "name": "Hospital Letters",
+            "description": "Hospital Letters"
         },
         {
             "name": "hospitals",

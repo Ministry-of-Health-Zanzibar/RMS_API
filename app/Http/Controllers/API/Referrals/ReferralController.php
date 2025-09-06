@@ -330,13 +330,6 @@ class ReferralController extends Controller
             ->whereNull("bills.referral_id") // exclude referrals already billed in this file
             ->get();
 
-        if ($referrals->isEmpty()) {
-            return response()->json([
-                'message' => 'No referrals found for this hospital',
-                'statusCode' => 404,
-            ], 404);
-        }
-
         return response()->json([
             'data' => $referrals,
             'statusCode' => 200,

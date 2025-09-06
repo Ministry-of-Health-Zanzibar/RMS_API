@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('payment_id');
             $table->decimal('allocated_amount', 15, 2); // Amount from payment applied to this bill
             $table->string('allocation_date')->nullable();
-            $table->enum('status', ['Pending', 'Partial', 'Settled'])->default('Pending');
+            $table->enum('status', ['Pending', 'Partially Paid', 'Paid'])->default('Pending');
             $table->timestamps();
             $table->softDeletes();
 
