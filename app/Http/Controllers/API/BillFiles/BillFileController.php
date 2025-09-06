@@ -7,6 +7,7 @@ use App\Models\BillFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class BillFileController extends Controller
 {
@@ -372,4 +373,51 @@ class BillFileController extends Controller
             'statusCode' => 200
         ]);
     }
+
+    public function getBillFilesForPayment()
+    {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View BillFile')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $billFiles = DB::table('bill_files as bf')
+            ->leftJoin('hospitals as h', 'bf.hospital_id', '=', 'h.hospital_id')
+            ->leftJoin('bills as b', 'bf.bill_file_id', '=', 'b.bill_file_id')
+            ->leftJoin('bill_payments as bp', 'b.bill_id', '=', 'bp.bill_id')
+            ->leftJoin('payments as p', 'bp.payment_id', '=', 'p.payment_id')
+            ->select(
+                'bf.bill_file_id',
+                'h.hospital_name as hospital',
+                'bf.bill_file_title as title',
+                'bf.bill_file as file_link',
+                DB::raw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) as bill_file_amount'),
+                DB::raw('COALESCE(SUM(bp.allocated_amount), 0) as paid_amount'),
+                DB::raw('(CAST(bf.bill_file_amount AS DECIMAL(15,2)) - COALESCE(SUM(bp.allocated_amount), 0)) as balance'),
+                DB::raw("
+                    CASE 
+                        WHEN COALESCE(SUM(bp.allocated_amount), 0) = 0 THEN 'Pending'
+                        WHEN COALESCE(SUM(bp.allocated_amount), 0) < CAST(bf.bill_file_amount AS DECIMAL(15,2)) THEN 'Partially Paid'
+                        WHEN COALESCE(SUM(bp.allocated_amount), 0) >= CAST(bf.bill_file_amount AS DECIMAL(15,2)) THEN 'Paid'
+                    END as status
+                ")
+            )
+            ->groupBy(
+                'bf.bill_file_id',
+                'h.hospital_name',
+                'bf.bill_file_title',
+                'bf.bill_file',
+                'bf.bill_file_amount'
+            )
+            ->get();
+
+        return response()->json([
+            'data' => $billFiles,
+            'statusCode' => 200
+        ]);
+    }
+
 }
