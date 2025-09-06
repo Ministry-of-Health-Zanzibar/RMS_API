@@ -391,9 +391,9 @@ class BillFileController extends Controller
             ->leftJoin('payments as p', 'bp.payment_id', '=', 'p.payment_id')
             ->select(
                 'bf.bill_file_id',
-                'h.hospital_name as hospital',
-                'bf.bill_file_title as title',
-                'bf.bill_file as file_link',
+                'h.hospital_name',
+                'bf.bill_file_title',
+                'bf.bill_file',
                 DB::raw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) as bill_file_amount'),
                 DB::raw('COALESCE(SUM(bp.allocated_amount), 0) as paid_amount'),
                 DB::raw('(CAST(bf.bill_file_amount AS DECIMAL(15,2)) - COALESCE(SUM(bp.allocated_amount), 0)) as balance'),
