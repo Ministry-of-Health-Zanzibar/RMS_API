@@ -22,22 +22,13 @@ class PatientListController extends Controller
      */
     public function index()
     {
-        $lists = PatientList::withTrashed()
-        ->with([
+        $lists = PatientList::withTrashed()->with([
             'creator', // user who created the list
             'patients' => function ($q) {
                 $q->with('geographicalLocation'); // each patient with their geographical location
             }
         ])
         ->get();
-
-
-        if ($lists->isEmpty()) {
-            return response([
-                'message' => 'No patient lists found',
-                'statusCode' => 200
-            ], 200);
-        }
 
         return response([
             'data' => $lists,
@@ -67,8 +58,8 @@ class PatientListController extends Controller
         return response([
             'data' => $list->load(['creator', 'patients']),
             'message' => 'Patient list created successfully',
-            'statusCode' => 201
-        ], 201);
+            'statusCode' => 200
+        ], 200);
     }
 
     /**
@@ -76,7 +67,10 @@ class PatientListController extends Controller
      */
     public function show($id)
     {
-        $list = PatientList::with(['creator', 'patients'])->find($id);
+        $list = PatientList::with([
+            'creator',
+            'patients'
+        ])->find($id);
 
         if (!$list) {
             return response([

@@ -58,16 +58,8 @@ class BillItemController extends Controller
 
         $billItems = BillItem::withTrashed()->with('bill')->get();
 
-        if ($billItems->isEmpty()) {
-            return response()->json([
-                'message' => 'No data found',
-                'statusCode' => 200
-            ], 200);
-        }
-
         return response()->json([
             'data' => $billItems,
-            'message' => 'Bill items retrieved successfully',
             'statusCode' => 200
         ], 200);
     }
@@ -228,7 +220,6 @@ class BillItemController extends Controller
 
         return response()->json([
             'data' => $billItem,
-            'message' => 'Bill item retrieved successfully',
             'statusCode' => 200
         ], 200);
     }
@@ -239,13 +230,6 @@ class BillItemController extends Controller
             ->with('bill')
             ->where('bill_id', $billId)
             ->get();
-
-        if ($billItems->isEmpty()) {
-            return response([
-                'message' => 'No bill items found for this bill.',
-                'statusCode' => 404
-            ], 404);
-        }
 
         return response([
             'data' => $billItems,

@@ -183,6 +183,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Hospital Letters
     Route::resource('hospital-letters', HospitalLetterController::class);
+    Route::get('hospital-letters/followup-by-referral-id/{referral_id}', [HospitalLetterController::class, 'getHospitalLettersByReferralId']);
 
     // Followups
     Route::resource('followups', FollowupController::class);

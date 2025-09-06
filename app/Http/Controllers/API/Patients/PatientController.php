@@ -89,13 +89,6 @@ class PatientController extends Controller
             'referrals.creator',  // referral created by user
         ])->get();
 
-        if ($patients->isEmpty()) {
-            return response([
-                'message' => 'No data found',
-                'statusCode' => 200,
-            ], 200);
-        }
-
         return response([
             'data' => $patients,
             'statusCode' => 200,
@@ -566,13 +559,6 @@ class PatientController extends Controller
             $query->whereIn('status', ['Cancelled', 'Expired', 'Closed']);
         })
         ->get();
-
-        if ($patients->isEmpty()) {
-            return response([
-                'message' => 'No data found',
-                'statusCode' => 200,
-            ], 200);
-        }
 
         return response([
             'data' => $patients,

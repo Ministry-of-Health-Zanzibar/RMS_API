@@ -158,13 +158,6 @@ class BillController extends Controller
             return $bill;
         });
 
-        if ($bills->isEmpty()) {
-            return response([
-                'message' => 'No data found',
-                'statusCode' => 200,
-            ], 200);
-        }
-
         return response([
             'data' => $bills,
             'statusCode' => 200,
@@ -279,8 +272,8 @@ class BillController extends Controller
             return response([
                 'data' => $bill,
                 'message' => 'Bill created successfully',
-                'statusCode' => 201,
-            ], 201);
+                'statusCode' => 200,
+            ], 200);
         }
 
         return response([
@@ -570,14 +563,6 @@ class BillController extends Controller
         ->withTrashed()
         ->where('bill_file_id', $id)
         ->get();
-
-
-        if (!$bills) {
-            return response([
-                'message' => 'Bill file not found',
-                'statusCode' => 404,
-            ], 404);
-        }
 
         return response([
             'data' => $bills,
@@ -940,6 +925,5 @@ class BillController extends Controller
             'statusCode' => 200,
         ], 200);
     }
-
 
 }
