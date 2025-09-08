@@ -307,13 +307,17 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        $letter = Referral::with([
-            'hospitalLetters.followups'
-        ])->where('referral_id',$id)
-        ->get();
+        $letters = Referral::with([
+            'hospitalLetters' => function ($query) {
+                $query->select('letter_id', 'received_date', 'content_summary', 'next_appointment_date', 'letter_file', 'outcome')
+                    ->with(['followups' => function ($q) {
+                        $q->select('followup_id', 'followup_date', 'notes');
+                    }]);
+            }
+        ])->where('referral_id', $id)->get();
 
         return response()->json([
-            'data' => $letter,
+            'data' => $letters,
             'statusCode' => 200
         ]);
     }
