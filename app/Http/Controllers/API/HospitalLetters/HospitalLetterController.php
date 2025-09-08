@@ -166,28 +166,6 @@ class HospitalLetterController extends Controller
         ]);
     }
 
-    public function getHospitalLettersByReferralId($id)
-    {
-        $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View Hospital Letter')) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
-
-        $letter = HospitalLetter::with([
-            'referral',
-            'followups'
-        ])->where('referral_id',$id)
-        ->get();
-
-        return response()->json([
-            'data' => $letter,
-            'statusCode' => 200
-        ]);
-    }
-
     /**
      * Update the specified resource in storage.
      */

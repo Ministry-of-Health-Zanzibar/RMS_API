@@ -297,6 +297,27 @@ class ReferralController extends Controller
         ], 200);
     }
 
+    public function getHospitalLettersByReferralId($id)
+    {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View Referral')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $letter = Referral::with([
+            'hospitalLetters.followups'
+        ])->where('referral_id',$id)
+        ->get();
+
+        return response()->json([
+            'data' => $letter,
+            'statusCode' => 200
+        ]);
+    }
+
     public function getReferralsByHospitalId(int $hospitalId, int $billFileId)
     {
         $user = auth()->user();

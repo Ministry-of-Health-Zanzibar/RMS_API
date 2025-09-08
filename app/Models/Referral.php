@@ -26,6 +26,14 @@ class Referral extends Model
         'created_by',
     ];
 
+    /**
+     * Referral has many hospital letters
+     */
+    public function hospitalLetters()
+    {
+        return $this->hasMany(HospitalLetter::class, 'referral_id', 'referral_id');
+    }
+
     public function referral()
     {
         return $this->belongsTo(Referral::class, 'referral_id', 'referral_id')

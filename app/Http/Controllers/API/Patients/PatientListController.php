@@ -47,7 +47,19 @@ class PatientListController extends Controller
         ]);
 
         // store file
-        $filePath = $request->file('patient_list_file')->store('patient_lists', 'public');
+        // $filePath = $request->file('patient_list_file')->store('patient_lists', 'public');
+        if ($request->hasFile('patient_list_file')) {
+            $file = $request->file('patient_list_file');
+            
+            // Generate a new file name
+            $newFileName = time() . '_' . $file->getClientOriginalName();
+
+            // Move the file to public/uploads/patientLists/
+            $file->move(public_path('uploads/patientLists/'), $newFileName);
+
+            // Save the file path to database
+            $filePath = 'uploads/patientLists/' . $newFileName;
+        }
 
         $list = PatientList::create([
             'patient_list_title' => $request->patient_list_title,

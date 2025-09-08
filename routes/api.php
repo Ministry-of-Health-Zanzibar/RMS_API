@@ -26,7 +26,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Reasons\ReasonController;
 use App\Http\Controllers\API\Payments\PaymentController;
-// use App\Http\Controllers\API\Auth\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -70,7 +69,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('unBlockUploadTypes/{upload_types_id}', [App\Http\Controllers\API\Setup\UnBlockCotroller::class, 'unblock_upload_types'])->name('unBlockUploadTypes');
     Route::get('unBlockUser/{user_id}', [App\Http\Controllers\API\Setup\UnBlockCotroller::class, 'unblock_user'])->name('unBlockUser');
 
-
     // RMS RELATED APIs
     //HOSPITALS
     Route::get('hospitals/reffered-hospitals', [HospitalController::class, 'getReferredHospitals']);
@@ -97,7 +95,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('patients-withinsurance/{id}', [PatientController::class, 'getAllPatientsWithInsurance']);
     Route::get('patients/for-referral/allowed', [PatientController::class, 'getAllPatients']);
 
-
     // INSURANCES APIs
     Route::resource('insurances', InsuranceController::class);
     Route::patch('insurances/unBlock/{hospitalId}', [InsuranceController::class, 'unBlockInsuarance']);
@@ -112,6 +109,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('referrals-withbills/{referral_id}', [ReferralController::class, 'getReferralsWithBills']);
     Route::get('referrals-by-hospital/{hospital_id}/{bill_file_id}', [ReferralController::class, 'getReferralsByHospitalId']);
     // Route::get('bill-payment/{bill_id}', [ReferralController::class, 'getReferralsWithBillPayment']);
+    Route::get('hospital-letters/followup-by-referral-id/{referral_id}', [ReferralController::class, 'getHospitalLettersByReferralId']);
+
 
     // RMS REASON APIs
     Route::resource('reasons', ReasonController::class);
@@ -183,7 +182,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Hospital Letters
     Route::resource('hospital-letters', HospitalLetterController::class);
-    Route::get('hospital-letters/followup-by-referral-id/{referral_id}', [HospitalLetterController::class, 'getHospitalLettersByReferralId']);
 
     // Followups
     Route::resource('followups', FollowupController::class);
