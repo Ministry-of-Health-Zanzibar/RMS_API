@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('patient_id'); // FK → patients
             $table->unsignedBigInteger('letter_id');  // FK → hospital_letters
             $table->date('followup_date');
-            $table->string('notes');
+            $table->string('notes')->nullable();
             $table->enum('status', ['Ongoing', 'Closed'])->default('Ongoing');
             $table->timestamps();
             $table->softDeletes(); 

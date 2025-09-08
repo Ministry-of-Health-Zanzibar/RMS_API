@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('bill_file_title');     // Title of the bill file
             $table->string('bill_file');           // Path or filename of the uploaded file
             $table->string('bill_file_amount');
+            $table->string('bill_start')->nullable();  // Start of the billing period
+            $table->string('bill_end')->nullable();    // End of the billing period
             $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();                  // created_at & updated_at
             $table->softDeletes();
