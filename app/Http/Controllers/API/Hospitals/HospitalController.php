@@ -495,19 +495,25 @@ class HospitalController extends Controller
             ], 403);
         }
 
-        $hospitals = Hospital::whereHas('referrals')
-            ->with([
-                'referrals',            // load all referrals for the hospital
-                'referralType',         // load the referral type of the hospital
-            ])
-            ->withTrashed()
-            ->get([
-                'hospital_id', 
-                'hospital_name', 
-                'hospital_address', 
-                'hospital_code', 
-                'referral_type_id'     // from hospitals
-            ]);
+        $hospitals = Hospital::whereHas('referrals', function($query) {
+            // Only confirmed referrals
+            $query->where('status', 'Confirmed');
+        })
+        ->with([
+            'referrals' => function($query) {
+                // Only confirmed referrals (exclude Cancelled)
+                $query->where('status', 'Confirmed');
+            },
+            'referralType',
+        ])
+        ->withTrashed()
+        ->get([
+            'hospital_id', 
+            'hospital_name', 
+            'hospital_address', 
+            'hospital_code', 
+            'referral_type_id'
+        ]);
 
 
         if ($hospitals) {
