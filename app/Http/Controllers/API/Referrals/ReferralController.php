@@ -300,24 +300,46 @@ class ReferralController extends Controller
     public function getHospitalLettersByReferralId($id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View Referral')) {
+        if (
+            !$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) 
+            || !$user->can('View Referral')
+        ) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $letters = Referral::with([
+        $referral = Referral::with([
             'hospitalLetters' => function ($query) {
-                $query->select('letter_id', 'received_date', 'content_summary', 'next_appointment_date', 'letter_file', 'outcome')
-                    ->with(['followups' => function ($q) {
-                        $q->select('followup_id', 'followup_date', 'notes');
-                    }]);
+                $query->select(
+                    'letter_id', 
+                    'referral_id', // must include FK for relationship
+                    'received_date', 
+                    'content_summary', 
+                    'next_appointment_date', 
+                    'letter_file', 
+                    'outcome'
+                )->with(['followups' => function ($q) {
+                    $q->select(
+                        'followup_id', 
+                        'hospital_letter_id', // must include FK
+                        'followup_date', 
+                        'notes'
+                    );
+                }]);
             }
-        ])->where('referral_id', $id)->get();
+        ])->where('referral_id', $id)->first();
+
+        if (!$referral) {
+            return response()->json([
+                'message' => 'Referral not found',
+                'statusCode' => 404
+            ], 404);
+        }
 
         return response()->json([
-            'data' => $letters,
+            'data' => $referral,
             'statusCode' => 200
         ]);
     }
