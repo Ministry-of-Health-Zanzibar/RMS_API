@@ -157,22 +157,36 @@ class PaymentController extends Controller
         $billPayments = [];
 
         foreach ($bills as $bill) {
-            if (!$bill) {
-                continue; // skip null just in case
-            }
+            if (!$bill) continue;
 
             if ($remainingAmount <= 0) break;
 
             $allocation = min($remainingAmount, $bill->total_amount);
 
-            $billPayments[] = BillPayment::create([
-                // handle both "bill_id" and "id" column names
-                'bill_id'         => $bill->bill_id ?? $bill->id,
+            // Create bill payment
+            $billPayment = BillPayment::create([
+                'bill_id'         => $bill->bill_id,
                 'payment_id'      => $payment->payment_id,
                 'allocated_amount'=> $allocation,
                 'allocation_date' => now(),
-                'status'           => $allocation == $bill->total_amount ? 'Paid' : 'Partially Paid',
+                'status'          => $allocation == $bill->total_amount ? 'Paid' : 'Partially Paid',
             ]);
+
+            $billPayments[] = $billPayment;
+
+            // Update the bill's status based on total allocated payments
+            $totalAllocated = BillPayment::where('bill_id', $bill->bill_id)
+                                ->sum('allocated_amount');
+
+            if ($totalAllocated >= $bill->total_amount) {
+                $bill->bill_status = 'Paid';
+            } elseif ($totalAllocated > 0) {
+                $bill->bill_status = 'Partially Paid';
+            } else {
+                $bill->bill_status = 'Pending';
+            }
+
+            $bill->save();
 
             $remainingAmount -= $allocation;
         }
