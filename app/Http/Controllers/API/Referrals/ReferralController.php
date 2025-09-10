@@ -323,7 +323,7 @@ class ReferralController extends Controller
                 )->with(['followups' => function ($q) {
                     $q->select(
                         'followup_id', 
-                        'hospital_letter_id', // must include FK
+                        'letter_id', // must include FK
                         'followup_date', 
                         'notes'
                     );
