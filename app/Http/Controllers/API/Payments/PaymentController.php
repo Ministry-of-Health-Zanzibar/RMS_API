@@ -128,17 +128,17 @@ class PaymentController extends Controller
             'payment_method'    => 'nullable|string|max:255',
             'reference_number'  => 'nullable|string|max:255',
             'voucher_number'    => 'nullable|string|max:255',
-            'payment_date'      => 'nullable|date', // defaults to today if not provided
+            'payment_date'      => 'nullable|date',
         ]);
 
         $validated['created_by'] = $user->id;
 
-        // Set default payment_date if not provided
+        // Default payment_date to now if not provided
         if (empty($validated['payment_date'])) {
             $validated['payment_date'] = now();
         }
 
-        // Create payment
+        // Create the payment record
         $payment = Payment::create([
             'payer'            => $validated['payer'],
             'amount_paid'      => $validated['amount_paid'],
@@ -150,7 +150,7 @@ class PaymentController extends Controller
             'created_by'       => $user->id,
         ]);
 
-        // Fetch all bills referencing this bill_file_id
+        // Fetch all bills for this bill_file_id
         $bills = Bill::where('bill_file_id', $validated['bill_file_id'])->get();
 
         $remainingAmount = $validated['amount_paid'];
@@ -158,30 +158,27 @@ class PaymentController extends Controller
 
         foreach ($bills as $bill) {
             if (!$bill) continue;
-
             if ($remainingAmount <= 0) break;
 
             $allocation = min($remainingAmount, $bill->total_amount);
 
-            // Create bill payment
+            // Create bill payment (status: only Pending or Paid)
             $billPayment = BillPayment::create([
                 'bill_id'         => $bill->bill_id,
                 'payment_id'      => $payment->payment_id,
                 'allocated_amount'=> $allocation,
                 'allocation_date' => now(),
-                'status'          => $allocation == $bill->total_amount ? 'Paid' : 'Partially Paid',
+                'status'          => $allocation >= $bill->total_amount ? 'Paid' : 'Pending',
             ]);
 
             $billPayments[] = $billPayment;
 
-            // Update the bill's status based on total allocated payments
+            // Update the bill's status (only Pending or Paid)
             $totalAllocated = BillPayment::where('bill_id', $bill->bill_id)
                                 ->sum('allocated_amount');
 
             if ($totalAllocated >= $bill->total_amount) {
                 $bill->bill_status = 'Paid';
-            } elseif ($totalAllocated > 0) {
-                $bill->bill_status = 'Partially Paid';
             } else {
                 $bill->bill_status = 'Pending';
             }

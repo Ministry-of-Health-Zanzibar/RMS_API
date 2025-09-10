@@ -428,9 +428,8 @@ class BillFileController extends Controller
             DB::raw('(CAST(bf.bill_file_amount AS DECIMAL(15,2)) - COALESCE(SUM(bp.allocated_amount), 0)) as balance'),
             DB::raw("
                 CASE 
-                    WHEN COALESCE(SUM(bp.allocated_amount), 0) = 0 THEN 'Pending'
-                    WHEN COALESCE(SUM(bp.allocated_amount), 0) < CAST(bf.bill_file_amount AS DECIMAL(15,2)) THEN 'Partially Paid'
                     WHEN COALESCE(SUM(bp.allocated_amount), 0) >= CAST(bf.bill_file_amount AS DECIMAL(15,2)) THEN 'Paid'
+                    ELSE 'Pending'
                 END as status
             ")
         )
