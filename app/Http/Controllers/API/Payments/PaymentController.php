@@ -140,14 +140,14 @@ class PaymentController extends Controller
 
         // Create payment
         $payment = Payment::create([
-            'payer' => $validated['payer'],
-            'amount_paid' => $validated['amount_paid'],
-            'currency' => $validated['currency'],
-            'payment_method' => $validated['payment_method'] ?? null,
+            'payer'            => $validated['payer'],
+            'amount_paid'      => $validated['amount_paid'],
+            'currency'         => $validated['currency'],
+            'payment_method'   => $validated['payment_method'] ?? null,
             'reference_number' => $validated['reference_number'] ?? null,
-            'voucher_number' => $validated['voucher_number'] ?? null,
-            'payment_date' => $validated['payment_date'],
-            'created_by' => $user->id,
+            'voucher_number'   => $validated['voucher_number'] ?? null,
+            'payment_date'     => $validated['payment_date'],
+            'created_by'       => $user->id,
         ]);
 
         // Fetch all bills referencing this bill_file_id
@@ -157,26 +157,31 @@ class PaymentController extends Controller
         $billPayments = [];
 
         foreach ($bills as $bill) {
+            if (!$bill) {
+                continue; // skip null just in case
+            }
+
             if ($remainingAmount <= 0) break;
 
             $allocation = min($remainingAmount, $bill->total_amount);
 
             $billPayments[] = BillPayment::create([
-                'bill_id' => $bill->bill_id,
-                'payment_id' => $payment->payment_id,
-                'allocated_amount' => $allocation,
+                // handle both "bill_id" and "id" column names
+                'bill_id'         => $bill->bill_id ?? $bill->id,
+                'payment_id'      => $payment->payment_id,
+                'allocated_amount'=> $allocation,
                 'allocation_date' => now(),
-                'status' => $allocation == $bill->total_amount ? 'Settled' : 'Partial',
+                'status'          => $allocation == $bill->total_amount ? 'Settled' : 'Partial',
             ]);
 
             $remainingAmount -= $allocation;
         }
 
         return response()->json([
-            'message' => 'Payment created and allocated successfully.',
-            'payment' => $payment,
+            'message'          => 'Payment created and allocated successfully.',
+            'payment'          => $payment,
             'bill_allocations' => $billPayments,
-            'statusCode' => 200,
+            'statusCode'       => 200,
         ], 200);
     }
 

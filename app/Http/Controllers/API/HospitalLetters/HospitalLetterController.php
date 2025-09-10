@@ -126,6 +126,7 @@ class HospitalLetterController extends Controller
 
             $followupValidated['letter_id'] = $letter->letter_id;
             $followupValidated['patient_id'] = $patientId;
+            $followupValidated['followup_status'] = 'Ongoing';
             $followupValidated['created_by'] = Auth::id();
 
             $followup = FollowUp::create($followupValidated);
