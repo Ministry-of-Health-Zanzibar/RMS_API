@@ -171,7 +171,7 @@ class PaymentController extends Controller
                 'payment_id'      => $payment->payment_id,
                 'allocated_amount'=> $allocation,
                 'allocation_date' => now(),
-                'status'          => $allocation == $bill->total_amount ? 'Settled' : 'Partial',
+                'status'           => $allocation == $bill->total_amount ? 'Paid' : 'Partially Paid',
             ]);
 
             $remainingAmount -= $allocation;
