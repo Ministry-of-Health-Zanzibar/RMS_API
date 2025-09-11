@@ -43,10 +43,6 @@ class ReportController extends Controller
             ]);
         }
 
-
-
-
-
     }
 
 
@@ -320,7 +316,6 @@ class ReportController extends Controller
             'statusCode' => 200,
         ]);
     }
-
 
     // searchReferralReport
     public function searchReferralReport(Request $request)

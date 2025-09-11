@@ -276,8 +276,10 @@ class ReferralController extends Controller
         }
 
         $referral = Referral::with([
-                'patient',
-                'reason'
+                'patient.geographicalLocation',
+                'patient.patientList',
+                'patient.files',
+                'reason',
             ])
             ->where('referral_id', $id)
             ->first();
