@@ -466,7 +466,7 @@ class ReportController extends Controller
      */
     public function rangeReport(Request $request)
     {
-        // ✅ Validate request input
+        // Validate request input
         $request->validate([
             'start_date' => 'required|date',
             'end_date'   => 'required|date|after_or_equal:start_date',
@@ -475,25 +475,25 @@ class ReportController extends Controller
         $startDate = $request->input('start_date');
         $endDate   = $request->input('end_date');
 
-        // ✅ Query hospital billing/payment report
+        // Query hospital billing/payment report
         $report = DB::table('hospitals')
-            ->join('bill_files', 'hospitals.hospital_id', '=', 'bill_files.hospital_id')
-            ->join('bills', 'bill_files.bill_file_id', '=', 'bills.bill_file_id')
-            ->leftJoin('bill_payments', 'bills.bill_id', '=', 'bill_payments.bill_id')
-            ->leftJoin('payments', 'bill_payments.payment_id', '=', 'payments.payment_id')
-            ->select(
-                'hospitals.hospital_name',
-                DB::raw('COUNT(DISTINCT bills.bill_id) as total_bills'),
-                DB::raw('SUM(CASE WHEN bills.bill_status = "Paid" THEN 1 ELSE 0 END) as paid_bills'),
-                DB::raw('SUM(CASE WHEN bills.bill_status = "Pending" THEN 1 ELSE 0 END) as pending_bills'),
-                DB::raw('SUM(bills.total_amount) as total_amount'),
-                DB::raw('SUM(CASE WHEN bills.bill_status = "Paid" THEN bills.total_amount ELSE 0 END) as paid_amount'),
-                DB::raw('SUM(CASE WHEN bills.bill_status = "Pending" THEN bills.total_amount ELSE 0 END) as pending_amount')
-            )
-            ->whereBetween('bills.bill_period_start', [$startDate, $endDate])
-            ->groupBy('hospitals.hospital_name')
-            ->orderBy('hospitals.hospital_name')
-            ->get();
+        ->join('bill_files', 'hospitals.hospital_id', '=', 'bill_files.hospital_id')
+        ->join('bills', 'bill_files.bill_file_id', '=', 'bills.bill_file_id')
+        ->leftJoin('bill_payments', 'bills.bill_id', '=', 'bill_payments.bill_id')
+        ->leftJoin('payments', 'bill_payments.payment_id', '=', 'payments.payment_id')
+        ->select(
+            'hospitals.hospital_name',
+            DB::raw('COUNT(DISTINCT bills.bill_id) as total_bills'),
+            DB::raw("SUM(CASE WHEN bills.bill_status = 'Paid' THEN 1 ELSE 0 END) as paid_bills"),
+            DB::raw("SUM(CASE WHEN bills.bill_status = 'Pending' THEN 1 ELSE 0 END) as pending_bills"),
+            DB::raw('SUM(bills.total_amount) as total_amount'),
+            DB::raw("SUM(CASE WHEN bills.bill_status = 'Paid' THEN bills.total_amount ELSE 0 END) as paid_amount"),
+            DB::raw("SUM(CASE WHEN bills.bill_status = 'Pending' THEN bills.total_amount ELSE 0 END) as pending_amount")
+        )
+        ->whereBetween('bills.bill_period_start', [$startDate, $endDate])
+        ->groupBy('hospitals.hospital_name')
+        ->orderBy('hospitals.hospital_name')
+        ->get();
 
         return response()->json([
             'start_date' => $startDate,
