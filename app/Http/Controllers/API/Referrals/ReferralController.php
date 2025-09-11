@@ -280,6 +280,7 @@ class ReferralController extends Controller
                 'patient.patientList',
                 'patient.files',
                 'reason',
+                'hospital',
             ])
             ->where('referral_id', $id)
             ->first();
