@@ -152,11 +152,20 @@ class ReferralLettersController extends Controller
         // Find referral
         $referral = Referral::findOrFail($data['referral_id']);
 
-        // Update hospital_id and status in the referral
-        $referral->update([
-            'hospital_id' => $data['hospital_id'],
-            'status' => $data['status'],
-        ]);
+        if($data['status']=='Confirmed'){
+
+            // Update hospital_id and status in the referral
+            $referral->update([
+                'hospital_id' => $data['hospital_id'],
+                'status' => $data['status'],
+            ]);
+        }else{
+            
+            // Update hospital_id and status in the referral
+            $referral->update([
+                'status' => $data['status'],
+            ]);
+        }
 
         // Create referral letter
         $ReferralLetter = ReferralLetter::create([
