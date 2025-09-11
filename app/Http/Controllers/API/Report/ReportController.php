@@ -318,10 +318,92 @@ class ReportController extends Controller
     }
 
     // searchReferralReport
+    // public function searchReferralReport(Request $request)
+    // {
+    //     $user = auth()->user();
+
+    //     if (
+    //         !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
+    //         !$user->can('View Patient')
+    //     ) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $query = DB::table('referrals')
+    //         ->join('patients', 'patients.patient_id', '=', 'referrals.patient_id')
+    //         ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
+    //         ->join('referral_types', 'referral_types.referral_type_id', '=', 'referrals.referral_type_id')
+    //         ->join('reasons', 'reasons.reason_id', '=', 'referrals.reason_id')
+    //         ->leftJoin('insurances', 'insurances.patient_id', '=', 'patients.patient_id')
+    //         ->select(
+    //             'referrals.referral_id',
+    //             'referrals.start_date',
+    //             'referrals.end_date',
+    //             'referrals.status as referral_status',
+    //             'patients.patient_id',
+    //             'patients.name as patient_name',
+    //             'hospitals.hospital_name',
+    //             'hospitals.hospital_address',
+    //             'referral_types.referral_type_name',
+    //             'reasons.referral_reason_name',
+    //             'insurances.insurance_provider_name',
+               
+    //         );
+
+    //     // Optional filters
+    //     if ($request->filled('patient_name')) {
+    //         $query->where('patients.name', 'ILIKE', '%' . $request->patient_name . '%');
+    //     }
+
+    //     if ($request->filled('hospital_name')) {
+    //         $query->where('hospitals.hospital_name', 'ILIKE', '%' . $request->hospital_name . '%');
+    //     }
+
+    //     if ($request->filled('hospital_address')) {
+    //         $query->where('hospitals.hospital_address', 'ILIKE', '%' . $request->hospital_address . '%');
+    //     }
+
+    //     if ($request->filled('referral_type_name')) {
+    //         $query->where('referral_types.referral_type_name', 'ILIKE', '%' . $request->referral_type_name . '%');
+    //     }
+
+    //     if ($request->filled('referral_reason_name')) {
+    //         $query->where('reasons.referral_reason_name', 'ILIKE', '%' . $request->referral_reason_name . '%');
+    //     }
+
+    //     if ($request->filled('insurance_provider_name')) {
+    //         $query->where('insurances.insurance_provider_name', 'ILIKE', '%' . $request->insurance_provider_name . '%');
+    //     }
+
+    //     if ($request->filled('disease_name')) {
+    //         $query->join('patient_diseases', 'patient_diseases.patient_id', '=', 'patients.patient_id')
+    //             ->join('diseases', 'diseases.disease_id', '=', 'patient_diseases.disease_id')
+    //             ->where('diseases.disease_name', 'ILIKE', '%' . $request->disease_name . '%');
+    //     }
+
+    //     $results = $query->get();
+
+    //     if ($results->isEmpty()) {
+    //         return response([
+    //             'message' => 'No results found',
+    //             'statusCode' => 404,
+    //         ], 404);
+    //     }
+
+    //     return response([
+    //         'data' => $results,
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
+
     public function searchReferralReport(Request $request)
     {
         $user = auth()->user();
 
+        // Permission check
         if (
             !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
             !$user->can('View Patient')
@@ -335,25 +417,21 @@ class ReportController extends Controller
         $query = DB::table('referrals')
             ->join('patients', 'patients.patient_id', '=', 'referrals.patient_id')
             ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
-            ->join('referral_types', 'referral_types.referral_type_id', '=', 'referrals.referral_type_id')
             ->join('reasons', 'reasons.reason_id', '=', 'referrals.reason_id')
             ->leftJoin('insurances', 'insurances.patient_id', '=', 'patients.patient_id')
             ->select(
                 'referrals.referral_id',
-                'referrals.start_date',
-                'referrals.end_date',
+                'referrals.created_at',
                 'referrals.status as referral_status',
                 'patients.patient_id',
                 'patients.name as patient_name',
                 'hospitals.hospital_name',
                 'hospitals.hospital_address',
-                'referral_types.referral_type_name',
                 'reasons.referral_reason_name',
-                'insurances.insurance_provider_name',
-               
+                'insurances.insurance_provider_name'
             );
 
-        // Optional filters
+        // Filters (Postgres uses ILIKE)
         if ($request->filled('patient_name')) {
             $query->where('patients.name', 'ILIKE', '%' . $request->patient_name . '%');
         }
@@ -366,10 +444,6 @@ class ReportController extends Controller
             $query->where('hospitals.hospital_address', 'ILIKE', '%' . $request->hospital_address . '%');
         }
 
-        if ($request->filled('referral_type_name')) {
-            $query->where('referral_types.referral_type_name', 'ILIKE', '%' . $request->referral_type_name . '%');
-        }
-
         if ($request->filled('referral_reason_name')) {
             $query->where('reasons.referral_reason_name', 'ILIKE', '%' . $request->referral_reason_name . '%');
         }
@@ -378,20 +452,19 @@ class ReportController extends Controller
             $query->where('insurances.insurance_provider_name', 'ILIKE', '%' . $request->insurance_provider_name . '%');
         }
 
+        // Disease filter (joins only when needed)
         if ($request->filled('disease_name')) {
             $query->join('patient_diseases', 'patient_diseases.patient_id', '=', 'patients.patient_id')
                 ->join('diseases', 'diseases.disease_id', '=', 'patient_diseases.disease_id')
                 ->where('diseases.disease_name', 'ILIKE', '%' . $request->disease_name . '%');
         }
 
-        $results = $query->get();
-
-        if ($results->isEmpty()) {
-            return response([
-                'message' => 'No results found',
-                'statusCode' => 404,
-            ], 404);
+        // Date range filter
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('referrals.created_at', [$request->start_date, $request->end_date]);
         }
+
+        $results = $query->get();
 
         return response([
             'data' => $results,
