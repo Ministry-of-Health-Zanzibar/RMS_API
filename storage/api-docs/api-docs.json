@@ -8190,6 +8190,116 @@
                 }
             }
         },
+        "/api/reports/range": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Get Range Report",
+                "description": "Fetch aggregated hospital billing data (total bills, paid, pending, amounts) within a given date range.",
+                "operationId": "2f091ad24cb02d1ddd34cd562fba75a8",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Start date for filtering (YYYY-MM-DD)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-01-01"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "End date for filtering (YYYY-MM-DD)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-03-31"
+                        }
+                    },
+                    {
+                        "name": "hospital_id",
+                        "in": "query",
+                        "description": "Optional hospital ID to filter results",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful range report",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "start_date": {
+                                            "type": "string",
+                                            "format": "date",
+                                            "example": "2025-01-01"
+                                        },
+                                        "end_date": {
+                                            "type": "string",
+                                            "format": "date",
+                                            "example": "2025-03-31"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "hospital_name": {
+                                                        "type": "string",
+                                                        "example": "City Hospital"
+                                                    },
+                                                    "total_bills": {
+                                                        "type": "integer",
+                                                        "example": 15
+                                                    },
+                                                    "paid_bills": {
+                                                        "type": "integer",
+                                                        "example": 10
+                                                    },
+                                                    "pending_bills": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "total_amount": {
+                                                        "type": "string",
+                                                        "example": "150000.00"
+                                                    },
+                                                    "paid_amount": {
+                                                        "type": "string",
+                                                        "example": "100000.00"
+                                                    },
+                                                    "pending_amount": {
+                                                        "type": "string",
+                                                        "example": "50000.00"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request (missing or invalid parameters)"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
+        },
         "/api/countries": {
             "get": {
                 "tags": [
@@ -11472,6 +11582,10 @@
         {
             "name": "referrals",
             "description": "referrals"
+        },
+        {
+            "name": "Reports",
+            "description": "Reports"
         },
         {
             "name": "countries",

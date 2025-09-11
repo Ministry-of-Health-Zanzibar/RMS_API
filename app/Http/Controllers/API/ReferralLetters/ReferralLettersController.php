@@ -154,14 +154,14 @@ class ReferralLettersController extends Controller
 
         if($data['status']=='Confirmed'){
 
-            // Update hospital_id and status in the referral
+            // Update hospital and status in the referral if confirmed
             $referral->update([
                 'hospital_id' => $data['hospital_id'],
                 'status' => $data['status'],
             ]);
         }else{
-            
-            // Update hospital_id and status in the referral
+
+            // Update status in the referral if cacelled
             $referral->update([
                 'status' => $data['status'],
             ]);

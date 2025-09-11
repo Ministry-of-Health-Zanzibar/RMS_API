@@ -399,4 +399,177 @@ class ReportController extends Controller
         ], 200);
     }
 
+
+
+    // NEW
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/reports/range",
+     *     summary="Get Range Report",
+     *     description="Fetch aggregated hospital billing data (total bills, paid, pending, amounts) within a given date range.",
+     *     tags={"Reports"},
+     *     @OA\Parameter(
+     *         name="start_date",
+     *         in="query",
+     *         required=true,
+     *         description="Start date for filtering (YYYY-MM-DD)",
+     *         @OA\Schema(type="string", format="date", example="2025-01-01")
+     *     ),
+     *     @OA\Parameter(
+     *         name="end_date",
+     *         in="query",
+     *         required=true,
+     *         description="End date for filtering (YYYY-MM-DD)",
+     *         @OA\Schema(type="string", format="date", example="2025-03-31")
+     *     ),
+     *     @OA\Parameter(
+     *         name="hospital_id",
+     *         in="query",
+     *         required=false,
+     *         description="Optional hospital ID to filter results",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful range report",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="start_date", type="string", format="date", example="2025-01-01"),
+     *             @OA\Property(property="end_date", type="string", format="date", example="2025-03-31"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="hospital_name", type="string", example="City Hospital"),
+     *                     @OA\Property(property="total_bills", type="integer", example=15),
+     *                     @OA\Property(property="paid_bills", type="integer", example=10),
+     *                     @OA\Property(property="pending_bills", type="integer", example=5),
+     *                     @OA\Property(property="total_amount", type="string", example="150000.00"),
+     *                     @OA\Property(property="paid_amount", type="string", example="100000.00"),
+     *                     @OA\Property(property="pending_amount", type="string", example="50000.00")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid request (missing or invalid parameters)"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error"
+     *     )
+     * )
+     */
+    public function rangeReport(Request $request)
+    {
+        // ✅ Validate request input
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date'   => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $startDate = $request->input('start_date');
+        $endDate   = $request->input('end_date');
+
+        // ✅ Query hospital billing/payment report
+        $report = DB::table('hospitals')
+            ->join('bill_files', 'hospitals.hospital_id', '=', 'bill_files.hospital_id')
+            ->join('bills', 'bill_files.bill_file_id', '=', 'bills.bill_file_id')
+            ->leftJoin('bill_payments', 'bills.bill_id', '=', 'bill_payments.bill_id')
+            ->leftJoin('payments', 'bill_payments.payment_id', '=', 'payments.payment_id')
+            ->select(
+                'hospitals.hospital_name',
+                DB::raw('COUNT(DISTINCT bills.bill_id) as total_bills'),
+                DB::raw('SUM(CASE WHEN bills.bill_status = "Paid" THEN 1 ELSE 0 END) as paid_bills'),
+                DB::raw('SUM(CASE WHEN bills.bill_status = "Pending" THEN 1 ELSE 0 END) as pending_bills'),
+                DB::raw('SUM(bills.total_amount) as total_amount'),
+                DB::raw('SUM(CASE WHEN bills.bill_status = "Paid" THEN bills.total_amount ELSE 0 END) as paid_amount'),
+                DB::raw('SUM(CASE WHEN bills.bill_status = "Pending" THEN bills.total_amount ELSE 0 END) as pending_amount')
+            )
+            ->whereBetween('bills.bill_period_start', [$startDate, $endDate])
+            ->groupBy('hospitals.hospital_name')
+            ->orderBy('hospitals.hospital_name')
+            ->get();
+
+        return response()->json([
+            'start_date' => $startDate,
+            'end_date'   => $endDate,
+            'data'       => $report,
+        ]);
+    }
+
+    public function referralStatusReport()
+    {
+        $report = DB::table('referrals')
+            ->select(
+                DB::raw('COUNT(CASE WHEN status = "Confirmed" THEN 1 END) as confirmed'),
+                DB::raw('COUNT(CASE WHEN status = "Cancelled" THEN 1 END) as cancelled'),
+                DB::raw('COUNT(CASE WHEN status = "Expired" THEN 1 END) as expired'),
+                DB::raw('COUNT(CASE WHEN status = "Closed" THEN 1 END) as closed')
+            )
+            ->first();
+
+        return response()->json($report);
+    }
+
+    public function timelyReport(Request $request)
+    {
+        $period = $request->input('period', 'monthly'); // daily, weekly, monthly, yearly
+
+        $query = DB::table('bills');
+
+        switch ($period) {
+            case 'daily':
+                $query->select(
+                    DB::raw('DATE(bill_period_start) as period'),
+                    DB::raw('COUNT(bill_id) as total_bills'),
+                    DB::raw('SUM(total_amount) as total_amount')
+                )->groupBy(DB::raw('DATE(bill_period_start)'));
+                break;
+
+            case 'weekly':
+                $query->select(
+                    DB::raw('YEARWEEK(bill_period_start, 1) as period'),
+                    DB::raw('COUNT(bill_id) as total_bills'),
+                    DB::raw('SUM(total_amount) as total_amount')
+                )->groupBy(DB::raw('YEARWEEK(bill_period_start, 1)'));
+                break;
+
+            case 'monthly':
+                $query->select(
+                    DB::raw('DATE_FORMAT(bill_period_start, "%Y-%m") as period'),
+                    DB::raw('COUNT(bill_id) as total_bills'),
+                    DB::raw('SUM(total_amount) as total_amount')
+                )->groupBy(DB::raw('DATE_FORMAT(bill_period_start, "%Y-%m")'));
+                break;
+
+            case 'yearly':
+                $query->select(
+                    DB::raw('YEAR(bill_period_start) as period'),
+                    DB::raw('COUNT(bill_id) as total_bills'),
+                    DB::raw('SUM(total_amount) as total_amount')
+                )->groupBy(DB::raw('YEAR(bill_period_start)'));
+                break;
+        }
+
+        $report = $query->get();
+        return response()->json($report);
+    }
+
+    public function patientsReport()
+    {
+        $report = DB::table('patients')
+            ->select(
+                DB::raw('COUNT(CASE WHEN gender = "Male" THEN 1 END) as male'),
+                DB::raw('COUNT(CASE WHEN gender = "Female" THEN 1 END) as female')
+            )
+            ->first();
+
+        return response()->json($report);
+    }
+
 }
