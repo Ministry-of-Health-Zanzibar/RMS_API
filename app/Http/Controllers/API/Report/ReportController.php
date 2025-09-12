@@ -448,10 +448,6 @@ class ReportController extends Controller
             $query->where('reasons.referral_reason_name', 'ILIKE', '%' . $request->referral_reason_name . '%');
         }
 
-        if ($request->filled('insurance_provider_name')) {
-            $query->where('insurances.insurance_provider_name', 'ILIKE', '%' . $request->insurance_provider_name . '%');
-        }
-
         // Disease filter (joins only when needed)
         if ($request->filled('disease_name')) {
             $query->join('patient_diseases', 'patient_diseases.patient_id', '=', 'patients.patient_id')
