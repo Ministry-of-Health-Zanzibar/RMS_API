@@ -34,11 +34,6 @@ class Referral extends Model
         return $this->hasMany(HospitalLetter::class, 'referral_id', 'referral_id');
     }
 
-    public function referralLetter()
-    {
-        return $this->hasMany(ReferralLetter::class, 'referral_id', 'referral_id');
-    }
-
     public function referral()
     {
         return $this->belongsTo(Referral::class, 'referral_id', 'referral_id')

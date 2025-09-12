@@ -198,7 +198,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('bill-payments', BillPaymentController::class);
 
     // New Report
-    Route::get('reports/range', [ReportController::class, 'rangeReport']);
+    Route::post('reports/range', [ReportController::class, 'rangeReport']);
     Route::get('reports/referrals', [ReportController::class, 'referralStatusReport']);
     Route::get('reports/timely', [ReportController::class, 'timelyReport']);
     Route::get('reports/patients', [ReportController::class, 'patientsReport']);
