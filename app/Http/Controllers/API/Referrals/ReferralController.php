@@ -315,6 +315,11 @@ class ReferralController extends Controller
         }
 
         $referral = Referral::with([
+            'patient.geographicalLocation',
+            'patient.patientList',
+            'patient.files',
+            'reason',
+            'hospital',
             'hospitalLetters' => function ($query) {
                 $query->select(
                     'letter_id', 
