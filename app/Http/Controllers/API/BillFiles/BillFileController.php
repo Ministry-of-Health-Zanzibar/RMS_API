@@ -142,6 +142,8 @@ class BillFileController extends Controller
             'bill_file_title' => ['required','string','max:255'],
             'bill_file' => ['required','file','mimes:pdf,jpg,jpeg,png','max:2048'],
             'bill_file_amount' => ['required','string'],
+            'bill_start' => ['nullable','string'],
+            'bill_end' => ['nullable','string'],
             'hospital_id' => ['required', 'numeric']
         ]);
 
@@ -212,7 +214,10 @@ class BillFileController extends Controller
             ], 403);
         }
 
-        $billFile = BillFile::with(['created_by'])->find($id);
+        $billFile = BillFile::with([
+            'hospital',
+            'created_by'
+        ])->find($id);
 
         if (!$billFile) {
             return response()->json([
@@ -292,6 +297,8 @@ class BillFileController extends Controller
             'bill_file_title' => ['sometimes','string','max:255'],
             'bill_file' => ['sometimes','file','mimes:pdf,jpg,jpeg,png','max:2048'],
             'bill_file_amount' => ['sometimes','string'],
+            'bill_start' => ['nullable','string'],
+            'bill_end' => ['nullable','string'],
             'hospital_id' => ['required', 'numeric']
         ]);
 

@@ -156,6 +156,7 @@ class PatientController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string'],
+            'matibabu_card' => ['nullable', 'string'],
             'date_of_birth' => ['nullable', 'string'],
             'gender' => ['nullable', 'string'],
             'phone' => ['nullable', 'string'],
@@ -354,6 +355,7 @@ class PatientController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string'],
+            'matibabu_card' => ['nullable', 'string'],
             'date_of_birth' => ['nullable', 'date'],
             'gender' => ['nullable', 'string'],
             'phone' => ['nullable', 'string'],

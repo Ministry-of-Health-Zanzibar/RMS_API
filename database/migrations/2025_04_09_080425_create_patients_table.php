@@ -13,6 +13,7 @@ return new class extends Migration {
         Schema::create('patients', function (Blueprint $table) {
             $table->bigIncrements('patient_id');
             $table->string('name'); // NOT NULL by default
+            $table->string('matibabu_card')->nullable()->unique(); // NOT NULL by default
             $table->date('date_of_birth')->nullable();
             $table->string('gender', 20)->nullable();
             $table->string('phone', 20)->nullable();
