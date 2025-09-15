@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('bill_files', function (Blueprint $table) {
             $table->bigIncrements('bill_file_id'); // Primary Key
             $table->unsignedBigInteger('hospital_id')->nullable();
-            $table->string('bill_file_title');     // Title of the bill file
             $table->string('bill_file');           // Path or filename of the uploaded file
             $table->string('bill_file_amount');
             $table->string('bill_start')->nullable();  // Start of the billing period

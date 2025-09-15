@@ -377,13 +377,22 @@ class PatientController extends Controller
         // Handle file upload if exists
         if ($request->hasFile('patient_file')) {
             $file = $request->file('patient_file');
-            $filePath = $file->store('patient_files', 'public');
 
+            // Generate a new file name (timestamp + original name)
+            $newFileName = time() . '_' . $file->getClientOriginalName();
+
+            // Move the file to public/uploads/patientFiles/
+            $file->move(public_path('uploads/patientFiles/'), $newFileName);
+
+            // Save the file path to database (relative path for easy access)
+            $filePath = 'uploads/patientFiles/' . $newFileName;
+
+            // Store metadata in DB
             PatientFile::create([
-                'patient_id' => $patient->patient_id,
-                'file_name' => $file->getClientOriginalName(),
-                'file_path' => $filePath,
-                'file_type' => $file->getClientMimeType(),
+                'patient_id'  => $patient->patient_id,
+                'file_name'   => $newFileName,                 // safer than original name
+                'file_path'   => $filePath,
+                'file_type'   => $file->getClientMimeType(),
                 'description' => $data['description'] ?? null,
                 'uploaded_by' => Auth::id(),
             ]);

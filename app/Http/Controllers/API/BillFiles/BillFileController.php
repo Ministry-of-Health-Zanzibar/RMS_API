@@ -34,7 +34,6 @@ class BillFileController extends Controller
      *             @OA\Property(property="data", type="array",
      *                 @OA\Items(
      *                     @OA\Property(property="bill_file_id", type="integer", example=1),
-     *                     @OA\Property(property="bill_file_title", type="string", example="Lumumba Hospital Bill August 2025"),
      *                     @OA\Property(property="bill_file", type="string", example="bill_files/file.pdf"),
      *                     @OA\Property(property="bill_file_amount", type="string", example="50,000,000"),
      *                     @OA\Property(property="created_by", type="integer", example=1),
@@ -91,8 +90,7 @@ class BillFileController extends Controller
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
-     *                 required={"bill_file_title","bill_file","bill_file_amount"},
-     *                 @OA\Property(property="bill_file_title", type="string", example="Lumumba Hospital Bill August 2025"),
+     *                 required={"bill_file","bill_file_amount"},
      *                 @OA\Property(property="bill_file", type="string", format="binary"),
      *                 @OA\Property(property="bill_file_amount", type="string", example="50,000,000")
      *             )
@@ -105,7 +103,6 @@ class BillFileController extends Controller
      *             type="object",
      *             @OA\Property(property="data", type="object",
      *                 @OA\Property(property="bill_file_id", type="integer", example=1),
-     *                 @OA\Property(property="bill_file_title", type="string", example="Lumumba Hospital Bill August 2025"),
      *                 @OA\Property(property="bill_file", type="string", example="bill_files/file.pdf"),
      *                 @OA\Property(property="bill_file_amount", type="string", example="50,000,000"),
      *                 @OA\Property(property="hospital_id", type="integer", example="1"),
@@ -139,7 +136,6 @@ class BillFileController extends Controller
         }
 
         $validated = $request->validate([
-            'bill_file_title' => ['required','string','max:255'],
             'bill_file' => ['required','file','mimes:pdf,jpg,jpeg,png','max:2048'],
             'bill_file_amount' => ['required','string'],
             'bill_start' => ['nullable','string'],
@@ -147,9 +143,19 @@ class BillFileController extends Controller
             'hospital_id' => ['required', 'numeric']
         ]);
 
-        $path = $request->file('bill_file')->store('bill_files', 'public');
+        if ($request->hasFile('bill_file')) {
+            $file = $request->file('bill_file');
 
-        $validated['bill_file'] = $path;
+            // Generate a new file name
+            $newFileName = time() . '_' . $file->getClientOriginalName();
+
+            // Move the file to public/uploads/billFiles/
+            $file->move(public_path('uploads/billFiles/'), $newFileName);
+
+            // Save the relative file path
+            $validated['bill_file'] = 'uploads/billFiles/' . $newFileName;
+        }
+
         $validated['created_by'] = Auth::id();
 
         $billFile = BillFile::create($validated);
@@ -183,7 +189,6 @@ class BillFileController extends Controller
      *             type="object",
      *             @OA\Property(property="data", type="object",
      *                 @OA\Property(property="bill_file_id", type="integer", example=1),
-     *                 @OA\Property(property="bill_file_title", type="string", example="Lumumba Hospital Bill August 2025"),
      *                 @OA\Property(property="bill_file", type="string", example="bill_files/file.pdf"),
      *                 @OA\Property(property="bill_file_amount", type="string", example="50,000,000"),
      *                 @OA\Property(property="created_by", type="integer", example=1),
@@ -252,7 +257,6 @@ class BillFileController extends Controller
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
-     *                 @OA\Property(property="bill_file_title", type="string", example="Lumumba Hospital Bill August 2024"),
      *                 @OA\Property(property="bill_file", type="string", format="binary"),
      *                 @OA\Property(property="bill_file_amount", type="string", example="55,000,000"),
      *                 @OA\Property(property="hospital_id", type="integer", example="1")
@@ -294,7 +298,6 @@ class BillFileController extends Controller
         }
 
         $validated = $request->validate([
-            'bill_file_title' => ['sometimes','string','max:255'],
             'bill_file' => ['sometimes','file','mimes:pdf,jpg,jpeg,png','max:2048'],
             'bill_file_amount' => ['sometimes','string'],
             'bill_start' => ['nullable','string'],
@@ -399,8 +402,9 @@ class BillFileController extends Controller
         ->select(
             'bf.bill_file_id',
             'h.hospital_name',
-            'bf.bill_file_title',
             'bf.bill_file',
+            'bf.bill_start',
+            'bf.bill_end',
             DB::raw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) as bill_file_amount'),
             DB::raw('COALESCE(SUM(bp.allocated_amount), 0) as paid_amount'),
             DB::raw('(CAST(bf.bill_file_amount AS DECIMAL(15,2)) - COALESCE(SUM(bp.allocated_amount), 0)) as balance'),
@@ -414,7 +418,6 @@ class BillFileController extends Controller
         ->groupBy(
             'bf.bill_file_id',
             'h.hospital_name',
-            'bf.bill_file_title',
             'bf.bill_file',
             'bf.bill_file_amount'
         )

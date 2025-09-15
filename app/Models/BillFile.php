@@ -47,7 +47,6 @@ class BillFile extends Model
      * @var array
      */
     protected $fillable = [
-        'bill_file_title',
         'bill_file',
         'bill_file_amount',
         'bill_start',

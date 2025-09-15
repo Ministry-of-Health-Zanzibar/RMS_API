@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('hospital_letters', function (Blueprint $table) {
             $table->bigIncrements('letter_id'); // Primary Key
             $table->unsignedBigInteger('referral_id'); // Foreign Key
-            // $table->string('received_date');
             $table->text('content_summary')->nullable();
             $table->string('next_appointment_date')->nullable();
             $table->string('letter_file')->nullable(); // Path or filename for uploaded letter
