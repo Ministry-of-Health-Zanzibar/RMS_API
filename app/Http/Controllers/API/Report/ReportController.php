@@ -587,7 +587,7 @@ class ReportController extends Controller
 
     public function timelyReport(Request $request)
     {
-        $period = $request->input('period', 'monthly'); // daily, weekly, monthly, yearly
+        $period = $request->input('period'); // daily, weekly, monthly, yearly
 
         $query = DB::table('bills');
 
