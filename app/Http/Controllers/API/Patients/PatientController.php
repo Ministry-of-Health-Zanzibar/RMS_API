@@ -173,6 +173,7 @@ class PatientController extends Controller
         // Create Patient
         $patient = Patient::create([
             'name' => $data['name'],
+            'matibabu_card' => $data['matibabu_card'],
             'date_of_birth' => $data['date_of_birth'],
             'gender' => $data['gender'],
             'phone' => $data['phone'],
