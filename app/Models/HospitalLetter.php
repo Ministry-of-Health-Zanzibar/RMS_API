@@ -18,7 +18,7 @@ class HospitalLetter extends Model
 
     protected $fillable = [
         'referral_id',
-        'received_date',
+        // 'received_date',
         'content_summary',
         'next_appointment_date',
         'letter_file',

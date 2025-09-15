@@ -54,9 +54,8 @@ class HospitalLetterController extends Controller
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
      *                 type="object",
-     *                 required={"referral_id","received_date","outcome"},
+     *                 required={"referral_id","outcome"},
      *                 @OA\Property(property="referral_id", type="integer"),
-     *                 @OA\Property(property="received_date", type="string", format="date"),
      *                 @OA\Property(property="content_summary", type="string"),
      *                 @OA\Property(property="next_appointment_date", type="string", format="date"),
      *                 @OA\Property(property="letter_file", type="string", format="binary"),
@@ -76,29 +75,44 @@ class HospitalLetterController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('Create Hospital Letter')) {
-            return response([
-                'message' => 'Forbidden',
+        // Permission check
+        if (
+            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) ||
+            !$user->can('Create Hospital Letter')
+        ) {
+            return response()->json([
+                'message'    => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
         // Validate Hospital Letter data
         $validated = $request->validate([
-            'referral_id' => ['required','exists:referrals,referral_id'],
-            'received_date' => ['required','string'],
-            'content_summary' => ['nullable','string'],
-            'next_appointment_date' => ['nullable','string'],
-            'letter_file' => ['nullable','file','mimes:pdf,doc,docx','max:2048'],
-            'outcome' => ['required','in:Follow-up,Finished,Transferred,Death'],
-            'followup_date' => ['nullable','string'], // will be required later if outcome is Follow-up
-            'notes' => ['nullable','string'],
+            'referral_id'          => ['required', 'exists:referrals,referral_id'],
+            'content_summary'      => ['nullable', 'string'],
+            'next_appointment_date'=> ['nullable', 'string'],
+            'letter_file'          => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:2048'],
+            'outcome'              => ['required', 'in:Follow-up,Finished,Transferred,Death'],
+            'followup_date'        => ['nullable', 'string'],
         ]);
 
-        // Handle file upload
+        // Ensure referral exists
+        $referral = Referral::find($validated['referral_id']);
+        if (!$referral) {
+            return response()->json([
+                'message'    => 'Referral not found',
+                'statusCode' => 404
+            ], 404);
+        }
+
+        $patientId = $referral->patient_id;
+
+        // Handle file upload (move to public/uploads/hospitalLetters/)
         if ($request->hasFile('letter_file')) {
-            $path = $request->file('letter_file')->store('hospital_letters','public');
-            $validated['letter_file'] = $path;
+            $file = $request->file('letter_file');
+            $newFileName = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('uploads/hospitalLetters/'), $newFileName);
+            $validated['letter_file'] = 'uploads/hospitalLetters/' . $newFileName;
         }
 
         $validated['created_by'] = Auth::id();
@@ -106,35 +120,58 @@ class HospitalLetterController extends Controller
         // Create Hospital Letter
         $letter = HospitalLetter::create($validated);
 
-        $referral = Referral::find($validated['referral_id']);
+        // Prepare FollowUp data (common fields)
+        $baseFollowUpData = [
+            'letter_id'      => $letter->letter_id,
+            'patient_id'     => $patientId,
+            'created_by'     => Auth::id(),
+        ];
 
-        if (!$referral) {
-            return response()->json([
-                'message' => 'Referral not found',
-                'statusCode' => 404
-            ], 404);
+        // Handle outcome-specific logic
+        switch ($validated['outcome']) {
+            case 'Follow-up':
+                $followupData = $request->validate([
+                    'followup_date'   => ['required', 'string'],
+                    'content_summary' => ['nullable', 'string'],
+                ]);
+                $followupData['followup_status'] = 'Ongoing';
+                break;
+
+            case 'Finished':
+                $followupData = $request->validate([
+                    'content_summary' => ['nullable', 'string'],
+                ]);
+                $followupData['followup_status'] = 'Closed';
+                $referral->update(['status' => 'Closed']);
+                break;
+
+            case 'Transferred':
+                $followupData = $request->validate([
+                    'followup_date'   => ['required', 'string'],
+                    'content_summary' => ['nullable', 'string'],
+                ]);
+                $followupData['followup_status'] = 'Transferred';
+                break;
+
+            case 'Death':
+                $followupData = $request->validate([
+                    'content_summary' => ['nullable', 'string'],
+                ]);
+                $followupData['followup_status'] = 'Closed';
+                $referral->update(['status' => 'Closed']);
+                break;
         }
 
-        $patientId = $referral->patient_id;
+        // Map content_summary → notes if present
+        $followupData['notes'] = $followupData['content_summary'] ?? null;
+        unset($followupData['content_summary']);
 
-        // If outcome is Follow-up, validate and create a follow-up record
-        if ($validated['outcome'] === 'Follow-up') {
-            $followupValidated = $request->validate([
-                'followup_date' => ['required','date'],
-                'notes' => ['nullable','string'],
-            ]);
-
-            $followupValidated['letter_id'] = $letter->letter_id;
-            $followupValidated['patient_id'] = $patientId;
-            $followupValidated['followup_status'] = 'Ongoing';
-            $followupValidated['created_by'] = Auth::id();
-
-            $followup = FollowUp::create($followupValidated);
-        }
+        // Merge common + outcome-specific data
+        FollowUp::create(array_merge($baseFollowUpData, $followupData));
 
         return response()->json([
-            'message' => 'Hospital Letter created successfully',
-            'data' => $letter,
+            'message'    => 'Hospital Letter created successfully',
+            'data'       => $letter,
             'statusCode' => 201
         ]);
     }
@@ -191,7 +228,6 @@ class HospitalLetterController extends Controller
 
         $validated = $request->validate([
             'referral_id' => ['sometimes','exists:referrals,referral_id'],
-            'received_date' => ['sometimes','date'],
             'content_summary' => ['nullable','string'],
             'next_appointment_date' => ['nullable','date'],
             'letter_file' => ['nullable','file','mimes:pdf,doc,docx','max:2048'],

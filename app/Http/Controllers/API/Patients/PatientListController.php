@@ -47,7 +47,6 @@ class PatientListController extends Controller
         ]);
 
         // store file
-        // $filePath = $request->file('patient_list_file')->store('patient_lists', 'public');
         if ($request->hasFile('patient_list_file')) {
             $file = $request->file('patient_list_file');
             
