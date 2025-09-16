@@ -146,8 +146,6 @@ class BillFileController extends Controller
             'hospital_id'      => ['required', 'numeric']
         ]);
 
-        $filePath = null;
-
         if ($request->hasFile('bill_file')) {
 
             // Get the uploaded file

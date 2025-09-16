@@ -107,12 +107,22 @@ class HospitalLetterController extends Controller
 
         $patientId = $referral->patient_id;
 
-        // Handle file upload (move to public/uploads/hospitalLetters/)
         if ($request->hasFile('letter_file')) {
+
+            // Get the uploaded file
             $file = $request->file('letter_file');
-            $newFileName = time() . '_' . $file->getClientOriginalName();
+
+            // Extract the file extension (pdf, jpg, etc.)
+            $extension = $file->getClientOriginalExtension();
+
+            // Generate a custom file name: hospital_letter_1694791234.pdf
+            $newFileName = 'hospital_letter_' . time() . '.' . $extension;
+
+            // Move the file to public/uploads/hospitalLetters/
             $file->move(public_path('uploads/hospitalLetters/'), $newFileName);
-            $validated['letter_file'] = 'uploads/hospitalLetters/' . $newFileName;
+
+            // Save the relative file path for DB
+            $validated['letter_file'] = $newFileName;
         }
 
         $validated['created_by'] = Auth::id();
