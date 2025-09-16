@@ -265,8 +265,12 @@ class PaymentController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        $user = auth()->user(); // current logged-in user
+
+        // Find the payment
         $payment = Payment::findOrFail($id);
 
+        // Validate request
         $validated = $request->validate([
             'bill_file_id'      => 'sometimes|exists:bill_files,bill_file_id',
             'payer'             => 'sometimes|string|max:255',
@@ -278,49 +282,79 @@ class PaymentController extends Controller
             'payment_date'      => 'nullable|date',
         ]);
 
-        // Update payment
-        $payment->update([
-            'payer' => $validated['payer'] ?? $payment->payer,
-            'amount_paid' => $validated['amount_paid'],
-            'currency' => $validated['currency'] ?? $payment->currency,
-            'payment_method' => $validated['payment_method'] ?? $payment->payment_method,
-            'reference_number' => $validated['reference_number'] ?? $payment->reference_number,
-            'voucher_number' => $validated['voucher_number'] ?? $payment->voucher_number,
-            'payment_date' => $validated['payment_date'] ?? $payment->payment_date,
-        ]);
-
-        // If bill_file_id is provided, re-allocate payment
-        $billPayments = [];
-        if (!empty($validated['bill_file_id'])) {
-
-            // Remove previous allocations for this payment
-            BillPayment::where('payment_id', $payment->payment_id)->delete();
-
-            $bills = Bill::where('bill_file_id', $validated['bill_file_id'])->get();
-            $remainingAmount = $validated['amount_paid'];
-
-            foreach ($bills as $bill) {
-                if ($remainingAmount <= 0) break;
-
-                $allocation = min($remainingAmount, $bill->total_amount);
-
-                $billPayments[] = BillPayment::create([
-                    'bill_id' => $bill->bill_id,
-                    'payment_id' => $payment->payment_id,
-                    'allocated_amount' => $allocation,
-                    'allocation_date' => now(),
-                    'status' => $allocation == $bill->total_amount ? 'Settled' : 'Partial',
-                ]);
-
-                $remainingAmount -= $allocation;
-            }
+        // Default payment_date to now if not provided
+        if (empty($validated['payment_date'])) {
+            $validated['payment_date'] = now();
         }
 
+        DB::transaction(function () use ($validated, $payment, $user) {
+
+            // Update the payment record
+            $payment->update([
+                'payer'            => $validated['payer'] ?? $payment->payer,
+                'amount_paid'      => $validated['amount_paid'],
+                'currency'         => $validated['currency'] ?? $payment->currency,
+                'payment_method'   => $validated['payment_method'] ?? $payment->payment_method,
+                'reference_number' => $validated['reference_number'] ?? $payment->reference_number,
+                'voucher_number'   => $validated['voucher_number'] ?? $payment->voucher_number,
+                'payment_date'     => $validated['payment_date'] ?? $payment->payment_date,
+                'updated_by'       => $user->id,
+            ]);
+
+            $billPayments = [];
+
+            // Re-allocate payment if bill_file_id is provided
+            if (!empty($validated['bill_file_id'])) {
+
+                // Remove previous allocations for this payment
+                BillPayment::where('payment_id', $payment->payment_id)->delete();
+
+                // Fetch all pending bills for the bill file
+                $bills = Bill::where('bill_file_id', $validated['bill_file_id'])
+                            ->orderBy('bill_id') // optional: allocate in order
+                            ->get();
+
+                $remainingAmount = $validated['amount_paid'];
+
+                foreach ($bills as $bill) {
+                    if (!$bill || $remainingAmount <= 0) break;
+
+                    // Calculate total already allocated to this bill
+                    $totalAllocated = BillPayment::where('bill_id', $bill->bill_id)->sum('allocated_amount');
+
+                    // Remaining amount for this bill
+                    $billRemaining = $bill->total_amount - $totalAllocated;
+
+                    $allocation = min($remainingAmount, $billRemaining);
+
+                    // Determine allocation status
+                    $status = $allocation >= $billRemaining ? 'Paid' : 'Partially Paid';
+
+                    // Create bill payment record
+                    $billPayment = BillPayment::create([
+                        'bill_id'         => $bill->bill_id,
+                        'payment_id'      => $payment->payment_id,
+                        'allocated_amount'=> $allocation,
+                        'allocation_date' => now(),
+                        'status'          => $status,
+                    ]);
+
+                    $billPayments[] = $billPayment;
+
+                    // Update the bill's status
+                    $bill->bill_status = $status;
+                    $bill->save();
+
+                    $remainingAmount -= $allocation;
+                }
+            }
+        });
+
         return response()->json([
-            'message' => 'Payment updated and re-allocated successfully.',
-            'payment' => $payment,
-            'bill_allocations' => $billPayments,
-            'statusCode' => 200,
+            'message'          => 'Payment updated and re-allocated successfully.',
+            'payment'          => $payment,
+            'bill_allocations' => BillPayment::where('payment_id', $payment->payment_id)->get(),
+            'statusCode'       => 200,
         ], 200);
     }
 

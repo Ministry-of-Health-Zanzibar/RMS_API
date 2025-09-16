@@ -14,45 +14,44 @@ class PatientFileController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'patient_id' => 'required|numeric|exists:patients,id',
+            'patient_id'   => 'required|numeric|exists:patients,id',
             'patient_file' => 'required|file|mimes:pdf,jpg,png,doc,docx',
-            'description' => 'nullable|string',
+            'description'  => 'nullable|string',
         ]);
 
-        // Check if the request contains a file with the field name 'patient_file'
+        $filePath = null; // to store the relative path
+
         if ($request->hasFile('patient_file')) {
 
-            // Get the uploaded file object from the request
+            // Get the uploaded file object
             $file = $request->file('patient_file');
 
-            // Generate a new file name:
-            // - time() ensures uniqueness with a timestamp
-            // - preg_replace replaces spaces with underscores in the original file name
-            // - getClientOriginalName() gets the original filename from the client
-            $newFileName = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
+            // Extract the file extension
+            $extension = $file->getClientOriginalExtension();
 
-            // Move the uploaded file from temporary storage to the public/uploads/patientFiles/ directory
-            // The file will be renamed to the $newFileName we generated above
+            // Generate a custom file name
+            $newFileName = 'patient_file_' . time() . '.' . $extension;
+
+            // Move the uploaded file to public/uploads/patientFiles/
             $file->move(public_path('uploads/patientFiles/'), $newFileName);
 
-            // Save the relative path (to be stored in DB or used later)
-            // Example: 'uploads/patientFiles/1694791234_My_Report.pdf'
-            $path = 'uploads/patientFiles/' . $newFileName;
+            // Save the relative file path
+            $filePath = $newFileName; // or 'uploads/patientFiles/' . $newFileName for full path
         }
 
         // Save record in the patient_files table
         $patientFile = PatientFile::create([
             'patient_id'  => $request->patient_id,
-            'file_name'   => $file->getClientOriginalName(),        // original file name
-            'file_path'   => $path,                                 // saved relative path
-            'file_type'   => $file->getClientOriginalExtension(),   // file extension (e.g., pdf, jpg)
+            'file_name'   => $file->getClientOriginalName(),  // original filename
+            'file_path'   => $filePath,                       // saved relative path
+            'file_type'   => $extension,                      // file extension
             'description' => $request->description,
             'uploaded_by' => Auth::id(),
         ]);
 
         return response()->json([
-            'message' => 'patient_file uploaded successfully',
-            'data' => $patientFile,
+            'message' => 'Patient file uploaded successfully',
+            'data'    => $patientFile,
         ], 201);
     }
 

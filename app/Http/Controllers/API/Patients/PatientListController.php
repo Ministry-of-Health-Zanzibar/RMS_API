@@ -41,25 +41,33 @@ class PatientListController extends Controller
      */
     public function store(Request $request)
     {
+        // Validate request
         $request->validate([
             'patient_list_title' => ['required', 'string', 'max:255'],
             'patient_list_file'  => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
         ]);
 
-        // store file
+        $filePath = null;
+
         if ($request->hasFile('patient_list_file')) {
+
+            // Get the uploaded file
             $file = $request->file('patient_list_file');
-            
-            // Generate a new file name
-            $newFileName = time() . '_' . $file->getClientOriginalName();
+
+            // Extract the file extension (pdf, jpg, jpeg, png)
+            $extension = $file->getClientOriginalExtension();
+
+            // Generate a custom file name
+            $newFileName = 'patient_list_' . time() . '.' . $extension;
 
             // Move the file to public/uploads/patientLists/
             $file->move(public_path('uploads/patientLists/'), $newFileName);
 
-            // Save the file path to database
-            $filePath = 'uploads/patientLists/' . $newFileName;
+            // Save the relative path
+            $filePath = $newFileName; // or 'uploads/patientLists/' . $newFileName if you want full path
         }
 
+        // Save to database
         $list = PatientList::create([
             'patient_list_title' => $request->patient_list_title,
             'patient_list_file'  => $filePath,
@@ -67,8 +75,8 @@ class PatientListController extends Controller
         ]);
 
         return response([
-            'data' => $list->load(['creator', 'patients']),
-            'message' => 'Patient list created successfully',
+            'data'       => $list->load(['creator', 'patients']),
+            'message'    => 'Patient list created successfully',
             'statusCode' => 200
         ], 200);
     }

@@ -128,6 +128,8 @@ class BillFileController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
+
+        // Check user role and permission
         if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('Create BillFile')) {
             return response([
                 'message' => 'Forbidden',
@@ -135,40 +137,43 @@ class BillFileController extends Controller
             ], 403);
         }
 
+        // Validate request
         $validated = $request->validate([
-            'bill_file' => ['required','file','mimes:pdf,jpg,jpeg,png','max:2048'],
+            'bill_file'        => ['required','file','mimes:pdf,jpg,jpeg,png','max:2048'],
             'bill_file_amount' => ['required','string'],
-            'bill_start' => ['nullable','string'],
-            'bill_end' => ['nullable','string'],
-            'hospital_id' => ['required', 'numeric']
+            'bill_start'       => ['nullable','string'],
+            'bill_end'         => ['nullable','string'],
+            'hospital_id'      => ['required', 'numeric']
         ]);
+
+        $filePath = null;
 
         if ($request->hasFile('bill_file')) {
 
-                // Get the uploaded file
+            // Get the uploaded file
             $file = $request->file('bill_file');
 
             // Extract the file extension (pdf, jpg, etc.)
             $extension = $file->getClientOriginalExtension();
 
-            // Generate a custom file name:
-            // Example: patient_file_1694791234.pdf
+            // Generate a custom file name: bill_file_1694791234.pdf
             $newFileName = 'bill_file_' . time() . '.' . $extension;
 
             // Move the file to public/uploads/billFiles/
             $file->move(public_path('uploads/billFiles/'), $newFileName);
 
-            // Save the relative file path
             $validated['bill_file'] = $newFileName;
         }
 
-        $validated['created_by'] = Auth::id();
+        // Add created_by field
+        $validated['created_by'] = $user->id;
 
+        // Create the BillFile record
         $billFile = BillFile::create($validated);
 
         return response()->json([
-            'message' => 'Bill file created successfully',
-            'data' => $billFile,
+            'message'    => 'Bill file created successfully',
+            'data'       => $billFile,
             'statusCode' => 201
         ]);
     }
@@ -459,6 +464,7 @@ class BillFileController extends Controller
             'bf.bill_start',
             'bf.bill_end'
         )
+        ->havingRaw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) = COALESCE(SUM(b.total_amount), 0)')
         ->get();
 
         return response()->json([
