@@ -19,13 +19,33 @@ class PatientFileController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $path = $request->file('patient_file')->store('patient_files', 'public');
+        // Check if the request contains a file with the field name 'patient_file'
+        if ($request->hasFile('patient_file')) {
 
+            // Get the uploaded file object from the request
+            $file = $request->file('patient_file');
+
+            // Generate a new file name:
+            // - time() ensures uniqueness with a timestamp
+            // - preg_replace replaces spaces with underscores in the original file name
+            // - getClientOriginalName() gets the original filename from the client
+            $newFileName = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
+
+            // Move the uploaded file from temporary storage to the public/uploads/patientFiles/ directory
+            // The file will be renamed to the $newFileName we generated above
+            $file->move(public_path('uploads/patientFiles/'), $newFileName);
+
+            // Save the relative path (to be stored in DB or used later)
+            // Example: 'uploads/patientFiles/1694791234_My_Report.pdf'
+            $path = 'uploads/patientFiles/' . $newFileName;
+        }
+
+        // Save record in the patient_files table
         $patientFile = PatientFile::create([
-            'patient_id' => $request->patient_id,
-            'file_name' => $request->file('patient_file')->getClientOriginalName(),
-            'file_path' => $path,
-            'file_type' => $request->file('patient_file')->getClientOriginalExtension(),
+            'patient_id'  => $request->patient_id,
+            'file_name'   => $file->getClientOriginalName(),        // original file name
+            'file_path'   => $path,                                 // saved relative path
+            'file_type'   => $file->getClientOriginalExtension(),   // file extension (e.g., pdf, jpg)
             'description' => $request->description,
             'uploaded_by' => Auth::id(),
         ]);

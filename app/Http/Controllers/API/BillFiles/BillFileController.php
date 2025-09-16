@@ -144,16 +144,22 @@ class BillFileController extends Controller
         ]);
 
         if ($request->hasFile('bill_file')) {
+
+                // Get the uploaded file
             $file = $request->file('bill_file');
 
-            // Generate a new file name
-            $newFileName = time() . '_' . $file->getClientOriginalName();
+            // Extract the file extension (pdf, jpg, etc.)
+            $extension = $file->getClientOriginalExtension();
+
+            // Generate a custom file name:
+            // Example: patient_file_1694791234.pdf
+            $newFileName = 'bill_file_' . time() . '.' . $extension;
 
             // Move the file to public/uploads/billFiles/
             $file->move(public_path('uploads/billFiles/'), $newFileName);
 
             // Save the relative file path
-            $validated['bill_file'] = 'uploads/billFiles/' . $newFileName;
+            $validated['bill_file'] = $newFileName;
         }
 
         $validated['created_by'] = Auth::id();

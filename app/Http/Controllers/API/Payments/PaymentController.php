@@ -151,7 +151,7 @@ class PaymentController extends Controller
         ]);
 
         // Fetch all bills for this bill_file_id
-        $bills = Bill::where('bill_file_id', $validated['bill_file_id'])->get();
+        $bills = Bill::where('bill_file_id', $validated['bill_file_id'])->where('bill_status', 'Pending')->get();
 
         $remainingAmount = $validated['amount_paid'];
         $billPayments = [];
