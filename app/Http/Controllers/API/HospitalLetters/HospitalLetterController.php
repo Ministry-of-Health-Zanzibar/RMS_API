@@ -122,7 +122,7 @@ class HospitalLetterController extends Controller
             $file->move(public_path('uploads/hospitalLetters/'), $newFileName);
 
             // Save the relative file path for DB
-            $validated['letter_file'] = $newFileName;
+            $validated['letter_file'] = 'uploads/hospitalLetters/'.$newFileName;
         }
 
         $validated['created_by'] = Auth::id();
@@ -159,6 +159,7 @@ class HospitalLetterController extends Controller
                 $followupData = $request->validate([
                     'followup_date'   => ['required', 'string'],
                     'content_summary' => ['nullable', 'string'],
+                    // 'hospital_id'     => ['required', 'exists:hospitals,hospital_id']
                 ]);
                 $followupData['followup_status'] = 'Transferred';
                 break;

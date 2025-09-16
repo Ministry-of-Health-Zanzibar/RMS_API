@@ -160,7 +160,7 @@ class BillFileController extends Controller
             // Move the file to public/uploads/billFiles/
             $file->move(public_path('uploads/billFiles/'), $newFileName);
 
-            $validated['bill_file'] = $newFileName;
+            $validated['bill_file'] = 'uploads/billFiles/'.$newFileName;
         }
 
         // Add created_by field
@@ -403,35 +403,6 @@ class BillFileController extends Controller
             ], 403);
         }
 
-        // $billFiles = DB::table('bill_files as bf')
-        // ->leftJoin('hospitals as h', 'bf.hospital_id', '=', 'h.hospital_id')
-        // ->leftJoin('bills as b', 'bf.bill_file_id', '=', 'b.bill_file_id')
-        // ->leftJoin('bill_payments as bp', 'b.bill_id', '=', 'bp.bill_id')
-        // ->leftJoin('payments as p', 'bp.payment_id', '=', 'p.payment_id')
-        // ->select(
-        //     'bf.bill_file_id',
-        //     'h.hospital_name',
-        //     'bf.bill_file',
-        //     'bf.bill_start',
-        //     'bf.bill_end',
-        //     DB::raw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) as bill_file_amount'),
-        //     DB::raw('COALESCE(SUM(bp.allocated_amount), 0) as paid_amount'),
-        //     DB::raw('(CAST(bf.bill_file_amount AS DECIMAL(15,2)) - COALESCE(SUM(bp.allocated_amount), 0)) as balance'),
-        //     DB::raw("
-        //         CASE 
-        //             WHEN COALESCE(SUM(bp.allocated_amount), 0) >= CAST(bf.bill_file_amount AS DECIMAL(15,2)) THEN 'Paid'
-        //             ELSE 'Pending'
-        //         END as status
-        //     ")
-        // )
-        // ->groupBy(
-        //     'bf.bill_file_id',
-        //     'h.hospital_name',
-        //     'bf.bill_file',
-        //     'bf.bill_file_amount'
-        // )
-        // ->havingRaw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) = COALESCE(SUM(b.total_amount), 0)')
-        // ->get();
         $billFiles = DB::table('bill_files as bf')
         ->leftJoin('hospitals as h', 'bf.hospital_id', '=', 'h.hospital_id')
         ->leftJoin('bills as b', 'bf.bill_file_id', '=', 'b.bill_file_id')
@@ -463,6 +434,46 @@ class BillFileController extends Controller
             'bf.bill_end'
         )
         ->havingRaw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) = COALESCE(SUM(b.total_amount), 0)')
+        ->get();
+
+        return response()->json([
+            'data' => $billFiles,
+            'statusCode' => 200
+        ]);
+    }
+
+    public function getBillFilesGoupByHospitals()
+    {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View BillFile')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $billFiles = DB::table('bill_files as bf')
+        ->leftJoin('hospitals as h', 'bf.hospital_id', '=', 'h.hospital_id')
+        ->leftJoin('bills as b', 'bf.bill_file_id', '=', 'b.bill_file_id')
+        ->leftJoin('bill_payments as bp', 'b.bill_id', '=', 'bp.bill_id')
+        ->select(
+            'h.hospital_name',
+            'h.hospital_id',
+            DB::raw('SUM(CAST(bf.bill_file_amount AS DECIMAL(15,2))) as total_bill_file_amount'),
+            DB::raw('COALESCE(SUM(bp.allocated_amount), 0) as total_allocated_amount'),
+            DB::raw('(SUM(CAST(bf.bill_file_amount AS DECIMAL(15,2))) - COALESCE(SUM(bp.allocated_amount), 0)) as total_balance'),
+            DB::raw("
+                CASE 
+                    WHEN COALESCE(SUM(bp.allocated_amount), 0) = 0 THEN 'Pending'
+                    WHEN COALESCE(SUM(bp.allocated_amount), 0) < SUM(CAST(bf.bill_file_amount AS DECIMAL(15,2))) THEN 'Partially Paid'
+                    WHEN COALESCE(SUM(bp.allocated_amount), 0) >= SUM(CAST(bf.bill_file_amount AS DECIMAL(15,2))) THEN 'Paid'
+                END as status
+            ")
+        )
+        ->groupBy(
+            'h.hospital_name',
+            'h.hospital_id',
+        )
         ->get();
 
         return response()->json([

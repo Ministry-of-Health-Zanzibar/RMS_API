@@ -36,7 +36,7 @@ class PatientFileController extends Controller
             $file->move(public_path('uploads/patientFiles/'), $newFileName);
 
             // Save the relative file path
-            $filePath = $newFileName; // or 'uploads/patientFiles/' . $newFileName for full path
+            $filePath = 'uploads/patientFiles/'.$newFileName; // or 'uploads/patientFiles/' . $newFileName for full path
         }
 
         // Save record in the patient_files table
