@@ -84,17 +84,10 @@ class ReferralController extends Controller
             'hospital',
         ])->get();
 
-        if ($referrals->isNotEmpty()) {
-            return response([
-                'data' => $referrals,
-                'statusCode' => 200,
-            ], 200);
-        } else {
-            return response([
-                'message' => 'No data found',
-                'statusCode' => 200,
-            ], 200);
-        }
+        return response([
+            'data' => $referrals,
+            'statusCode' => 200,
+        ], 200);
     }
 
     public function getReferralwithBills()
@@ -191,10 +184,18 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        $data = $request->validate([
-            'patient_id' => ['required', 'numeric'],
-            'reason_id'  => ['required', 'numeric'],
+        $validator = Validator::make($request->all(), [
+            'patient_id' => ['required', 'numeric', 'exists:patients,patient_id'],
+            'reason_id'  => ['required', 'numeric', 'exists:reasons,reason_id'],
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors(),
+                'statusCode' => 422,
+            ], 422);
+        }
 
         // --- Generate referral number ---
         $today = now()->format('Y-m-d'); // e.g. 2025-09-01
@@ -202,8 +203,8 @@ class ReferralController extends Controller
         $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
 
         $referral = Referral::create([
-            'patient_id'       => $data['patient_id'],
-            'reason_id'        => $data['reason_id'],
+            'patient_id'       => $request['patient_id'],
+            'reason_id'        => $request['reason_id'],
             'status'           => 'Pending',
             'referral_number'  => $referralNumber,
             'confirmed_by'     => Auth::id(),

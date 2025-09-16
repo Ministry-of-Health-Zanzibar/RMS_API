@@ -6,8 +6,9 @@ use App\Models\PatientList;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
-class PatientListController extends Controller
+class MedicalBoadController extends Controller
 {
     public function __construct()
     {
@@ -41,11 +42,19 @@ class PatientListController extends Controller
     public function store(Request $request)
     {
         // Validate request
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'patient_list_title' => ['required', 'string', 'max:255'],
             'patient_list_file'  => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
         ]);
-        // return "Validate";
+        
+        // Check if validation fails
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors(),
+                'statusCode' => 422,
+            ], 422);
+        }
 
         $filePath = null;
 

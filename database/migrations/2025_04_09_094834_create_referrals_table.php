@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('referrals', function (Blueprint $table) {
             $table->bigIncrements('referral_id');
-            $table->string('referral_number')->unique()->after('referral_id');
+            $table->string('referral_number');
             $table->unsignedBigInteger('patient_id');
             $table->unsignedBigInteger('hospital_id')->nullable();
             $table->unsignedBigInteger('reason_id');

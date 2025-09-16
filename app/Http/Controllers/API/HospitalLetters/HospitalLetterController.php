@@ -105,8 +105,6 @@ class HospitalLetterController extends Controller
             ], 404);
         }
 
-        $patientId = $referral->patient_id;
-
         if ($request->hasFile('letter_file')) {
 
             // Get the uploaded file
@@ -133,7 +131,7 @@ class HospitalLetterController extends Controller
         // Prepare FollowUp data (common fields)
         $baseFollowUpData = [
             'letter_id'      => $letter->letter_id,
-            'patient_id'     => $patientId,
+            'patient_id'     => $referral->patient_id,
             'created_by'     => Auth::id(),
         ];
 
@@ -155,13 +153,43 @@ class HospitalLetterController extends Controller
                 $referral->update(['status' => 'Closed']);
                 break;
 
+            // case 'Transferred':
+            //     $followupData = $request->validate([
+            //         'followup_date'   => ['required', 'string'],
+            //         'content_summary' => ['nullable', 'string'],
+            //         'hospital_id'     => ['required', 'exists:hospitals,hospital_id']
+            //     ]);
+            //     $followupData['followup_status'] = 'Transferred';
+            //     break;
             case 'Transferred':
+                // 1️ Validate follow-up data
                 $followupData = $request->validate([
-                    'followup_date'   => ['required', 'string'],
+                    'followup_date'   => ['required', 'date'], // use 'date' instead of string
                     'content_summary' => ['nullable', 'string'],
-                    // 'hospital_id'     => ['required', 'exists:hospitals,hospital_id']
+                    'hospital_id'     => ['required', 'exists:hospitals,hospital_id'],
                 ]);
+
+                // 2️ Set follow-up status
                 $followupData['followup_status'] = 'Transferred';
+                $followupData['patient_id'] = $referral->patient_id; // make sure you have patient reference
+
+                // 3️ Save the follow-up
+                $followup = Followup::create($followupData);
+
+                // 4 Create a new referral using the same referral_number
+                $originalReferral = Referral::where('referral_number', $referral->referral_number)->latest()->first();
+
+                if ($originalReferral) {
+                    Referral::create([
+                        'referral_number' => $originalReferral->referral_number, // same number
+                        'patient_id'      => $patient->id,
+                        'hospital_id'     => $followupData['hospital_id'], // new hospital
+                        'status'          => 'New', // or whatever default status
+                        'content'         => $originalReferral->content, // copy original content if needed
+                        'created_by'      => auth()->id(),
+                    ]);
+                }
+
                 break;
 
             case 'Death':
@@ -186,6 +214,7 @@ class HospitalLetterController extends Controller
             'statusCode' => 201
         ]);
     }
+    
 
     /**
      * Display the specified resource.

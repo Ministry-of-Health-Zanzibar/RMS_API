@@ -14,13 +14,13 @@ return new class extends Migration {
             $table->bigIncrements('patient_id');
             $table->string('name'); // NOT NULL by default
             $table->string('matibabu_card')->nullable()->unique(); // NOT NULL by default
-            $table->date('date_of_birth')->nullable();
-            $table->string('gender', 20)->nullable();
-            $table->string('phone', 20)->nullable();
+            $table->string('date_of_birth')->nullable();
+            $table->string('gender')->nullable();
+            $table->string('phone')->nullable();
             $table->string('location_id')->nullable();
-            $table->string(column: 'job')->nullable();
-            $table->string(column: 'position')->nullable();
-            $table->unsignedBigInteger('patient_list_id');
+            $table->string('job')->nullable();
+            $table->string('position')->nullable();
+            $table->unsignedBigInteger('patient_list_id')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();

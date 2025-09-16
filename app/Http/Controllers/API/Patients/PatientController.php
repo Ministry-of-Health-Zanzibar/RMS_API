@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use function PHPUnit\Framework\isEmpty;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class PatientController extends Controller
 {
@@ -154,7 +155,7 @@ class PatientController extends Controller
             ], 403);
         }
 
-        $data = $request->validate([
+        $data = Validator::make($request->all(),[
             'name' => ['required', 'string'],
             'matibabu_card' => ['nullable', 'string'],
             'date_of_birth' => ['nullable', 'string'],
@@ -163,40 +164,70 @@ class PatientController extends Controller
             'location_id' => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
             'job' => ['nullable', 'string'],
             'position' => ['nullable', 'string'],
-            'patient_list_id' => ['required', 'numeric'],
-            'patient_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'], // add file validation
+            'patient_list_id' => ['nullable', 'numeric', 'exists:patient_lists,patient_list_id'],
+            'patient_file.*' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'], // add file validation
             'description' => ['nullable', 'string'],
         ]);
+
+        // Check if validation fails
+        if ($data->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $data->errors(),
+                'statusCode' => 422,
+            ], 422);
+        }
 
         $location_id = $request->location_id;
 
         // Create Patient
         $patient = Patient::create([
-            'name' => $data['name'],
-            'matibabu_card' => $data['matibabu_card'],
-            'date_of_birth' => $data['date_of_birth'],
-            'gender' => $data['gender'],
-            'phone' => $data['phone'],
-            'location_id' => $data['location_id'],
-            'job' => $data['job'],
-            'position' => $data['position'],
-            'patient_list_id' => $data['patient_list_id'],
+            'name' => $request['name'],
+            'matibabu_card' => $request['matibabu_card'],
+            'date_of_birth' => $request['date_of_birth'],
+            'gender' => $request['gender'],
+            'phone' => $request['phone'],
+            'location_id' => $request['location_id'],
+            'job' => $request['job'],
+            'position' => $request['position'],
+            'patient_list_id' => $request['patient_list_id'],
             'created_by' => Auth::id(),
         ]);
 
         // Handle File Upload if exists
-        if ($request->hasFile('patient_file')) {
-            $file = $request->file('patient_file');
-            $filePath = $file->store('patient_files', 'public'); // saves in storage/app/public/patient_files
+       if ($request->hasFile('patient_file')) {
 
-            PatientFile::create([
-                'patient_id' => $patient->patient_id,
-                'file_name' => $file->getClientOriginalName(),
-                'file_path' => $filePath,
-                'file_type' => $file->getClientMimeType(),
-                'description' => $data['description'] ?? null,
-                'uploaded_by' => Auth::id(),
-            ]);
+            $files = $request->file('patient_file');
+
+            // Make sure $files is always an array
+            if (!is_array($files)) {
+                $files = [$files];
+            }
+
+            foreach ($files as $file) {
+
+                // Extract the file extension
+                $extension = $file->getClientOriginalExtension();
+
+                // Generate a unique file name
+                $newFileName = 'patient_file_' . time() . '_' . uniqid() . '.' . $extension;
+
+                // Move the file to public/uploads/patientFiles/
+                $file->move(public_path('uploads/patientFiles/'), $newFileName);
+
+                // Save the relative path
+                $filePath = 'uploads/patientFiles/' . $newFileName;
+
+                // Save record in the database
+                PatientFile::create([
+                    'patient_id'  => $patient->patient_id,
+                    'file_name'   => $file->getClientOriginalName(),
+                    'file_path'   => $filePath,
+                    'file_type'   => $file->getClientMimeType(),
+                    'description' => $request->input('description') ?? null,
+                    'uploaded_by' => Auth::id(),
+                ]);
+            }
         }
 
         if ($patient) {
@@ -347,59 +378,86 @@ class PatientController extends Controller
     public function updatePatient(Request $request, int $id)
     {
         $user = auth()->user();
+
+        // Authorization check
         if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('Update Patient')) {
-            return response([
+            return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $data = $request->validate([
-            'name' => ['required', 'string'],
-            'matibabu_card' => ['nullable', 'string'],
-            'date_of_birth' => ['nullable', 'date'],
-            'gender' => ['nullable', 'string'],
-            'phone' => ['nullable', 'string'],
-            'location' => ['nullable', 'string'],
-            'job' => ['nullable', 'string'],
-            'position' => ['nullable', 'string'],
-            'patient_list_id' => ['required', 'numeric'],
-            'patient_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
-            'description' => ['nullable', 'string'],
+        // Validation
+        $validator = Validator::make($request->all(), [
+            'name'             => ['required', 'string'],
+            'matibabu_card'    => ['nullable', 'string'],
+            'date_of_birth'    => ['nullable', 'date'],
+            'gender'           => ['nullable', 'string'],
+            'phone'            => ['nullable', 'string'],
+            'location_id'      => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
+            'job'              => ['nullable', 'string'],
+            'position'         => ['nullable', 'string'],
+            'patient_list_id'  => ['nullable', 'numeric', 'exists:patient_lists,patient_list_id'],
+            'patient_file.*'   => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
+            'description'      => ['nullable', 'string'],
         ]);
 
-        $patient = Patient::findOrFail($id);
-
-        $data['created_by'] = Auth::id();
-
-        // Update patient
-        $patient->update($data);
-
-        // Handle file upload if exists
-        if ($request->hasFile('patient_file')) {
-            $file = $request->file('patient_file');
-
-            // Generate a new file name (timestamp + original name)
-            $newFileName = time() . '_' . $file->getClientOriginalName();
-
-            // Move the file to public/uploads/patientFiles/
-            $file->move(public_path('uploads/patientFiles/'), $newFileName);
-
-            // Save the file path to database (relative path for easy access)
-            $filePath = 'uploads/patientFiles/' . $newFileName;
-
-            // Store metadata in DB
-            PatientFile::create([
-                'patient_id'  => $patient->patient_id,
-                'file_name'   => $newFileName,                 // safer than original name
-                'file_path'   => $filePath,
-                'file_type'   => $file->getClientMimeType(),
-                'description' => $data['description'] ?? null,
-                'uploaded_by' => Auth::id(),
-            ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors(),
+                'statusCode' => 422,
+            ], 422);
         }
 
-        return response([
+        // Find patient
+        $patient = Patient::findOrFail($id);
+
+        // Update patient data
+        $patient->update([
+            'name'            => $request->input('name'),
+            'matibabu_card'   => $request->input('matibabu_card'),
+            'date_of_birth'   => $request->input('date_of_birth'),
+            'gender'          => $request->input('gender'),
+            'phone'           => $request->input('phone'),
+            'location_id'     => $request->input('location_id'),
+            'job'             => $request->input('job'),
+            'position'        => $request->input('position'),
+            'patient_list_id' => $request->input('patient_list_id'),
+            'created_by'      => Auth::id(),
+        ]);
+
+        // Handle single or multiple file uploads
+        if ($request->hasFile('patient_file')) {
+            $files = $request->file('patient_file');
+
+            // Ensure $files is always an array
+            if (!is_array($files)) {
+                $files = [$files];
+            }
+
+            foreach ($files as $file) {
+                $extension = $file->getClientOriginalExtension();
+                $newFileName = 'patient_file_' . time() . '_' . uniqid() . '.' . $extension;
+
+                // Move file to public/uploads/patientFiles/
+                $file->move(public_path('uploads/patientFiles/'), $newFileName);
+                $filePath = 'uploads/patientFiles/' . $newFileName;
+
+                // Save file record in database
+                PatientFile::create([
+                    'patient_id'  => $patient->patient_id,
+                    'file_name'   => $file->getClientOriginalName(),
+                    'file_path'   => $filePath,
+                    'file_type'   => $file->getClientMimeType(),
+                    'description' => $request->input('description') ?? null,
+                    'uploaded_by' => Auth::id(),
+                ]);
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
             'data' => $patient->load('files'),
             'message' => 'Patient updated successfully.',
             'statusCode' => 200,

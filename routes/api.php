@@ -17,6 +17,7 @@ use App\Http\Controllers\API\Patients\PatientController;
 use App\Http\Controllers\API\Report\ReportController;
 use App\Http\Controllers\API\Treatments\TreatmentController;
 use App\Http\Controllers\API\Patients\PatientListController;
+use App\Http\Controllers\API\Patients\MedicalBoadController;
 use App\Http\Controllers\API\HospitalLetters\HospitalLetterController;
 use App\Http\Controllers\API\Followups\FollowupController;
 use App\Http\Controllers\API\BillFiles\BillFileController;
@@ -175,7 +176,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('accountant/reports/searchReportByParameter', [AccountantReportController::class, 'searchReportByParameter']);
 
     // Patient Lis
-    Route::resource('patient-lists', PatientListController::class);
+    Route::resource('patient-lists', MedicalBoadController::class);
     Route::post('patient-lists/update/{id}', [PatientListController::class, 'updatePatientList']);
     Route::patch('patient-lists/unblock/{id}', [PatientListController::class, 'unBlockParentList']);
     Route::get('patient-lists/body-form/{id}', [PatientListController::class, 'getAllPatientsByPatientListId']);
@@ -189,7 +190,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Bill Files
     Route::resource('bill-files', BillFileController::class);
     Route::get('bill-files/bill-files-for-payment/payment', [BillFileController::class,'getBillFilesForPayment']);
-    Route::get('bill-files/hospitals', [BillFileController::class,'getBillFilesGoupByHospitals']);
+    Route::get('bill-files/hospital-bills/hospitals', [BillFileController::class,'getBillFilesGroupByHospitals']);
     Route::get('bill-files/hospitals/{hospital_id}', [BillFileController::class,'getBillFilesByHospitalId']);
 
     // Bill Items

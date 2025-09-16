@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class BillController extends Controller
 {
@@ -206,77 +207,70 @@ class BillController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
+
+        // Authorization
         if (
             !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
             !$user->can('Create Bill')
         ) {
-            return response([
+            return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $data = $request->validate([
-            'referral_id' => ['required', 'numeric'],
-            'total_amount' => ['required', 'numeric'],
-            'bill_period_start' => ['nullable', 'string'],
-            'bill_period_end' => ['nullable', 'string'],
-            'bill_file_id' => ['required', 'numeric'],
+        // Validation
+        $validator = Validator::make($request->all(), [
+            'referral_id' => ['required', 'numeric', 'exists:referrals,referral_id'],
+            'total_amount' => ['required', 'numeric', 'min:0'],
+            'bill_period_start' => ['required', 'date'],
+            'bill_period_end' => ['required', 'date', 'after_or_equal:bill_period_start'],
+            'bill_file_id' => ['required', 'numeric', 'exists:bill_files,bill_file_id'],
         ]);
 
-        // Ensure referral exists
-        $referral = Referral::find($data['referral_id']);
-        if (!$referral) {
-            return response([
-                'message' => 'Referral not found',
-                'statusCode' => 404,
-            ], 404);
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors(),
+                'statusCode' => 422,
+            ], 422);
         }
 
-        // Ensure bill_file exists
-        $billFile = BillFile::find($data['bill_file_id']);
-        if (!$billFile) {
-            return response([
-                'message' => 'Bill file not found',
-                'statusCode' => 404,
-            ], 404);
-        }
+        $data = $validator->validated();
 
         // Calculate already used amount in this bill_file
-        $usedAmount = Bill::where('bill_file_id', $data['bill_file_id'])
-            ->sum('total_amount');
+        $usedAmount = Bill::where('bill_file_id', $data['bill_file_id'])->sum('total_amount');
 
-        // Check if adding this bill would exceed the limit
+        $billFile = BillFile::find($data['bill_file_id']);
+
         if ($usedAmount + $data['total_amount'] > $billFile->bill_file_amount) {
-            return response([
+            return response()->json([
                 'message' => 'The total amount exceeds the allowed bill file amount of ' . $billFile->bill_file_amount,
                 'statusCode' => 422
             ], 422);
         }
 
         // Create Bill
-        $billData = [
+        $bill = Bill::create([
             'referral_id' => $data['referral_id'],
-            'total_amount' => $data['total_amount'] ?? 0,
+            'total_amount' => $data['total_amount'],
             'bill_period_start' => $data['bill_period_start'] ?? null,
             'bill_period_end' => $data['bill_period_end'] ?? null,
             'sent_date' => Carbon::now(),
-            'bill_file_id' => $data['bill_file_id'] ?? null,
+            'bill_file_id' => $data['bill_file_id'],
             'bill_status' => 'Pending',
             'created_by' => Auth::id(),
-        ];
-
-        $bill = Bill::create($billData);
+        ]);
 
         if ($bill) {
-            return response([
+            return response()->json([
                 'data' => $bill,
                 'message' => 'Bill created successfully',
                 'statusCode' => 200,
             ], 200);
         }
 
-        return response([
+        return response()->json([
             'message' => 'Internal server error',
             'statusCode' => 500,
         ], 500);
