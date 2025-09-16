@@ -190,6 +190,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('bill-files', BillFileController::class);
     Route::get('bill-files/bill-files-for-payment/payment', [BillFileController::class,'getBillFilesForPayment']);
     Route::get('bill-files/hospitals', [BillFileController::class,'getBillFilesGoupByHospitals']);
+    Route::get('bill-files/hospitals/{hospital_id}', [BillFileController::class,'getBillFilesByHospitalId']);
 
     // Bill Items
     Route::resource('bill-items', BillItemController::class);
