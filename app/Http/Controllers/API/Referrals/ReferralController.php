@@ -324,7 +324,6 @@ class ReferralController extends Controller
                 $query->select(
                     'letter_id', 
                     'referral_id', // must include FK for relationship
-                    'received_date', 
                     'content_summary', 
                     'next_appointment_date', 
                     'letter_file', 
