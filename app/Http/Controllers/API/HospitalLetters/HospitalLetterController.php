@@ -72,288 +72,145 @@ class HospitalLetterController extends Controller
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    // public function store(Request $request)
-    // {
-    //     $user = auth()->user();
-
-    //     // Permission check
-    //     if (
-    //         !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) ||
-    //         !$user->can('Create Hospital Letter')
-    //     ) {
-    //         return response()->json([
-    //             'message'    => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     // Validate Hospital Letter data
-    //     $validated = Validator::make($request->all(),[
-    //         'referral_id'          => ['required', 'exists:referrals,referral_id'],
-    //         'content_summary'      => ['nullable', 'string'],
-    //         'next_appointment_date'=> ['nullable', 'string'],
-    //         'letter_file'          => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:2048'],
-    //         'outcome'              => ['required', 'in:Follow-up,Finished,Transferred,Death'],
-    //         'followup_date'        => ['nullable', 'string'],
-    //     ]);
-
-    //     // Check validation
-    //     if ($validated->fails()) {
-    //         return response()->json([
-    //             'message'    => 'Validation Error',
-    //             'errors'     => $validated->errors(),
-    //             'statusCode' => 422
-    //         ], 422);
-    //     }
-
-    //     $data = $validated->validated();
-
-    //     // Ensure referral exists
-    //     $referral = Referral::find($data['referral_id']);
-    //     if (!$referral) {
-    //         return response()->json([
-    //             'message'    => 'Referral not found',
-    //             'statusCode' => 404
-    //         ], 404);
-    //     }
-
-    //     if ($data->hasFile('letter_file')) {
-
-    //         // Get the uploaded file
-    //         $file = $data->file('letter_file');
-
-    //         // Extract the file extension (pdf, jpg, etc.)
-    //         $extension = $file->getClientOriginalExtension();
-
-    //         // Generate a custom file name: hospital_letter_1694791234.pdf
-    //         $newFileName = 'hospital_letter_' . time() . '.' . $extension;
-
-    //         // Move the file to public/uploads/hospitalLetters/
-    //         $file->move(public_path('uploads/hospitalLetters/'), $newFileName);
-
-    //         // Save the relative file path for DB
-    //         $data['letter_file'] = 'uploads/hospitalLetters/'.$newFileName;
-    //     }
-
-    //     $data['created_by'] = Auth::id();
-
-    //     // Create Hospital Letter
-    //     $letter = HospitalLetter::create($data);
-
-    //     // Prepare FollowUp data (common fields)
-    //     $baseFollowUpData = [
-    //         'letter_id'      => $letter->letter_id,
-    //         'patient_id'     => $referral->patient_id,
-    //         'created_by'     => Auth::id(),
-    //     ];
-
-    //     // Handle outcome-specific logic
-    //     switch ($data['outcome']) {
-    //         case 'Follow-up':
-    //             $followupData = $request->validate([
-    //                 'followup_date'   => ['required', 'string'],
-    //                 'content_summary' => ['nullable', 'string'],
-    //             ]);
-    //             $followupData['followup_status'] = 'Ongoing';
-    //             break;
-
-    //         case 'Finished':
-    //             $followupData = $request->validate([
-    //                 'content_summary' => ['nullable', 'string'],
-    //             ]);
-    //             $followupData['followup_status'] = 'Closed';
-    //             $referral->update(['status' => 'Closed']);
-    //             break;
-
-    //         case 'Transferred':
-    //             // 1️ Validate follow-up data
-    //             $followupData = $request->validate([
-    //                 'followup_date'   => ['required', 'date'], // use 'date' instead of string
-    //                 'content_summary' => ['nullable', 'string'],
-    //                 'hospital_id'     => ['required', 'exists:hospitals,hospital_id'],
-    //             ]);
-
-    //             // 2️ Set follow-up status
-    //             $followupData['followup_status'] = 'Transferred';
-    //             $followupData['patient_id'] = $referral->patient_id; // make sure you have patient reference
-
-    //             // 3️ Save the follow-up
-    //             $followup = Followup::create($followupData);
-
-    //             // 4 Create a new referral using the same referral_number
-    //             $originalReferral = Referral::where('referral_number', $referral->referral_number)->latest()->first();
-
-    //             if ($originalReferral) {
-    //                 Referral::create([
-    //                     'referral_number' => $originalReferral->referral_number, // same number
-    //                     'patient_id'      => $patient->id,
-    //                     'hospital_id'     => $followupData['hospital_id'], // new hospital
-    //                     'status'          => 'New', // or whatever default status
-    //                     'content'         => $originalReferral->content, // copy original content if needed
-    //                     'created_by'      => auth()->id(),
-    //                 ]);
-    //             }
-
-    //             break;
-
-    //         case 'Death':
-    //             $followupData = $request->validate([
-    //                 'content_summary' => ['nullable', 'string'],
-    //             ]);
-    //             $followupData['followup_status'] = 'Closed';
-    //             $referral->update(['status' => 'Closed']);
-    //             break;
-    //     }
-
-    //     // Map content_summary → notes if present
-    //     $followupData['notes'] = $followupData['content_summary'] ?? null;
-    //     unset($followupData['content_summary']);
-
-    //     // Merge common + outcome-specific data
-    //     FollowUp::create(array_merge($baseFollowUpData, $followupData));
-
-    //     return response()->json([
-    //         'message'    => 'Hospital Letter created successfully',
-    //         'data'       => $letter,
-    //         'statusCode' => 201
-    //     ]);
-    // }
     public function store(Request $request)
-    {
-        $user = auth()->user();
+{
+    $user = auth()->user();
 
-        // Permission check
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) ||
-            !$user->can('Create Hospital Letter')
-        ) {
-            return response()->json([
-                'message'    => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
-
-        // Base rules
-        $rules = [
-            'referral_id'           => 'required|exists:referrals,referral_id',
-            'hospital_id'           => 'nullable|exists:hospitals,hospital_id',
-            'content_summary'       => 'nullable|string',
-            'next_appointment_date' => 'nullable|date',
-            'letter_file'           => 'nullable|file|mimes:pdf,doc,docx|max:2048',
-            'outcome'               => 'required|in:Follow-up,Finished,Transferred,Death',
-        ];
-
-        // Create validator instance
-        $validator = Validator::make($request->all(), $rules);
-
-        // Conditional validation based on outcome
-        $validator->sometimes('followup_date', 'required|date', function ($input) {
-            return in_array($input->outcome, ['Follow-up', 'Transferred']);
-        });
-
-        $validator->sometimes('hospital_id', 'required|exists:hospitals,hospital_id', function ($input) {
-            return $input->outcome === 'Transferred';
-        });
-
-        // Check validation
-        if ($validator->fails()) {
-            return response()->json([
-                'message'    => 'Validation Error',
-                'errors'     => $validator->errors(),
-                'statusCode' => 422
-            ], 422);
-        }
-
-        $validated = $validator->validated();
-
-        // Ensure referral exists
-        $referral = Referral::find($validated['referral_id']);
-
-        if (!$referral) {
-            return response()->json([
-                'message'    => 'Referral not found',
-                'statusCode' => 404
-            ], 404);
-        }
-
-        // Handle file upload
-        if (!empty($validated['letter_file'])) {
-            $file = $request->file('letter_file');
-            $extension = $file->getClientOriginalExtension();
-            $newFileName = 'hospital_letter_' . time() . '.' . $extension;
-            $file->move(public_path('uploads/hospitalLetters/'), $newFileName);
-            $validated['letter_file'] = 'uploads/hospitalLetters/' . $newFileName;
-        }
-
-        $validated['created_by'] = Auth::id();
-
-        // Create Hospital Letter
-        $letter = HospitalLetter::create($validated);
-
-        // Prepare follow-up base data
-        $baseFollowUpData = [
-            'letter_id'  => $letter->letter_id,
-            'patient_id' => $referral->patient_id,
-            'created_by' => Auth::id(),
-        ];
-
-        // Outcome-specific follow-up handling
-        switch ($validated['outcome']) {
-            case 'Follow-up':
-                $followupData = [
-                    'followup_date'   => $validated['followup_date'],
-                    'notes'           => $validated['content_summary'] ?? null,
-                    'followup_status' => 'Ongoing',
-                ];
-                break;
-
-            case 'Finished':
-                $followupData = [
-                    'notes'           => $validated['content_summary'] ?? null,
-                    'followup_status' => 'Closed',
-                ];
-                $referral->update(['status' => 'Closed']);
-                break;
-
-            case 'Transferred':
-                $followupData = [
-                    'followup_date'   => $validated['followup_date'],
-                    'notes'           => $validated['content_summary'] ?? null,
-                    'followup_status' => 'Transferred',
-                    'hospital_id'     => $validated['hospital_id'],
-                    'patient_id'      => $referral->patient_id,
-                ];
-
-                // Create new referral for the transferred hospital
-                Referral::create([
-                    'referral_number' => $referral->referral_number,
-                    'patient_id'      => $referral->patient_id,
-                    'hospital_id'     => $validated['hospital_id'],
-                    'status'          => 'Confirmed',
-                    'reason_id'       => $referral->reason_id,
-                    'confirmed_by'    => Auth::id(),
-                    'created_by'      => Auth::id(),
-                ]);
-                break;
-
-            case 'Death':
-                $followupData = [
-                    'notes'           => $validated['content_summary'] ?? null,
-                    'followup_status' => 'Closed',
-                ];
-                $referral->update(['status' => 'Closed']);
-                break;
-        }
-
-        // Merge base + outcome follow-up data
-        FollowUp::create(array_merge($baseFollowUpData, $followupData));
-
+    // Permission check
+    if (
+        !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) ||
+        !$user->can('Create Hospital Letter')
+    ) {
         return response()->json([
-            'message'    => 'Hospital Letter created successfully',
-            'data'       => $letter,
-            'statusCode' => 201
+            'message'    => 'Forbidden',
+            'statusCode' => 403
+        ], 403);
+    }
+
+    // Base validation rules
+    $rules = [
+        'referral_id'           => 'required|exists:referrals,referral_id',
+        'hospital_id'           => 'nullable|exists:hospitals,hospital_id',
+        'content_summary'       => 'nullable|string',
+        'next_appointment_date' => 'nullable|date',
+        'letter_file'           => 'nullable|file|mimes:pdf,doc,docx|max:2048',
+        'outcome'               => 'required|in:Follow-up,Finished,Transferred,Death',
+    ];
+
+    $validator = Validator::make($request->all(), $rules);
+
+    // Conditional validation
+    $validator->sometimes('followup_date', 'required|date', function ($input) {
+        return in_array($input->outcome, ['Follow-up', 'Finished', 'Death', 'Transferred']);
+    });
+
+    $validator->sometimes('hospital_id', 'required|exists:hospitals,hospital_id', function ($input) {
+        return $input->outcome === 'Transferred';
+    });
+
+    if ($validator->fails()) {
+        return response()->json([
+            'message'    => 'Validation Error',
+            'errors'     => $validator->errors(),
+            'statusCode' => 422
+        ], 422);
+    }
+
+    $validated = $validator->validated();
+
+    // Add default followup_date if missing
+    if (empty($validated['followup_date'])) {
+        $validated['followup_date'] = now()->toDateString();
+    }
+
+    // Ensure referral exists
+    $referral = Referral::find($validated['referral_id']);
+    if (!$referral) {
+        return response()->json([
+            'message'    => 'Referral not found',
+            'statusCode' => 404
+        ], 404);
+    }
+
+    // Handle file upload
+    if (!empty($validated['letter_file'])) {
+        $file = $request->file('letter_file');
+        $extension = $file->getClientOriginalExtension();
+        $newFileName = 'hospital_letter_' . time() . '.' . $extension;
+        $file->move(public_path('uploads/hospitalLetters/'), $newFileName);
+        $validated['letter_file'] = 'uploads/hospitalLetters/' . $newFileName;
+    }
+
+    $validated['created_by'] = Auth::id();
+
+    // Create Hospital Letter
+    $letter = HospitalLetter::create($validated);
+
+    // Base Follow-up data
+    $baseFollowUpData = [
+        'letter_id'  => $letter->letter_id,
+        'patient_id' => $referral->patient_id,
+        'created_by' => Auth::id(),
+    ];
+
+    // Outcome-specific Follow-up data
+    $followupData = match ($validated['outcome']) {
+        'Follow-up' => [
+            'followup_date'   => $validated['followup_date'],
+            'notes'           => $validated['content_summary'] ?? null,
+            'followup_status' => 'Ongoing',
+        ],
+
+        'Finished' => [
+            'followup_date'   => $validated['followup_date'],
+            'notes'           => $validated['content_summary'] ?? null,
+            'followup_status' => 'Closed',
+        ],
+
+        'Transferred' => [
+            'followup_date'   => $validated['followup_date'],
+            'notes'           => $validated['content_summary'] ?? null,
+            'followup_status' => 'Transferred',
+            'hospital_id'     => $validated['hospital_id'],
+            'patient_id'      => $referral->patient_id,
+        ],
+
+        'Death' => [
+            'followup_date'   => $validated['followup_date'],
+            'notes'           => $validated['content_summary'] ?? null,
+            'followup_status' => 'Closed',
+        ],
+    };
+
+    // Update referral status only for certain outcomes
+    if ($validated['outcome'] === 'Finished' || $validated['outcome'] === 'Death') {
+        $referral->update(['status' => 'Closed']);
+    }
+
+    // If Transferred, create new referral
+    if ($validated['outcome'] === 'Transferred') {
+        Referral::create([
+            'referral_number' => $referral->referral_number,
+            'patient_id'      => $referral->patient_id,
+            'hospital_id'     => $validated['hospital_id'],
+            'status'          => 'Confirmed',
+            'reason_id'       => $referral->reason_id,
+            'confirmed_by'    => Auth::id(),
+            'created_by'      => Auth::id(),
         ]);
-    } 
+    }
+
+    // Save follow-up
+    FollowUp::create(array_merge($baseFollowUpData, $followupData));
+
+    return response()->json([
+        'message'    => 'Hospital Letter created successfully',
+        'data'       => $letter,
+        'statusCode' => 201
+    ]);
+}
+
+
 
     /**
      * Display the specified resource.
