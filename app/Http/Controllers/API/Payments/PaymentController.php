@@ -8,6 +8,8 @@ use App\Models\BillPayment;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+
 
 /**
  * @OA\Tag(
@@ -120,7 +122,7 @@ class PaymentController extends Controller
         $user = auth()->user(); // get current logged-in user
 
         // Validate input
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(),[
             'bill_file_id'      => 'required|exists:bill_files,bill_file_id',
             'payer'             => 'required|string|max:255',
             'amount_paid'       => 'required|numeric|min:0',
@@ -130,6 +132,28 @@ class PaymentController extends Controller
             'voucher_number'    => 'nullable|string|max:255',
             'payment_date'      => 'nullable|date',
         ]);
+
+        // $validator = Validator::make($request->all(),[
+        //     'bill_file_id'      => 'sometimes|exists:bill_files,bill_file_id',
+        //     'payer'             => 'sometimes|string|max:255',
+        //     'amount_paid'       => 'required|numeric|min:0',
+        //     'currency'          => 'sometimes|string|max:10',
+        //     'payment_method'    => 'nullable|string|max:255',
+        //     'reference_number'  => 'nullable|string|max:255',
+        //     'voucher_number'    => 'nullable|string|max:255',
+        //     'payment_date'      => 'nullable|date',
+        // ]);
+
+        // Check validation
+        if ($validator->fails()) {
+            return response()->json([
+                'message'    => 'Validation Error',
+                'errors'     => $validator->errors(),
+                'statusCode' => 422
+            ], 422);
+        }
+
+        $validated = $validator->validated();
 
         $validated['created_by'] = $user->id;
 
@@ -271,7 +295,7 @@ class PaymentController extends Controller
         $payment = Payment::findOrFail($id);
 
         // Validate request
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(),[
             'bill_file_id'      => 'sometimes|exists:bill_files,bill_file_id',
             'payer'             => 'sometimes|string|max:255',
             'amount_paid'       => 'required|numeric|min:0',
@@ -281,6 +305,17 @@ class PaymentController extends Controller
             'voucher_number'    => 'nullable|string|max:255',
             'payment_date'      => 'nullable|date',
         ]);
+
+        // Check validation
+        if ($validator->fails()) {
+            return response()->json([
+                'message'    => 'Validation Error',
+                'errors'     => $validator->errors(),
+                'statusCode' => 422
+            ], 422);
+        }
+
+        $validated = $validator->validated();
 
         // Default payment_date to now if not provided
         if (empty($validated['payment_date'])) {

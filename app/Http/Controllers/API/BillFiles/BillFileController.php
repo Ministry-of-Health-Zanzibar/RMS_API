@@ -564,30 +564,35 @@ class BillFileController extends Controller
                     END as status
                 ")
             )
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('bills as bb')
+                    ->whereRaw('bb.bill_file_id = bf.bill_file_id'); // only include bill_files linked in bills
+            })
             ->groupBy('h.hospital_name', 'h.hospital_id')
             ->get();
 
-        $billFilesArray = $billFiles->map(function($item) {
+        $billFilesArray = $billFiles->map(function ($item) {
             return (array) $item;
         })->toArray();
 
         // Calculate grand totals for all hospitals
         $grandTotals = [
-            'hospital_name' => 'ALL HOSPITALS',
-            'hospital_id' => null,
-            'total_bill_file_amount' => array_sum(array_column($billFilesArray, 'total_bill_file_amount')),
-            'total_allocated_amount' => array_sum(array_column($billFilesArray, 'total_allocated_amount')),
-            'total_balance' => array_sum(array_column($billFilesArray, 'total_balance')),
-            'status' => 'Summary'
+            'hospital_name'           => 'ALL HOSPITALS',
+            'hospital_id'             => null,
+            'total_bill_file_amount'  => array_sum(array_column($billFilesArray, 'total_bill_file_amount')),
+            'total_allocated_amount'  => array_sum(array_column($billFilesArray, 'total_allocated_amount')),
+            'total_balance'           => array_sum(array_column($billFilesArray, 'total_balance')),
+            'status'                  => 'Summary'
         ];
 
         $result = [
             'hospitals' => $billFilesArray,
-            'totals' => $grandTotals
+            'totals'    => $grandTotals
         ];
 
         return response()->json([
-            'data' => $result,
+            'data'       => $result,
             'statusCode' => 200
         ]);
     }
