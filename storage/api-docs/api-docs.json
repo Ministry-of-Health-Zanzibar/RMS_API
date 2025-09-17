@@ -2075,10 +2075,6 @@
                                                         "type": "integer",
                                                         "example": 1
                                                     },
-                                                    "bill_file_title": {
-                                                        "type": "string",
-                                                        "example": "Lumumba Hospital Bill August 2025"
-                                                    },
                                                     "bill_file": {
                                                         "type": "string",
                                                         "example": "bill_files/file.pdf"
@@ -2152,15 +2148,10 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "bill_file_title",
                                     "bill_file",
                                     "bill_file_amount"
                                 ],
                                 "properties": {
-                                    "bill_file_title": {
-                                        "type": "string",
-                                        "example": "Lumumba Hospital Bill August 2025"
-                                    },
                                     "bill_file": {
                                         "type": "string",
                                         "format": "binary"
@@ -2187,10 +2178,6 @@
                                                 "bill_file_id": {
                                                     "type": "integer",
                                                     "example": 1
-                                                },
-                                                "bill_file_title": {
-                                                    "type": "string",
-                                                    "example": "Lumumba Hospital Bill August 2025"
                                                 },
                                                 "bill_file": {
                                                     "type": "string",
@@ -2292,10 +2279,6 @@
                                                     "type": "integer",
                                                     "example": 1
                                                 },
-                                                "bill_file_title": {
-                                                    "type": "string",
-                                                    "example": "Lumumba Hospital Bill August 2025"
-                                                },
                                                 "bill_file": {
                                                     "type": "string",
                                                     "example": "bill_files/file.pdf"
@@ -2379,10 +2362,6 @@
                         "multipart/form-data": {
                             "schema": {
                                 "properties": {
-                                    "bill_file_title": {
-                                        "type": "string",
-                                        "example": "Lumumba Hospital Bill August 2024"
-                                    },
                                     "bill_file": {
                                         "type": "string",
                                         "format": "binary"
@@ -4712,29 +4691,37 @@
                             "schema": {
                                 "required": [
                                     "referral_id",
-                                    "received_date",
                                     "outcome"
                                 ],
                                 "properties": {
                                     "referral_id": {
+                                        "description": "ID of the referral",
                                         "type": "integer"
                                     },
-                                    "received_date": {
-                                        "type": "string",
-                                        "format": "date"
+                                    "hospital_id": {
+                                        "description": "Required if outcome = Transferred",
+                                        "type": "integer",
+                                        "nullable": true
                                     },
                                     "content_summary": {
-                                        "type": "string"
+                                        "description": "Summary of the letter",
+                                        "type": "string",
+                                        "nullable": true
                                     },
                                     "next_appointment_date": {
+                                        "description": "Next appointment date",
                                         "type": "string",
-                                        "format": "date"
+                                        "format": "date",
+                                        "nullable": true
                                     },
                                     "letter_file": {
+                                        "description": "Letter file (PDF, DOC, DOCX, max 2MB)",
                                         "type": "string",
-                                        "format": "binary"
+                                        "format": "binary",
+                                        "nullable": true
                                     },
                                     "outcome": {
+                                        "description": "Outcome of the hospital letter",
                                         "type": "string",
                                         "enum": [
                                             "Follow-up",
@@ -4744,11 +4731,15 @@
                                         ]
                                     },
                                     "followup_date": {
+                                        "description": "Follow-up date (required for Follow-up, Finished, Transferred, Death)",
                                         "type": "string",
-                                        "format": "date"
+                                        "format": "date",
+                                        "nullable": true
                                     },
                                     "notes": {
-                                        "type": "string"
+                                        "description": "Additional notes",
+                                        "type": "string",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -4758,7 +4749,27 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Hospital Letter created successfully"
+                        "description": "Hospital Letter created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Hospital Letter created successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 201
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "403": {
                         "description": "Forbidden"

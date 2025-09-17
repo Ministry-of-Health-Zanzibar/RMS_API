@@ -18,6 +18,7 @@ class Referral extends Model
 
     protected $fillable = [
         'patient_id',
+        'parent_referral_id',
         'referral_number',
         'hospital_id',
         'reason_id',
@@ -25,6 +26,16 @@ class Referral extends Model
         'confirmed_by',
         'created_by',
     ];
+
+    public function parent()
+    {
+        return $this->belongsTo(Referral::class, 'parent_referral_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Referral::class, 'parent_referral_id');
+    }
 
     /**
      * Referral has many hospital letters
