@@ -142,8 +142,8 @@ class BillFileController extends Controller
         $validator = Validator::make($request->all(), [
             'bill_file'        => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
             'bill_file_amount' => ['required', 'numeric', 'min:0'],
-            'bill_start'       => ['nullable', 'date'],
-            'bill_end'         => ['nullable', 'date', 'after_or_equal:bill_start'],
+            'bill_start'       => ['nullable', 'string'],
+            'bill_end'         => ['nullable', 'string', 'after_or_equal:bill_start'],
             'hospital_id'      => ['required', 'numeric', 'exists:hospitals,hospital_id'],
         ]);
 
