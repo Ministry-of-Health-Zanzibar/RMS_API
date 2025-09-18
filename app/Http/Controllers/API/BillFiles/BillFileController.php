@@ -543,7 +543,7 @@ class BillFileController extends Controller
                 'bf.bill_start',
                 'bf.bill_end'
             )
-            // ->havingRaw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) = COALESCE(SUM(b.total_amount), 0)')
+            ->havingRaw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) = COALESCE(SUM(b.total_amount), 0)')
             ->get();
 
         $billFilesArray = $billFiles->map(function($item) {
