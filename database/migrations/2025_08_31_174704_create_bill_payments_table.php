@@ -21,7 +21,6 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-
             // Foreign keys
             $table->foreign('bill_id')->references('bill_id')->on('bills');
             $table->foreign('payment_id')->references('payment_id')->on('payments');
