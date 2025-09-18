@@ -378,7 +378,74 @@ class ReferralController extends Controller
     //         'statusCode' => 200
     //     ]);
     // }
-    public function getHospitalLettersByReferralId($id)
+
+
+//     public function getHospitalLettersByReferralId($id)
+// {
+//     $user = auth()->user();
+//     if (
+//         !$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) 
+//         || !$user->can('View Referral')
+//     ) {
+//         return response([
+//             'message' => 'Forbidden',
+//             'statusCode' => 403
+//         ], 403);
+//     }
+
+//     // 1. Find the referral
+//     $referral = Referral::find($id);
+
+//     if (!$referral) {
+//         return response()->json([
+//             'message' => 'Referral not found',
+//             'statusCode' => 404
+//         ], 404);
+//     }
+
+//     // 2. Get the root referral (if this one is child, go up to parent)
+//     $rootReferralId = $referral->parent_referral_id ?? $referral->referral_id;
+
+//     // 3. Collect all referral IDs in this chain (root + children)
+//     $referralIds = Referral::where('referral_id', $rootReferralId)
+//         ->orWhere('parent_referral_id', $rootReferralId)
+//         ->pluck('referral_id')
+//         ->toArray();
+
+//     // 4. Load all referrals + hospital letters for the chain
+//     $referrals = Referral::with([
+//         'patient.geographicalLocation',
+//         'patient.patientList',
+//         'patient.files',
+//         'reason',
+//         'hospital',
+//         'hospitalLetters' => function ($query) {
+//             $query->select(
+//                 'letter_id', 
+//                 'referral_id', 
+//                 'content_summary', 
+//                 'next_appointment_date', 
+//                 'letter_file', 
+//                 'outcome'
+//             )->with(['followups' => function ($q) {
+//                 $q->select(
+//                     'followup_id', 
+//                     'letter_id', 
+//                     'followup_date', 
+//                     'notes'
+//                 );
+//             }]);
+//         }
+//     ])->whereIn('referral_id', $referralIds)->get();
+
+//     return response()->json([
+//         'data' => $referrals,
+//         'statusCode' => 200
+//     ]);
+// }
+
+
+public function getHospitalLettersByReferralId($id)
 {
     $user = auth()->user();
     if (
@@ -401,46 +468,60 @@ class ReferralController extends Controller
         ], 404);
     }
 
-    // 2. Get the root referral (if this one is child, go up to parent)
+    // 2. Get root referral
     $rootReferralId = $referral->parent_referral_id ?? $referral->referral_id;
 
-    // 3. Collect all referral IDs in this chain (root + children)
-    $referralIds = Referral::where('referral_id', $rootReferralId)
-        ->orWhere('parent_referral_id', $rootReferralId)
-        ->pluck('referral_id')
-        ->toArray();
-
-    // 4. Load all referrals + hospital letters for the chain
+    // 3. Get all referrals in the chain
     $referrals = Referral::with([
         'patient.geographicalLocation',
         'patient.patientList',
         'patient.files',
         'reason',
         'hospital',
-        'hospitalLetters' => function ($query) {
-            $query->select(
-                'letter_id', 
-                'referral_id', 
-                'content_summary', 
-                'next_appointment_date', 
-                'letter_file', 
-                'outcome'
-            )->with(['followups' => function ($q) {
-                $q->select(
-                    'followup_id', 
-                    'letter_id', 
-                    'followup_date', 
-                    'notes'
-                );
-            }]);
-        }
-    ])->whereIn('referral_id', $referralIds)->get();
+        'hospitalLetters.followups'
+    ])->where('referral_id', $rootReferralId)
+      ->orWhere('parent_referral_id', $rootReferralId)
+      ->get();
+
+    if ($referrals->isEmpty()) {
+        return response()->json([
+            'message' => 'No related referrals found',
+            'statusCode' => 404
+        ], 404);
+    }
+
+    // 4. Build merged response
+    $patient   = $referrals->first()->patient;
+    $reason    = $referrals->first()->reason;
+    $hospitals = $referrals->pluck('hospital')->unique('hospital_id')->values();
+    $letters   = $referrals->pluck('hospitalLetters')->flatten(1)->values();
+    $referralArr = $referrals->map(function ($r) {
+        return [
+            'referral_id'        => $r->referral_id,
+            'parent_referral_id' => $r->parent_referral_id,
+            'hospital_id'        => $r->hospital_id,
+            'status'             => $r->status,
+            'created_at'         => $r->created_at,
+            'updated_at'         => $r->updated_at,
+        ];
+    });
+
+    $result = [
+        'referral_number'  => $referrals->first()->referral_number,
+        'status'           => $referrals->pluck('status')->unique()->join(', '),
+        'patient'          => $patient,
+        'reason'           => $reason,
+        'hospitals'        => $hospitals,
+        'referrals'        => $referralArr,
+        'hospital_letters' => $letters,
+    ];
 
     return response()->json([
-        'data' => $referrals,
+        'data'       => $result,
         'statusCode' => 200
     ]);
 }
+
 
 
     public function getReferralsByHospitalId(int $hospitalId, int $billFileId)
