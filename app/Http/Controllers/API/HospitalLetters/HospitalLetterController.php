@@ -312,176 +312,115 @@ class HospitalLetterController extends Controller
      */
     public function updateHospitalLetter(Request $request, $id)
     {
-        $user = auth()->user();
+        $letter = HospitalLetter::findOrFail($id);
 
-        // Permission check
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) ||
-            !$user->can('Update Hospital Letter')
-        ) {
-            return response()->json([
-                'message'    => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
+        // ✅ Get referral linked to this letter (supporting parent_referral_id)
+        $referral = Referral::where('referral_id', $letter->referral_id)
+            ->orWhere('referral_id', $letter->parent_referral_id)
+            ->first();
 
-        // Find Hospital Letter
-        $letter = HospitalLetter::find($id);
-        if (!$letter) {
+        // ✅ Safe patient_id: from referral OR letter
+        $patientId = $referral->patient_id ?? $letter->patient_id ?? null;
+
+        if (!$patientId) {
             return response()->json([
-                'message'    => 'Hospital Letter not found',
-                'statusCode' => 404
+                'message'    => 'No patient found for this hospital letter',
+                'statusCode' => 404,
             ], 404);
         }
 
-        // Base validation rules
-        $rules = [
-            'referral_id'           => 'sometimes|exists:referrals,referral_id',
-            'hospital_id'           => 'nullable|exists:hospitals,hospital_id',
-            'content_summary'       => 'nullable|string',
-            'next_appointment_date' => 'nullable|date',
-            'letter_file'           => 'nullable|file|mimes:pdf,doc,docx|max:2048',
-            'outcome'               => 'sometimes|in:Follow-up,Finished,Transferred,Death',
-        ];
+        // ✅ Validate input
+        $validated = $request->validate([
+            'outcome'         => 'nullable|string',
+            'followup_date'   => 'nullable|date',
+            'content_summary' => 'nullable|string',
+            'hospital_id'     => 'nullable|numeric|exists:hospitals,hospital_id',
+        ]);
 
-        $validator = Validator::make($request->all(), $rules);
+        // ✅ Outcome fallback (never null)
+        $outcome = $validated['outcome'] ?? $letter->outcome ?? 'Follow-up';
 
-        // Conditional validation
-        $validator->sometimes('followup_date', 'required|date', function ($input) {
-            return in_array($input->outcome, ['Follow-up', 'Finished', 'Death', 'Transferred']);
-        });
+        // ✅ Follow-up date fallback
+        $followupDate = $validated['followup_date'] ?? now()->toDateString();
 
-        $validator->sometimes('hospital_id', 'required|exists:hospitals,hospital_id', function ($input) {
-            return $input->outcome === 'Transferred';
-        });
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message'    => 'Validation Error',
-                'errors'     => $validator->errors(),
-                'statusCode' => 422
-            ], 422);
-        }
-
-        $validated = $validator->validated();
-
-        // Add default followup_date if missing
-        if (empty($validated['followup_date'])) {
-            $validated['followup_date'] = now()->toDateString();
-        }
-
-        // Ensure referral exists if updated
-        $referral = !empty($validated['referral_id'])
-            ? Referral::find($validated['referral_id'])
-            : Referral::find($letter->referral_id);
-
-        if (!$referral) {
-            return response()->json([
-                'message'    => 'Referral not found',
-                'statusCode' => 404
-            ], 404);
-        }
-
-        // Handle file upload
-        if ($request->hasFile('letter_file')) {
-            // Delete old file if exists
-            if (!empty($letter->letter_file) && file_exists(public_path($letter->letter_file))) {
-                unlink(public_path($letter->letter_file));
-            }
-
-            $file = $request->file('letter_file');
-            $extension = $file->getClientOriginalExtension();
-            $newFileName = 'hospital_letter_' . date('h-i-s_a_d-m-Y') . '.' . $extension;
-            $file->move(public_path('uploads/hospitalLetters/'), $newFileName);
-            $validated['letter_file'] = 'uploads/hospitalLetters/' . $newFileName;
-        }
-
-        $validated['updated_by'] = Auth::id();
-
-        // Update Hospital Letter
-        $letter->update($validated);
-
-        // Outcome-specific Follow-up data
-        switch ($validated['outcome'] ?? $letter->outcome) {
+        // ✅ Build followup data by outcome (all cases covered)
+        switch ($outcome) {
             case 'Follow-up':
                 $followupData = [
-                    'followup_date'   => $validated['followup_date'],
-                    'notes'           => $validated['content_summary'] ?? null,
+                    'followup_date'   => $followupDate,
+                    'notes'           => $validated['content_summary'] ?? $letter->content_summary ?? null,
                     'followup_status' => 'Ongoing',
+                    'hospital_id'     => $validated['hospital_id'] ?? $letter->hospital_id ?? null,
+                    'patient_id'      => $patientId,
                 ];
                 break;
 
             case 'Finished':
                 $followupData = [
-                    'followup_date'   => $validated['followup_date'],
-                    'notes'           => $validated['content_summary'] ?? null,
+                    'followup_date'   => $followupDate,
+                    'notes'           => $validated['content_summary'] ?? $letter->content_summary ?? null,
                     'followup_status' => 'Closed',
+                    'hospital_id'     => $validated['hospital_id'] ?? $letter->hospital_id ?? null,
+                    'patient_id'      => $patientId,
                 ];
                 break;
 
             case 'Transferred':
                 $followupData = [
-                    'followup_date'   => $validated['followup_date'],
-                    'notes'           => $validated['content_summary'] ?? null,
+                    'followup_date'   => $followupDate,
+                    'notes'           => $validated['content_summary'] ?? $letter->content_summary ?? null,
                     'followup_status' => 'Transferred',
-                    'hospital_id'     => $validated['hospital_id'] ?? null,
-                    'patient_id'      => $referral->patient_id,
+                    'hospital_id'     => $validated['hospital_id'] ?? $letter->hospital_id ?? null,
+                    'patient_id'      => $patientId,
                 ];
                 break;
 
             case 'Death':
                 $followupData = [
-                    'followup_date'   => $validated['followup_date'],
-                    'notes'           => $validated['content_summary'] ?? null,
+                    'followup_date'   => $followupDate,
+                    'notes'           => $validated['content_summary'] ?? $letter->content_summary ?? null,
                     'followup_status' => 'Closed',
+                    'hospital_id'     => $validated['hospital_id'] ?? $letter->hospital_id ?? null,
+                    'patient_id'      => $patientId,
                 ];
                 break;
 
             default:
+                // ✅ Safety fallback for any other unforeseen outcome
                 $followupData = [
-                    'followup_date'   => $validated['followup_date'] ?? now()->toDateString(),
-                    'notes'           => $validated['content_summary'] ?? null,
+                    'followup_date'   => $followupDate,
+                    'notes'           => $validated['content_summary'] ?? $letter->content_summary ?? null,
                     'followup_status' => 'Ongoing',
+                    'hospital_id'     => $validated['hospital_id'] ?? $letter->hospital_id ?? null,
+                    'patient_id'      => $patientId,
                 ];
                 break;
         }
 
-        // Update referral status if needed
-        if (($validated['outcome'] ?? $letter->outcome) === 'Finished' || ($validated['outcome'] ?? $letter->outcome) === 'Death') {
-            $referral->update(['status' => 'Closed']);
-        }
+        // ✅ Update the hospital letter
+        $letter->update([
+            'outcome'         => $outcome,
+            'content_summary' => $validated['content_summary'] ?? $letter->content_summary,
+        ]);
 
-        // If Transferred, create new referral
-        if (($validated['outcome'] ?? $letter->outcome) === 'Transferred') {
-            Referral::create([
-                'referral_number'     => $referral->referral_number,
-                'patient_id'          => $referral->patient_id,
-                'hospital_id'         => $validated['hospital_id'],
-                'status'              => 'Transferred',
-                'reason_id'           => $referral->reason_id,
-                'parent_referral_id'  => $referral->referral_id,
-                'confirmed_by'        => Auth::id(),
-                'created_by'          => Auth::id(),
-            ]);
-        }
-
-        // Save/Update Follow-up
-        $followUp = FollowUp::updateOrCreate(
+        // ✅ Save or update follow-up (always has followup_status now)
+        FollowUp::updateOrCreate(
             ['letter_id' => $letter->letter_id],
             [
-                'patient_id'      => $referral->patient_id,
+                'patient_id'      => $followupData['patient_id'],
                 'followup_date'   => $followupData['followup_date'],
-                'notes'           => $followupData['notes'] ?? null,
+                'notes'           => $followupData['notes'],
                 'followup_status' => $followupData['followup_status'],
+                'hospital_id'     => $followupData['hospital_id'],
             ]
         );
 
         return response()->json([
-            'message'    => 'Hospital Letter updated successfully',
-            'data'       => $letter,
-            'statusCode' => 200
+            'message' => 'Hospital Letter updated successfully',
+            'letter'  => $letter,
         ]);
     }
+
 
     /**
      * Remove the specified resource from storage.

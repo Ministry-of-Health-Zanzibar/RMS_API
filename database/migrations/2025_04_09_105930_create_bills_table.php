@@ -18,7 +18,7 @@ return new class extends Migration {
             $table->decimal('total_amount', 12, 2);
             $table->date('bill_period_start');
             $table->date('bill_period_end');
-            $table->enum('bill_status', ['Pending', 'Paid'])->default('Pending');
+            $table->enum('bill_status', ['Pending', 'Partially Paid', 'Paid'])->default('Pending');
     
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
