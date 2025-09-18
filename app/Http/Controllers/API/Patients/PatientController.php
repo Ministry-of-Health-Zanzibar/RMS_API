@@ -210,7 +210,7 @@ class PatientController extends Controller
                 $extension = $file->getClientOriginalExtension();
 
                 // Generate a unique file name
-                $newFileName = 'patient_file_' . time() . '_' . uniqid() . '.' . $extension;
+                $newFileName = 'patient_file_' .  date('h-i-s_a_d-m-Y') . '.' . $extension;
 
                 // Move the file to public/uploads/patientFiles/
                 $file->move(public_path('uploads/patientFiles/'), $newFileName);

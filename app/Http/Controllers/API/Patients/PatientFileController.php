@@ -30,7 +30,7 @@ class PatientFileController extends Controller
             $extension = $file->getClientOriginalExtension();
 
             // Generate a custom file name
-            $newFileName = 'patient_file_' . time() . '.' . $extension;
+            $newFileName = 'patient_file_' .  date('h-i-s_a_d-m-Y') . '.' . $extension;
 
             // Move the uploaded file to public/uploads/patientFiles/
             $file->move(public_path('uploads/patientFiles/'), $newFileName);

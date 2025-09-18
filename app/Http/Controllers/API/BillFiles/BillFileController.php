@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\File;
 
 class BillFileController extends Controller
 {
@@ -163,7 +164,7 @@ class BillFileController extends Controller
             $extension = $file->getClientOriginalExtension();
 
             // Unique filename
-            $newFileName = 'bill_file_' . time() . '_' . uniqid() . '.' . $extension;
+            $newFileName = 'bill_file_' . date('h-i-s_a_d-m-Y') . '.' . $extension;
 
             // Move file to public/uploads/billFiles/
             $file->move(public_path('uploads/billFiles/'), $newFileName);
@@ -310,42 +311,77 @@ class BillFileController extends Controller
      *     )
      * )
      */
-    public function update(Request $request, $id)
+    public function updateBillFile(Request $request,int $id)
     {
         $user = auth()->user();
 
-        if (!($user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) && $user->can('Update BillFile'))) {
-            return response()->json(['message' => 'Forbidden','statusCode' => 403], 403);
+        // Authorization
+        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('Update BillFile')) {
+            return response()->json([
+                'message'    => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
         }
 
         $billFile = BillFile::find($id);
+
         if (!$billFile) {
-            return response()->json(['message' => 'BillFile not found','statusCode' => 404], 404);
+            return response()->json([
+                'message'    => 'BillFile not found',
+                'statusCode' => 404
+            ], 404);
         }
 
-        $validated = $request->validate([
-            'bill_file' => ['sometimes','file','mimes:pdf,jpg,jpeg,png','max:2048'],
-            'bill_file_amount' => ['sometimes','string'],
-            'bill_start' => ['nullable','string'],
-            'bill_end' => ['nullable','string'],
-            'hospital_id' => ['required', 'numeric']
+        // Validation
+        $validator = Validator::make($request->all(), [
+            'bill_file'        => ['sometimes', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'bill_file_amount' => ['sometimes', 'numeric', 'min:0'],
+            'bill_start'       => ['nullable', 'string'],
+            'bill_end'         => ['nullable', 'string', 'after_or_equal:bill_start'],
+            'hospital_id'      => ['required', 'numeric', 'exists:hospitals,hospital_id'],
         ]);
 
-        if ($request->hasFile('bill_file')) {
-            if ($billFile->bill_file && Storage::disk('public')->exists($billFile->bill_file)) {
-                Storage::disk('public')->delete($billFile->bill_file);
-            }
-            $validated['bill_file'] = $request->file('bill_file')->store('bill_files', 'public');
+        if ($validator->fails()) {
+            return response()->json([
+                'status'     => 'error',
+                'errors'     => $validator->errors(),
+                'statusCode' => 422,
+            ], 422);
         }
 
+        $validated = $validator->validated();
+
+        // Handle file upload
+        if ($request->hasFile('bill_file')) {
+            // Delete old file if exists
+            if ($billFile->bill_file && File::exists(public_path($billFile->bill_file))) {
+                File::delete(public_path($billFile->bill_file));
+            }
+
+            $file = $request->file('bill_file');
+            $extension = $file->getClientOriginalExtension();
+
+            // Unique filename (safe format)
+            $newFileName = 'bill_file_' . date('h-i-s_a_d-m-Y') . '.' . $extension;
+
+            // Move file to public/uploads/billFiles/
+            $file->move(public_path('uploads/billFiles/'), $newFileName);
+
+            $validated['bill_file'] = 'uploads/billFiles/' . $newFileName;
+        }
+
+        // Track updater
+        $validated['updated_by'] = $user->id;
+
+        // Update BillFile
         $billFile->update($validated);
-        $billFile->refresh(); // ensure latest data
+        $billFile->refresh();
 
         return response()->json([
-            'message' => 'BillFile updated successfully',
-            'data' => $billFile,
+            'message'    => 'Bill file updated successfully',
+            'data'       => $billFile,
             'statusCode' => 200
-        ]);
+        ], 200);
     }
 
     /**

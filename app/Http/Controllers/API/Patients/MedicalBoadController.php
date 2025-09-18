@@ -67,13 +67,13 @@ class MedicalBoadController extends Controller
             $extension = $file->getClientOriginalExtension();
 
             // Generate a custom file name
-            $newFileName = 'patient_list_' . time() . '.' . $extension;
+            $newFileName = 'patient_list_' .  date('h-i-s_a_d-m-Y') . '.' . $extension;
 
             // Move the file to public/uploads/patientLists/
             $file->move(public_path('uploads/patientLists/'), $newFileName);
 
             // Save the relative path
-            $filePath = 'uploads/patientLists/'.$newFileName; // or 'uploads/patientLists/' . $newFileName if you want full path
+            $filePath = 'uploads/patientLists/'.$newFileName;
         }
 
         // Save to database
