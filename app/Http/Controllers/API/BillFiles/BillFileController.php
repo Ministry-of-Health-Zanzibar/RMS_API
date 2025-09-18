@@ -669,7 +669,7 @@ class BillFileController extends Controller
                     ->whereRaw('bb.bill_file_id = bf.bill_file_id'); 
             })
             ->groupBy('h.hospital_name', 'h.hospital_id')
-            ->havingRaw('SUM(CAST(bf.bill_file_amount AS DECIMAL(15,2))) = COALESCE(SUM(b.total_amount), 0)')
+            // ->havingRaw('SUM(CAST(bf.bill_file_amount AS DECIMAL(15,2))) = COALESCE(SUM(b.total_amount), 0)')
             ->get();
 
         $billFilesArray = $billFiles->map(fn($item) => (array) $item)->toArray();
