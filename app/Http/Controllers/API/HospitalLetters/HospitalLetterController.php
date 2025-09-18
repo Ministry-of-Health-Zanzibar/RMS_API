@@ -379,7 +379,7 @@ class HospitalLetterController extends Controller
                 $followupData = [
                     'followup_date'   => $followupDate,
                     'notes'           => $validated['content_summary'] ?? $letter->content_summary ?? null,
-                    'followup_status' => 'Closed',
+                    'followup_status' => 'Death',
                     'hospital_id'     => $validated['hospital_id'] ?? $letter->hospital_id ?? null,
                     'patient_id'      => $patientId,
                 ];
