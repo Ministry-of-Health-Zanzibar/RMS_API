@@ -543,7 +543,7 @@ class BillFileController extends Controller
                 'bf.bill_start',
                 'bf.bill_end'
             )
-            // ->havingRaw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) = COALESCE(SUM(b.total_amount), 0)')
+            ->havingRaw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) = COALESCE(SUM(b.total_amount), 0)')
             ->get();
 
         $billFilesArray = $billFiles->map(function($item) {
@@ -571,6 +571,69 @@ class BillFileController extends Controller
             'statusCode' => 200
         ]);
     }
+
+    // public function getBillFilesGroupByHospitals()
+    // {
+    //     $user = auth()->user();
+    //     if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View BillFile')) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $billFiles = DB::table('bill_files as bf')
+    //         ->leftJoin('hospitals as h', 'bf.hospital_id', '=', 'h.hospital_id')
+    //         ->leftJoin('bills as b', 'bf.bill_file_id', '=', 'b.bill_file_id')
+    //         ->leftJoin('bill_payments as bp', 'b.bill_id', '=', 'bp.bill_id')
+    //         ->select(
+    //             'h.hospital_name',
+    //             'h.hospital_id',
+    //             DB::raw('SUM(COALESCE(CAST(bf.bill_file_amount AS DECIMAL(15,2)), 0)) as total_bill_file_amount'),
+    //             DB::raw('COALESCE(SUM(bp.allocated_amount), 0) as total_allocated_amount'),
+    //             DB::raw('(SUM(COALESCE(CAST(bf.bill_file_amount AS DECIMAL(15,2)),0)) - COALESCE(SUM(bp.allocated_amount), 0)) as total_balance'),
+    //             DB::raw("
+    //                 CASE 
+    //                     WHEN COALESCE(SUM(bp.allocated_amount), 0) = 0 THEN 'Pending'
+    //                     WHEN COALESCE(SUM(bp.allocated_amount), 0) < SUM(COALESCE(CAST(bf.bill_file_amount AS DECIMAL(15,2)),0)) THEN 'Partially Paid'
+    //                     WHEN COALESCE(SUM(bp.allocated_amount), 0) >= SUM(COALESCE(CAST(bf.bill_file_amount AS DECIMAL(15,2)),0)) THEN 'Paid'
+    //                 END as status
+    //             ")
+    //         )
+    //         ->whereExists(function ($query) {
+    //             $query->select(DB::raw(1))
+    //                 ->from('bills as bb')
+    //                 ->whereRaw('bb.bill_file_id = bf.bill_file_id'); // only include bill_files linked in bills
+    //         })
+    //         ->groupBy('h.hospital_name', 'h.hospital_id')
+    //         ->get();
+
+    //     $billFilesArray = $billFiles->map(function ($item) {
+    //         return (array) $item;
+    //     })->toArray();
+
+    //     // Calculate grand totals for all hospitals
+    //     $grandTotals = [
+    //         'hospital_name'           => 'ALL HOSPITALS',
+    //         'hospital_id'             => null,
+    //         'total_bill_file_amount'  => array_sum(array_column($billFilesArray, 'total_bill_file_amount')),
+    //         'total_allocated_amount'  => array_sum(array_column($billFilesArray, 'total_allocated_amount')),
+    //         'total_balance'           => array_sum(array_column($billFilesArray, 'total_balance')),
+    //         'status'                  => 'Summary'
+    //     ];
+
+    //     $result = [
+    //         'hospitals' => $billFilesArray,
+    //         'totals'    => $grandTotals
+    //     ];
+
+    //     return response()->json([
+    //         'data'       => $result,
+    //         'statusCode' => 200
+    //     ]);
+    // }
+
+
 
     public function getBillFilesGroupByHospitals()
     {
@@ -603,16 +666,14 @@ class BillFileController extends Controller
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('bills as bb')
-                    ->whereRaw('bb.bill_file_id = bf.bill_file_id'); // only include bill_files linked in bills
+                    ->whereRaw('bb.bill_file_id = bf.bill_file_id'); 
             })
             ->groupBy('h.hospital_name', 'h.hospital_id')
+            ->havingRaw('SUM(CAST(bf.bill_file_amount AS DECIMAL(15,2))) = COALESCE(SUM(b.total_amount), 0)')
             ->get();
 
-        $billFilesArray = $billFiles->map(function ($item) {
-            return (array) $item;
-        })->toArray();
+        $billFilesArray = $billFiles->map(fn($item) => (array) $item)->toArray();
 
-        // Calculate grand totals for all hospitals
         $grandTotals = [
             'hospital_name'           => 'ALL HOSPITALS',
             'hospital_id'             => null,
@@ -622,15 +683,12 @@ class BillFileController extends Controller
             'status'                  => 'Summary'
         ];
 
-        $result = [
-            'hospitals' => $billFilesArray,
-            'totals'    => $grandTotals
-        ];
-
         return response()->json([
-            'data'       => $result,
+            'data'       => [
+                'hospitals' => $billFilesArray,
+                'totals'    => $grandTotals
+            ],
             'statusCode' => 200
         ]);
     }
-
 }
