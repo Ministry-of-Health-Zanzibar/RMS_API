@@ -438,7 +438,7 @@ class PatientController extends Controller
 
             foreach ($files as $file) {
                 $extension = $file->getClientOriginalExtension();
-                $newFileName = 'patient_file_' . time() . '_' . uniqid() . '.' . $extension;
+                $newFileName = 'patient_file_' . date('h-i-s_a_d-m-Y') . '.' . $extension;
 
                 // Move file to public/uploads/patientFiles/
                 $file->move(public_path('uploads/patientFiles/'), $newFileName);
