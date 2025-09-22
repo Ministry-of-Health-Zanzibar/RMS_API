@@ -111,33 +111,47 @@ class PatientListController extends Controller
     {
         $list = PatientList::findOrFail($id);
 
-        // Validate input
-        $data = $request->validate([
+        // Validate request
+        $request->validate([
             'patient_list_title' => ['required', 'string', 'max:255'],
             'patient_list_file'  => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
         ]);
 
-        // Handle file upload
+        $filePath = $list->patient_list_file; // keep old file by default
+
         if ($request->hasFile('patient_list_file')) {
-            if ($list->patient_list_file && Storage::disk('public')->exists($list->patient_list_file)) {
-                Storage::disk('public')->delete($list->patient_list_file);
+
+            // Delete old file if it exists
+            if ($list->patient_list_file && file_exists(public_path($list->patient_list_file))) {
+                unlink(public_path($list->patient_list_file));
             }
 
-            $filePath = $request->file('patient_list_file')->store('patient_lists', 'public');
-            $data['patient_list_file'] = $filePath;
-        } else {
-            $data['patient_list_file'] = $list->patient_list_file;
+            // Get the uploaded file
+            $file = $request->file('patient_list_file');
+
+            // Extract the file extension (pdf, jpg, jpeg, png)
+            $extension = $file->getClientOriginalExtension();
+
+            // Generate a custom file name
+            $newFileName = 'patient_list_' . date('h-i-s_a_d-m-Y') . '.' . $extension;
+
+            // Move the file to public/uploads/patientLists/
+            $file->move(public_path('uploads/patientLists/'), $newFileName);
+
+            // Save the relative path
+            $filePath = 'uploads/patientLists/' . $newFileName;
         }
 
+        // Update in database
         $list->update([
-            'patient_list_title' => $data['patient_list_title'],
-            'patient_list_file'  => $data['patient_list_file'],
+            'patient_list_title' => $request->patient_list_title,
+            'patient_list_file'  => $filePath,
             'updated_by'         => Auth::id(),
         ]);
 
         return response([
-            'data' => $list->load(['creator', 'patients']),
-            'message' => 'Patient list updated successfully',
+            'data'       => $list->load(['creator', 'patients']),
+            'message'    => 'Patient list updated successfully',
             'statusCode' => 200
         ], 200);
     }
