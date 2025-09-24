@@ -314,12 +314,12 @@ class HospitalLetterController extends Controller
     {
         $letter = HospitalLetter::findOrFail($id);
 
-        // ✅ Get referral linked to this letter (supporting parent_referral_id)
+        // Get referral linked to this letter (supporting parent_referral_id)
         $referral = Referral::where('referral_id', $letter->referral_id)
             ->orWhere('referral_id', $letter->parent_referral_id)
             ->first();
 
-        // ✅ Safe patient_id: from referral OR letter
+        // Safe patient_id: from referral OR letter
         $patientId = $referral->patient_id ?? $letter->patient_id ?? null;
 
         if (!$patientId) {
@@ -329,7 +329,7 @@ class HospitalLetterController extends Controller
             ], 404);
         }
 
-        // ✅ Validate input
+        // Validate input
         $validated = $request->validate([
             'outcome'         => 'nullable|string',
             'followup_date'   => 'nullable|date',
@@ -337,13 +337,13 @@ class HospitalLetterController extends Controller
             'hospital_id'     => 'nullable|numeric|exists:hospitals,hospital_id',
         ]);
 
-        // ✅ Outcome fallback (never null)
+        // Outcome fallback (never null)
         $outcome = $validated['outcome'] ?? $letter->outcome ?? 'Follow-up';
 
-        // ✅ Follow-up date fallback
+        // Follow-up date fallback
         $followupDate = $validated['followup_date'] ?? now()->toDateString();
 
-        // ✅ Build followup data by outcome (all cases covered)
+        // Build followup data by outcome (all cases covered)
         switch ($outcome) {
             case 'Follow-up':
                 $followupData = [
@@ -386,7 +386,7 @@ class HospitalLetterController extends Controller
                 break;
 
             default:
-                // ✅ Safety fallback for any other unforeseen outcome
+                // Safety fallback for any other unforeseen outcome
                 $followupData = [
                     'followup_date'   => $followupDate,
                     'notes'           => $validated['content_summary'] ?? $letter->content_summary ?? null,
@@ -397,13 +397,13 @@ class HospitalLetterController extends Controller
                 break;
         }
 
-        // ✅ Update the hospital letter
+        // Update the hospital letter
         $letter->update([
             'outcome'         => $outcome,
             'content_summary' => $validated['content_summary'] ?? $letter->content_summary,
         ]);
 
-        // ✅ Save or update follow-up (always has followup_status now)
+        // Save or update follow-up (always has followup_status now)
         FollowUp::updateOrCreate(
             ['letter_id' => $letter->letter_id],
             [

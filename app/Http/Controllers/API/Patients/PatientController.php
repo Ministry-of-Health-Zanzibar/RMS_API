@@ -16,7 +16,7 @@ class PatientController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Patient|Create Patient|View Patient|Update Patient|Delete Patient', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
+        $this->middleware('permission:View Patient|Create Patient|Update Patient|Delete Patient', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
     }
 
     /**
@@ -71,10 +71,7 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-            !$user->can('View Patient')
-        ) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -606,10 +603,8 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-            !$user->can('View Patient')
-        ) {
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Patient')) 
+        {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
