@@ -206,13 +206,13 @@ class PatientListController extends Controller
     public function getAllPatientsByPatientListId(int $patientListId)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) 
-            || !$user->can('View Patient')) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
+        // if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) 
+        //     || !$user->can('View Patient')) {
+        //     return response([
+        //         'message' => 'Forbidden',
+        //         'statusCode' => 403
+        //     ], 403);
+        // }
 
         $list = PatientList::with([
             'patients.files',
