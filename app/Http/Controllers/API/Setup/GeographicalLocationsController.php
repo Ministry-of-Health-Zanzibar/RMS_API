@@ -70,8 +70,8 @@ class GeographicalLocationsController extends Controller
     */
     public function index()
     {
-        if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Setup Management'))
-        {
+        // if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Setup Management'))
+        // {
             $geographicalLocations = DB::table('geographical_locations')
                                 ->join('users', 'users.id', '=', 'geographical_locations.created_by')
                                 ->select('geographical_locations.*','users.first_name','users.middle_name','users.last_name','users.id')
@@ -84,19 +84,11 @@ class GeographicalLocationsController extends Controller
             ];
 
             return response()->json($respose);
-        }
-        else{
-            return response()
-                ->json(['message' => 'Unauthorized','statusCode'=> 401]);
-        }
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-
+        // }
+        // else{
+        //     return response()
+        //         ->json(['message' => 'Unauthorized','statusCode'=> 401]);
+        // }
     }
 
     /**
@@ -261,8 +253,8 @@ class GeographicalLocationsController extends Controller
     */
     public function show(string $location_id)
     {
-        if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Setup Management'))
-        {
+        // if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Setup Management'))
+        // {
             $geographicalLocations = DB::table('geographical_locations')
                                 ->select('geographical_locations.*')
                                 ->where('geographical_locations.location_id', '=',$location_id)
@@ -282,11 +274,11 @@ class GeographicalLocationsController extends Controller
                 return response()
                 ->json(['message' => 'No Geographical Location Found','statusCode'=> 400]);
             }
-        }
-        else{
-            return response()
-                ->json(['message' => 'unAuthenticated','statusCode'=> 401]);
-        }
+        // }
+        // else{
+        //     return response()
+        //         ->json(['message' => 'unAuthenticated','statusCode'=> 401]);
+        // }
     }
 
     /**
@@ -352,8 +344,8 @@ class GeographicalLocationsController extends Controller
             return response()->json($respose);
         }
 
-        if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Update Location'))
-        {
+        // if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Update Location'))
+        // {
             $user_id = auth()->user()->id;
             try{
                 $GeographicalLocations = GeographicalLocations::find($location_id);
@@ -374,11 +366,11 @@ class GeographicalLocationsController extends Controller
                 return response()
                     ->json(['message' => $e->getMessage(),'statusCode'=> 500]);
             }
-        }
-        else{
-            return response()
-                ->json(['message' => 'unAuthenticated','statusCode'=> 401]);
-        }
+        // }
+        // else{
+        //     return response()
+        //         ->json(['message' => 'unAuthenticated','statusCode'=> 401]);
+        // }
     }
 
      /**

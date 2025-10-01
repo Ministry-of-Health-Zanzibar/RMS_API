@@ -178,6 +178,25 @@ class PatientListController extends Controller
         ], 200);
     }
 
+    public function delete($id)
+    {
+        $list = PatientList::find($id);
+
+        if (!$list) {
+            return response([
+                'message' => 'Patient list not found',
+                'statusCode' => 404
+            ], 404);
+        }
+
+        $list->forceDelete(); // permanently deletes the record
+
+        return response([
+            'message' => 'Patient list permanently deleted successfully',
+            'statusCode' => 200
+        ], 200);
+    }
+
     /**
      * Restore a soft-deleted patient list.
      */

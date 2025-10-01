@@ -92,6 +92,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // PATIENTS APIs
     Route::resource('patients', PatientController::class);
     Route::post('patients/update/{id}', [PatientController::class, 'updatePatient']);
+    Route::delete('patients/delete/{id}', [PatientController::class, 'delete']);
     Route::patch('patients/unBlock/{id}', [PatientController::class, 'unBlockPatient']);
     Route::get('patients-withinsurance/{id}', [PatientController::class, 'getAllPatientsWithInsurance']);
     Route::get('patients/for-referral/allowed', [PatientController::class, 'getAllPatients']);
@@ -178,6 +179,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Patient Lis
     Route::resource('patient-lists', MedicalBoadController::class);
     Route::post('patient-lists/update/{id}', [PatientListController::class, 'updatePatientList']);
+    Route::delete('patient-lists/delete/{id}', [PatientListController::class, 'delete']);
     Route::patch('patient-lists/unblock/{id}', [PatientListController::class, 'unBlockParentList']);
     Route::get('patient-lists/body-form/{id}', [PatientListController::class, 'getAllPatientsByPatientListId']);
 
