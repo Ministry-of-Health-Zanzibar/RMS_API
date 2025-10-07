@@ -2344,7 +2344,7 @@
                     "Bill Files"
                 ],
                 "summary": "Update a bill file",
-                "operationId": "0d19e7a721b3c6a89c01b161111a7ac7",
+                "operationId": "f0a0c02f42cfa810eed60fb885082d85",
                 "parameters": [
                     {
                         "name": "id",
@@ -6159,6 +6159,235 @@
                         }
                     }
                 }
+            }
+        },
+        "/api/patient-histories": {
+            "get": {
+                "tags": [
+                    "Patient Histories"
+                ],
+                "summary": "Get all patient histories",
+                "operationId": "d7bc086ca6fb11cfb7b422d4e5f9a907",
+                "responses": {
+                    "200": {
+                        "description": "List of patient histories"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Patient Histories"
+                ],
+                "summary": "Create a patient history",
+                "operationId": "b00facf26a299564ebd3f72eaa5fbd33",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "patient_id",
+                                    "referring_doctor",
+                                    "file_number",
+                                    "referring_date"
+                                ],
+                                "properties": {
+                                    "patient_id": {
+                                        "type": "integer"
+                                    },
+                                    "referring_doctor": {
+                                        "type": "string"
+                                    },
+                                    "file_number": {
+                                        "type": "string"
+                                    },
+                                    "referring_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "history_of_presenting_illness": {
+                                        "type": "string"
+                                    },
+                                    "physical_findings": {
+                                        "type": "string"
+                                    },
+                                    "investigations": {
+                                        "type": "string"
+                                    },
+                                    "diagnosis": {
+                                        "type": "string"
+                                    },
+                                    "management_done": {
+                                        "type": "string"
+                                    },
+                                    "history_file": {
+                                        "description": "Upload file (pdf, jpg, jpeg, png)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Patient history created successfully"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/patient-histories/{id}": {
+            "get": {
+                "tags": [
+                    "Patient Histories"
+                ],
+                "summary": "Get a patient history by ID",
+                "operationId": "73b6a99e077bf2a04e2bbfb9cd843d9d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Patient history data"
+                    },
+                    "404": {
+                        "description": "Patient history not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Patient Histories"
+                ],
+                "summary": "Delete a patient history",
+                "operationId": "13dae0bc31e9fa1fdb0b46d2eba2d7bd",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Patient history deleted successfully"
+                    },
+                    "404": {
+                        "description": "Patient history not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Patient Histories"
+                ],
+                "summary": "Update a patient history",
+                "operationId": "1286bd725af7d1974f538f92ba69eb57",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "patient_id": {
+                                        "type": "integer"
+                                    },
+                                    "referring_doctor": {
+                                        "type": "string"
+                                    },
+                                    "file_number": {
+                                        "type": "string"
+                                    },
+                                    "referring_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "history_of_presenting_illness": {
+                                        "type": "string"
+                                    },
+                                    "physical_findings": {
+                                        "type": "string"
+                                    },
+                                    "investigations": {
+                                        "type": "string"
+                                    },
+                                    "diagnosis": {
+                                        "type": "string"
+                                    },
+                                    "management_done": {
+                                        "type": "string"
+                                    },
+                                    "history_file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Patient history updated successfully"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "404": {
+                        "description": "Patient history not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/payments": {
@@ -11522,6 +11751,10 @@
         }
     },
     "tags": [
+        {
+            "name": "Patient Histories",
+            "description": "CRUD operations for patient histories"
+        },
         {
             "name": "Payments",
             "description": "API Endpoints for Managing Payments"

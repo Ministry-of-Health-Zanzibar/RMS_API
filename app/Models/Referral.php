@@ -22,6 +22,7 @@ class Referral extends Model
         'referral_number',
         'hospital_id',
         'reason_id',
+        'disease_id',
         'status',
         'confirmed_by',
         'created_by',
@@ -88,6 +89,12 @@ class Referral extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by', 'id');
+    }
+
+    // Disease relationship (new)
+    public function disease()
+    {
+        return $this->belongsTo(Disease::class, 'disease_id', 'disease_id');
     }
 
     public function getActivitylogOptions(): LogOptions

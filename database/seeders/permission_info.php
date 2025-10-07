@@ -141,32 +141,15 @@ class permission_info extends Seeder
             'Update Bill Item',
             'Delete Bill Item',
 
-            // 'Accountant Module',
-            // 'Create Source',
-            // 'Update Source',
-            // 'Delete Source',
-            // 'View Source',
+            'View Disease',
+            'Create Disease',
+            'Update Disease',
+            'Delete Disease',
 
-            // 'Create Source Type',
-            // 'Update Source Type',
-            // 'Delete Source Type',
-            // 'View Source Type',
-
-            // 'Create Category',
-            // 'Update Category',
-            // 'Delete Category',
-            // 'View Category',
-
-            // 'Create Document Type',
-            // 'Update Document Type',
-            // 'Delete Document Type',
-            // 'View Document Type',
-
-            // 'Create Document Form',
-            // 'Update Document Form',
-            // 'Delete Document Form',
-            // 'View Document Form',
-            // 'View Report',
+            'View Patient History',
+            'Create Patient History',
+            'Update Patient History',
+            'Delete Patient History',
         ];
 
         foreach ($permissions as $permission) {
