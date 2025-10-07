@@ -22,13 +22,26 @@ class MedicalBoadController extends Controller
      */
     public function index()
     {
-        $lists = PatientList::withTrashed()->with([
-            'creator', // user who created the list
-            'patients' => function ($q) {
-                $q->with('geographicalLocation'); // each patient with their geographical location
-            }
-        ])
-        ->get();
+           $user = auth()->user();
+
+         if ($user->hasAnyRole(['ROLE ADMIN'])) {   
+            $lists = PatientList::with([
+                'creator', 
+                'patients' => function ($q) {
+                    $q->with('geographicalLocation'); 
+                }
+            ])
+            ->withTrashed()
+            ->get();
+         } else {
+             $lists = PatientList::with([
+                'creator', 
+                'patients' => function ($q) {
+                    $q->with('geographicalLocation'); 
+                }
+            ])
+            ->get();
+         }
 
         return response([
             'data' => $lists,

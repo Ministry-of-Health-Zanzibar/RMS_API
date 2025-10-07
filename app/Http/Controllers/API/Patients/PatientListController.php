@@ -12,7 +12,7 @@ class PatientListController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Patient List|Create Patient List|Update Patient List|Delete Patient List', 
+        $this->middleware('permission:View Patient List|Create Patient List|Update Patient List|Delete Patient List',
             ['only' => ['index', 'store', 'show', 'updatePatientList', 'destroy', 'unBlockParentList', 'getAllPatientsByPatientListId']]);
     }
 
@@ -21,10 +21,10 @@ class PatientListController extends Controller
      */
     public function index()
     {
-        $lists = PatientList::withTrashed()->with([
-            'creator', // user who created the list
+        $lists = PatientList::withTrashed([
+            'creator',
             'patients' => function ($q) {
-                $q->with('geographicalLocation'); // each patient with their geographical location
+                $q->with('geographicalLocation');
             }
         ])
         ->get();
@@ -161,7 +161,7 @@ class PatientListController extends Controller
      */
     public function destroy($id)
     {
-        $list = PatientList::find($id);
+        $list = PatientList::withTrashed()->find($id);
 
         if (!$list) {
             return response([
@@ -178,24 +178,7 @@ class PatientListController extends Controller
         ], 200);
     }
 
-    public function delete($id)
-    {
-        $list = PatientList::find($id);
 
-        if (!$list) {
-            return response([
-                'message' => 'Patient list not found',
-                'statusCode' => 404
-            ], 404);
-        }
-
-        $list->forceDelete(); // permanently deletes the record
-
-        return response([
-            'message' => 'Patient list permanently deleted successfully',
-            'statusCode' => 200
-        ], 200);
-    }
 
     /**
      * Restore a soft-deleted patient list.
@@ -211,7 +194,7 @@ class PatientListController extends Controller
             ], 404);
         }
 
-        $list->restore();
+        $list->restore($id);
 
         return response([
             'message' => 'Patient list restored successfully',
@@ -225,7 +208,7 @@ class PatientListController extends Controller
     public function getAllPatientsByPatientListId(int $patientListId)
     {
         $user = auth()->user();
-        // if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) 
+        // if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER'])
         //     || !$user->can('View Patient')) {
         //     return response([
         //         'message' => 'Forbidden',
@@ -237,7 +220,7 @@ class PatientListController extends Controller
             'patients.files',
             'patients.geographicalLocation'
         ])->find($patientListId);
-        
+
 
         if (!$list) {
             return response([
