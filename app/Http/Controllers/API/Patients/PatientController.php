@@ -78,15 +78,37 @@ class PatientController extends Controller
         //     ], 403);
         // }
 
-        $patients = Patient::with([
-            'patientList',          // patient list info
-            'files',                // all patient files
-            'geographicalLocation',
-            'referrals.reason',     // referrals + reason
-            'referrals.hospital',   // referrals + hospital
-            'referrals.creator',  // referral created by user
-        ])->get();
+        if (!$user->can('View Patient')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
 
+         if ($user->hasAnyRole(['ROLE ADMIN'])) {
+            $patients = Patient::with([
+                'patientList',          // patient list info
+                'files',                // all patient files
+                'geographicalLocation',
+                'referrals.reason',     // referrals + reason
+                'referrals.hospital',   // referrals + hospital
+                'referrals.creator',  // referral created by user
+            ])
+            ->withTrashed()
+            ->get();
+        } else {
+             $patients = Patient::with([
+                'patientList',          // patient list info
+                'files',                // all patient files
+                'geographicalLocation',
+                'referrals.reason',     // referrals + reason
+                'referrals.hospital',   // referrals + hospital
+                'referrals.creator',  // referral created by user
+            ])
+            ->get();
+        }
+
+        
         return response([
             'data' => $patients,
             'statusCode' => 200,
