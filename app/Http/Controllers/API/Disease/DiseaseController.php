@@ -85,6 +85,7 @@ class DiseaseController extends Controller
         $validator = Validator::make($request->all(), [
             'disease_name' => ['required', 'string', 'max:255'],
             'disease_code' => ['nullable', 'string', 'max:100', 'unique:diseases,disease_code'],
+            'disease_description' => ['nullable', 'string', 'max:1000'],
         ]);
 
         if ($validator->fails()) {
@@ -101,6 +102,7 @@ class DiseaseController extends Controller
             $disease = Disease::create([
                 'disease_name' => $request->disease_name,
                 'disease_code' => $request->disease_code,
+                'disease_description' => $request->disease_description,
                 'created_by' => Auth::id(),
             ]);
 
@@ -213,6 +215,7 @@ class DiseaseController extends Controller
         $validator = Validator::make($request->all(), [
             'disease_name' => ['required', 'string', 'max:255'],
             'disease_code' => ['nullable', 'string', 'max:100', 'unique:diseases,disease_code,' . $id . ',disease_id'],
+            'disease_description' => ['nullable', 'string', 'max:1000'],
         ]);
 
         if ($validator->fails()) {
@@ -229,6 +232,7 @@ class DiseaseController extends Controller
             $disease->update([
                 'disease_name' => $request->disease_name,
                 'disease_code' => $request->disease_code,
+                'disease_description' => $request->disease_description,
             ]);
 
             DB::commit();

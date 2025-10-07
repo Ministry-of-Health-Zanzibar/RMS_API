@@ -25,8 +25,9 @@ class Disease extends Model
     public $incrementing = true;            // still auto-incrementing
 
     protected $fillable = [
-        'disease_name',
         'disease_code',
+        'disease_name',
+        'disease_description',
         'created_by',
     ];
 

@@ -210,4 +210,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('reports/timely', [ReportController::class, 'timelyReport']);
     Route::get('reports/patients', [ReportController::class, 'patientsReport']);
 
+    Route::apiResource('diseases', App\Http\Controllers\API\Disease\DiseaseController::class);
+
 });

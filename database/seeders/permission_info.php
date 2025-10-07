@@ -4,19 +4,14 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
-use Illuminate\Support\Facades\DB;
 
 class permission_info extends Seeder
 {
     /**
      * Run the database seeds.
-     *
-     * @return void
      */
-    public function run()
+    public function run(): void
     {
-        DB::table('permissions')->delete();
-
         $permissions = [
             'View Referral Dashboard',
             'View Permission',
@@ -153,9 +148,9 @@ class permission_info extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-
-            Permission::create(['name' => $permission, 'guard_name' => 'web']);
-
+            Permission::firstOrCreate(
+                ['name' => $permission, 'guard_name' => 'web']
+            );
         }
     }
 }
