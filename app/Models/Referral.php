@@ -97,6 +97,11 @@ class Referral extends Model
         return $this->belongsTo(Disease::class, 'disease_id', 'disease_id');
     }
 
+    public function referralLetters()
+    {
+        return $this->hasMany(ReferralLetter::class, 'referral_id', 'referral_id');
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['*']);
