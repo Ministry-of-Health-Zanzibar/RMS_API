@@ -13,9 +13,6 @@ class user_info extends Seeder
 {
     public function run()
     {
-        // ❌ Do NOT delete existing users/roles (causes foreign key violations)
-        // ✅ Use firstOrCreate() to avoid duplicates
-
         // 1. Create or get Admin user
         $admin = User::firstOrCreate(
             ['email' => 'info@mohz.go.tz'],
@@ -32,8 +29,14 @@ class user_info extends Seeder
             ]
         );
 
-        $adminRole = Role::firstOrCreate(['name' => 'ROLE ADMIN'], ['created_by' => 1]);
-        $allPermissions = Permission::pluck('id')->all();
+        // Create admin role if not exists
+        $adminRole = Role::firstOrCreate(
+            ['name' => 'ROLE ADMIN', 'guard_name' => 'web'],
+            ['created_by' => 1]
+        );
+
+        // ✅ Use permission names instead of IDs
+        $allPermissions = Permission::pluck('name')->all();
 
         $adminRole->syncPermissions($allPermissions);
         $admin->syncPermissions($allPermissions);
@@ -55,7 +58,10 @@ class user_info extends Seeder
             ]
         );
 
-        $accountantRole = Role::firstOrCreate(['name' => 'ROLE ACCOUNTANT'], ['created_by' => $admin->id]);
+        $accountantRole = Role::firstOrCreate(
+            ['name' => 'ROLE ACCOUNTANT', 'guard_name' => 'web'],
+            ['created_by' => $admin->id]
+        );
 
         $permissions = [
             'Accountant Module',
@@ -94,8 +100,10 @@ class user_info extends Seeder
 
         $accountantPermissions = collect();
         foreach ($permissions as $permName) {
-            $permission = Permission::firstOrCreate(['name' => $permName]);
-            $accountantPermissions->push($permission);
+            $permission = Permission::firstOrCreate(
+                ['name' => $permName, 'guard_name' => 'web']
+            );
+            $accountantPermissions->push($permission->name);
         }
 
         $accountantRole->syncPermissions($accountantPermissions);
@@ -118,9 +126,12 @@ class user_info extends Seeder
             ]
         );
 
-        $dgRole = Role::firstOrCreate(['name' => 'ROLE DG'], ['created_by' => $admin->id]);
+        $dgRole = Role::firstOrCreate(
+            ['name' => 'ROLE DG', 'guard_name' => 'web'],
+            ['created_by' => $admin->id]
+        );
 
-        $dgPermissions = Permission::whereIn('name', [
+        $dgPermissionNames = [
             'Create ReferralLetter',
             'Update ReferralLetter',
             'Delete ReferralLetter',
@@ -140,10 +151,19 @@ class user_info extends Seeder
             'Update Payment',
             'Delete Payment',
             'View Payment',
-        ])->get();
+        ];
+
+        $dgPermissions = collect();
+        foreach ($dgPermissionNames as $permName) {
+            $permission = Permission::firstOrCreate(
+                ['name' => $permName, 'guard_name' => 'web']
+            );
+            $dgPermissions->push($permission->name);
+        }
 
         $dgRole->syncPermissions($dgPermissions);
         $dg->syncPermissions($dgPermissions);
         $dg->syncRoles([$dgRole]);
     }
 }
+
