@@ -234,4 +234,37 @@ class PatientListController extends Controller
             'statusCode' => 200,
         ], 200);
     }
+
+
+        /**
+     * Get total counts for Medical Boards, Patients, and Referrals.
+     */
+    public function getOverallCounts()
+    {
+        $user = auth()->user();
+
+        // Optional: Permission check
+        if (!$user->can('View Referral Dashboard')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // Count totals
+        $totalMedicalBoards = \App\Models\PatientList::count();
+        $totalPatients = \App\Models\Patient::count();
+        $totalReferrals = \App\Models\Referral::count();
+
+        return response([
+            'data' => [
+                'total_medical_boards' => $totalMedicalBoards,
+                'total_patients'       => $totalPatients,
+                'total_referrals'      => $totalReferrals,
+            ],
+            'message' => 'Counts retrieved successfully',
+            'statusCode' => 200
+        ], 200);
+    }
+
 }
