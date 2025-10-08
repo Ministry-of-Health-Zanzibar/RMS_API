@@ -155,23 +155,27 @@ class ReportController extends Controller
         }
 
         try {
-            // ✅ Query referrals grouped by gender
+            // ✅ Group by lowercase gender (case-insensitive)
             $referralsByGender = DB::table("referrals")
                 ->join("patients", "patients.patient_id", '=', "referrals.patient_id")
                 ->whereNull("referrals.deleted_at")
-                ->select("patients.gender", DB::raw("COUNT(referrals.referral_id) as total"))
-                ->groupBy("patients.gender")
+                ->select(
+                    DB::raw("LOWER(patients.gender) as gender"),
+                    DB::raw("COUNT(referrals.referral_id) as total")
+                )
+                ->groupBy(DB::raw("LOWER(patients.gender)"))
                 ->get();
 
-            // ✅ Convert to simple associative array
+            // ✅ Convert to associative array and normalize keys
             $genderStats = $referralsByGender->pluck('total', 'gender')->toArray();
 
-            // ✅ Ensure both genders always appear (even if zero)
-            $genderStats = array_merge(['Female' => 0, 'Male' => 0], $genderStats);
+            // Normalize to Title Case keys (Female, Male)
+            $femaleCount = $genderStats['female'] ?? 0;
+            $maleCount   = $genderStats['male'] ?? 0;
 
             return response([
-                'Male' => $genderStats['Male'],
-                'Female' => $genderStats['Female'],
+                'Male'   => $maleCount,
+                'Female' => $femaleCount,
                 'statusCode' => 200,
             ], 200);
 
