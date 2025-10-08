@@ -143,6 +143,48 @@ class ReportController extends Controller
     }
 
 
+    public function referralsReportByGendr()
+    {
+        $user = auth()->user();
+
+        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF'])) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        try {
+            // ✅ Query referrals grouped by gender
+            $referralsByGender = DB::table("referrals")
+                ->join("patients", "patients.patient_id", '=', "referrals.patient_id")
+                ->whereNull("referrals.deleted_at")
+                ->select("patients.gender", DB::raw("COUNT(referrals.referral_id) as total"))
+                ->groupBy("patients.gender")
+                ->get();
+
+            // ✅ Convert to simple associative array
+            $genderStats = $referralsByGender->pluck('total', 'gender')->toArray();
+
+            // ✅ Ensure both genders always appear (even if zero)
+            $genderStats = array_merge(['Female' => 0, 'Male' => 0], $genderStats);
+
+            return response([
+                'Male' => $genderStats['Male'],
+                'Female' => $genderStats['Female'],
+                'statusCode' => 200,
+            ], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'statusCode' => 401
+            ]);
+        }
+    }
+
+
+
     /**
      * Report by hospital
      */

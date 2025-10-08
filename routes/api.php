@@ -216,5 +216,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Dasboard Counts
     Route::get('/dashboard/totals', [PatientListController::class, 'getOverallCounts']);
 
+    // referrals by Gender
+    Route::get('reports/referralsByGender', [ReportController::class, 'referralsReportByGendr']);
+
 
 });
