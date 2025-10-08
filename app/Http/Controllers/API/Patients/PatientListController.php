@@ -255,14 +255,15 @@ class PatientListController extends Controller
         $totalMedicalBoards = \App\Models\PatientList::count();
         $totalPatients = \App\Models\Patient::count();
         $totalReferrals = \App\Models\Referral::count();
+        $totalHospitals = \App\Models\Hospital::count();
 
         return response([
             'data' => [
                 'total_medical_boards' => $totalMedicalBoards,
                 'total_patients'       => $totalPatients,
                 'total_referrals'      => $totalReferrals,
+                'total_hospitals'      => $totalHospitals,
             ],
-            'message' => 'Counts retrieved successfully',
             'statusCode' => 200
         ], 200);
     }
