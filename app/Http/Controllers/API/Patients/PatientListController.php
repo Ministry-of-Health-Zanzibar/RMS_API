@@ -21,6 +21,14 @@ class PatientListController extends Controller
      */
     public function index()
     {
+        $user = auth()->user();
+        if (!$user->can('View Patient List')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $lists = PatientList::withTrashed([
             'creator',
             'patients' => function ($q) {
@@ -40,6 +48,14 @@ class PatientListController extends Controller
      */
     public function store(Request $request)
     {
+        $user = auth()->user();
+        if (!$user->can('Create Patient List')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         // Validate request
         $request->validate([
             'patient_list_title' => ['required', 'string', 'max:255'],
@@ -86,6 +102,14 @@ class PatientListController extends Controller
      */
     public function show($id)
     {
+        $user = auth()->user();
+        if (!$user->can('View Patient List')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $list = PatientList::with([
             'creator',
             'patients'
@@ -109,6 +133,14 @@ class PatientListController extends Controller
      */
     public function updatePatientList(Request $request, $id)
     {
+        $user = auth()->user();
+        if (!$user->can('Update Patient List')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $list = PatientList::findOrFail($id);
 
         // Validate request
@@ -161,6 +193,14 @@ class PatientListController extends Controller
      */
     public function destroy($id)
     {
+        $user = auth()->user();
+        if (!$user->can('Delete Patient List')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $list = PatientList::withTrashed()->find($id);
 
         if (!$list) {
@@ -208,13 +248,12 @@ class PatientListController extends Controller
     public function getAllPatientsByPatientListId(int $patientListId)
     {
         $user = auth()->user();
-        // if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER'])
-        //     || !$user->can('View Patient')) {
-        //     return response([
-        //         'message' => 'Forbidden',
-        //         'statusCode' => 403
-        //     ], 403);
-        // }
+        if (!$user->can('View Patient List')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
 
         $list = PatientList::with([
             'patients.files',

@@ -49,7 +49,7 @@ class BillItemController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Bill Item')) {
+        if (!$user->can('View Bill Item')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -105,10 +105,7 @@ class BillItemController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-            !$user->can('Create Bill Item')
-        ) {
+        if (!$user->can('Create Bill Item')){
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -202,7 +199,7 @@ class BillItemController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Bill Item')) {
+        if (!$user->can('View Bill Item')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -273,7 +270,7 @@ class BillItemController extends Controller
     public function update(Request $request, int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Update Bill Item')) {
+        if (!$user->can('Update Bill Item')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -338,7 +335,7 @@ class BillItemController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Delete Bill Item')) {
+        if (!$user->can('Delete Bill Item')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -389,7 +386,7 @@ class BillItemController extends Controller
     public function restore(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Update Bill Item')) {
+        if (!$user->can('Update Bill Item')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403

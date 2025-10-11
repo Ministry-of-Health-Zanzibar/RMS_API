@@ -22,26 +22,32 @@ class MedicalBoadController extends Controller
      */
     public function index()
     {
-           $user = auth()->user();
+        $user = auth()->user();
+        if (!$user->can('View Patient List')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
 
-         if ($user->hasAnyRole(['ROLE ADMIN'])) {   
+        if ($user->hasAnyRole(['ROLE ADMIN'])) {
+        $lists = PatientList::with([
+            'creator', 
+            'patients' => function ($q) {
+                $q->with('geographicalLocation'); 
+            }
+        ])
+        ->withTrashed()
+        ->get();
+        } else {
             $lists = PatientList::with([
-                'creator', 
-                'patients' => function ($q) {
-                    $q->with('geographicalLocation'); 
-                }
-            ])
-            ->withTrashed()
-            ->get();
-         } else {
-             $lists = PatientList::with([
-                'creator', 
-                'patients' => function ($q) {
-                    $q->with('geographicalLocation'); 
-                }
-            ])
-            ->get();
-         }
+            'creator', 
+            'patients' => function ($q) {
+                $q->with('geographicalLocation'); 
+            }
+        ])
+        ->get();
+        }
 
         return response([
             'data' => $lists,
@@ -54,6 +60,13 @@ class MedicalBoadController extends Controller
      */
     public function store(Request $request)
     {
+        $user = auth()->user();
+        if (!$user->can('Create Patient List')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
         // Validate request
         $validator = Validator::make($request->all(), [
             'patient_list_title' => ['required', 'string', 'max:255'],
@@ -108,6 +121,14 @@ class MedicalBoadController extends Controller
      */
     public function show($id)
     {
+        $user = auth()->user();
+        if (!$user->can('View Patient List')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $list = PatientList::with([
             'creator',
             'patients'
@@ -131,6 +152,14 @@ class MedicalBoadController extends Controller
      */
     public function updatePatientList(Request $request, $id)
     {
+        $user = auth()->user();
+        if (!$user->can('Update Patient List')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $list = PatientList::findOrFail($id);
 
         // Validate input
@@ -169,6 +198,14 @@ class MedicalBoadController extends Controller
      */
     public function destroy($id)
     {
+        $user = auth()->user();
+        if (!$user->can('Delete Patient List')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $list = PatientList::find($id);
 
         if (!$list) {
@@ -214,13 +251,12 @@ class MedicalBoadController extends Controller
     public function getAllPatientsByPatientListId(int $patientListId)
     {
         $user = auth()->user();
-        // if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) 
-        //     || !$user->can('View Patient')) {
-        //     return response([
-        //         'message' => 'Forbidden',
-        //         'statusCode' => 403
-        //     ], 403);
-        // }
+        if (!$user->can('View Patient List')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
 
         $list = PatientList::with([
             'patients.files',

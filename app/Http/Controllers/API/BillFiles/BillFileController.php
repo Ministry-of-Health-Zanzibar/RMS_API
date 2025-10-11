@@ -16,7 +16,7 @@ class BillFileController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View BillFile|Create BillFile|Update BillFile|Delete BillFile', ['only' => ['index','store','show','update','destroy']]);
+        // $this->middleware('permission:View BillFile|Create BillFile|Update BillFile|Delete BillFile', ['only' => ['index','store','show','update','destroy']]);
     }
 
     /**
@@ -60,7 +60,7 @@ class BillFileController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View BillFile')) {
+        if (!$user->can('View BillFile')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -132,7 +132,7 @@ class BillFileController extends Controller
         $user = auth()->user();
 
         // Authorization
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('Create BillFile')) {
+        if (!$user->can('Create BillFile')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -230,7 +230,7 @@ class BillFileController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View BillFile')) {
+        if (!$user->can('View BillFile')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -316,7 +316,7 @@ class BillFileController extends Controller
         $user = auth()->user();
 
         // Authorization
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('Update BillFile')) {
+        if (!$user->can('Update BillFile')) {
             return response()->json([
                 'message'    => 'Forbidden',
                 'statusCode' => 403
@@ -422,7 +422,7 @@ class BillFileController extends Controller
     public function destroy($id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('Delete BillFile')) {
+        if (!$user->can('Delete BillFile')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -449,7 +449,7 @@ class BillFileController extends Controller
     public function getBillFilesForPayment()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View BillFile')) {
+        if (!$user->can('View BillFile')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -498,7 +498,7 @@ class BillFileController extends Controller
     public function getBillFilesByHospitalId(int $hospitalId)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View BillFile')) {
+        if (!$user->can('View BillFile')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -575,7 +575,7 @@ class BillFileController extends Controller
     public function getBillFilesGroupByHospitals()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View BillFile')) {
+        if (!$user->can('View BillFile')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -601,7 +601,7 @@ class BillFileController extends Controller
                 ")
             )
             ->groupBy('h.hospital_name', 'h.hospital_id')
-    //         // ->havingRaw('SUM(CAST(bf.bill_file_amount AS DECIMAL(15,2))) = COALESCE(SUM(b.total_amount), 0)')
+            // ->havingRaw('SUM(CAST(bf.bill_file_amount AS DECIMAL(15,2))) = COALESCE(SUM(b.total_amount), 0)')
             ->get();
 
         $billFilesArray = $billFiles->map(fn($item) => (array) $item)->toArray();

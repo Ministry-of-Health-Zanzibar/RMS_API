@@ -62,7 +62,7 @@ class HospitalController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF','ROLE DG OFFICER']) || !$user->can('View Hospital')) {
+        if (!$user->can('View Hospital')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -126,7 +126,7 @@ class HospitalController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Create Hospital')) {
+        if (!$user->can('Create Hospital')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -208,7 +208,7 @@ class HospitalController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF','ROLE DG OFFICER']) || !$user->can('View Hospital')) {
+        if (!$user->can('View Hospital')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -279,7 +279,7 @@ class HospitalController extends Controller
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Update Hospital')) {
+        if (!$user->can('Update Hospital')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -364,7 +364,7 @@ class HospitalController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Delete Hospital')) {
+        if (!$user->can('Delete Hospital')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -427,7 +427,7 @@ class HospitalController extends Controller
      */
     public function unBlockHospital(int $id)
     {
-
+        
         $hospital = Hospital::withTrashed()->find($id);
 
         if (!$hospital) {
@@ -488,7 +488,7 @@ class HospitalController extends Controller
     public function getReferredHospitals()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('View Hospital')) {
+        if (!$user->can('View Hospital')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403

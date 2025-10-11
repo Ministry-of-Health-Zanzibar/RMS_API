@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
             nationality_info::class,
             permission_info::class,
             user_info::class,
-            admin_info::class,
+            // admin_info::class,
             national_role::class,
             //dg_role::class,
             batch_year::class,

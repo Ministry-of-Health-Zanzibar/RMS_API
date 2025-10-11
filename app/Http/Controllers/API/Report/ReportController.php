@@ -5,9 +5,16 @@ namespace App\Http\Controllers\API\Report;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+
 
 class ReportController extends Controller
 {
+     public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+    }
+
     public function referralReport(int $patientId)
     {
         $user = auth()->user();
@@ -155,7 +162,7 @@ class ReportController extends Controller
         }
 
         try {
-            // ✅ Group by lowercase gender (case-insensitive)
+            // Group by lowercase gender (case-insensitive)
             $referralsByGender = DB::table("referrals")
                 ->join("patients", "patients.patient_id", '=', "referrals.patient_id")
                 ->whereNull("referrals.deleted_at")
@@ -166,7 +173,7 @@ class ReportController extends Controller
                 ->groupBy(DB::raw("LOWER(patients.gender)"))
                 ->get();
 
-            // ✅ Convert to associative array and normalize keys
+            // Convert to associative array and normalize keys
             $genderStats = $referralsByGender->pluck('total', 'gender')->toArray();
 
             // Normalize to Title Case keys (Female, Male)

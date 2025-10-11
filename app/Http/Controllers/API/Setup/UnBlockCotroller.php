@@ -35,7 +35,7 @@ class UnBlockCotroller extends Controller
      */
     public function unblock_adminHierache(string $admin_hierarchy_id)
     {
-        if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Setup Management'))
+        if(auth()->user()->can('Setup Management'))
         {
             $user_id = auth()->user()->id;
 

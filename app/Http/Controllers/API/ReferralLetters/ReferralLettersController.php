@@ -65,7 +65,7 @@ class ReferralLettersController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View ReferralLetter')) {
+        if (!$user->can('View ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -131,8 +131,7 @@ class ReferralLettersController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) 
-            || !$user->can('Create ReferralLetter')) {
+        if (!$user->can('Create ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -230,7 +229,7 @@ class ReferralLettersController extends Controller
     public function show(string $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View ReferralLetter')) {
+        if (!$user->can('View ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -303,8 +302,7 @@ class ReferralLettersController extends Controller
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) 
-            || !$user->can('Create ReferralLetter')) {
+        if (!$user->can('Create ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -390,7 +388,7 @@ class ReferralLettersController extends Controller
     public function destroy(string $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Delete ReferralLetter')) {
+        if (!$user->can('Delete ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -519,7 +517,7 @@ class ReferralLettersController extends Controller
     public function getReferralCommentByReferralId(int $referralId)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View ReferralLetter')) {
+        if (!$user->can('View ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403

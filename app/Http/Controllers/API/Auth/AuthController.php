@@ -57,7 +57,7 @@ class AuthController extends Controller
                 }
             }
 
-             //return new UserResource(auth()->user());
+            //return new UserResource(auth()->user());
             $token = auth()->user()->createToken('auth_token')->plainTextToken;
             $data = array(
                 'user_id' => auth()->user()->id,

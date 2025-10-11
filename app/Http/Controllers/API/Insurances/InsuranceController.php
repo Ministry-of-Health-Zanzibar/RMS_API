@@ -62,7 +62,7 @@ class InsuranceController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('View Insurance')) {
+        if (!$user->can('View Insurance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -127,7 +127,7 @@ class InsuranceController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Create Insurance')) {
+        if (!$user->can('Create Insurance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -204,7 +204,7 @@ class InsuranceController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('View Insurance')) {
+        if (!$user->can('View Insurance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -274,7 +274,7 @@ class InsuranceController extends Controller
     public function update(Request $request, int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Create Insurance')) {
+        if (!$user->can('Create Insurance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -351,7 +351,7 @@ class InsuranceController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Delete Insurance')) {
+        if (!$user->can('Delete Insurance')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403

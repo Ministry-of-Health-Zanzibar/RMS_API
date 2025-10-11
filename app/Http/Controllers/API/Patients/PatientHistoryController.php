@@ -31,8 +31,12 @@ class PatientHistoryController extends Controller
      */
     public function index()
     {
-        if (!auth()->user()->hasRole('admin') && !auth()->user()->can('view patient histories')) {
-            return response()->json(['status' => 'error', 'message' => 'Unauthorized', 'statusCode' => 401], 401);
+        if (!auth()->user()->can('view patient histories')) {
+            return response()->json([
+                'status' => 'error', 
+                'message' => 'Unauthorized', 
+                'statusCode' => 401
+            ], 401);
         }
 
         $histories = PatientHistory::with('patient')->get();

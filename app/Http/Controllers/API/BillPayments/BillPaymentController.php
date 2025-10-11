@@ -6,14 +6,28 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\BillPayment;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+
 
 class BillPaymentController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+    }
     /**
      * Display all Bill Payments
      */
     public function index()
     {
+        $user = auth()->user();
+        if (!$user->can('View Payment')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $billPayments = BillPayment::with(['bill', 'payment'])->get();
 
         return response()->json([
@@ -28,6 +42,14 @@ class BillPaymentController extends Controller
      */
     public function store(Request $request)
     {
+        $user = auth()->user();
+        if (!$user->can('Create Payment')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'bill_id'          => 'required|exists:bills,bill_id',
             'payment_id'       => 'required|exists:payments,payment_id',
@@ -79,6 +101,14 @@ class BillPaymentController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        $user = auth()->user();
+        if (!$user->can('Update Payment')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $billPayment = BillPayment::find($id);
 
         if (!$billPayment) {
@@ -118,6 +148,14 @@ class BillPaymentController extends Controller
      */
     public function destroy(string $id)
     {
+        $user = auth()->user();
+        if (!$user->can('Delete Payment')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $billPayment = BillPayment::find($id);
 
         if (!$billPayment) {

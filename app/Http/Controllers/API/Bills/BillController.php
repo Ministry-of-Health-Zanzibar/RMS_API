@@ -132,10 +132,7 @@ class BillController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-            !$user->can('View Bill')
-        ) {
+        if (!$user->can('View Bill')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -209,10 +206,7 @@ class BillController extends Controller
         $user = auth()->user();
 
         // Authorization
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-            !$user->can('Create Bill')
-        ) {
+        if (!$user->can('Create Bill')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -392,10 +386,7 @@ class BillController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-            !$user->can('View Bill')
-        ) {
+        if (!$user->can('View Bill')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -536,10 +527,7 @@ class BillController extends Controller
     public function getBillsByBillFile(int $id)
     {
         $user = auth()->user();
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-            !$user->can('View Bill')
-        ) {
+        if (!$user->can('View Bill')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -623,8 +611,7 @@ class BillController extends Controller
         $user = auth()->user();
 
         // Ensure user has role AND permission
-        if (!($user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) 
-            && $user->can('Update Bill'))) {
+        if (!$user->can('Update Bill')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -695,7 +682,7 @@ class BillController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('Delete Bill')) {
+        if (!$user->can('Delete Bill')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -842,10 +829,7 @@ class BillController extends Controller
     public function getPatientBillAndPaymentByBillId(int $billId)
     {
         $user = auth()->user();
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-            !$user->can('View Patient')
-        ) {
+        if (!$user->can('View Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403

@@ -81,11 +81,11 @@ class user_info extends Seeder
             'Delete Bill',
             'View Bill',
 
-            'Payment Module',
-            'Create Payment',
-            'Update Payment',
-            'Delete Payment',
-            'View Payment',
+            // 'Payment Module',
+            // 'Create Payment',
+            // 'Update Payment',
+            // 'Delete Payment',
+            // 'View Payment',
         ];
 
         $dgPermissions = collect();

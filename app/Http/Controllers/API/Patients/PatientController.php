@@ -71,12 +71,12 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        // if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Patient')) {
-        //     return response([
-        //         'message' => 'Forbidden',
-        //         'statusCode' => 403
-        //     ], 403);
-        // }
+        if (!$user->can('View Patient')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
 
         if (!$user->can('View Patient')) {
             return response([
@@ -167,12 +167,12 @@ class PatientController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        // if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('Create Patient')) {
-        //     return response([
-        //         'message' => 'Forbidden',
-        //         'statusCode' => 403
-        //     ], 403);
-        // }
+        if (!$user->can('Create Patient')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
 
         $data = Validator::make($request->all(),[
             'name' => ['required', 'string'],
@@ -307,12 +307,12 @@ class PatientController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        // if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('View Patient')) {
-        //     return response([
-        //         'message' => 'Forbidden',
-        //         'statusCode' => 403
-        //     ], 403);
-        // }
+        if (!$user->can('View Patient')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
 
         $patient = Patient::with([
                 'patientList',          // patient list info
@@ -399,12 +399,12 @@ class PatientController extends Controller
         $user = auth()->user();
 
         // Authorization check
-        // if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('Update Patient')) {
-        //     return response()->json([
-        //         'message' => 'Forbidden',
-        //         'statusCode' => 403
-        //     ], 403);
-        // }
+        if (!$user->can('Update Patient')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
 
         // Validation
         $validator = Validator::make($request->all(), [
@@ -521,12 +521,12 @@ class PatientController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        // if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) || !$user->can('Delete Patient')) {
-        //     return response([
-        //         'message' => 'Forbidden',
-        //         'statusCode' => 403
-        //     ], 403);
-        // }
+        if (!$user->can('Delete Patient')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
 
         $patient = Patient::withTrashed()->find($id);
 
@@ -602,6 +602,8 @@ class PatientController extends Controller
         ], 200);
     }
 
+
+    
     public function getAllPatientsWithInsurance(int $patient_id)
     {
         $patient = Patient::with('insurances')
@@ -621,17 +623,20 @@ class PatientController extends Controller
         return response()->json($patient);
     }
 
+
+
+
     public function getAllPatients()
     {
         $user = auth()->user();
 
-        // if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Patient')) 
-        // {
-        //     return response([
-        //         'message' => 'Forbidden',
-        //         'statusCode' => 403
-        //     ], 403);
-        // }
+        if (!$user->can('View Patient')) 
+        {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
 
         $patients = Patient::with([
             'patientList',

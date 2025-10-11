@@ -25,7 +25,7 @@ class HospitalLetterController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View Hospital Letter')) {
+        if (!$user->can('View Hospital Letter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -128,10 +128,7 @@ class HospitalLetterController extends Controller
         $user = auth()->user();
 
         // Permission check
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF']) ||
-            !$user->can('Create Hospital Letter')
-        ) {
+        if (!$user->can('Create Hospital Letter')) {
             return response()->json([
                 'message'    => 'Forbidden',
                 'statusCode' => 403
@@ -285,7 +282,7 @@ class HospitalLetterController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('View Hospital Letter')) {
+        if (!$user->can('View Hospital Letter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -312,6 +309,14 @@ class HospitalLetterController extends Controller
      */
     public function updateHospitalLetter(Request $request, $id)
     {
+        $user = auth()->user();
+        if (!$user->can('Update Hospital Letter')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $letter = HospitalLetter::findOrFail($id);
 
         // Get referral linked to this letter (supporting parent_referral_id)
@@ -428,7 +433,7 @@ class HospitalLetterController extends Controller
     public function destroy($id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN','ROLE NATIONAL','ROLE STAFF']) || !$user->can('Delete Hospital Letter')) {
+        if (!$user->can('Delete Hospital Letter')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
