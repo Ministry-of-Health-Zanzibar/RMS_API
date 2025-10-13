@@ -49,7 +49,7 @@ class PatientList extends Model
                 default => substr($boardTypeFull, 0, 3),
             };
 
-            // Use user-provided no_of_patients, no auto-generation
+            // Use user-provided no_of_patients, default to 1
             $numPatients = $patientList->no_of_patients ?? 1;
 
             // Format to 3 digits for reference number
@@ -65,6 +65,15 @@ class PatientList extends Model
 
             // Save full board_type
             $patientList->board_type = $boardTypeFull;
+
+            // Generate patient_list_title automatically if not provided
+            if (empty($patientList->patient_list_title)) {
+                $patientList->patient_list_title = sprintf(
+                    'Medical Board Meeting of %s at %s',
+                    now()->format('d-m-Y'),
+                    now()->format('h:i:s a')
+                );
+            }
         });
     }
 

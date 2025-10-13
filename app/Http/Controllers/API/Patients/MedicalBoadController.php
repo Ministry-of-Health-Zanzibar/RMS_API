@@ -131,7 +131,7 @@ class MedicalBoadController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'patient_list_title' => ['required', 'string', 'max:255'],
+            // 'patient_list_title' => ['required', 'string', 'max:255'],
             'board_type' => ['required', 'in:Emergency,Routine'],
             'patient_list_file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
             'board_date' => ['required', 'string'],
@@ -156,7 +156,7 @@ class MedicalBoadController extends Controller
         }
 
         $list = PatientList::create([
-            'patient_list_title' => $request->patient_list_title,
+            // 'patient_list_title' => $request->patient_list_title,
             'patient_list_file' => $filePath,
             'board_type' => $request->board_type,
             'board_date' => $request->board_date ?? null,
