@@ -15,8 +15,8 @@ class PatientList extends Model
 
     protected $table = 'patient_lists';
     protected $primaryKey = 'patient_list_id';
-    public $incrementing = true;      // since it's bigIncrements
-    protected $keyType = 'int';       // integer PK
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
         'reference_number',
@@ -39,42 +39,35 @@ class PatientList extends Model
                 $patientList->board_date = now()->toDateString();
             }
 
-            // Convert board_type to uppercase and shorten it
-            $boardType = strtoupper($patientList->board_type ?? 'ROUTINE');
+            // Full board type
+            $boardTypeFull = ucfirst(strtolower($patientList->board_type ?? 'Routine'));
 
-            // Abbreviate
-            $boardTypeAbbr = match ($boardType) {
-                'EMERGENCY' => 'EMG',
-                'ROUTINE' => 'RTN',
-                default => substr($boardType, 0, 3),
+            // Abbreviation for reference number
+            $boardTypeAbbr = match ($boardTypeFull) {
+                'Emergency' => 'EMG',
+                'Routine' => 'RTN',
+                default => substr($boardTypeFull, 0, 3),
             };
 
-            // Determine next patient number for that day/type
-            $latest = self::whereDate('board_date', $patientList->board_date)
-                ->where('board_type', $patientList->board_type)
-                ->max('no_of_patients');
+            // Use user-provided no_of_patients, no auto-generation
+            $numPatients = $patientList->no_of_patients ?? 1;
 
-            $patientList->no_of_patients = $latest ? $latest + 1 : 1;
-
-            // Format to 3 digits (e.g. 005)
-            $formattedNum = str_pad($patientList->no_of_patients, 3, '0', STR_PAD_LEFT);
+            // Format to 3 digits for reference number
+            $formattedNum = str_pad($numPatients, 3, '0', STR_PAD_LEFT);
 
             // Generate reference number
             $patientList->reference_number = sprintf(
-                'REFF-%s-%s-%s',
+                'MBM-%s-%s-%s',
                 $patientList->board_date,
                 $boardTypeAbbr,
                 $formattedNum
             );
 
-            // Save back the abbreviation version (optional)
-            $patientList->board_type = $boardTypeAbbr;
+            // Save full board_type
+            $patientList->board_type = $boardTypeFull;
         });
     }
 
-    /**
-     * Relationship: PatientList belongs to a User (creator).
-     */
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -85,9 +78,6 @@ class PatientList extends Model
         return $this->hasMany(Patient::class, 'patient_list_id', 'patient_list_id');
     }
 
-    /**
-     * Configure Spatie Activity Log
-     */
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['*']);

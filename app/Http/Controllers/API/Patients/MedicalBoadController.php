@@ -134,8 +134,8 @@ class MedicalBoadController extends Controller
             'patient_list_title' => ['required', 'string', 'max:255'],
             'board_type' => ['required', 'in:Emergency,Routine'],
             'patient_list_file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
-            'board_date' => ['nullable', 'date'],
-            'no_of_patients' => ['nullable', 'integer', 'min:1'],
+            'board_date' => ['required', 'string'],
+            'no_of_patients' => ['required', 'integer', 'min:1'],
         ]);
 
         if ($validator->fails()) {

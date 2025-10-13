@@ -13,12 +13,11 @@ return new class extends Migration
     {
         Schema::create('diagnoses', function (Blueprint $table) {
             $table->id('diagnosis_id'); // auto increment primary key
-        $table->uuid('uuid')->unique(); // uuid auto generated
-        $table->string('name');
-        $table->string('code');
-        $table->unsignedBigInteger('created_by');
-        $table->softDeletes();
-        $table->timestamps();
+            $table->uuid('diagnosis_uuid')->unique(); // uuid auto generated
+            $table->string('diagnosis_name');
+            $table->string('diagnosis_code');
+            $table->softDeletes();
+            $table->timestamps();   
         });
     }
 
