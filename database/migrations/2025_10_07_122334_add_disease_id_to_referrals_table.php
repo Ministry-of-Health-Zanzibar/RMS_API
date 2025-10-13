@@ -15,10 +15,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('disease_id')->nullable()->after('reason_id');
 
             // Add foreign key constraint to diseases table
-            $table->foreign('disease_id')
-                  ->references('disease_id')
-                  ->on('diseases')
-                  ->onDelete('cascade');
+            $table->foreign('disease_id')->references('disease_id')->on('diseases')->onDelete('cascade');
         });
     }
 

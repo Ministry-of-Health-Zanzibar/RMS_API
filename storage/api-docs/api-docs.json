@@ -5685,6 +5685,475 @@
                 }
             }
         },
+        "/api/patient-lists": {
+            "get": {
+                "tags": [
+                    "Patient Lists"
+                ],
+                "summary": "Get all patient lists",
+                "operationId": "94fc3229fc9d244623bcd11e49ba4011",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "patient_list_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "patient_list_title": {
+                                                        "type": "string"
+                                                    },
+                                                    "board_type": {
+                                                        "type": "string"
+                                                    },
+                                                    "board_date": {
+                                                        "type": "string",
+                                                        "format": "date"
+                                                    },
+                                                    "no_of_patients": {
+                                                        "type": "integer"
+                                                    },
+                                                    "reference_number": {
+                                                        "type": "string"
+                                                    },
+                                                    "patient_list_file": {
+                                                        "type": "string"
+                                                    },
+                                                    "created_by": {
+                                                        "type": "integer"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Patient Lists"
+                ],
+                "summary": "Create a new patient list",
+                "operationId": "f8b13457cb4beca365f9dd51b1838c8f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "patient_list_title": {
+                                        "type": "string",
+                                        "example": "Morning Board"
+                                    },
+                                    "board_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "EMG",
+                                            "RTN"
+                                        ],
+                                        "example": "EMG"
+                                    },
+                                    "board_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-10-13"
+                                    },
+                                    "no_of_patients": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "patient_list_file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Patient list created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Patient list created successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "patient_list_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "patient_list_title": {
+                                                    "type": "string",
+                                                    "example": "Morning Board"
+                                                },
+                                                "board_type": {
+                                                    "type": "string",
+                                                    "example": "EMG"
+                                                },
+                                                "board_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2025-10-13"
+                                                },
+                                                "no_of_patients": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "reference_number": {
+                                                    "type": "string",
+                                                    "example": "REFF-2025-10-13-EMG-005"
+                                                },
+                                                "patient_list_file": {
+                                                    "type": "string",
+                                                    "example": "uploads/patientLists/patient_list_13-10-2025.pdf"
+                                                },
+                                                "created_by": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-10-13T12:00:00Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-10-13T12:00:00Z"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/patient-lists/{id}": {
+            "get": {
+                "tags": [
+                    "Patient Lists"
+                ],
+                "summary": "Get a patient list by ID",
+                "operationId": "dd135bea03c59ca66f3fae0876fee244",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Patient list ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Patient list retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Patient list retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "patient_list_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "patient_list_title": {
+                                                    "type": "string",
+                                                    "example": "Morning Board"
+                                                },
+                                                "board_type": {
+                                                    "type": "string",
+                                                    "example": "EMG"
+                                                },
+                                                "board_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2025-10-13"
+                                                },
+                                                "no_of_patients": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "reference_number": {
+                                                    "type": "string",
+                                                    "example": "REFF-2025-10-13-EMG-005"
+                                                },
+                                                "patient_list_file": {
+                                                    "type": "string",
+                                                    "example": "uploads/patientLists/patient_list_13-10-2025.pdf"
+                                                },
+                                                "created_by": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-10-13T12:00:00Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-10-13T12:00:00Z"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Patient list not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Patient Lists"
+                ],
+                "summary": "Update a patient list",
+                "operationId": "c3bcf9ea73f62020867def0f4018cf26",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Patient list ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "patient_list_title": {
+                                        "type": "string"
+                                    },
+                                    "board_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Emergency",
+                                            "Routine"
+                                        ]
+                                    },
+                                    "board_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "no_of_patients": {
+                                        "type": "integer"
+                                    },
+                                    "patient_list_file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Patient list updated successfully"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Patient Lists"
+                ],
+                "summary": "Soft delete a patient list",
+                "operationId": "5337c93eaed5f505555d1f8545ac93ca",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Patient list ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Patient list deleted successfully"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Patient list not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/patient-lists/unblock/{id}": {
+            "put": {
+                "tags": [
+                    "Patient Lists"
+                ],
+                "summary": "Restore a soft-deleted patient list",
+                "operationId": "4a2b1a6559f8356ae16a839e355d1fd7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Patient list ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Patient list restored successfully"
+                    },
+                    "404": {
+                        "description": "Patient list not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/patient-lists/{id}/patients": {
+            "get": {
+                "tags": [
+                    "Patient Lists"
+                ],
+                "summary": "Get all patients by patient list ID",
+                "operationId": "85f4c078b690168fd862da462abf2390",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Patient list ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of patients"
+                    },
+                    "404": {
+                        "description": "Patient list not found"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/patients": {
             "get": {
                 "tags": [
@@ -11806,6 +12275,10 @@
         {
             "name": "insurances",
             "description": "insurances"
+        },
+        {
+            "name": "Patient Lists",
+            "description": "Patient Lists"
         },
         {
             "name": "patients",
