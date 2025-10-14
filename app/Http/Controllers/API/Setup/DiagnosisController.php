@@ -70,10 +70,10 @@ class DiagnosisController extends Controller
         $diagnoses = Diagnosis::latest()->get();
 
         return response()->json([
-            'status' => true,
             'message' => 'Diagnoses retrieved successfully',
-            'data' => $diagnoses
-        ]);
+            'data' => $diagnoses,
+            'statusCode' => 200,
+        ], 200);
     }
 
     /**
@@ -106,9 +106,9 @@ class DiagnosisController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'status' => false,
                 'message' => __('Validation failed'),
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
+                'statusCode' => 422,
             ], 422);
         }
 
@@ -119,10 +119,10 @@ class DiagnosisController extends Controller
         ]);
 
         return response()->json([
-            'status' => true,
             'message' => __('Diagnosis created successfully'),
-            'data' => $diagnosis
-        ], 201);
+            'data' => $diagnosis,
+            'statusCode' => 200,
+        ], 200);
     }
 
     /**
@@ -154,16 +154,16 @@ class DiagnosisController extends Controller
 
         if (!$diagnosis) {
             return response()->json([
-                'status' => false,
                 'message' => __('Diagnosis not found'),
+                'statusCode' => 404,
             ], 404);
         }
 
         return response()->json([
-            'status' => true,
             'message' => __('Diagnosis retrieved successfully'),
-            'data' => $diagnosis
-        ]);
+            'data' => $diagnosis,
+            'statusCode' => 200,
+        ], 200);
     }
 
     /**
@@ -200,8 +200,8 @@ class DiagnosisController extends Controller
 
         if (!$diagnosis) {
             return response()->json([
-                'status' => false,
                 'message' => __('Diagnosis not found'),
+                'statusCode' => 404,
             ], 404);
         }
 
@@ -212,19 +212,19 @@ class DiagnosisController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'status' => false,
                 'message' => __('Validation failed'),
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
+                'statusCode' => 422,
             ], 422);
         }
 
         $diagnosis->update($request->only(['diagnosis_name', 'diagnosis_code']));
 
         return response()->json([
-            'status' => true,
             'message' => __('Diagnosis updated successfully'),
-            'data' => $diagnosis
-        ]);
+            'data' => $diagnosis,
+            'statusCode' => 200,
+        ], 200);
     }
 
     /**
@@ -256,17 +256,17 @@ class DiagnosisController extends Controller
 
         if (!$diagnosis) {
             return response()->json([
-                'status' => false,
                 'message' => __('Diagnosis not found'),
+                'statusCode' => 404,
             ], 404);
         }
 
         $diagnosis->delete();
 
         return response()->json([
-            'status' => true,
-            'message' => __('Diagnosis deleted successfully')
-        ]);
+            'message' => __('Diagnosis deleted successfully'),
+            'statusCode' => 200,
+        ], 200);
     }
 
     /**
@@ -302,7 +302,7 @@ class DiagnosisController extends Controller
                 'statusCode' => 403
             ], 403);
         }
-        
+
         // Validate file type
         $validator = Validator::make($request->all(), [
             'file' => 'required|mimes:xlsx,xls,csv'
@@ -310,9 +310,9 @@ class DiagnosisController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'status' => false,
                 'message' => __('Invalid file format. Allowed: xlsx, xls, csv'),
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
+                'statusCode' => 400,
             ], 400);
         }
 
@@ -349,17 +349,17 @@ class DiagnosisController extends Controller
             }
 
             return response()->json([
-                'status' => true,
                 'message' => __('Diagnoses imported successfully'),
-                'inserted' => $inserted
+                'inserted' => $inserted,
+                'statusCode' => 200,
             ], 200);
 
         } catch (\Exception $e) {
             Log::error('Diagnosis import failed: ' . $e->getMessage());
             return response()->json([
-                'status' => false,
                 'message' => __('Failed to import diagnoses'),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'statusCode' => 500,
             ], 500);
         }
     }
