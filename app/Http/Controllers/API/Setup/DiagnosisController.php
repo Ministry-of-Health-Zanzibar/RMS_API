@@ -271,6 +271,52 @@ class DiagnosisController extends Controller
 
     /**
      * @OA\Post(
+     *     path="/api/diagnoses/restore/{uuid}",
+     *     tags={"Diagnosis"},
+     *     summary="Restore a soft-deleted diagnosis",
+     *     @OA\Parameter(
+     *         name="uuid",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response=200, description="Diagnosis restored successfully"),
+     *     @OA\Response(response=404, description="Diagnosis not found"),
+     *     @OA\Response(response=403, description="Forbidden")
+     * )
+     */
+    public function restore($uuid)
+    {
+        // $user = auth()->user();
+        // if (!$user->can('Restore Diagnoses')) {
+        //     return response()->json([
+        //         'message' => 'Forbidden',
+        //         'statusCode' => 403
+        //     ], 403);
+        // }
+
+        // Fetch the trashed record
+        $diagnosis = Diagnosis::onlyTrashed()->where('uuid', $uuid)->first();
+
+        if (!$diagnosis) {
+            return response()->json([
+                'message' => __('Diagnosis not found or not deleted'),
+                'statusCode' => 404,
+            ], 404);
+        }
+
+        // Restore the diagnosis
+        $diagnosis->restore();
+
+        return response()->json([
+            'message' => __('Diagnosis restored successfully'),
+            'statusCode' => 200,
+            'data' => $diagnosis
+        ], 200);
+    }
+
+    /**
+     * @OA\Post(
      *     path="/api/diagnoses/import",
      *     tags={"Diagnosis"},
      *     summary="Bulk import diagnoses from Excel file",

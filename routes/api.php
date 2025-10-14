@@ -228,6 +228,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('{uuid}', [DiagnosisController::class, 'show']);
         Route::put('{uuid}', [DiagnosisController::class, 'update']);
         Route::delete('{uuid}', [DiagnosisController::class, 'destroy']);
+        Route::post('/restore/{uuid}', [DiagnosisController::class, 'restore']);
         Route::post('/import', [DiagnosisController::class, 'importExcel']);
     });
 

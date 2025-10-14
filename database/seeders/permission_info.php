@@ -150,6 +150,7 @@ class permission_info extends Seeder
             'Create Diagnoses',
             'Update Diagnoses',
             'Delete Diagnoses',
+            'Restore Diagnoses',
         ];
 
         foreach ($permissions as $permission) {
