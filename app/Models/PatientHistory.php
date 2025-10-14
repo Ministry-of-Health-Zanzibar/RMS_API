@@ -19,32 +19,33 @@ class PatientHistory extends Model
 
     protected $fillable = [
         'patient_id',
+        'diagnosis_id',
         'referring_doctor',
         'file_number',
         'referring_date',
         'history_of_presenting_illness',
         'physical_findings',
         'investigations',
-        'diagnosis',
         'management_done',
+        'board_comments',
         'history_file',
     ];
 
-    /**
-     * Relations
-     */
-
-    // Belongs to Patient
+    // Belongs to patient
     public function patient()
     {
         return $this->belongsTo(Patient::class, 'patient_id', 'patient_id');
     }
 
-    /**
-     * Activity log options
-     */
+    // Belongs to diagnosis
+    public function diagnosis()
+    {
+        return $this->belongsTo(Diagnosis::class, 'diagnosis_id', 'diagnosis_id');
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['*']);
     }
 }
+

@@ -29,6 +29,7 @@ return new class extends Migration
             $table->text('investigations')->nullable();
             $table->text('diagnosis')->nullable();
             $table->text('management_done')->nullable();
+            $table->text('board_comments')->nullable();
 
             // Attachments
             $table->string('history_file')->nullable();

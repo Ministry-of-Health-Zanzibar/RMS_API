@@ -121,8 +121,8 @@ class DiagnosisController extends Controller
         return response()->json([
             'message' => __('Diagnosis created successfully'),
             'data' => $diagnosis,
-            'statusCode' => 200,
-        ], 200);
+            'statusCode' => 201,
+        ], 201);
     }
 
     /**
