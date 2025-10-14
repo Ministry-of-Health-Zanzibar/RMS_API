@@ -16,7 +16,6 @@ class PatientController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Patient|Create Patient|Update Patient|Delete Patient', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
     }
 
     /**
@@ -177,13 +176,13 @@ class PatientController extends Controller
         $data = Validator::make($request->all(),[
             'name' => ['required', 'string'],
             'matibabu_card' => ['nullable', 'string'],
-            'date_of_birth' => ['nullable', 'string'],
-            'gender' => ['nullable', 'string'],
+            'date_of_birth' => ['required', 'string'],
+            'gender' => ['required', 'string'],
             'phone' => ['nullable', 'string'],
             'location_id' => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
             'job' => ['nullable', 'string'],
             'position' => ['nullable', 'string'],
-            'patient_list_id' => ['nullable', 'numeric', 'exists:patient_lists,patient_list_id'],
+            'patient_list_id' => ['required', 'numeric', 'exists:patient_lists,patient_list_id'],
             'patient_file.*' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'], // add file validation
             'description' => ['nullable', 'string'],
         ]);
@@ -443,7 +442,6 @@ class PatientController extends Controller
             'job'             => $request->input('job'),
             'position'        => $request->input('position'),
             'patient_list_id' => $request->input('patient_list_id'),
-            'created_by'      => Auth::id(),
         ]);
 
         // Handle single or multiple file uploads
