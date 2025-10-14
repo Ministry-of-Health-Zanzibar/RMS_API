@@ -78,7 +78,7 @@ class PatientList extends Model
 
             // Generate human-readable title
             $patientList->patient_list_title = sprintf(
-                'Medical Board Meeting of %s at %s',
+                'MBM of %s at %s',
                 $formattedDateForTitle,
                 now()->format('h:i a')
             );
