@@ -6772,12 +6772,44 @@
                     }
                 ]
             },
-            "put": {
+            "delete": {
+                "tags": [
+                    "Patient History"
+                ],
+                "summary": "Delete patient history",
+                "operationId": "13dae0bc31e9fa1fdb0b46d2eba2d7bd",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/patient-histories/update/{id}": {
+            "post": {
                 "tags": [
                     "Patient History"
                 ],
                 "summary": "Update patient history",
-                "operationId": "3bfa34f5a51e5a065eda216aa7d5e5d1",
+                "operationId": "a77b01896750133f711622edc1e26b4f",
                 "parameters": [
                     {
                         "name": "id",
@@ -6851,45 +6883,15 @@
                         "sanctum": []
                     }
                 ]
-            },
-            "delete": {
-                "tags": [
-                    "Patient History"
-                ],
-                "summary": "Delete patient history",
-                "operationId": "13dae0bc31e9fa1fdb0b46d2eba2d7bd",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Deleted successfully"
-                    },
-                    "403": {
-                        "description": "Forbidden"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
             }
         },
-        "/api/patient-histories/{id}/unblock": {
+        "/api/patient-histories/unblock/{id}": {
             "post": {
                 "tags": [
                     "Patient History"
                 ],
                 "summary": "Unblock a patient history",
-                "operationId": "3379c8ed515be0f66a29777aa7cb7d2f",
+                "operationId": "b10cafa27eea5dd92066c66e2930ee2b",
                 "parameters": [
                     {
                         "name": "id",

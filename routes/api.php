@@ -237,7 +237,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/', [PatientHistoryController::class, 'index']);
         Route::get('/{id}', [PatientHistoryController::class, 'show']);
         Route::post('/', [PatientHistoryController::class, 'store']);
-        Route::put('/{id}', [PatientHistoryController::class, 'update']);
+        Route::post('/update/{id}', [PatientHistoryController::class, 'update']);
         Route::delete('/{id}', [PatientHistoryController::class, 'destroy']);
         Route::post('/{id}/unblock', [PatientHistoryController::class, 'unblock']);
     });

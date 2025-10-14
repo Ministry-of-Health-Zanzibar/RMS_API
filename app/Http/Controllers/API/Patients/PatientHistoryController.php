@@ -209,8 +209,8 @@ class PatientHistoryController extends Controller
     }
 
     /**
-     * @OA\Put(
-     *     path="/api/patient-histories/{id}",
+     * @OA\Post(
+     *     path="/api/patient-histories/update/{id}",
      *     tags={"Patient History"},
      *     summary="Update patient history",
      *     security={{"sanctum":{}}},
