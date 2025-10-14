@@ -6633,37 +6633,47 @@
         "/api/patient-histories": {
             "get": {
                 "tags": [
-                    "Patient Histories"
+                    "Patient History"
                 ],
                 "summary": "Get all patient histories",
                 "operationId": "d7bc086ca6fb11cfb7b422d4e5f9a907",
                 "responses": {
                     "200": {
-                        "description": "List of patient histories"
+                        "description": "List of patient histories",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Patient History"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
                     }
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             },
             "post": {
                 "tags": [
-                    "Patient Histories"
+                    "Patient History"
                 ],
-                "summary": "Create a patient history",
+                "summary": "Create a new patient history",
                 "operationId": "b00facf26a299564ebd3f72eaa5fbd33",
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "multipart/form-data": {
+                        "application/json": {
                             "schema": {
                                 "required": [
-                                    "patient_id",
-                                    "referring_doctor",
-                                    "file_number",
-                                    "referring_date"
+                                    "patient_id"
                                 ],
                                 "properties": {
                                     "patient_id": {
@@ -6688,14 +6698,19 @@
                                     "investigations": {
                                         "type": "string"
                                     },
-                                    "diagnosis": {
-                                        "type": "string"
-                                    },
                                     "management_done": {
                                         "type": "string"
                                     },
+                                    "board_comments": {
+                                        "type": "string"
+                                    },
+                                    "diagnosis_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    },
                                     "history_file": {
-                                        "description": "Upload file (pdf, jpg, jpeg, png)",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -6710,12 +6725,15 @@
                         "description": "Patient history created successfully"
                     },
                     "422": {
-                        "description": "Validation error"
+                        "description": "Validation failed"
+                    },
+                    "403": {
+                        "description": "Forbidden"
                     }
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             }
@@ -6723,7 +6741,7 @@
         "/api/patient-histories/{id}": {
             "get": {
                 "tags": [
-                    "Patient Histories"
+                    "Patient History"
                 ],
                 "summary": "Get a patient history by ID",
                 "operationId": "73b6a99e077bf2a04e2bbfb9cd843d9d",
@@ -6739,54 +6757,27 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Patient history data"
+                        "description": "Patient history found"
                     },
                     "404": {
-                        "description": "Patient history not found"
+                        "description": "Not found"
+                    },
+                    "403": {
+                        "description": "Forbidden"
                     }
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             },
-            "delete": {
+            "put": {
                 "tags": [
-                    "Patient Histories"
+                    "Patient History"
                 ],
-                "summary": "Delete a patient history",
-                "operationId": "13dae0bc31e9fa1fdb0b46d2eba2d7bd",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Patient history deleted successfully"
-                    },
-                    "404": {
-                        "description": "Patient history not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "patch": {
-                "tags": [
-                    "Patient Histories"
-                ],
-                "summary": "Update a patient history",
-                "operationId": "1286bd725af7d1974f538f92ba69eb57",
+                "summary": "Update patient history",
+                "operationId": "3bfa34f5a51e5a065eda216aa7d5e5d1",
                 "parameters": [
                     {
                         "name": "id",
@@ -6798,14 +6789,11 @@
                     }
                 ],
                 "requestBody": {
-                    "required": false,
+                    "required": true,
                     "content": {
-                        "multipart/form-data": {
+                        "application/json": {
                             "schema": {
                                 "properties": {
-                                    "patient_id": {
-                                        "type": "integer"
-                                    },
                                     "referring_doctor": {
                                         "type": "string"
                                     },
@@ -6825,11 +6813,17 @@
                                     "investigations": {
                                         "type": "string"
                                     },
-                                    "diagnosis": {
-                                        "type": "string"
-                                    },
                                     "management_done": {
                                         "type": "string"
+                                    },
+                                    "board_comments": {
+                                        "type": "string"
+                                    },
+                                    "diagnosis_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
                                     },
                                     "history_file": {
                                         "type": "string",
@@ -6843,18 +6837,80 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Patient history updated successfully"
+                        "description": "Updated successfully"
                     },
                     "422": {
-                        "description": "Validation error"
+                        "description": "Validation failed"
                     },
-                    "404": {
-                        "description": "Patient history not found"
+                    "403": {
+                        "description": "Forbidden"
                     }
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Patient History"
+                ],
+                "summary": "Delete patient history",
+                "operationId": "13dae0bc31e9fa1fdb0b46d2eba2d7bd",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/patient-histories/{id}/unblock": {
+            "post": {
+                "tags": [
+                    "Patient History"
+                ],
+                "summary": "Unblock a patient history",
+                "operationId": "3379c8ed515be0f66a29777aa7cb7d2f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Unblocked successfully"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
                     }
                 ]
             }
@@ -9293,6 +9349,36 @@
                     },
                     "404": {
                         "description": "Diagnosis not found"
+                    }
+                }
+            }
+        },
+        "/api/diagnoses/restore/{uuid}": {
+            "post": {
+                "tags": [
+                    "Diagnosis"
+                ],
+                "summary": "Restore a soft-deleted diagnosis",
+                "operationId": "24ac13c498a8548db9bd6c9a32f614be",
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Diagnosis restored successfully"
+                    },
+                    "404": {
+                        "description": "Diagnosis not found"
+                    },
+                    "403": {
+                        "description": "Forbidden"
                     }
                 }
             }
@@ -12397,6 +12483,60 @@
     },
     "components": {
         "schemas": {
+            "Patient History": {
+                "required": [
+                    "patient_id"
+                ],
+                "properties": {
+                    "patient_histories_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "patient_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "referring_doctor": {
+                        "type": "string",
+                        "example": "Dr. John Doe"
+                    },
+                    "file_number": {
+                        "type": "string",
+                        "example": "F12345"
+                    },
+                    "referring_date": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "history_of_presenting_illness": {
+                        "type": "string"
+                    },
+                    "physical_findings": {
+                        "type": "string"
+                    },
+                    "investigations": {
+                        "type": "string"
+                    },
+                    "management_done": {
+                        "type": "string"
+                    },
+                    "board_comments": {
+                        "type": "string"
+                    },
+                    "history_file": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "Diagnosis": {
                 "title": "Diagnosis",
                 "required": [
@@ -12439,10 +12579,6 @@
         }
     },
     "tags": [
-        {
-            "name": "Patient Histories",
-            "description": "CRUD operations for patient histories"
-        },
         {
             "name": "Payments",
             "description": "API Endpoints for Managing Payments"
@@ -12502,6 +12638,10 @@
         {
             "name": "patients",
             "description": "patients"
+        },
+        {
+            "name": "Patient History",
+            "description": "Patient History"
         },
         {
             "name": "reasons",

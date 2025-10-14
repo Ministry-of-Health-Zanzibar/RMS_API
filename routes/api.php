@@ -18,6 +18,7 @@ use App\Http\Controllers\API\Report\ReportController;
 use App\Http\Controllers\API\Treatments\TreatmentController;
 use App\Http\Controllers\API\Patients\PatientListController;
 use App\Http\Controllers\API\Patients\MedicalBoadController;
+use App\Http\Controllers\API\Patients\PatientHistoryController;
 use App\Http\Controllers\API\HospitalLetters\HospitalLetterController;
 use App\Http\Controllers\API\Followups\FollowupController;
 use App\Http\Controllers\API\BillFiles\BillFileController;
@@ -231,5 +232,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/restore/{uuid}', [DiagnosisController::class, 'restore']);
         Route::post('/import', [DiagnosisController::class, 'importExcel']);
     });
+
+    Route::prefix('patient-histories')->group(function () {
+        Route::get('/', [PatientHistoryController::class, 'index']);
+        Route::get('/{id}', [PatientHistoryController::class, 'show']);
+        Route::post('/', [PatientHistoryController::class, 'store']);
+        Route::put('/{id}', [PatientHistoryController::class, 'update']);
+        Route::delete('/{id}', [PatientHistoryController::class, 'destroy']);
+        Route::post('/{id}/unblock', [PatientHistoryController::class, 'unblock']);
+    });
+
 
 });

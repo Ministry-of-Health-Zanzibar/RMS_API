@@ -27,7 +27,6 @@ return new class extends Migration
             $table->text('history_of_presenting_illness')->nullable();
             $table->text('physical_findings')->nullable();
             $table->text('investigations')->nullable();
-            $table->text('diagnosis')->nullable();
             $table->text('management_done')->nullable();
             $table->text('board_comments')->nullable();
 

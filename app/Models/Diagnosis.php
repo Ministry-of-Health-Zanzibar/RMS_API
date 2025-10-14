@@ -30,4 +30,15 @@ class Diagnosis extends Model
             }
         });
     }
+
+    public function patientHistories()
+    {
+        return $this->belongsToMany(
+            PatientHistory::class,
+            'history_diagnosis',          // pivot table
+            'diagnosis_id',               // foreign key on pivot (this model)
+            'patient_histories_id'        // related key on pivot (other model)
+        );
+    }
+
 }

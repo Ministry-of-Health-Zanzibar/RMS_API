@@ -19,7 +19,6 @@ class PatientHistory extends Model
 
     protected $fillable = [
         'patient_id',
-        'diagnosis_id',
         'referring_doctor',
         'file_number',
         'referring_date',
@@ -31,21 +30,32 @@ class PatientHistory extends Model
         'history_file',
     ];
 
-    // Belongs to patient
+    /**
+     * Belongs to Patient
+     */
     public function patient()
     {
         return $this->belongsTo(Patient::class, 'patient_id', 'patient_id');
     }
 
-    // Belongs to diagnosis
-    public function diagnosis()
+    /**
+     * Many-to-many relation with Diagnosis via pivot table
+     */
+    public function diagnoses()
     {
-        return $this->belongsTo(Diagnosis::class, 'diagnosis_id', 'diagnosis_id');
+        return $this->belongsToMany(
+            Diagnosis::class,
+            'history_diagnosis',
+            'patient_histories_id',
+            'diagnosis_id'
+        );
     }
 
+    /**
+     * Activity log options
+     */
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['*']);
     }
 }
-

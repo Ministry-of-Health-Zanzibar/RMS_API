@@ -3,15 +3,38 @@
 namespace App\Http\Controllers\API\Patients;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\PatientHistory;
+use App\Models\Diagnosis;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @OA\Tag(
- *     name="Patient Histories",
- *     description="CRUD operations for patient histories"
+ *     name="Patient History",
+ *     description="API Endpoints for managing patient histories"
+ * )
+ */
+
+/**
+ * @OA\Schema(
+ *     schema="Patient History",
+ *     type="object",
+ *     required={"patient_id"},
+ *     @OA\Property(property="patient_histories_id", type="integer", example=1),
+ *     @OA\Property(property="patient_id", type="integer", example=1),
+ *     @OA\Property(property="referring_doctor", type="string", example="Dr. John Doe"),
+ *     @OA\Property(property="file_number", type="string", example="F12345"),
+ *     @OA\Property(property="referring_date", type="string", format="date"),
+ *     @OA\Property(property="history_of_presenting_illness", type="string"),
+ *     @OA\Property(property="physical_findings", type="string"),
+ *     @OA\Property(property="investigations", type="string"),
+ *     @OA\Property(property="management_done", type="string"),
+ *     @OA\Property(property="board_comments", type="string"),
+ *     @OA\Property(property="history_file", type="string"),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
  * )
  */
 class PatientHistoryController extends Controller
@@ -20,30 +43,40 @@ class PatientHistoryController extends Controller
     {
         $this->middleware('auth:sanctum');
     }
+
     /**
      * @OA\Get(
      *     path="/api/patient-histories",
-     *     tags={"Patient Histories"},
+     *     tags={"Patient History"},
      *     summary="Get all patient histories",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(response=200, description="List of patient histories")
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of patient histories",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Patient History")
+     *         )
+     *     ),
+     *     @OA\Response(response=403, description="Forbidden")
      * )
      */
     public function index()
     {
-        if (!auth()->user()->can('view patient histories')) {
+        $user = auth()->user();
+        if (!$user->can('View Patient History')) {
             return response()->json([
-                'status' => 'error', 
-                'message' => 'Unauthorized', 
-                'statusCode' => 401
-            ], 401);
+                'message' => 'Forbidden', 
+                'statusCode' => 403
+            ], 403);
         }
 
-        $histories = PatientHistory::with('patient')->get();
+        $histories = PatientHistory::with('patient', 'diagnoses')->latest()->get();
 
         return response()->json([
-            'status' => 'success',
+            'status' => true,
             'data' => $histories,
+            'message' => 'Patient histories retrieved successfully',
             'statusCode' => 200
         ]);
     }
@@ -51,235 +84,282 @@ class PatientHistoryController extends Controller
     /**
      * @OA\Post(
      *     path="/api/patient-histories",
-     *     tags={"Patient Histories"},
-     *     summary="Create a patient history",
-     *     security={{"bearerAuth":{}}},
+     *     tags={"Patient History"},
+     *     summary="Create a new patient history",
+     *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="multipart/form-data",
-     *             @OA\Schema(
-     *                 required={"patient_id","referring_doctor","file_number","referring_date"},
-     *                 @OA\Property(property="patient_id", type="integer"),
-     *                 @OA\Property(property="referring_doctor", type="string"),
-     *                 @OA\Property(property="file_number", type="string"),
-     *                 @OA\Property(property="referring_date", type="string", format="date"),
-     *                 @OA\Property(property="history_of_presenting_illness", type="string"),
-     *                 @OA\Property(property="physical_findings", type="string"),
-     *                 @OA\Property(property="investigations", type="string"),
-     *                 @OA\Property(property="diagnosis", type="string"),
-     *                 @OA\Property(property="management_done", type="string"),
-     *                 @OA\Property(property="history_file", type="string", format="binary", description="Upload file (pdf, jpg, jpeg, png)")
-     *             )
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"patient_id"},
+     *             @OA\Property(property="patient_id", type="integer"),
+     *             @OA\Property(property="referring_doctor", type="string"),
+     *             @OA\Property(property="file_number", type="string"),
+     *             @OA\Property(property="referring_date", type="string", format="date"),
+     *             @OA\Property(property="history_of_presenting_illness", type="string"),
+     *             @OA\Property(property="physical_findings", type="string"),
+     *             @OA\Property(property="investigations", type="string"),
+     *             @OA\Property(property="management_done", type="string"),
+     *             @OA\Property(property="board_comments", type="string"),
+     *             @OA\Property(property="diagnosis_ids", type="array", @OA\Items(type="integer")),
+     *             @OA\Property(property="history_file", type="string", format="binary")
      *         )
      *     ),
      *     @OA\Response(response=201, description="Patient history created successfully"),
-     *     @OA\Response(response=422, description="Validation error")
+     *     @OA\Response(response=422, description="Validation failed"),
+     *     @OA\Response(response=403, description="Forbidden")
      * )
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->hasRole('admin') && !auth()->user()->can('create patient histories')) {
-            return response()->json(['status' => 'error', 'message' => 'Unauthorized', 'statusCode' => 401], 401);
+        $user = auth()->user();
+        if (!$user->can('Create Patient History')) {
+            return response()->json([
+                'message' => 'Forbidden', 
+                'statusCode' => 403
+            ], 403);
         }
 
         $validator = Validator::make($request->all(), [
-            'patient_id' => ['required', 'exists:patients,patient_id'],
-            'referring_doctor' => ['required', 'string', 'max:255'],
-            'file_number' => ['required', 'string', 'max:255'],
-            'referring_date' => ['required', 'date'],
-            'history_of_presenting_illness' => ['nullable', 'string'],
-            'physical_findings' => ['nullable', 'string'],
-            'investigations' => ['nullable', 'string'],
-            'diagnosis' => ['nullable', 'string'],
-            'management_done' => ['nullable', 'string'],
-            'history_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'patient_id' => 'required|exists:patients,patient_id',
+            'referring_doctor' => 'nullable|string',
+            'file_number' => 'nullable|string',
+            'referring_date' => 'nullable|date',
+            'history_of_presenting_illness' => 'nullable|string',
+            'physical_findings' => 'nullable|string',
+            'investigations' => 'nullable|string',
+            'management_done' => 'nullable|string',
+            'board_comments' => 'nullable|string',
+            'diagnosis_ids' => 'required|array',
+            'diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
+            'history_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
+            return response()->json([
+                'status'=>'error',
+                'errors'=>$validator->errors(),
+                'statusCode'=>422
+            ],422);
         }
 
-        DB::beginTransaction();
         try {
-            $filePath = null;
+            $data = $request->only([
+                'patient_id', 'referring_doctor', 'file_number', 'referring_date',
+                'history_of_presenting_illness','physical_findings','investigations',
+                'management_done','board_comments'
+            ]);
+            $data['created_by'] = Auth::id();
+
             if ($request->hasFile('history_file')) {
                 $file = $request->file('history_file');
-                $extension = $file->getClientOriginalExtension();
-                $newFileName = 'patient_history_' . date('h-i-s_a_d-m-Y') . '.' . $extension;
-                $file->move(public_path('uploads/patientLists/'), $newFileName);
-                $filePath = 'uploads/patientLists/' . $newFileName;
+                $fileName = 'history_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('uploads/historyFiles/'), $fileName);
+                $data['history_file'] = 'uploads/historyFiles/' . $fileName;
             }
 
-            $history = PatientHistory::create(array_merge(
-                $request->only([
-                    'patient_id', 'referring_doctor', 'file_number', 'referring_date',
-                    'history_of_presenting_illness', 'physical_findings', 'investigations',
-                    'diagnosis', 'management_done'
-                ]),
-                ['history_file' => $filePath]
-            ));
+            $history = PatientHistory::create($data);
 
-            DB::commit();
+            if ($request->has('diagnosis_ids')) {
+                $history->diagnoses()->sync($request->diagnosis_ids);
+            }
 
             return response()->json([
-                'status' => 'success',
+                'status' => true,
+                'data' => $history->load('patient', 'diagnoses'),
                 'message' => 'Patient history created successfully',
-                'data' => $history->load('patient'),
                 'statusCode' => 201
-            ], 201);
-
+            ]);
         } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['status' => 'error', 'message' => 'Internal Server Error', 'error' => $e->getMessage(), 'statusCode' => 500], 500);
+            Log::error('Patient history creation failed: ' . $e->getMessage());
+            return response()->json(['status'=>false,'message'=>'Creation failed','error'=>$e->getMessage(),'statusCode'=>500],500);
         }
     }
 
     /**
      * @OA\Get(
      *     path="/api/patient-histories/{id}",
-     *     tags={"Patient Histories"},
+     *     tags={"Patient History"},
      *     summary="Get a patient history by ID",
-     *     security={{"bearerAuth":{}}},
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Patient history data"),
-     *     @OA\Response(response=404, description="Patient history not found")
+     *     @OA\Response(response=200, description="Patient history found"),
+     *     @OA\Response(response=404, description="Not found"),
+     *     @OA\Response(response=403, description="Forbidden")
      * )
      */
     public function show($id)
     {
-        if (!auth()->user()->hasRole('admin') && !auth()->user()->can('view patient histories')) {
-            return response()->json(['status' => 'error', 'message' => 'Unauthorized', 'statusCode' => 401], 401);
+        $user = auth()->user();
+        if (!$user->can('View Patient History')) {
+            return response()->json([
+                'message' => 'Forbidden', 
+                'statusCode' => 403
+            ], 403);
         }
 
-        $history = PatientHistory::with('patient')->find($id);
-        if (!$history) {
-            return response()->json(['status' => 'error', 'message' => 'Patient history not found', 'statusCode' => 404], 404);
-        }
+        $history = PatientHistory::with('patient','diagnoses')->findOrFail($id);
 
-        return response()->json(['status' => 'success', 'data' => $history, 'statusCode' => 200]);
+        return response()->json([
+            'status' => true,
+            'data' => $history,
+            'message' => 'Patient history retrieved successfully',
+            'statusCode' => 200
+        ]);
     }
 
     /**
-     * @OA\Patch(
+     * @OA\Put(
      *     path="/api/patient-histories/{id}",
-     *     tags={"Patient Histories"},
-     *     summary="Update a patient history",
-     *     security={{"bearerAuth":{}}},
+     *     tags={"Patient History"},
+     *     summary="Update patient history",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\RequestBody(
-     *         required=false,
-     *         @OA\MediaType(
-     *             mediaType="multipart/form-data",
-     *             @OA\Schema(
-     *                 @OA\Property(property="patient_id", type="integer"),
-     *                 @OA\Property(property="referring_doctor", type="string"),
-     *                 @OA\Property(property="file_number", type="string"),
-     *                 @OA\Property(property="referring_date", type="string", format="date"),
-     *                 @OA\Property(property="history_of_presenting_illness", type="string"),
-     *                 @OA\Property(property="physical_findings", type="string"),
-     *                 @OA\Property(property="investigations", type="string"),
-     *                 @OA\Property(property="diagnosis", type="string"),
-     *                 @OA\Property(property="management_done", type="string"),
-     *                 @OA\Property(property="history_file", type="string", format="binary")
-     *             )
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="referring_doctor", type="string"),
+     *             @OA\Property(property="file_number", type="string"),
+     *             @OA\Property(property="referring_date", type="string", format="date"),
+     *             @OA\Property(property="history_of_presenting_illness", type="string"),
+     *             @OA\Property(property="physical_findings", type="string"),
+     *             @OA\Property(property="investigations", type="string"),
+     *             @OA\Property(property="management_done", type="string"),
+     *             @OA\Property(property="board_comments", type="string"),
+     *             @OA\Property(property="diagnosis_ids", type="array", @OA\Items(type="integer")),
+     *             @OA\Property(property="history_file", type="string", format="binary")
      *         )
      *     ),
-     *     @OA\Response(response=200, description="Patient history updated successfully"),
-     *     @OA\Response(response=422, description="Validation error"),
-     *     @OA\Response(response=404, description="Patient history not found")
+     *     @OA\Response(response=200, description="Updated successfully"),
+     *     @OA\Response(response=422, description="Validation failed"),
+     *     @OA\Response(response=403, description="Forbidden")
      * )
      */
     public function update(Request $request, $id)
     {
-        if (!auth()->user()->hasRole('admin') && !auth()->user()->can('update patient histories')) {
-            return response()->json(['status' => 'error', 'message' => 'Unauthorized', 'statusCode' => 401], 401);
+        $user = auth()->user();
+        if (!$user->can('Update Patient History')) {
+            return response()->json(['message' => 'Forbidden','statusCode'=>403],403);
         }
 
-        $history = PatientHistory::find($id);
-        if (!$history) {
-            return response()->json(['status' => 'error', 'message' => 'Patient history not found', 'statusCode' => 404], 404);
-        }
+        $history = PatientHistory::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'patient_id' => ['sometimes', 'exists:patients,patient_id'],
-            'referring_doctor' => ['sometimes', 'string', 'max:255'],
-            'file_number' => ['sometimes', 'string', 'max:255'],
-            'referring_date' => ['sometimes', 'date'],
-            'history_of_presenting_illness' => ['nullable', 'string'],
-            'physical_findings' => ['nullable', 'string'],
-            'investigations' => ['nullable', 'string'],
-            'diagnosis' => ['nullable', 'string'],
-            'management_done' => ['nullable', 'string'],
-            'history_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'referring_doctor' => 'nullable|string',
+            'file_number' => 'nullable|string',
+            'referring_date' => 'nullable|date',
+            'history_of_presenting_illness' => 'nullable|string',
+            'physical_findings' => 'nullable|string',
+            'investigations' => 'nullable|string',
+            'management_done' => 'nullable|string',
+            'board_comments' => 'nullable|string',
+            'diagnosis_ids' => 'nullable|array',
+            'diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
+            'history_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
+            return response()->json([
+                'status'=>'error',
+                'errors'=>$validator->errors(),
+                'statusCode'=>422
+            ],422);
         }
 
-        DB::beginTransaction();
         try {
-            foreach ($request->only([
-                'patient_id', 'referring_doctor', 'file_number', 'referring_date',
-                'history_of_presenting_illness', 'physical_findings', 'investigations',
-                'diagnosis', 'management_done'
-            ]) as $field => $value) {
-                $history->{$field} = $value;
-            }
+            $data = $request->only([
+                'referring_doctor','file_number','referring_date','history_of_presenting_illness',
+                'physical_findings','investigations','management_done','board_comments'
+            ]);
 
             if ($request->hasFile('history_file')) {
+                if ($history->history_file && file_exists(public_path($history->history_file))) {
+                    unlink(public_path($history->history_file));
+                }
                 $file = $request->file('history_file');
-                $extension = $file->getClientOriginalExtension();
-                $newFileName = 'patient_history_' . date('h-i-s_a_d-m-Y') . '.' . $extension;
-                $file->move(public_path('uploads/patientLists/'), $newFileName);
-                $history->history_file = 'uploads/patientLists/' . $newFileName;
+                $fileName = 'history_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('uploads/historyFiles/'), $fileName);
+                $data['history_file'] = 'uploads/historyFiles/' . $fileName;
             }
 
-            $history->save();
-            DB::commit();
+            $history->update($data);
+
+            if ($request->has('diagnosis_ids')) {
+                $history->diagnoses()->sync($request->diagnosis_ids);
+            }
 
             return response()->json([
-                'status' => 'success',
+                'status' => true,
+                'data' => $history->load('patient','diagnoses'),
                 'message' => 'Patient history updated successfully',
-                'data' => $history->load('patient'),
                 'statusCode' => 200
-            ], 200);
-
+            ]);
         } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['status' => 'error', 'message' => 'Internal Server Error', 'error' => $e->getMessage(), 'statusCode' => 500], 500);
+            Log::error('Patient history update failed: ' . $e->getMessage());
+            return response()->json(['status'=>false,'message'=>'Update failed','error'=>$e->getMessage(),'statusCode'=>500],500);
         }
     }
 
     /**
      * @OA\Delete(
      *     path="/api/patient-histories/{id}",
-     *     tags={"Patient Histories"},
-     *     summary="Delete a patient history",
-     *     security={{"bearerAuth":{}}},
+     *     tags={"Patient History"},
+     *     summary="Delete patient history",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Patient history deleted successfully"),
-     *     @OA\Response(response=404, description="Patient history not found")
+     *     @OA\Response(response=200, description="Deleted successfully"),
+     *     @OA\Response(response=403, description="Forbidden")
      * )
      */
     public function destroy($id)
     {
-        if (!auth()->user()->hasRole('admin') && !auth()->user()->can('delete patient histories')) {
-            return response()->json(['status' => 'error', 'message' => 'Unauthorized', 'statusCode' => 401], 401);
+        $user = auth()->user();
+        if (!$user->can('Delete Patient History')) {
+            return response()->json([
+                'message'=>'Forbidden',
+                'statusCode'=>403
+            ],403);
         }
 
-        $history = PatientHistory::find($id);
-        if (!$history) {
-            return response()->json(['status' => 'error', 'message' => 'Patient history not found', 'statusCode' => 404], 404);
-        }
-
+        $history = PatientHistory::findOrFail($id);
         $history->delete();
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Patient history deleted successfully',
-            'statusCode' => 200
+            'status'=>true,
+            'message'=>'Patient history deleted successfully',
+            'statusCode'=>200
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/patient-histories/unblock/{id}",
+     *     tags={"Patient History"},
+     *     summary="Unblock a patient history",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Unblocked successfully"),
+     *     @OA\Response(response=403, description="Forbidden")
+     * )
+     */
+    public function unblock($id)
+    {
+        $user = auth()->user();
+        if (!$user->can('Update Patient History')) {
+            return response()->json([
+                'message'=>'Forbidden',
+                'statusCode'=>403
+            ],403);
+        }
+
+        $history = PatientHistory::withTrashed()->findOrFail($id);
+        $history->restore();
+
+        return response()->json([
+            'status'=>true,
+            'message'=>'Patient history unblocked successfully',
+            'statusCode'=>200
         ]);
     }
 }
