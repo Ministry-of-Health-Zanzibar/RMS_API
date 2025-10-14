@@ -5776,10 +5776,10 @@
                                     "board_type": {
                                         "type": "string",
                                         "enum": [
-                                            "EMG",
-                                            "RTN"
+                                            "Emergency",
+                                            "Routine"
                                         ],
-                                        "example": "EMG"
+                                        "example": "Emergency"
                                     },
                                     "board_date": {
                                         "type": "string",
@@ -5827,7 +5827,7 @@
                                                 },
                                                 "board_type": {
                                                     "type": "string",
-                                                    "example": "EMG"
+                                                    "example": "Emergency"
                                                 },
                                                 "board_date": {
                                                     "type": "string",
@@ -9158,6 +9158,182 @@
                 }
             }
         },
+        "/api/diagnoses": {
+            "get": {
+                "tags": [
+                    "Diagnosis"
+                ],
+                "summary": "Get all diagnoses",
+                "operationId": "ba78a02d552bb7a3c9cb5b348acdd08a",
+                "responses": {
+                    "200": {
+                        "description": "List of diagnoses",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Diagnosis"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Diagnosis"
+                ],
+                "summary": "Create a new diagnosis",
+                "operationId": "3c4453f29fa6ec828397ab6acdf8b21c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Diagnosis"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Diagnosis created successfully"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                }
+            }
+        },
+        "/api/diagnoses/{uuid}": {
+            "get": {
+                "tags": [
+                    "Diagnosis"
+                ],
+                "summary": "Get diagnosis by UUID",
+                "operationId": "644e3f3c115d11ea5275eb6161f3d8d6",
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Diagnosis found"
+                    },
+                    "404": {
+                        "description": "Diagnosis not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Diagnosis"
+                ],
+                "summary": "Update an existing diagnosis",
+                "operationId": "3917408c82601e453d932d436439a752",
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Diagnosis"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Diagnosis updated successfully"
+                    },
+                    "404": {
+                        "description": "Diagnosis not found"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Diagnosis"
+                ],
+                "summary": "Delete a diagnosis",
+                "operationId": "4249b4969a4e24af0b47295f7df350cd",
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Diagnosis deleted successfully"
+                    },
+                    "404": {
+                        "description": "Diagnosis not found"
+                    }
+                }
+            }
+        },
+        "/api/diagnoses/import": {
+            "post": {
+                "tags": [
+                    "Diagnosis"
+                ],
+                "summary": "Bulk import diagnoses from Excel file",
+                "operationId": "47a20b1a5042a60deb97e443200a8413",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "description": "Excel file with diagnosis_name and diagnosis_code columns",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Diagnoses imported successfully"
+                    },
+                    "400": {
+                        "description": "Invalid file"
+                    }
+                }
+            }
+        },
         "/api/locations": {
             "get": {
                 "tags": [
@@ -12219,6 +12395,49 @@
             }
         }
     },
+    "components": {
+        "schemas": {
+            "Diagnosis": {
+                "title": "Diagnosis",
+                "required": [
+                    "diagnosis_name",
+                    "diagnosis_code"
+                ],
+                "properties": {
+                    "diagnosis_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "uuid": {
+                        "type": "string",
+                        "example": "c0a80123-45ab-67cd-89ef-1234567890ab"
+                    },
+                    "diagnosis_name": {
+                        "type": "string",
+                        "example": "Diabetes"
+                    },
+                    "diagnosis_code": {
+                        "type": "string",
+                        "example": "E11"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            }
+        }
+    },
     "tags": [
         {
             "name": "Patient Histories",
@@ -12307,6 +12526,10 @@
         {
             "name": "countries",
             "description": "countries"
+        },
+        {
+            "name": "Diagnosis",
+            "description": "Diagnosis"
         },
         {
             "name": "locations",

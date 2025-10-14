@@ -145,6 +145,11 @@ class permission_info extends Seeder
             'Create Patient History',
             'Update Patient History',
             'Delete Patient History',
+
+            'View Diagnoses',
+            'Create Diagnoses',
+            'Update Diagnoses',
+            'Delete Diagnoses',
         ];
 
         foreach ($permissions as $permission) {

@@ -27,6 +27,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Reasons\ReasonController;
 use App\Http\Controllers\API\Payments\PaymentController;
+use App\Http\Controllers\API\Setup\DiagnosisController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -219,5 +221,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // referrals by Gender
     Route::get('reports/referralsByGender', [ReportController::class, 'referralsReportByGendr']);
 
+    Route::prefix('diagnoses')->group(function () {
+        Route::get('/', [DiagnosisController::class, 'index']);
+        Route::post('/', [DiagnosisController::class, 'store']);
+        Route::get('{uuid}', [DiagnosisController::class, 'show']);
+        Route::put('{uuid}', [DiagnosisController::class, 'update']);
+        Route::delete('{uuid}', [DiagnosisController::class, 'destroy']);
+        Route::post('/import', [DiagnosisController::class, 'importExcel']);
+    });
 
 });

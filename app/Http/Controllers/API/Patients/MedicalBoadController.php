@@ -87,7 +87,7 @@ class MedicalBoadController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="patient_list_title", type="string", example="Morning Board"),
-     *             @OA\Property(property="board_type", type="string", enum={"EMG","RTN"}, example="EMG"),
+     *             @OA\Property(property="board_type", type="string", enum={"Emergency","Routine"}, example="Emergency"),
      *             @OA\Property(property="board_date", type="string", format="date", example="2025-10-13"),
      *             @OA\Property(property="no_of_patients", type="integer", example=5),
      *             @OA\Property(property="patient_list_file", type="string", format="binary")
@@ -105,7 +105,7 @@ class MedicalBoadController extends Controller
      *                 type="object",
      *                 @OA\Property(property="patient_list_id", type="integer", example=1),
      *                 @OA\Property(property="patient_list_title", type="string", example="Morning Board"),
-     *                 @OA\Property(property="board_type", type="string", example="EMG"),
+     *                 @OA\Property(property="board_type", type="string", example="Emergency"),
      *                 @OA\Property(property="board_date", type="string", format="date", example="2025-10-13"),
      *                 @OA\Property(property="no_of_patients", type="integer", example=5),
      *                 @OA\Property(property="reference_number", type="string", example="REFF-2025-10-13-EMG-005"),
@@ -131,7 +131,6 @@ class MedicalBoadController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            // 'patient_list_title' => ['required', 'string', 'max:255'],
             'board_type' => ['required', 'in:Emergency,Routine'],
             'patient_list_file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
             'board_date' => ['required', 'string'],
@@ -156,7 +155,6 @@ class MedicalBoadController extends Controller
         }
 
         $list = PatientList::create([
-            // 'patient_list_title' => $request->patient_list_title,
             'patient_list_file' => $filePath,
             'board_type' => $request->board_type,
             'board_date' => $request->board_date ?? null,
