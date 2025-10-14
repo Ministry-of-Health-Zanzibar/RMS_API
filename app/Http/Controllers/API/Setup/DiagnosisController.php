@@ -67,7 +67,7 @@ class DiagnosisController extends Controller
             ], 403);
         }
 
-        $diagnoses = Diagnosis::latest()->get();
+        $diagnoses = Diagnosis::withTrashed()->latest()->get();
 
         return response()->json([
             'message' => 'Diagnoses retrieved successfully',
