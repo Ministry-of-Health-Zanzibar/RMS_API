@@ -55,12 +55,16 @@ class PatientList extends Model
             // Format to 3 digits for reference number
             $formattedNum = str_pad($numPatients, 3, '0', STR_PAD_LEFT);
 
-            // Generate reference number
+            // Format data for referance
+            $formattedDateForRef = \Carbon\Carbon::parse($patientList->board_date)->format('d/m/Y');
+
+            // Generate reference number (safe for URLs/files)
             $patientList->reference_number = sprintf(
-                'MBM-%s-%s-%s',
-                $patientList->board_date,
-                $boardTypeAbbr,
-                $formattedNum
+                'MBM-%s-%s-%s-%s',
+                $formattedDateForRef,    // e.g. 2025-10-14
+                $boardTypeAbbr,            // EMG or RTN
+                $formattedNum,             // 005
+                now()->format('H:i')       // 14-30 (no colon)
             );
 
             // Save full board_type
@@ -69,7 +73,7 @@ class PatientList extends Model
             // Generate patient_list_title automatically if not provided
             if (empty($patientList->patient_list_title)) {
                 $patientList->patient_list_title = sprintf(
-                    'Medical Board Meeting of %s at %s',
+                    'MBM of %s at %s',
                     now()->format('d-m-Y'),
                     now()->format('h:i:s a')
                 );
