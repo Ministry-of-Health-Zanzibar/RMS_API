@@ -181,7 +181,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Patient Lis
     Route::resource('patient-lists', MedicalBoadController::class);
     // Route::post('patient-lists/with-trash/{id}', [PatientListController::class, 'patientListWithTrash']);
-    Route::post('patient-lists/update/{id}', [PatientListController::class, 'updatePatientList']);
+    Route::post('patient-lists/update/{id}', [MedicalBoadController::class, 'updatePatientList']);
+    // Route::post('patient-lists/update/{id}', [PatientListController::class, 'updatePatientList']);
     Route::patch('patient-lists/unblock/{id}', [PatientListController::class, 'unBlockParentList']);
     Route::get('patient-lists/body-form/{id}', [PatientListController::class, 'getAllPatientsByPatientListId']);
 

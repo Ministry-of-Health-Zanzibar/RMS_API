@@ -276,7 +276,6 @@ class MedicalBoadController extends Controller
         $list = PatientList::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'patient_list_title' => ['required', 'string', 'max:255'],
             'board_type' => ['nullable', 'in:Emergency,Routine'],
             'patient_list_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
             'board_date' => ['nullable', 'date'],
@@ -303,13 +302,46 @@ class MedicalBoadController extends Controller
             $filePath = 'uploads/patientLists/' . $newFileName;
         }
 
+        // Determine updated fields
+        $boardType = $request->board_type ?? $list->board_type;
+        $numPatients = $request->no_of_patients ?? $list->no_of_patients;
+        $boardDateInput = $request->board_date ?? $list->board_date;
+
+        // Parse board_date safely
+        try {
+            $boardDate = \Carbon\Carbon::parse($boardDateInput);
+        } catch (\Exception $e) {
+            $boardDate = \Carbon\Carbon::createFromTimestamp(strtotime($boardDateInput));
+        }
+
+        $formattedDateForRef = $boardDate->format('d/m/Y');
+        $formattedDateForTitle = $boardDate->format('d/m/Y');
+
+        $boardTypeAbbr = match (ucfirst(strtolower($boardType))) {
+            'Emergency' => 'EMG',
+            'Routine' => 'RTN',
+            default => substr($boardType, 0, 3),
+        };
+
+        // Update the model
         $list->update([
-            'patient_list_title' => $request->patient_list_title,
             'patient_list_file' => $filePath,
-            'board_type' => $request->board_type ?? $list->board_type,
-            'board_date' => $request->board_date ?? $list->board_date,
-            'no_of_patients' => $request->no_of_patients ?? $list->no_of_patients,
-            'updated_by' => Auth::id(),
+            'board_type' => $boardType,
+            'board_date' => $boardDate->toDateString(),
+            'no_of_patients' => $numPatients,
+            'reference_number' => sprintf(
+                'MBM-%s-%s-%s-%s',
+                $formattedDateForRef,
+                $boardTypeAbbr,
+                str_pad($numPatients, 3, '0', STR_PAD_LEFT),
+                now()->format('H-i')
+            ),
+            'patient_list_title' => sprintf(
+                'MBM of %s at %s',
+                $formattedDateForTitle,
+                now()->format('h:i a')
+            ),
+            'updated_by' => $user->id,
         ]);
 
         return response()->json([
