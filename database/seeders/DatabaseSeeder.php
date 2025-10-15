@@ -18,15 +18,11 @@ class DatabaseSeeder extends Seeder
             // admin_info::class,
             national_role::class,
             //dg_role::class,
-            batch_year::class,
-            // ReasonSeeder::class,
             referralTypeSeeder::class,
             HospitalSeeder::class,
             SourceSeeder::class,
             SourceTypeSeeder::class,
             DocumentTypeSeeder::class,
-            // AccountantRoleSeeder::class,
-            // AccountantInfoSeeder::class,
         ]);
     }
 }

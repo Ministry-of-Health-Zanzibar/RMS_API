@@ -35,7 +35,7 @@ class user_info extends Seeder
             ['created_by' => 1]
         );
 
-        // ✅ Use permission names instead of IDs
+        // Use permission names instead of IDs
         $allPermissions = Permission::pluck('name')->all();
 
         $adminRole->syncPermissions($allPermissions);

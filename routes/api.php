@@ -54,24 +54,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::resource('uploadTypes', App\Http\Controllers\API\Setup\UploadTypesController::class);
     Route::resource('locations', App\Http\Controllers\API\Setup\GeographicalLocationsController::class);
-    // Route::resource('workStations', App\Http\Controllers\API\Setup\WorkingStationsController::class);
     Route::resource('identifications', App\Http\Controllers\API\Setup\IdentificationsController::class);
-    // Route::resource('senorities', App\Http\Controllers\API\Setup\SenoritiesController::class);
     Route::resource('countries', App\Http\Controllers\API\Setup\CountriesController::class);
 
     Route::resource('userAccounts', App\Http\Controllers\API\User\UsersCotroller::class);
     Route::resource('roles', App\Http\Controllers\API\User\RolesCotroller::class);
     Route::resource('permissions', App\Http\Controllers\API\User\PermissionsCotroller::class);
-
-    Route::get('getDefaultHeadCount', [App\Http\Controllers\API\Management\DashboardController::class, 'get_default_year'])->name('getDefaultHeadCount');
-    Route::get('getSelectedHeadCount/{year}', [App\Http\Controllers\API\Management\DashboardController::class, 'get_selected_year'])->name('getSelectedHeadCount');
-
-    Route::get('unBlockWorkingStations/{stations_id}', [App\Http\Controllers\API\Setup\UnBlockCotroller::class, 'unblock_working_stations'])->name('unBlockWorkingStations');
-    Route::get('unBlockSenorities/{senorities_id}', [App\Http\Controllers\API\Setup\UnBlockCotroller::class, 'unblock_senorities'])->name('unBlockSenorities');
-    Route::get('unBlockIdentifications/{identifications_id}', [App\Http\Controllers\API\Setup\UnBlockCotroller::class, 'unblock_identifications'])->name('unBlockIdentifications');
-    Route::get('unBlockGeographicalLocations/{geographical_locations_id}', [App\Http\Controllers\API\Setup\UnBlockCotroller::class, 'unblock_geographical_locations'])->name('unBlockGeographicalLocations');
-    Route::get('unBlockUploadTypes/{upload_types_id}', [App\Http\Controllers\API\Setup\UnBlockCotroller::class, 'unblock_upload_types'])->name('unBlockUploadTypes');
-    Route::get('unBlockUser/{user_id}', [App\Http\Controllers\API\Setup\UnBlockCotroller::class, 'unblock_user'])->name('unBlockUser');
 
     // RMS RELATED APIs
     //HOSPITALS
@@ -116,7 +104,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Route::get('bill-payment/{bill_id}', [ReferralController::class, 'getReferralsWithBillPayment']);
     Route::get('hospital-letters/followup-by-referral-id/{referral_id}', [ReferralController::class, 'getHospitalLettersByReferralId']);
 
-
     // RMS REASON APIs
     Route::resource('reasons', ReasonController::class);
     Route::patch('reasons/unBlock/{reasonsId}', [ReasonController::class, 'unBlockReason']);
@@ -133,12 +120,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('bills/getPatientBillAndPaymentByBillId/{billId}', [BillController::class, 'getPatientBillAndPaymentByBillId']);
     Route::patch('bills/unBlock/{billId}', [BillController::class, 'unBlockBill']);
 
-    //  MONTHLY BILL APIs
-    Route::resource('monthly-bills', MonthlyBillController::class);
-    Route::post('monthly-bills/update/{id}', [MonthlyBillController::class, 'updateMonthlyBill']);
-    Route::patch('monthly-bills/unBlock/{monthlyId}', [MonthlyBillController::class, 'unBlockMonthlyBill']);
-    Route::get('monthly-bills/by-hospital/{hospitalId}', [MonthlyBillController::class, 'viewBillsByHospitalId']);
-
     // REPORT APIs
     Route::get('reports/referrals/{patientId}', [ReportController::class, 'referralReport']);
     Route::get('reports/referralsByType', [ReportController::class, 'referralReportByReferralType']);
@@ -153,7 +134,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // SOURCE
     Route::resource('sources', SouceController::class);
     Route::patch('sources/unBlock/{sourceId}', [SouceController::class, 'unBlockSource']);
-
 
     // SOURCE TYPE
     Route::resource('sourceTypes', SourceTypeController::class);
@@ -223,6 +203,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // referrals by Gender
     Route::get('reports/referralsByGender', [ReportController::class, 'referralsReportByGendr']);
 
+    // Diagnoses
     Route::prefix('diagnoses')->group(function () {
         Route::get('/', [DiagnosisController::class, 'index']);
         Route::post('/', [DiagnosisController::class, 'store']);
@@ -233,14 +214,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/import', [DiagnosisController::class, 'importExcel']);
     });
 
+    // Patient Histories
     Route::prefix('patient-histories')->group(function () {
         Route::get('/', [PatientHistoryController::class, 'index']);
-        Route::get('/{id}', [PatientHistoryController::class, 'show']);
+        Route::get('/{id}', [PatientHistoryController::class, 'show']); 
         Route::post('/', [PatientHistoryController::class, 'store']);
         Route::post('/update/{id}', [PatientHistoryController::class, 'update']);
         Route::delete('/{id}', [PatientHistoryController::class, 'destroy']);
         Route::post('/{id}/unblock', [PatientHistoryController::class, 'unblock']);
     });
-
 
 });

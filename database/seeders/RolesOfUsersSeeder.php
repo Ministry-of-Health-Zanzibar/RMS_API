@@ -7,7 +7,7 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
-class AccountantRoleSeeder extends Seeder
+class RolesOfUsersSeeder extends Seeder
 {
     /**
      * Run the database seeds.

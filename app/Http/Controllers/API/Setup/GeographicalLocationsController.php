@@ -19,10 +19,6 @@ class GeographicalLocationsController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:Setup Management|Create Location|Create Location|Update Location|Update Location|Delete Location', ['only' => ['index','create','store','update','destroy']]);
-
-        // $validate_batch_year = new GeneralController();
-        // $validate_batch_year->batch_year_configuration();
     }
 
     /**
@@ -70,25 +66,28 @@ class GeographicalLocationsController extends Controller
     */
     public function index()
     {
-        // if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Setup Management'))
-        // {
+        if(auth()->user()->can('Setup Management'))
+        {
             $geographicalLocations = DB::table('geographical_locations')
-                                ->join('users', 'users.id', '=', 'geographical_locations.created_by')
-                                ->select('geographical_locations.*','users.first_name','users.middle_name','users.last_name','users.id')
-                                // ->whereNull('geographical_locations.deleted_at')
-                                ->get();
+                ->join('users', 'users.id', '=', 'geographical_locations.created_by')
+                ->select('geographical_locations.*','users.first_name','users.middle_name','users.last_name','users.id')
+                // ->whereNull('geographical_locations.deleted_at')
+                ->get();
 
             $respose =[
                 'data' => $geographicalLocations,
                 'statusCode'=> 200
             ];
 
-            return response()->json($respose);
-        // }
-        // else{
-        //     return response()
-        //         ->json(['message' => 'Unauthorized','statusCode'=> 401]);
-        // }
+            return response()->json(
+                $respose
+            );
+        }else{
+            return response()->json([
+                'message' => 'Unauthorized',
+                'statusCode'=> 401
+            ]);
+        }
     }
 
     /**
@@ -130,14 +129,16 @@ class GeographicalLocationsController extends Controller
     public function store(Request $request)
     {
         $auto_id = random_int(100000, 999999).time();
-        if((auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL')) && $request->upload_excel){
+        if(auth()->user()->can('Create Location') && $request->upload_excel){
 
             $data = Validator::make($request->all(),[
                 'upload_excel' => 'mimes:xls,xlsx,csv'
             ]);
 
             if($data->fails()){
-                return response()->json($data->errors());
+                return response()->json(
+                    $data->errors()
+                );
             }
 
             try{
@@ -147,16 +148,19 @@ class GeographicalLocationsController extends Controller
                     'message'=> 'Geographical Location Inserted Successfully',
                     'statusCode'=> 201
                 ];
-                return response()->json($respose);
-            }
-            catch (Exception $e)
-            {
-                return response()
-                    ->json(['message' => $e->failures(),'statusCode'=> 401]);
+
+                return response()->json(
+                    $respose
+                );
+            }catch (Exception $e){
+                return response()->json([
+                    'message' => $e->failures(),
+                    'statusCode'=> 401
+                ], 401);
             }
 
         }
-        else if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Create Location'))
+        else if(auth()->user()->can('Create Location'))
         {
             $user_id = auth()->user()->id;
 
@@ -169,7 +173,9 @@ class GeographicalLocationsController extends Controller
                     'statusCode'=> 400
                 ];
 
-                return response()->json($respose);
+                return response()->json(
+                    $respose
+                );
             }
 
             try{
@@ -187,17 +193,23 @@ class GeographicalLocationsController extends Controller
                     'statusCode'=> 201
                 ];
 
-                return response()->json($respose);
+                return response()->json(
+                    $respose
+                );
             }
             catch (Exception $e)
             {
-                return response()
-                    ->json(['message' => $e->getMessage(),'statusCode'=> 500]);
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'statusCode'=> 500
+                ], 500);
             }
         }
         else{
-            return response()
-                ->json(['message' => 'unAuthenticated','statusCode'=> 401]);
+            return response()->json([
+                'message' => 'Unauthenticated',
+                'statusCode'=> 401
+            ], 401);
         }
     }
 
@@ -253,13 +265,13 @@ class GeographicalLocationsController extends Controller
     */
     public function show(string $location_id)
     {
-        // if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Setup Management'))
-        // {
+        if(auth()->user()->can('Setup Management'))
+        {
             $geographicalLocations = DB::table('geographical_locations')
-                                ->select('geographical_locations.*')
-                                ->where('geographical_locations.location_id', '=',$location_id)
-                                ->whereNull('geographical_locations.deleted_at')
-                                ->get();
+                ->select('geographical_locations.*')
+                ->where('geographical_locations.location_id', '=',$location_id)
+                ->whereNull('geographical_locations.deleted_at')
+                ->get();
 
             if (sizeof($geographicalLocations) > 0)
             {
@@ -268,17 +280,22 @@ class GeographicalLocationsController extends Controller
                     'statusCode'=> 200
                 ];
 
-                return response()->json($respose);
+                return response()->json(
+                    $respose
+                );
 
             }else{
-                return response()
-                ->json(['message' => 'No Geographical Location Found','statusCode'=> 400]);
+                return response()->json([
+                    'message' => 'No Geographical Location Found',
+                    'statusCode'=> 400
+                ],400);
             }
-        // }
-        // else{
-        //     return response()
-        //         ->json(['message' => 'unAuthenticated','statusCode'=> 401]);
-        // }
+        }else{
+            return response()->json([
+                'message' => 'Unauthenticated',
+                'statusCode'=> 401
+            ],401);
+        }
     }
 
     /**
@@ -341,11 +358,13 @@ class GeographicalLocationsController extends Controller
                 'statusCode'=> 400
             ];
 
-            return response()->json($respose);
+            return response()->json(
+                $respose
+            );
         }
 
-        // if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Update Location'))
-        // {
+        if(auth()->user()->can('Update Location'))
+        {
             $user_id = auth()->user()->id;
             try{
                 $GeographicalLocations = GeographicalLocations::find($location_id);
@@ -359,18 +378,22 @@ class GeographicalLocationsController extends Controller
                     'message' =>'Geographical Location Updated Successfully',
                     'statusCode'=> 201
                 ];
-                return response()->json($respose);
+
+                return response()->json(
+                    $respose
+                );
+            }catch (Exception $e){
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'statusCode'=> 500
+                ],500);
             }
-            catch (Exception $e)
-            {
-                return response()
-                    ->json(['message' => $e->getMessage(),'statusCode'=> 500]);
-            }
-        // }
-        // else{
-        //     return response()
-        //         ->json(['message' => 'unAuthenticated','statusCode'=> 401]);
-        // }
+        }else{
+            return response()->json([
+                'message' => 'Unauthenticated',
+                'statusCode'=> 401
+            ],401);
+        }
     }
 
      /**
@@ -407,22 +430,27 @@ class GeographicalLocationsController extends Controller
     */
     public function destroy(string $location_id)
     {
-        if(auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Delete Location'))
+        if(auth()->user()->can('Delete Location'))
         {
             $delete = GeographicalLocations::find($location_id);
             if ($delete != null) {
+
                 $delete->delete();
 
                 $respose =[
                     'message'=> 'Geographical Location Blocked Successfully',
                     'statusCode'=> 201
                 ];
-                return response()->json($respose);
+
+                return response()->json(
+                    $respose
+                );
             }
-        }
-        else{
-            return response()
-                ->json(['message' => 'unAuthenticated','statusCode'=> 401]);
+        }else{
+            return response()->json([
+                'message' => 'Unauthenticated',
+                'statusCode'=> 401
+            ],401);
         }
     }
 

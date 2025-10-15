@@ -19,7 +19,6 @@ class ReferralController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        // $this->middleware('permission:View Referral|View Referral|Create Referral|View Referral|Update Referral|Delete Referral', ['only' => ['index', 'getReferralwithBills', 'store', 'show', 'update', 'destroy']]);
     }
 
     /**

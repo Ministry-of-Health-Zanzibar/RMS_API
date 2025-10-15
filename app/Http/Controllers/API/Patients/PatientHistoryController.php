@@ -71,7 +71,7 @@ class PatientHistoryController extends Controller
             ], 403);
         }
 
-        $histories = PatientHistory::with('patient', 'diagnoses')->latest()->get();
+        $histories = PatientHistory::with('patient', 'diagnoses', 'reason')->latest()->get();
 
         return response()->json([
             'status' => true,
@@ -121,18 +121,19 @@ class PatientHistoryController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'patient_id' => 'required|exists:patients,patient_id',
-            'referring_doctor' => 'nullable|string',
-            'file_number' => 'nullable|string',
-            'referring_date' => 'nullable|date',
+            'patient_id'                    => 'required|exists:patients,patient_id',
+            'reason_id'                     => 'required|exists:reasons,reason_id',
+            'referring_doctor'              => 'nullable|string',
+            'file_number'                   => 'nullable|string',
+            'referring_date'                => 'nullable|date',
             'history_of_presenting_illness' => 'nullable|string',
-            'physical_findings' => 'nullable|string',
-            'investigations' => 'nullable|string',
-            'management_done' => 'nullable|string',
-            'board_comments' => 'nullable|string',
-            'diagnosis_ids' => 'required|array',
-            'diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
-            'history_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'physical_findings'             => 'nullable|string',
+            'investigations'                => 'nullable|string',
+            'management_done'               => 'nullable|string',
+            'board_comments'                => 'nullable|string',
+            'diagnosis_ids'                 => 'required|array',
+            'diagnosis_ids.*'               => 'exists:diagnoses,diagnosis_id',
+            'history_file'                  => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -145,7 +146,7 @@ class PatientHistoryController extends Controller
 
         try {
             $data = $request->only([
-                'patient_id', 'referring_doctor', 'file_number', 'referring_date',
+                'patient_id', 'reason_id', 'referring_doctor', 'file_number', 'referring_date',
                 'history_of_presenting_illness','physical_findings','investigations',
                 'management_done','board_comments'
             ]);
@@ -166,7 +167,7 @@ class PatientHistoryController extends Controller
 
             return response()->json([
                 'status' => true,
-                'data' => $history->load('patient', 'diagnoses'),
+                'data' => $history->load('patient', 'diagnoses', 'reason'),
                 'message' => 'Patient history created successfully',
                 'statusCode' => 201
             ]);
@@ -246,17 +247,18 @@ class PatientHistoryController extends Controller
         $history = PatientHistory::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'referring_doctor' => 'nullable|string',
-            'file_number' => 'nullable|string',
-            'referring_date' => 'nullable|date',
+            'reason_id'                     => 'nullable|exists:reasons,reason_id',
+            'referring_doctor'              => 'nullable|string',
+            'file_number'                   => 'nullable|string',
+            'referring_date'                => 'nullable|date',
             'history_of_presenting_illness' => 'nullable|string',
-            'physical_findings' => 'nullable|string',
-            'investigations' => 'nullable|string',
-            'management_done' => 'nullable|string',
-            'board_comments' => 'nullable|string',
-            'diagnosis_ids' => 'nullable|array',
-            'diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
-            'history_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'physical_findings'             => 'nullable|string',
+            'investigations'                => 'nullable|string',
+            'management_done'               => 'nullable|string',
+            'board_comments'                => 'nullable|string',
+            'diagnosis_ids'                 => 'nullable|array',
+            'diagnosis_ids.*'               => 'exists:diagnoses,diagnosis_id',
+            'history_file'                  => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -269,7 +271,7 @@ class PatientHistoryController extends Controller
 
         try {
             $data = $request->only([
-                'referring_doctor','file_number','referring_date','history_of_presenting_illness',
+                'reason_id', 'referring_doctor','file_number','referring_date','history_of_presenting_illness',
                 'physical_findings','investigations','management_done','board_comments'
             ]);
 

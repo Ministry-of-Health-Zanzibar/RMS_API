@@ -77,14 +77,7 @@ class PatientController extends Controller
             ], 403);
         }
 
-        if (!$user->can('View Patient')) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
-
-         if ($user->hasAnyRole(['ROLE ADMIN'])) {
+        if ($user->hasAnyRole(['ROLE ADMIN'])) {
             $patients = Patient::with([
                 'patientList',          // patient list info
                 'files',                // all patient files
@@ -328,12 +321,12 @@ class PatientController extends Controller
             return response([
                 'message' => 'Patient not found',
                 'statusCode' => 404,
-            ]);
+            ],404);
         } else {
             return response([
                 'data' => $patient,
                 'statusCode' => 200,
-            ]);
+            ],200);
         }
 
     }
@@ -532,7 +525,7 @@ class PatientController extends Controller
             return response([
                 'message' => 'Patient not found',
                 'statusCode' => 404,
-            ]);
+            ],404);
         }
 
         $patient->delete();
@@ -609,7 +602,10 @@ class PatientController extends Controller
             ->first();
 
         if (!$patient) {
-            return response()->json(['message' => 'Patient not found'], 404);
+            return response()->json([
+                'message' => 'Patient not found',
+                'statusCode' => 404,
+            ], 404);
         }
 
         if ($patient->patient_list_id) {
@@ -618,11 +614,12 @@ class PatientController extends Controller
             $patient->documentUrl = null;
         }
         $patient->insurances = $patient->insurances ?? [];
-        return response()->json($patient);
+        
+        return response([
+            'data' => $patient,
+            'statusCode' => 200,
+        ], 200);
     }
-
-
-
 
     public function getAllPatients()
     {

@@ -19,6 +19,7 @@ class PatientHistory extends Model
 
     protected $fillable = [
         'patient_id',
+        'reason_id',
         'referring_doctor',
         'file_number',
         'referring_date',
@@ -36,6 +37,11 @@ class PatientHistory extends Model
     public function patient()
     {
         return $this->belongsTo(Patient::class, 'patient_id', 'patient_id');
+    }
+
+    public function reason()
+    {
+        return $this->belongsTo(Reason::class, 'reason_id', 'reason_id');
     }
 
     /**
