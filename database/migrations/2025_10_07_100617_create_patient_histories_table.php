@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('patient_id');
             $table->string('referring_doctor')->nullable();
             $table->string('file_number')->nullable();
-            $table->date('referring_date')->nullable();
+            $table->string('referring_date')->nullable();
             $table->unsignedBigInteger('reason_id');
             // Medical details
             $table->text('history_of_presenting_illness')->nullable();

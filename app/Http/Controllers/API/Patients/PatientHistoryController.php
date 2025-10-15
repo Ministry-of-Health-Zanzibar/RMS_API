@@ -126,33 +126,54 @@ class PatientHistoryController extends Controller
             'reason_id'                     => 'required|exists:reasons,reason_id',
             'referring_doctor'              => 'nullable|string',
             'file_number'                   => 'nullable|string',
-            'referring_date'                => 'nullable|date',
+            'referring_date'                => 'nullable|string',
             'history_of_presenting_illness' => 'nullable|string',
             'physical_findings'             => 'nullable|string',
-            'investigations'                => 'nullable|string',
-            'management_done'               => 'nullable|string',
-            'board_comments'                => 'nullable|string',
-            'diagnosis_ids'                 => 'required|array',
-            'diagnosis_ids.*'               => 'exists:diagnoses,diagnosis_id',
-            'history_file'                  => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'investigations'               => 'nullable|string',
+            'management_done'              => 'nullable|string',
+            'board_comments'               => 'nullable|string',
+            'diagnosis_ids'                => 'required|array',
+            'diagnosis_ids.*'              => 'exists:diagnoses,diagnosis_id',
+            'history_file'                 => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'status'=>'error',
-                'errors'=>$validator->errors(),
-                'statusCode'=>422
-            ],422);
+                'status' => 'error',
+                'errors' => $validator->errors(),
+                'statusCode' => 422
+            ], 422);
         }
 
         try {
+            // Extract only allowed data
             $data = $request->only([
-                'patient_id', 'reason_id', 'referring_doctor', 'file_number', 'referring_date',
-                'history_of_presenting_illness','physical_findings','investigations',
-                'management_done','board_comments'
+                'patient_id', 
+                'reason_id', 
+                'referring_doctor', 
+                'file_number', 
+                'referring_date',
+                'history_of_presenting_illness',
+                'physical_findings',
+                'investigations',
+                'management_done',
+                'board_comments'
             ]);
-            $data['created_by'] = Auth::id();
 
+            $data['created_by'] = auth()->id();
+
+            // Normalize referring_date
+            if (empty($data['referring_date']) || strtolower($data['referring_date']) === 'default') {
+                $data['referring_date'] = null;
+            } else {
+                try {
+                    $data['referring_date'] = \Carbon\Carbon::parse($data['referring_date'])->format('Y-m-d');
+                } catch (\Exception $e) {
+                    $data['referring_date'] = null;
+                }
+            }
+
+            // Handle optional file upload
             if ($request->hasFile('history_file')) {
                 $file = $request->file('history_file');
                 $fileName = 'history_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
@@ -160,9 +181,11 @@ class PatientHistoryController extends Controller
                 $data['history_file'] = 'uploads/historyFiles/' . $fileName;
             }
 
+            // Create patient history
             $history = PatientHistory::create($data);
 
-            if ($request->has('diagnosis_ids')) {
+            // Attach diagnoses if provided
+            if ($request->filled('diagnosis_ids')) {
                 $history->diagnoses()->sync($request->diagnosis_ids);
             }
 
@@ -171,10 +194,16 @@ class PatientHistoryController extends Controller
                 'data' => $history->load('patient', 'diagnoses', 'reason'),
                 'message' => 'Patient history created successfully',
                 'statusCode' => 201
-            ]);
+            ], 201);
+
         } catch (\Exception $e) {
             Log::error('Patient history creation failed: ' . $e->getMessage());
-            return response()->json(['status'=>false,'message'=>'Creation failed','error'=>$e->getMessage(),'statusCode'=>500],500);
+            return response()->json([
+                'status' => false,
+                'message' => 'Creation failed',
+                'error' => $e->getMessage(),
+                'statusCode' => 500
+            ], 500);
         }
     }
 
