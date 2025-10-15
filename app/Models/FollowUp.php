@@ -15,7 +15,7 @@ class FollowUp extends Model
     protected $table = 'followups';
     protected $primaryKey = 'followup_id';
     public $incrementing = true;   // id() is auto-increment
-    protected $keyType = 'int';
+    protected $keyType = 'integer';
 
     protected $fillable = [
         'patient_id',

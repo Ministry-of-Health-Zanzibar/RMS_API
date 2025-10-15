@@ -14,7 +14,7 @@ class HospitalLetter extends Model
 
     protected $primaryKey = 'letter_id';
     public $incrementing = true;   // bigIncrements (integer PK)
-    protected $keyType = 'int';
+    protected $keyType = 'integer';
 
     protected $fillable = [
         'referral_id',

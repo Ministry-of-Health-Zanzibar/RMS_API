@@ -16,7 +16,7 @@ class PatientList extends Model
     protected $table = 'patient_lists';
     protected $primaryKey = 'patient_list_id';
     public $incrementing = true;
-    protected $keyType = 'int';
+    protected $keyType = 'integer';
 
     protected $fillable = [
         'reference_number',

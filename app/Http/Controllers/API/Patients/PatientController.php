@@ -187,8 +187,9 @@ class PatientController extends Controller
             'description'       => ['nullable', 'string'],
 
             // 🚑 Optional insurance validation
+            'has_insurance' => ['nullable', 'boolean'],
             'insurance_provider_name' => ['nullable', 'string'],
-            'card_number'           => ['nullable', 'string', 'unique:insurances,card_number'],
+            'card_number'           => ['nullable', 'string'], //, 'unique:insurances,card_number'],
             'valid_until'           => ['nullable', 'string'],
         ]);
 
@@ -219,7 +220,7 @@ class PatientController extends Controller
             ], 422);
         }
 
-        // ✅ Create Patient
+        // Create Patient
         $patient = Patient::create([
             'name'              => $request['name'],
             'matibabu_card'     => $request['matibabu_card'],
@@ -234,17 +235,28 @@ class PatientController extends Controller
             'created_by'        => Auth::id(),
         ]);
 
-        // 🚑 Optional Insurance creation (only if provided)
-        if ($request->filled('insurance_provider_name') || $request->filled('card_number')) {
-            \App\Models\Insurance::create([
-                'patient_id'             => $patient->patient_id,
-                'insurance_provider_name'=> $request->insurance_provider_name,
-                'card_number'            => $request->card_number,
-                'valid_until'            => $request->valid_until,
-            ]);
+        // Optional Insurance creation (only if provided)
+        if ($request->filled('has_insurance') && $request->boolean('has_insurance') === true) {
+
+            // Prepare clean input (avoid "Default" or empty strings)
+            $insuranceProvider = $request->insurance_provider_name ?: null;
+            $cardNumber        = $request->card_number ?: null;
+            $validUntil        = $request->valid_until ?: null;
+
+            // Only create if not already existing for that patient
+            $existingInsurance = \App\Models\Insurance::where('patient_id', $patient->patient_id)->first();
+
+            if (!$existingInsurance) {
+                \App\Models\Insurance::create([
+                    'patient_id'             => $patient->patient_id,
+                    'insurance_provider_name'=> $insuranceProvider,
+                    'card_number'            => $cardNumber,
+                    'valid_until'            => $validUntil,
+                ]);
+            }
         }
 
-        // 🗂️ File Upload
+        // File Upload
         if ($request->hasFile('patient_file')) {
             $files = $request->file('patient_file');
             if (!is_array($files)) {
@@ -437,6 +449,7 @@ class PatientController extends Controller
             'description'      => ['nullable', 'string'],
 
             // Optional Insurance Fields
+            'has_insurance'            => ['nullable', 'boolean'],
             'insurance_provider_name'  => ['nullable', 'string'],
             'card_number'              => ['nullable', 'string'],
             'valid_until'              => ['nullable', 'date'],
@@ -488,16 +501,30 @@ class PatientController extends Controller
             }
         }
 
-        // Handle Optional Insurance Update or Creation
-        if ($request->filled('insurance_provider_name') || $request->filled('card_number')) {
-            \App\Models\Insurance::updateOrCreate(
-                ['patient_id' => $patient->patient_id], // match by patient
-                [
-                    'insurance_provider_name' => $request->insurance_provider_name,
-                    'card_number'             => $request->card_number,
-                    'valid_until'             => $request->valid_until,
-                ]
-            );
+        // 🧩 Handle Optional Insurance Creation / Update / Deletion
+        if ($request->has('has_insurance')) {
+
+            $hasInsurance = $request->boolean('has_insurance');
+
+            if ($hasInsurance) {
+                // Cleanly handle possible empty inputs
+                $insuranceProvider = $request->insurance_provider_name ?: null;
+                $cardNumber        = $request->card_number ?: null;
+                $validUntil        = $request->valid_until ?: null;
+
+                // Create or update insurance
+                \App\Models\Insurance::updateOrCreate(
+                    ['patient_id' => $patient->patient_id], // match patient
+                    [
+                        'insurance_provider_name' => $insuranceProvider,
+                        'card_number'             => $cardNumber,
+                        'valid_until'             => $validUntil,
+                    ]
+                );
+            } else {
+                // If has_insurance == false, delete existing insurance record
+                \App\Models\Insurance::where('patient_id', $patient->patient_id)->delete();
+            }
         }
 
         // Response

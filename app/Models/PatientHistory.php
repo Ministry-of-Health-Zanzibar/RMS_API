@@ -15,7 +15,7 @@ class PatientHistory extends Model
     protected $table = 'patient_histories';
     protected $primaryKey = 'patient_histories_id';
     public $incrementing = true;
-    protected $keyType = 'int';
+    protected $keyType = 'integer';
 
     protected $fillable = [
         'patient_id',

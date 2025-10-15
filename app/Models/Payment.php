@@ -18,7 +18,7 @@ class Payment extends Model
     protected $primaryKey = 'payment_id';
 
     public $incrementing = true;
-    protected $keyType = 'int';
+    protected $keyType = 'integer';
 
     protected $fillable = [
         'monthly_bill_id',
