@@ -105,12 +105,6 @@ class permission_info extends Seeder
             'Delete Treatment',
             'View Treatment',
 
-            'Monthly Bill Module',
-            'Create Monthly Bill',
-            'Update Monthly Bill',
-            'Delete Monthly Bill',
-            'View Monthly Bill',
-
             'Create Patient List',
             'Update Patient List',
             'Delete Patient List',

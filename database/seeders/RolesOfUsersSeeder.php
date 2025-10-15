@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class RolesOfUsersSeeder extends Seeder
 {
@@ -14,45 +13,159 @@ class RolesOfUsersSeeder extends Seeder
      */
     public function run(): void
     {
-        $role = Role::create(['name' => 'ROLE ACCOUNTANT']);
+        /**
+         * =============================
+         * 1️ MEDICAL BOARD MEMBER
+         * =============================
+         */
+        $medicalBoardPermissions = [
+            'View Referral Dashboard',
 
-        $permissionNames = [
-            'Accountant Module',
-            'Create Source',
-            'Update Source',
-            'Delete Source',
-            'View Source',
+            // Patient Module
+            'View Patient',
+            'Create Patient',
+            'Update Patient',
 
-            'Create Source Type',
-            'Update Source Type',
-            'Delete Source Type',
-            'View Source Type',
+            // Referral Module
+            'View Referral',
+            'Create Referral',
+            'Update Referral',
 
-            'Create Category',
-            'Update Category',
-            'Delete Category',
-            'View Category',
+            // Diagnosis / History
+            'View Diagnoses',
+            'Create Diagnoses',
+            'Update Diagnoses',
+            'Restore Diagnoses',
 
-            'Create Document Type',
-            'Update Document Type',
-            'Delete Document Type',
-            'View Document Type',
+            'View Patient History',
+            'Create Patient History',
+            'Update Patient History',
 
-            'Create Document Form',
-            'Update Document Form',
-            'Delete Document Form',
+            // Treatment
+            'View Treatment',
+            'Create Treatment',
+            'Update Treatment',
 
-            'Create Accountant Support User',
-            'Update Accountant Support User',
-            'Delete Accountant Support User',
-            'View Accountant Support User',
-
-            'View Document Form',
-            'View Report'
+            // Reports
+            'View Report',
         ];
-        $permissions = Permission::whereIn('name', $permissionNames)->get();
 
-        $role->syncPermissions($permissions);
+        $medicalBoardRole = Role::firstOrCreate(['name' => 'Medical Board Member']);
+        $medicalBoardRole->syncPermissions(Permission::whereIn('name', $medicalBoardPermissions)->get());
+
+
+        /**
+         * =============================
+         * 2️ ACCOUNTANT
+         * =============================
+         */
+        $accountantPermissions = [
+            'Accountant Module',
+
+            // Bill Management
+            'View Bill',
+            'Create Bill',
+            'Update Bill',
+            'Delete Bill',
+
+            'View Bill Item',
+            'Create Bill Item',
+            'Update Bill Item',
+            'Delete Bill Item',
+
+            'View BillFile',
+            'Create BillFile',
+            'Update BillFile',
+            'Delete BillFile',
+
+            // Payment
+            'View Payment',
+            'Create Payment',
+            'Update Payment',
+            'Delete Payment',
+
+            // Reports
+            'View Report',
+        ];
+
+        $accountantRole = Role::firstOrCreate(['name' => 'Accountant']);
+        $accountantRole->syncPermissions(Permission::whereIn('name', $accountantPermissions)->get());
+
+
+        /**
+         * =============================
+         * 3️ DIRECTOR GENERAL (DG)
+         * =============================
+         */
+        $dgPermissions = [
+            'View Referral Dashboard',
+
+            // System management
+            'System Audit',
+            'Report Management',
+
+            // User and Role Management
+            'User Management',
+            'Create User',
+            'Update User',
+            'Delete User',
+            'View User',
+
+            'Create Role',
+            'Update Role',
+            'Delete Role',
+            'View Role',
+
+            // Hospitals and Referrals
+            'View Hospital',
+            'Create Hospital',
+            'Update Hospital',
+            'Delete Hospital',
+
+            'View Referral',
+            'Update Referral',
+
+            // Bills and Reports
+            'View Bill',
+            'View Report',
+        ];
+
+        $dgRole = Role::firstOrCreate(['name' => 'DG']);
+        $dgRole->syncPermissions(Permission::whereIn('name', $dgPermissions)->get());
+
+
+        /**
+         * =============================
+         * 4️ BILL VERIFICATION OFFICER
+         * =============================
+         */
+        $billVerificationPermissions = [
+            'Bill Module',
+
+            // Bills
+            'View Bill',
+            'Create Bill',
+            'Update Bill',
+
+            // Bill Items
+            'View Bill Item',
+            'Create Bill Item',
+            'Update Bill Item',
+
+            // Bill Files
+            'View BillFile',
+            'Update BillFile',
+
+            // Related Data
+            'View Patient',
+            'View Referral',
+            'View Treatment',
+
+            // Reports
+            'View Report',
+        ];
+
+        $billVerificationRole = Role::firstOrCreate(['name' => 'Bill Verification Officer']);
+        $billVerificationRole->syncPermissions(Permission::whereIn('name', $billVerificationPermissions)->get());
     }
-
 }

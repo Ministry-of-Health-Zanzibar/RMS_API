@@ -93,6 +93,7 @@ class PatientHistoryController extends Controller
      *             type="object",
      *             required={"patient_id"},
      *             @OA\Property(property="patient_id", type="integer"),
+     *             @OA\Property(property="reason_id", type="integer"),
      *             @OA\Property(property="referring_doctor", type="string"),
      *             @OA\Property(property="file_number", type="string"),
      *             @OA\Property(property="referring_date", type="string", format="date"),
@@ -220,6 +221,7 @@ class PatientHistoryController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             type="object",
+     *             @OA\Property(property="reason_id", type="integer"),
      *             @OA\Property(property="referring_doctor", type="string"),
      *             @OA\Property(property="file_number", type="string"),
      *             @OA\Property(property="referring_date", type="string", format="date"),
