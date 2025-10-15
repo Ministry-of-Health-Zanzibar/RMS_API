@@ -194,6 +194,26 @@ class PatientController extends Controller
 
         $location_id = $request->location_id;
 
+        // 🔍 Validate patient list limit
+        $patientList = \App\Models\PatientList::find($request->patient_list_id);
+
+        if (!$patientList) {
+            return response()->json([
+                'message' => 'Invalid Patient List ID',
+                'statusCode' => 404
+            ], 404);
+        }
+
+        // Count existing patients in that medical board
+        $existingCount = Patient::where('patient_list_id', $patientList->patient_list_id)->count();
+
+        if ($existingCount >= $patientList->no_of_patients) {
+            return response()->json([
+                'message' => "The Medical Board already reached its patient limit ({$patientList->no_of_patients}).",
+                'statusCode' => 422,
+            ], 422);
+        }
+
         // Create Patient
         $patient = Patient::create([
             'name'              => $request['name'],
