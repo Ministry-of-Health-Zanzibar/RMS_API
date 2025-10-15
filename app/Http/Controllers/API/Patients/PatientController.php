@@ -81,6 +81,7 @@ class PatientController extends Controller
             $patients = Patient::with([
                 'patientList',          // patient list info
                 'files',                // all patient files
+                'insurances',
                 'geographicalLocation',
                 'referrals.reason',     // referrals + reason
                 'referrals.hospital',   // referrals + hospital
@@ -141,7 +142,10 @@ class PatientController extends Controller
      *                     property="description",
      *                     type="string",
      *                     description="Optional file description"
-     *                 )
+     *                 ),
+     *                 @OA\Property(property="insurance_provider_name", type="string", description="Insurance provider name"),
+     *                 @OA\Property(property="card_number", type="string", description="Insurance card number"),
+     *                 @OA\Property(property="valid_until", type="string", format="date", description="Insurance valid until date"),
      *             )
      *         )
      *     ),
@@ -168,7 +172,7 @@ class PatientController extends Controller
             ], 403);
         }
 
-        $data = Validator::make($request->all(),[
+        $data = Validator::make($request->all(), [
             'name'              => ['required', 'string'],
             'matibabu_card'     => ['nullable', 'string'],
             'zan_id'            => ['nullable', 'string'],
@@ -179,11 +183,15 @@ class PatientController extends Controller
             'job'               => ['nullable', 'string'],
             'position'          => ['nullable', 'string'],
             'patient_list_id'   => ['required', 'numeric', 'exists:patient_lists,patient_list_id'],
-            'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'], // add file validation
+            'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
             'description'       => ['nullable', 'string'],
+
+            // 🚑 Optional insurance validation
+            'insurance_provider_name' => ['nullable', 'string'],
+            'card_number'           => ['nullable', 'string', 'unique:insurances,card_number'],
+            'valid_until'           => ['nullable', 'string'],
         ]);
 
-        // Check if validation fails
         if ($data->fails()) {
             return response()->json([
                 'status' => 'error',
@@ -191,8 +199,6 @@ class PatientController extends Controller
                 'statusCode' => 422,
             ], 422);
         }
-
-        $location_id = $request->location_id;
 
         // 🔍 Validate patient list limit
         $patientList = \App\Models\PatientList::find($request->patient_list_id);
@@ -204,7 +210,6 @@ class PatientController extends Controller
             ], 404);
         }
 
-        // Count existing patients in that medical board
         $existingCount = Patient::where('patient_list_id', $patientList->patient_list_id)->count();
 
         if ($existingCount >= $patientList->no_of_patients) {
@@ -214,7 +219,7 @@ class PatientController extends Controller
             ], 422);
         }
 
-        // Create Patient
+        // ✅ Create Patient
         $patient = Patient::create([
             'name'              => $request['name'],
             'matibabu_card'     => $request['matibabu_card'],
@@ -229,31 +234,29 @@ class PatientController extends Controller
             'created_by'        => Auth::id(),
         ]);
 
-        // Handle File Upload if exists
-       if ($request->hasFile('patient_file')) {
+        // 🚑 Optional Insurance creation (only if provided)
+        if ($request->filled('insurance_provider_name') || $request->filled('card_number')) {
+            \App\Models\Insurance::create([
+                'patient_id'             => $patient->patient_id,
+                'insurance_provider_name'=> $request->insurance_provider_name,
+                'card_number'            => $request->card_number,
+                'valid_until'            => $request->valid_until,
+            ]);
+        }
 
+        // 🗂️ File Upload
+        if ($request->hasFile('patient_file')) {
             $files = $request->file('patient_file');
-
-            // Make sure $files is always an array
             if (!is_array($files)) {
                 $files = [$files];
             }
 
             foreach ($files as $file) {
-
-                // Extract the file extension
                 $extension = $file->getClientOriginalExtension();
-
-                // Generate a unique file name
-                $newFileName = 'patient_file_' .  date('h-i-s_a_d-m-Y') . '.' . $extension;
-
-                // Move the file to public/uploads/patientFiles/
+                $newFileName = 'patient_file_' . date('h-i-s_a_d-m-Y') . '.' . $extension;
                 $file->move(public_path('uploads/patientFiles/'), $newFileName);
-
-                // Save the relative path
                 $filePath = 'uploads/patientFiles/' . $newFileName;
 
-                // Save record in the database
                 PatientFile::create([
                     'patient_id'  => $patient->patient_id,
                     'file_name'   => $file->getClientOriginalName(),
@@ -265,18 +268,11 @@ class PatientController extends Controller
             }
         }
 
-        if ($patient) {
-            return response([
-                'data' => $patient->load('files'), // load files relationship if needed
-                'message' => 'Patient created successfully with file.',
-                'statusCode' => 201,
-            ], 201);
-        } else {
-            return response([
-                'message' => 'Internal server error',
-                'statusCode' => 500,
-            ], 500);
-        }
+        return response([
+            'data' => $patient->load(['files', 'insurances']),
+            'message' => 'Patient created successfully with file' . ($request->filled('insurance_provider_name') ? ' and insurance.' : '.'),
+            'statusCode' => 201,
+        ], 201);
     }
 
     /**
@@ -333,6 +329,7 @@ class PatientController extends Controller
         $patient = Patient::with([
                 'patientList',          // patient list info
                 'files',                // all patient files
+                'insurances',
                 'geographicalLocation',
                 'referrals.reason',     // referrals + reason
                 'referrals.hospital',   // referrals + hospital
@@ -416,7 +413,7 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        // Authorization check
+        // Authorization
         if (!$user->can('Update Patient')) {
             return response()->json([
                 'message' => 'Forbidden',
@@ -438,6 +435,11 @@ class PatientController extends Controller
             'patient_list_id'  => ['nullable', 'numeric', 'exists:patient_lists,patient_list_id'],
             'patient_file.*'   => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
             'description'      => ['nullable', 'string'],
+
+            // Optional Insurance Fields
+            'insurance_provider_name'  => ['nullable', 'string'],
+            'card_number'              => ['nullable', 'string'],
+            'valid_until'              => ['nullable', 'date'],
         ]);
 
         if ($validator->fails()) {
@@ -448,10 +450,10 @@ class PatientController extends Controller
             ], 422);
         }
 
-        // Find patient
+        // Find Patient
         $patient = Patient::findOrFail($id);
 
-        // Update patient data
+        // Update Patient Data
         $patient->update([
             'name'            => $request->input('name'),
             'matibabu_card'   => $request->input('matibabu_card'),
@@ -465,38 +467,43 @@ class PatientController extends Controller
             'patient_list_id' => $request->input('patient_list_id'),
         ]);
 
-        // Handle single or multiple file uploads
+        // Handle File Upload (if any)
         if ($request->hasFile('patient_file')) {
             $files = $request->file('patient_file');
-
-            // Ensure $files is always an array
-            if (!is_array($files)) {
-                $files = [$files];
-            }
+            if (!is_array($files)) $files = [$files];
 
             foreach ($files as $file) {
                 $extension = $file->getClientOriginalExtension();
                 $newFileName = 'patient_file_' . date('h-i-s_a_d-m-Y') . '.' . $extension;
-
-                // Move file to public/uploads/patientFiles/
                 $file->move(public_path('uploads/patientFiles/'), $newFileName);
-                $filePath = 'uploads/patientFiles/' . $newFileName;
 
-                // Save file record in database
                 PatientFile::create([
                     'patient_id'  => $patient->patient_id,
                     'file_name'   => $file->getClientOriginalName(),
-                    'file_path'   => $filePath,
+                    'file_path'   => 'uploads/patientFiles/' . $newFileName,
                     'file_type'   => $file->getClientMimeType(),
-                    'description' => $request->input('description') ?? null,
+                    'description' => $request->input('description'),
                     'uploaded_by' => Auth::id(),
                 ]);
             }
         }
 
+        // Handle Optional Insurance Update or Creation
+        if ($request->filled('insurance_provider_name') || $request->filled('card_number')) {
+            \App\Models\Insurance::updateOrCreate(
+                ['patient_id' => $patient->patient_id], // match by patient
+                [
+                    'insurance_provider_name' => $request->insurance_provider_name,
+                    'card_number'             => $request->card_number,
+                    'valid_until'             => $request->valid_until,
+                ]
+            );
+        }
+
+        // Response
         return response()->json([
             'status' => 'success',
-            'data' => $patient->load('files'),
+            'data' => $patient->load(['files', 'insurances']),
             'message' => 'Patient updated successfully.',
             'statusCode' => 200,
         ], 200);

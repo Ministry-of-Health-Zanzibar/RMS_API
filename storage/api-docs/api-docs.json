@@ -4785,9 +4785,6 @@
                                                     "insurance_id": {
                                                         "type": "integer"
                                                     },
-                                                    "insurance_code": {
-                                                        "type": "string"
-                                                    },
                                                     "patient_id": {
                                                         "type": "integer"
                                                     },
@@ -4926,9 +4923,6 @@
                                             "properties": {
                                                 "insurance_id": {
                                                     "type": "integer"
-                                                },
-                                                "insurance_code": {
-                                                    "type": "string"
                                                 },
                                                 "patient_id": {
                                                     "type": "integer"
@@ -5770,6 +5764,19 @@
                                     "description": {
                                         "description": "Optional file description",
                                         "type": "string"
+                                    },
+                                    "insurance_provider_name": {
+                                        "description": "Insurance provider name",
+                                        "type": "string"
+                                    },
+                                    "card_number": {
+                                        "description": "Insurance card number",
+                                        "type": "string"
+                                    },
+                                    "valid_until": {
+                                        "description": "Insurance valid until date",
+                                        "type": "string",
+                                        "format": "date"
                                     }
                                 },
                                 "type": "object"

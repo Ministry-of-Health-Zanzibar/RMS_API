@@ -44,7 +44,6 @@ class InsuranceController extends Controller
      *                 @OA\Items(
      *                     type="object",
      *                     @OA\Property(property="insurance_id", type="integer"),
-     *                     @OA\Property(property="insurance_code", type="string"),
      *                     @OA\Property(property="patient_id", type="integer"),
      *                     @OA\Property(property="insurance_provider_name", type="string"),
      *                     @OA\Property(property="card_number", type="string"),
@@ -187,7 +186,6 @@ class InsuranceController extends Controller
      *                 property="data",
      *                 type="object",
      *                 @OA\Property(property="insurance_id", type="integer"),
-     *                     @OA\Property(property="insurance_code", type="string"),
      *                     @OA\Property(property="patient_id", type="integer"),
      *                     @OA\Property(property="insurance_provider_name", type="string"),
      *                     @OA\Property(property="card_number", type="string"),
