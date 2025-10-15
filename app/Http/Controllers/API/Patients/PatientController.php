@@ -172,6 +172,11 @@ class PatientController extends Controller
             ], 403);
         }
 
+        // 🔹 Normalize boolean from Angular ("true"/"false" → true/false)
+        $request->merge([
+            'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+        ]);
+
         $data = Validator::make($request->all(), [
             'name'              => ['required', 'string'],
             'matibabu_card'     => ['nullable', 'string'],
@@ -186,11 +191,11 @@ class PatientController extends Controller
             'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
             'description'       => ['nullable', 'string'],
 
-            // 🚑 Optional insurance validation
-            'has_insurance' => ['nullable', 'boolean'],
+            // Optional insurance validation
+            'has_insurance'           => ['required', 'boolean'],
             'insurance_provider_name' => ['nullable', 'string'],
-            'card_number'           => ['nullable', 'string'], //, 'unique:insurances,card_number'],
-            'valid_until'           => ['nullable', 'string'],
+            'card_number'             => ['nullable', 'string'], //, 'unique:insurances,card_number'],
+            'valid_until'             => ['nullable', 'string'],
         ]);
 
         if ($data->fails()) {
@@ -201,7 +206,7 @@ class PatientController extends Controller
             ], 422);
         }
 
-        // 🔍 Validate patient list limit
+        // Validate patient list limit
         $patientList = \App\Models\PatientList::find($request->patient_list_id);
 
         if (!$patientList) {
@@ -432,6 +437,11 @@ class PatientController extends Controller
                 'statusCode' => 403
             ], 403);
         }
+
+        // Normalize boolean from Angular ("true"/"false" → true/false)
+        $request->merge([
+            'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+        ]);
 
         // Validation
         $validator = Validator::make($request->all(), [

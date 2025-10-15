@@ -130,7 +130,7 @@ class RolesOfUsersSeeder extends Seeder
             'View Report',
         ];
 
-        $dgRole = Role::firstOrCreate(['name' => 'DG']);
+        $dgRole = Role::firstOrCreate(['name' => 'ROLE DG']);
         $dgRole->syncPermissions(Permission::whereIn('name', $dgPermissions)->get());
 
 
