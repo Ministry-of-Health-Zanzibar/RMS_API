@@ -21,6 +21,7 @@ class Patient extends Model
     protected $fillable = [
         'patient_id',
         'matibabu_card',
+        'zan_id',
         'name',
         'date_of_birth',
         'gender',

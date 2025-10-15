@@ -122,6 +122,8 @@ class PatientController extends Controller
      *             @OA\Schema(
      *                 required={"name","patient_list_id"},
      *                 @OA\Property(property="name", type="string"),
+     *                 @OA\Property(property="matibabu_card", type="string"),
+     *                 @OA\Property(property="zan_id", type="string"),
      *                 @OA\Property(property="date_of_birth", type="string", format="date"),
      *                 @OA\Property(property="gender", type="string"),
      *                 @OA\Property(property="phone", type="string"),
@@ -167,17 +169,18 @@ class PatientController extends Controller
         }
 
         $data = Validator::make($request->all(),[
-            'name' => ['required', 'string'],
-            'matibabu_card' => ['nullable', 'string'],
-            'date_of_birth' => ['required', 'string'],
-            'gender' => ['required', 'string'],
-            'phone' => ['nullable', 'string'],
-            'location_id' => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
-            'job' => ['nullable', 'string'],
-            'position' => ['nullable', 'string'],
-            'patient_list_id' => ['required', 'numeric', 'exists:patient_lists,patient_list_id'],
-            'patient_file.*' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'], // add file validation
-            'description' => ['nullable', 'string'],
+            'name'              => ['required', 'string'],
+            'matibabu_card'     => ['nullable', 'string'],
+            'zan_id'            => ['nullable', 'string'],
+            'date_of_birth'     => ['required', 'string'],
+            'gender'            => ['required', 'string'],
+            'phone'             => ['nullable', 'string'],
+            'location_id'       => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
+            'job'               => ['nullable', 'string'],
+            'position'          => ['nullable', 'string'],
+            'patient_list_id'   => ['required', 'numeric', 'exists:patient_lists,patient_list_id'],
+            'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'], // add file validation
+            'description'       => ['nullable', 'string'],
         ]);
 
         // Check if validation fails
@@ -193,16 +196,17 @@ class PatientController extends Controller
 
         // Create Patient
         $patient = Patient::create([
-            'name' => $request['name'],
-            'matibabu_card' => $request['matibabu_card'],
-            'date_of_birth' => $request['date_of_birth'],
-            'gender' => $request['gender'],
-            'phone' => $request['phone'],
-            'location_id' => $request['location_id'],
-            'job' => $request['job'],
-            'position' => $request['position'],
-            'patient_list_id' => $request['patient_list_id'],
-            'created_by' => Auth::id(),
+            'name'              => $request['name'],
+            'matibabu_card'     => $request['matibabu_card'],
+            'zan_id'            => $request['zan_id'],
+            'date_of_birth'     => $request['date_of_birth'],
+            'gender'            => $request['gender'],
+            'phone'             => $request['phone'],
+            'location_id'       => $request['location_id'],
+            'job'               => $request['job'],
+            'position'          => $request['position'],
+            'patient_list_id'   => $request['patient_list_id'],
+            'created_by'        => Auth::id(),
         ]);
 
         // Handle File Upload if exists
@@ -351,6 +355,8 @@ class PatientController extends Controller
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
      *                 @OA\Property(property="name", type="string"),
+     *                 @OA\Property(property="matibabu_card", type="string"),
+     *                 @OA\Property(property="zan_id", type="string"),
      *                 @OA\Property(property="date_of_birth", type="string", format="date"),
      *                 @OA\Property(property="gender", type="string"),
      *                 @OA\Property(property="phone", type="string"),
@@ -402,6 +408,7 @@ class PatientController extends Controller
         $validator = Validator::make($request->all(), [
             'name'             => ['required', 'string'],
             'matibabu_card'    => ['nullable', 'string'],
+            'zan_id'           => ['nullable', 'string'],
             'date_of_birth'    => ['nullable', 'date'],
             'gender'           => ['nullable', 'string'],
             'phone'            => ['nullable', 'string'],
@@ -428,6 +435,7 @@ class PatientController extends Controller
         $patient->update([
             'name'            => $request->input('name'),
             'matibabu_card'   => $request->input('matibabu_card'),
+            'zan_id'          => $request->input('zan_id'),
             'date_of_birth'   => $request->input('date_of_birth'),
             'gender'          => $request->input('gender'),
             'phone'           => $request->input('phone'),

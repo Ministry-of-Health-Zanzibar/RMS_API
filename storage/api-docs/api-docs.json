@@ -5734,6 +5734,12 @@
                                     "name": {
                                         "type": "string"
                                     },
+                                    "matibabu_card": {
+                                        "type": "string"
+                                    },
+                                    "zan_id": {
+                                        "type": "string"
+                                    },
                                     "date_of_birth": {
                                         "type": "string",
                                         "format": "date"
@@ -5969,6 +5975,12 @@
                             "schema": {
                                 "properties": {
                                     "name": {
+                                        "type": "string"
+                                    },
+                                    "matibabu_card": {
+                                        "type": "string"
+                                    },
+                                    "zan_id": {
                                         "type": "string"
                                     },
                                     "date_of_birth": {
