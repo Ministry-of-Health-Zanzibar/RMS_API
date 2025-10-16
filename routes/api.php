@@ -150,22 +150,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('documentTypes', DocumentTypeController::class);
     Route::patch('documentTypes/unBlock/{documentTypeId}', [DocumentTypeController::class, 'unBlockDocumentType']);
 
-    // DOCUMENT FORM
-    Route::resource('documentForms', DocumentTypeFormController::class);
-    Route::post('documentForms/update/{id}', [DocumentTypeFormController::class, 'updateDocumentForm']);
-    Route::patch('documentForms/unBlock/{documentTypeId}', [DocumentTypeFormController::class, 'unBlockDocumentForm']);
-    Route::get('accountant/reports/reportPerMonthly', [AccountantReportController::class, 'reportPerMonthly']);
-    Route::get('accountant/reports/reportPerWeekly', [AccountantReportController::class, 'reportPerWeekly']);
-    Route::get('accountant/reports/reportPerDocumentType', [AccountantReportController::class, 'reportPerDocumentType']);
-    Route::get('accountant/reports/reportBySourceType', [AccountantReportController::class, 'reportBySourceType']);
-    Route::post('accountant/reports/getDocumentFormReportByDate', [AccountantReportController::class, 'getDocumentFormsReport']);
-    Route::post('accountant/reports/searchReportByParameter', [AccountantReportController::class, 'searchReportByParameter']);
-
     // Patient Lis
     Route::resource('patient-lists', MedicalBoadController::class);
     // Route::post('patient-lists/with-trash/{id}', [PatientListController::class, 'patientListWithTrash']);
     Route::post('patient-lists/update/{id}', [MedicalBoadController::class, 'updatePatientList']);
-    // Route::post('patient-lists/update/{id}', [PatientListController::class, 'updatePatientList']);
     Route::patch('patient-lists/unblock/{id}', [PatientListController::class, 'unBlockParentList']);
     Route::get('patient-lists/body-form/{id}', [PatientListController::class, 'getAllPatientsByPatientListId']);
 
