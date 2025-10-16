@@ -31,12 +31,6 @@ class Disease extends Model
         'created_by',
     ];
 
-    // Referrals linked to this disease
-    public function referrals()
-    {
-        return $this->hasMany(Referral::class, 'disease_id', 'disease_id');
-    }
-
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['*']);

@@ -185,14 +185,37 @@ class PatientHistoryController extends Controller
             $history = PatientHistory::create($data);
 
             // Attach diagnoses if provided
+            // if ($request->filled('diagnosis_ids') ) {
+            //     $history->diagnoses()->sync($request->diagnosis_ids);
+            // }
             if ($request->filled('diagnosis_ids')) {
+
+                // Sync diagnoses to the history
                 $history->diagnoses()->sync($request->diagnosis_ids);
+
+                // Automatically create a referral for this patient history
+
+                // Generate referral number
+                $today = now()->format('Y-m-d');
+                $count = Referral::whereDate('created_at', $today)->count() + 1;
+                $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+
+                $referral = Referral::create([
+                    'patient_id'      => $request->patient_id,
+                    'reason_id'       => $request->reason_id,
+                    'status'          => 'Pending',
+                    'referral_number' => $referralNumber,
+                    'created_by'      => Auth::id(),
+                ]);
+
+                // Attach the same diagnoses to the referral via pivot table
+                $referral->diagnoses()->sync($request->diagnosis_ids);
             }
 
             return response()->json([
                 'status' => true,
                 'data' => $history->load('patient', 'diagnoses', 'reason'),
-                'message' => 'Patient history created successfully',
+                'message' => 'Patient history created and Referral requested successfully,',
                 'statusCode' => 201
             ], 201);
 

@@ -212,7 +212,6 @@ class ReferralController extends Controller
         $validator = Validator::make($request->all(), [
             'patient_id' => ['required', 'numeric', 'exists:patients,patient_id'],
             'reason_id'  => ['required', 'numeric', 'exists:reasons,reason_id'],
-            'disease_id'  => ['nullable', 'numeric', 'exists:reasons,disease_id'],
         ]);
 
         if ($validator->fails()) {
@@ -231,10 +230,8 @@ class ReferralController extends Controller
         $referral = Referral::create([
             'patient_id'       => $request['patient_id'],
             'reason_id'        => $request['reason_id'],
-            'disease_id'        => $request['disease_id'],
             'status'           => 'Pending',
             'referral_number'  => $referralNumber,
-            'confirmed_by'     => Auth::id(),
             'created_by'       => Auth::id(),
         ]);
 

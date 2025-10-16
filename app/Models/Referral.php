@@ -22,7 +22,6 @@ class Referral extends Model
         'referral_number',
         'hospital_id',
         'reason_id',
-        'disease_id',
         'status',
         'confirmed_by',
         'created_by',
@@ -91,10 +90,9 @@ class Referral extends Model
         return $this->belongsTo(User::class, 'created_by', 'id');
     }
 
-    // Disease relationship (new)
-    public function disease()
+    public function diagnoses()
     {
-        return $this->belongsTo(Disease::class, 'disease_id', 'disease_id');
+        return $this->belongsToMany(Diagnosis::class, 'diagnosis_referral', 'referral_id', 'diagnosis_id')->withTimestamps();
     }
 
     public function referralLetters()

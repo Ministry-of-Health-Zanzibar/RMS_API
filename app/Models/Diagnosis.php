@@ -41,4 +41,9 @@ class Diagnosis extends Model
         );
     }
 
+    public function referrals()
+    {
+        return $this->belongsToMany(Referral::class, 'diagnosis_referral', 'diagnosis_id', 'referral_id')->withTimestamps();
+    }
+
 }
