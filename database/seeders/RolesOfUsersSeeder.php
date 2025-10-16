@@ -25,33 +25,42 @@ class RolesOfUsersSeeder extends Seeder
         $medicalBoardPermissions = [
             'View Referral Dashboard',
 
-            // Patient Module
-            'View Patient',
+            'Setup Management',
+            'Create Location',
+            'Update Location',
+            // 'Delete Location',
+
+            'Create Reason',
+            'Update Reason',
+            'Delete Reason',
+            'View Reason',
+
+            'Create Insurance',
+            'Update Insurance',
+            'Delete Insurance',
+            'View Insurance',
+
+            'Patient Module',
             'Create Patient',
             'Update Patient',
+            'Delete Patient',
+            'View Patient',
 
-            // Referral Module
-            'View Referral',
-            'Create Referral',
-            'Update Referral',
-
-            // Diagnosis / History
-            'View Diagnoses',
-            'Create Diagnoses',
-            'Update Diagnoses',
-            'Restore Diagnoses',
+            'Create Patient List',
+            'Update Patient List',
+            'Delete Patient List',
+            'View Patient List',
 
             'View Patient History',
             'Create Patient History',
             'Update Patient History',
+            'Delete Patient History',
 
-            // Treatment
-            'View Treatment',
-            'Create Treatment',
-            'Update Treatment',
-
-            // Reports
-            'View Report',
+            'View Diagnoses',
+            'Create Diagnoses',
+            'Update Diagnoses',
+            'Delete Diagnoses',
+            'Restore Diagnoses',
         ];
 
         foreach ($medicalBoardPermissions as $perm) {
@@ -75,30 +84,138 @@ class RolesOfUsersSeeder extends Seeder
         $accountantPermissions = [
             'Accountant Module',
 
-            // Bill Management
-            'View Bill',
+            'View Referral Dashboard',
+            'View Permission',
+            'System Audit',
+            'Report Management',
+
+            'User Management',
+            'Create User',
+            'Update User',
+            'Delete User',
+            'View User',
+
+            'Create Role',
+            'Update Role',
+            'Delete Role',
+            'View Role',
+
+            'Setup Management',
+            'Create Location',
+            'Update Location',
+            'Delete Location',
+
+            'Create Facility Level',
+            'Update Facility Level',
+            'Delete Facility Level',
+
+            'Create Identification',
+            'Update Identification',
+            'Delete Identification',
+
+            'Create Upload Types',
+            'Update Upload Types',
+            'Delete Upload Types',
+
+            'Create Parent Upload Type',
+            'Update Parent Upload Type',
+            'Delete Parent Upload Type',
+
+            'Create Hospital',
+            'Update Hospital',
+            'Delete Hospital',
+            'View Hospital',
+
+            'Create ReferralType',
+            'Update ReferralType',
+            'Delete ReferralType',
+            'View ReferralType',
+
+            'Create ReferralLetter',
+            'Update ReferralLetter',
+            'Delete ReferralLetter',
+            'View ReferralLetter',
+
+            'Create Reason',
+            'Update Reason',
+            'Delete Reason',
+            'View Reason',
+
+            'Create Insurance',
+            'Update Insurance',
+            'Delete Insurance',
+            'View Insurance',
+
+            'Patient Module',
+            'Create Patient',
+            'Update Patient',
+            'Delete Patient',
+            'View Patient',
+
+            'Referral Module',
+            'Create Referral',
+            'Update Referral',
+            'Delete Referral',
+            'View Referral',
+
+            'Bill Module',
             'Create Bill',
             'Update Bill',
             'Delete Bill',
+            'View Bill',
 
-            'View Bill Item',
-            'Create Bill Item',
-            'Update Bill Item',
-            'Delete Bill Item',
+            'Payment Module',
+            'Create Payment',
+            'Update Payment',
+            'Delete Payment',
+            'View Payment',
+
+            'Treatment Module',
+            'Create Treatment',
+            'Update Treatment',
+            'Delete Treatment',
+            'View Treatment',
+
+            'Create Patient List',
+            'Update Patient List',
+            'Delete Patient List',
+            'View Patient List',
+
+            'Create FollowUp',
+            'Update FollowUp',
+            'Delete FollowUp',
+            'View FollowUp',
+
+            'Create Hospital Letter',
+            'Update Hospital Letter',
+            'Delete Hospital Letter',
+            'View Hospital Letter',
 
             'View BillFile',
             'Create BillFile',
             'Update BillFile',
             'Delete BillFile',
 
-            // Payment
-            'View Payment',
-            'Create Payment',
-            'Update Payment',
-            'Delete Payment',
+            'View Bill Item',
+            'Create Bill Item',
+            'Update Bill Item',
+            'Delete Bill Item',
 
-            // Reports
-            'View Report',
+            'View Disease',
+            'Create Disease',
+            'Update Disease',
+            'Delete Disease',
+
+            'View Patient History',
+            'Create Patient History',
+            'Update Patient History',
+            'Delete Patient History',
+
+            'View Diagnoses',
+            'Create Diagnoses',
+            'Update Diagnoses',
+            'Delete Diagnoses',
+            'Restore Diagnoses',
         ];
 
         foreach ($accountantPermissions as $perm) {
@@ -121,12 +238,10 @@ class RolesOfUsersSeeder extends Seeder
          */
         $dgPermissions = [
             'View Referral Dashboard',
-
-            // System management
+            'View Permission',
             'System Audit',
             'Report Management',
 
-            // User and Role Management
             'User Management',
             'Create User',
             'Update User',
@@ -138,18 +253,122 @@ class RolesOfUsersSeeder extends Seeder
             'Delete Role',
             'View Role',
 
-            // Hospitals and Referrals
-            'View Hospital',
+            'Setup Management',
+            'Create Location',
+            'Update Location',
+            'Delete Location',
+
+            'Create Facility Level',
+            'Update Facility Level',
+            'Delete Facility Level',
+
+            'Create Identification',
+            'Update Identification',
+            'Delete Identification',
+
+            'Create Upload Types',
+            'Update Upload Types',
+            'Delete Upload Types',
+
+            'Create Parent Upload Type',
+            'Update Parent Upload Type',
+            'Delete Parent Upload Type',
+
             'Create Hospital',
             'Update Hospital',
             'Delete Hospital',
+            'View Hospital',
 
-            'View Referral',
+            'Create ReferralType',
+            'Update ReferralType',
+            'Delete ReferralType',
+            'View ReferralType',
+
+            'Create ReferralLetter',
+            'Update ReferralLetter',
+            'Delete ReferralLetter',
+            'View ReferralLetter',
+
+            'Create Reason',
+            'Update Reason',
+            'Delete Reason',
+            'View Reason',
+
+            'Create Insurance',
+            'Update Insurance',
+            'Delete Insurance',
+            'View Insurance',
+
+            'Patient Module',
+            'Create Patient',
+            'Update Patient',
+            'Delete Patient',
+            'View Patient',
+
+            'Referral Module',
+            'Create Referral',
             'Update Referral',
+            'Delete Referral',
+            'View Referral',
 
-            // Bills and Reports
+            'Bill Module',
+            'Create Bill',
+            'Update Bill',
+            'Delete Bill',
             'View Bill',
-            'View Report',
+
+            'Payment Module',
+            'Create Payment',
+            'Update Payment',
+            'Delete Payment',
+            'View Payment',
+
+            'Treatment Module',
+            'Create Treatment',
+            'Update Treatment',
+            'Delete Treatment',
+            'View Treatment',
+
+            'Create Patient List',
+            'Update Patient List',
+            'Delete Patient List',
+            'View Patient List',
+
+            'Create FollowUp',
+            'Update FollowUp',
+            'Delete FollowUp',
+            'View FollowUp',
+
+            'Create Hospital Letter',
+            'Update Hospital Letter',
+            'Delete Hospital Letter',
+            'View Hospital Letter',
+
+            'View BillFile',
+            'Create BillFile',
+            'Update BillFile',
+            'Delete BillFile',
+
+            'View Bill Item',
+            'Create Bill Item',
+            'Update Bill Item',
+            'Delete Bill Item',
+
+            'View Disease',
+            'Create Disease',
+            'Update Disease',
+            'Delete Disease',
+
+            'View Patient History',
+            'Create Patient History',
+            'Update Patient History',
+            'Delete Patient History',
+
+            'View Diagnoses',
+            'Create Diagnoses',
+            'Update Diagnoses',
+            'Delete Diagnoses',
+            'Restore Diagnoses',
         ];
 
         foreach ($dgPermissions as $perm) {
@@ -171,29 +390,138 @@ class RolesOfUsersSeeder extends Seeder
          * =============================
          */
         $billVerificationPermissions = [
-            'Bill Module',
+            'View Referral Dashboard',
+            'View Permission',
+            'System Audit',
+            'Report Management',
 
-            // Bills
-            'View Bill',
+            'User Management',
+            'Create User',
+            'Update User',
+            'Delete User',
+            'View User',
+
+            'Create Role',
+            'Update Role',
+            'Delete Role',
+            'View Role',
+
+            'Setup Management',
+            'Create Location',
+            'Update Location',
+            'Delete Location',
+
+            'Create Facility Level',
+            'Update Facility Level',
+            'Delete Facility Level',
+
+            'Create Identification',
+            'Update Identification',
+            'Delete Identification',
+
+            'Create Upload Types',
+            'Update Upload Types',
+            'Delete Upload Types',
+
+            'Create Parent Upload Type',
+            'Update Parent Upload Type',
+            'Delete Parent Upload Type',
+
+            'Create Hospital',
+            'Update Hospital',
+            'Delete Hospital',
+            'View Hospital',
+
+            'Create ReferralType',
+            'Update ReferralType',
+            'Delete ReferralType',
+            'View ReferralType',
+
+            'Create ReferralLetter',
+            'Update ReferralLetter',
+            'Delete ReferralLetter',
+            'View ReferralLetter',
+
+            'Create Reason',
+            'Update Reason',
+            'Delete Reason',
+            'View Reason',
+
+            'Create Insurance',
+            'Update Insurance',
+            'Delete Insurance',
+            'View Insurance',
+
+            'Patient Module',
+            'Create Patient',
+            'Update Patient',
+            'Delete Patient',
+            'View Patient',
+
+            'Referral Module',
+            'Create Referral',
+            'Update Referral',
+            'Delete Referral',
+            'View Referral',
+
+            'Bill Module',
             'Create Bill',
             'Update Bill',
+            'Delete Bill',
+            'View Bill',
 
-            // Bill Items
+            'Payment Module',
+            'Create Payment',
+            'Update Payment',
+            'Delete Payment',
+            'View Payment',
+
+            'Treatment Module',
+            'Create Treatment',
+            'Update Treatment',
+            'Delete Treatment',
+            'View Treatment',
+
+            'Create Patient List',
+            'Update Patient List',
+            'Delete Patient List',
+            'View Patient List',
+
+            'Create FollowUp',
+            'Update FollowUp',
+            'Delete FollowUp',
+            'View FollowUp',
+
+            'Create Hospital Letter',
+            'Update Hospital Letter',
+            'Delete Hospital Letter',
+            'View Hospital Letter',
+
+            'View BillFile',
+            'Create BillFile',
+            'Update BillFile',
+            'Delete BillFile',
+
             'View Bill Item',
             'Create Bill Item',
             'Update Bill Item',
+            'Delete Bill Item',
 
-            // Bill Files
-            'View BillFile',
-            'Update BillFile',
+            'View Disease',
+            'Create Disease',
+            'Update Disease',
+            'Delete Disease',
 
-            // Related Data
-            'View Patient',
-            'View Referral',
-            'View Treatment',
+            'View Patient History',
+            'Create Patient History',
+            'Update Patient History',
+            'Delete Patient History',
 
-            // Reports
-            'View Report',
+            'View Diagnoses',
+            'Create Diagnoses',
+            'Update Diagnoses',
+            'Delete Diagnoses',
+            'Restore Diagnoses',
         ];
 
         foreach ($billVerificationPermissions as $perm) {

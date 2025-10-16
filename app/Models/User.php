@@ -52,6 +52,11 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    public function medicalBoards()
+    {
+        return $this->belongsToMany(PatientList::class, 'medical_board_user', 'user_id', 'patient_list_id')->withTimestamps();
+    }
+
     /**
      * The attributes that should be cast.
      *

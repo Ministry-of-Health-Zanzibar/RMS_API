@@ -120,6 +120,54 @@ class MedicalBoadController extends Controller
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
+    // public function store(Request $request)
+    // {
+    //     $user = auth()->user();
+    //     if (!$user->can('Create Patient List')) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $validator = Validator::make($request->all(), [
+    //         'board_type' => ['required', 'in:Emergency,Routine'],
+    //         'patient_list_file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+    //         'board_date' => ['required', 'string'],
+    //         'no_of_patients' => ['required', 'integer', 'min:1'],
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'errors' => $validator->errors(),
+    //             'statusCode' => 422,
+    //         ], 422);
+    //     }
+
+    //     // Handle file upload
+    //     $filePath = null;
+    //     if ($request->hasFile('patient_list_file')) {
+    //         $file = $request->file('patient_list_file');
+    //         $newFileName = 'patient_list_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
+    //         $file->move(public_path('uploads/patientLists/'), $newFileName);
+    //         $filePath = 'uploads/patientLists/' . $newFileName;
+    //     }
+
+    //     $list = PatientList::create([
+    //         'patient_list_file' => $filePath,
+    //         'board_type' => $request->board_type,
+    //         'board_date' => $request->board_date ?? null,
+    //         'no_of_patients' => $request->no_of_patients ?? null,
+    //         'created_by' => Auth::id(),
+    //     ]);
+
+    //     return response()->json([
+    //         'data' => $list,
+    //         'message' => 'Patient list created successfully',
+    //         'statusCode' => 200
+    //     ]);
+    // }
     public function store(Request $request)
     {
         $user = auth()->user();
@@ -135,6 +183,8 @@ class MedicalBoadController extends Controller
             'patient_list_file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
             'board_date' => ['required', 'string'],
             'no_of_patients' => ['required', 'integer', 'min:1'],
+            'board_members' => ['nullable', 'array'], // array of user IDs
+            'board_members.*' => ['integer', 'exists:users,id'], // validate each ID
         ]);
 
         if ($validator->fails()) {
@@ -154,17 +204,23 @@ class MedicalBoadController extends Controller
             $filePath = 'uploads/patientLists/' . $newFileName;
         }
 
+        // Create the patient list
         $list = PatientList::create([
             'patient_list_file' => $filePath,
             'board_type' => $request->board_type,
             'board_date' => $request->board_date ?? null,
             'no_of_patients' => $request->no_of_patients ?? null,
-            'created_by' => Auth::id(),
+            'created_by' => $user->id,
         ]);
 
+        // Attach board members to pivot table
+        if ($request->filled('board_members')) {
+            $list->boardMembers()->sync($request->board_members);
+        }
+
         return response()->json([
-            'data' => $list,
-            'message' => 'Patient list created successfully',
+            'data' => $list->load('boardMembers'), // load assigned users
+            'message' => 'Patient list created successfully with board members',
             'statusCode' => 200
         ]);
     }

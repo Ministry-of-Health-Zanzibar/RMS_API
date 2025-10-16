@@ -90,6 +90,11 @@ class PatientList extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function members()
+    {
+        return $this->belongsToMany(User::class, 'medical_board_user', 'patient_list_id', 'user_id')->withTimestamps();
+    }
+
     public function patients()
     {
         return $this->hasMany(Patient::class, 'patient_list_id', 'patient_list_id');
