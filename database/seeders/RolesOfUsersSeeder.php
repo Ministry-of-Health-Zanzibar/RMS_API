@@ -74,66 +74,10 @@ class RolesOfUsersSeeder extends Seeder
             'Accountant Module',
 
             'View Referral Dashboard',
-            'View Permission',
             'System Audit',
             'Report Management',
 
-            'User Management',
-            'Create User',
-            'Update User',
-            'Delete User',
-            'View User',
-
-            'Create Role',
-            'Update Role',
-            'Delete Role',
-            'View Role',
-
-            'Setup Management',
-            'Create Location',
-            'Update Location',
-            'Delete Location',
-
-            'Create Facility Level',
-            'Update Facility Level',
-            'Delete Facility Level',
-
-            'Create Identification',
-            'Update Identification',
-            'Delete Identification',
-
-            'Create Upload Types',
-            'Update Upload Types',
-            'Delete Upload Types',
-
-            'Create Parent Upload Type',
-            'Update Parent Upload Type',
-            'Delete Parent Upload Type',
-
-            'Create Hospital',
-            'Update Hospital',
-            'Delete Hospital',
             'View Hospital',
-
-            'Create ReferralType',
-            'Update ReferralType',
-            'Delete ReferralType',
-            'View ReferralType',
-
-            'Create ReferralLetter',
-            'Update ReferralLetter',
-            'Delete ReferralLetter',
-            'View ReferralLetter',
-
-            'Create Reason',
-            'Update Reason',
-            'Delete Reason',
-            'View Reason',
-
-            'Create Insurance',
-            'Update Insurance',
-            'Delete Insurance',
-            'View Insurance',
 
             'Patient Module',
             'Create Patient',
@@ -141,10 +85,6 @@ class RolesOfUsersSeeder extends Seeder
             'Delete Patient',
             'View Patient',
 
-            'Referral Module',
-            'Create Referral',
-            'Update Referral',
-            'Delete Referral',
             'View Referral',
 
             'Bill Module',
@@ -159,52 +99,14 @@ class RolesOfUsersSeeder extends Seeder
             'Delete Payment',
             'View Payment',
 
-            'Treatment Module',
-            'Create Treatment',
-            'Update Treatment',
-            'Delete Treatment',
-            'View Treatment',
-
             'Create Patient List',
             'Update Patient List',
             'Delete Patient List',
             'View Patient List',
 
-            'Create FollowUp',
-            'Update FollowUp',
-            'Delete FollowUp',
-            'View FollowUp',
-
-            'Create Hospital Letter',
-            'Update Hospital Letter',
-            'Delete Hospital Letter',
-            'View Hospital Letter',
-
             'View BillFile',
-            'Create BillFile',
-            'Update BillFile',
-            'Delete BillFile',
 
             'View Bill Item',
-            'Create Bill Item',
-            'Update Bill Item',
-            'Delete Bill Item',
-
-            'View Disease',
-            'Create Disease',
-            'Update Disease',
-            'Delete Disease',
-
-            'View Patient History',
-            'Create Patient History',
-            'Update Patient History',
-            'Delete Patient History',
-
-            'View Diagnoses',
-            'Create Diagnoses',
-            'Update Diagnoses',
-            'Delete Diagnoses',
-            'Restore Diagnoses',
         ];
 
         foreach ($accountantPermissions as $perm) {

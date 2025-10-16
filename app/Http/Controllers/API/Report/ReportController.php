@@ -15,80 +15,48 @@ class ReportController extends Controller
         $this->middleware('auth:sanctum');
     }
 
-    public function referralReport(int $patientId)
-    {
-        $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF'])) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
-
-
-        $referrals = DB::table("referrals")
-            ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
-            ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
-            ->select(
-                "referrals.*",
-                "hospitals.*",
-                "patients.*",
-            )
-            ->where("patients.patient_id", "=", $patientId)
-            ->get();
-
-
-        if ($referrals->isEmpty()) {
-            return response([
-                "message" => "No data found",
-                "statusCode" => 200
-            ], 200);
-        } else {
-            return response([
-                "data" => $referrals,
-                "statusCode" => 200,
-            ]);
-        }
-
-    }
-
+// BASHBOARD ================================================================================
 
     /**
      * Report by referral type
      */
-    public function referralReportByReferralType()
-    {
-        $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF'])) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
+    // public function referralReportByReferralType()
+    // {
+    //     $user = auth()->user();
+    //     if (!$user->can('View Referral Dashboard')) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
 
-        try {
-            $totalReferralsByMAINLANDType = DB::table("referrals")
-                ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
-                ->whereNull("referrals.deleted_at")
-                ->where("referral_types.referral_type_name", "=", "MAINLAND")
-                ->count();
+    //     try {
+    //         $totalReferralsByMAINLANDType = DB::table("referrals")
+    //             ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
+    //             ->whereNull("referrals.deleted_at")
+    //             ->where("referral_types.referral_type_name", "=", "MAINLAND")
+    //             ->count();
 
-            $totalReferralsByABROADType = DB::table("referrals")
-                ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
-                ->whereNull("referrals.deleted_at")
-                ->where("referral_types.referral_type_name", "=", "ABROAD")
-                ->count();
+    //         $totalReferralsByABROADType = DB::table("referrals")
+    //             ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
+    //             ->whereNull("referrals.deleted_at")
+    //             ->where("referral_types.referral_type_name", "=", "ABROAD")
+    //             ->count();
 
 
-            return response([
-                'totalReferralsByMAINLANDType' => $totalReferralsByMAINLANDType,
-                'totalReferralsByABROADType' => $totalReferralsByABROADType,
-            ]);
-        } catch (\Throwable $e) {
-            return response()
-                ->json(['message' => $e->getMessage(), 'statusCode' => 401]);
-        }
-    }
+    //         return response([
+    //             'totalReferralsByMAINLANDType' => $totalReferralsByMAINLANDType,
+    //             'totalReferralsByABROADType' => $totalReferralsByABROADType,
+    //         ]);
+    //     } catch (\Throwable $e) {
+    //         return response()
+    //             ->json(['message' => $e->getMessage(), 'statusCode' => 401]);
+    //     }
+    // }
+// DASHBOARD ========================================================================//
+
+
+// DASHBOARD ========================================================================//
 
     /**
      * Report by reason
@@ -96,7 +64,7 @@ class ReportController extends Controller
     public function referralsReportByReason()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF'])) {
+        if (!$user->can('View Referral Dashboard')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -148,13 +116,17 @@ class ReportController extends Controller
                 ->json(['message' => $e->getMessage(), 'statusCode' => 401]);
         }
     }
+// DASHBOARD ========================================================================//
 
+
+
+// DASHBOARD ========================================================================//
 
     public function referralsReportByGendr()
     {
         $user = auth()->user();
 
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF'])) {
+        if (!$user->can('View Referral Dashboard')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -193,8 +165,10 @@ class ReportController extends Controller
             ]);
         }
     }
+// DASHBOARD ========================================================================//
 
 
+// DASHBOARD ========================================================================//
 
     /**
      * Report by hospital
@@ -202,7 +176,7 @@ class ReportController extends Controller
     public function referralReportByHospital()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF'])) {
+        if (!$user->can('View Referral Dashboard')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -277,6 +251,47 @@ class ReportController extends Controller
         }
     }
 
+// DASHBOARD ========================================================================//
+
+
+// PRINTABLE REPORT ========================================================================//
+
+public function referralReport(int $patientId)
+    {
+        $user = auth()->user();
+        if (!$user->can('View Referral Dashboard')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+
+        $referrals = DB::table("referrals")
+            ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
+            ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
+            ->select(
+                "referrals.*",
+                "hospitals.*",
+                "patients.*",
+            )
+            ->where("patients.patient_id", "=", $patientId)
+            ->get();
+
+
+        if ($referrals->isEmpty()) {
+            return response([
+                "message" => "No data found",
+                "statusCode" => 200
+            ], 200);
+        } else {
+            return response([
+                "data" => $referrals,
+                "statusCode" => 200,
+            ]);
+        }
+
+    }
 
     // getBillsBetweenDates
     public function getBillsBetweenDates(Request $request)
@@ -370,97 +385,12 @@ class ReportController extends Controller
         ]);
     }
 
-    // searchReferralReport
-    // public function searchReferralReport(Request $request)
-    // {
-    //     $user = auth()->user();
-
-    //     if (
-    //         !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-    //         !$user->can('View Patient')
-    //     ) {
-    //         return response([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     $query = DB::table('referrals')
-    //         ->join('patients', 'patients.patient_id', '=', 'referrals.patient_id')
-    //         ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
-    //         ->join('referral_types', 'referral_types.referral_type_id', '=', 'referrals.referral_type_id')
-    //         ->join('reasons', 'reasons.reason_id', '=', 'referrals.reason_id')
-    //         ->leftJoin('insurances', 'insurances.patient_id', '=', 'patients.patient_id')
-    //         ->select(
-    //             'referrals.referral_id',
-    //             'referrals.start_date',
-    //             'referrals.end_date',
-    //             'referrals.status as referral_status',
-    //             'patients.patient_id',
-    //             'patients.name as patient_name',
-    //             'hospitals.hospital_name',
-    //             'hospitals.hospital_address',
-    //             'referral_types.referral_type_name',
-    //             'reasons.referral_reason_name',
-    //             'insurances.insurance_provider_name',
-               
-    //         );
-
-    //     // Optional filters
-    //     if ($request->filled('patient_name')) {
-    //         $query->where('patients.name', 'ILIKE', '%' . $request->patient_name . '%');
-    //     }
-
-    //     if ($request->filled('hospital_name')) {
-    //         $query->where('hospitals.hospital_name', 'ILIKE', '%' . $request->hospital_name . '%');
-    //     }
-
-    //     if ($request->filled('hospital_address')) {
-    //         $query->where('hospitals.hospital_address', 'ILIKE', '%' . $request->hospital_address . '%');
-    //     }
-
-    //     if ($request->filled('referral_type_name')) {
-    //         $query->where('referral_types.referral_type_name', 'ILIKE', '%' . $request->referral_type_name . '%');
-    //     }
-
-    //     if ($request->filled('referral_reason_name')) {
-    //         $query->where('reasons.referral_reason_name', 'ILIKE', '%' . $request->referral_reason_name . '%');
-    //     }
-
-    //     if ($request->filled('insurance_provider_name')) {
-    //         $query->where('insurances.insurance_provider_name', 'ILIKE', '%' . $request->insurance_provider_name . '%');
-    //     }
-
-    //     if ($request->filled('disease_name')) {
-    //         $query->join('patient_diseases', 'patient_diseases.patient_id', '=', 'patients.patient_id')
-    //             ->join('diseases', 'diseases.disease_id', '=', 'patient_diseases.disease_id')
-    //             ->where('diseases.disease_name', 'ILIKE', '%' . $request->disease_name . '%');
-    //     }
-
-    //     $results = $query->get();
-
-    //     if ($results->isEmpty()) {
-    //         return response([
-    //             'message' => 'No results found',
-    //             'statusCode' => 404,
-    //         ], 404);
-    //     }
-
-    //     return response([
-    //         'data' => $results,
-    //         'statusCode' => 200,
-    //     ], 200);
-    // }
-
     public function searchReferralReport(Request $request)
     {
         $user = auth()->user();
 
         // Permission check
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-            !$user->can('View Patient')
-        ) {
+        if (!$user->can('View Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -521,71 +451,6 @@ class ReportController extends Controller
         ], 200);
     }
 
-
-
-    // NEW
-
-
-    /**
-     * @OA\Get(
-     *     path="/api/reports/range",
-     *     summary="Get Range Report",
-     *     description="Fetch aggregated hospital billing data (total bills, paid, pending, amounts) within a given date range.",
-     *     tags={"Reports"},
-     *     @OA\Parameter(
-     *         name="start_date",
-     *         in="query",
-     *         required=true,
-     *         description="Start date for filtering (YYYY-MM-DD)",
-     *         @OA\Schema(type="string", format="date", example="2025-01-01")
-     *     ),
-     *     @OA\Parameter(
-     *         name="end_date",
-     *         in="query",
-     *         required=true,
-     *         description="End date for filtering (YYYY-MM-DD)",
-     *         @OA\Schema(type="string", format="date", example="2025-03-31")
-     *     ),
-     *     @OA\Parameter(
-     *         name="hospital_id",
-     *         in="query",
-     *         required=false,
-     *         description="Optional hospital ID to filter results",
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful range report",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="start_date", type="string", format="date", example="2025-01-01"),
-     *             @OA\Property(property="end_date", type="string", format="date", example="2025-03-31"),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(
-     *                     type="object",
-     *                     @OA\Property(property="hospital_name", type="string", example="City Hospital"),
-     *                     @OA\Property(property="total_bills", type="integer", example=15),
-     *                     @OA\Property(property="paid_bills", type="integer", example=10),
-     *                     @OA\Property(property="pending_bills", type="integer", example=5),
-     *                     @OA\Property(property="total_amount", type="string", example="150000.00"),
-     *                     @OA\Property(property="paid_amount", type="string", example="100000.00"),
-     *                     @OA\Property(property="pending_amount", type="string", example="50000.00")
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="Invalid request (missing or invalid parameters)"
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Server error"
-     *     )
-     * )
-     */
     public function rangeReport(Request $request)
     {
         // Validate request input
@@ -693,5 +558,7 @@ class ReportController extends Controller
 
         return response()->json($report);
     }
+
+// PRINTABLE REPORT ========================================================================//
 
 }
