@@ -53,6 +53,11 @@ class Patient extends Model
         return $this->belongsTo(PatientList::class, 'patient_list_id', 'patient_list_id');
     }
 
+    public function patientHistories()
+    {
+        return $this->hasMany(PatientHistory::class, 'patient_id', 'patient_id');
+    }
+
     public function files()
     {
         return $this->hasMany(PatientFile::class, 'patient_id', 'patient_id');
