@@ -66,7 +66,7 @@ class GeographicalLocationsController extends Controller
     */
     public function index()
     {
-        if(auth()->user()->can('Setup Management'))
+        if(auth()->user()->can('View Location'))
         {
             $geographicalLocations = DB::table('geographical_locations')
                 ->join('users', 'users.id', '=', 'geographical_locations.created_by')
@@ -265,7 +265,7 @@ class GeographicalLocationsController extends Controller
     */
     public function show(string $location_id)
     {
-        if(auth()->user()->can('Setup Management'))
+        if(auth()->user()->can('View Location'))
         {
             $geographicalLocations = DB::table('geographical_locations')
                 ->select('geographical_locations.*')

@@ -33,22 +33,7 @@ class permission_info extends Seeder
             'Create Location',
             'Update Location',
             'Delete Location',
-
-            'Create Facility Level',
-            'Update Facility Level',
-            'Delete Facility Level',
-
-            'Create Identification',
-            'Update Identification',
-            'Delete Identification',
-
-            'Create Upload Types',
-            'Update Upload Types',
-            'Delete Upload Types',
-
-            'Create Parent Upload Type',
-            'Update Parent Upload Type',
-            'Delete Parent Upload Type',
+            'View Location',
 
             'Create Hospital',
             'Update Hospital',
@@ -98,12 +83,6 @@ class permission_info extends Seeder
             'Update Payment',
             'Delete Payment',
             'View Payment',
-
-            'Treatment Module',
-            'Create Treatment',
-            'Update Treatment',
-            'Delete Treatment',
-            'View Treatment',
 
             'Create Patient List',
             'Update Patient List',

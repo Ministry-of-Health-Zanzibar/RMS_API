@@ -33,7 +33,7 @@ class RolesOfUsersSeeder extends Seeder
             // 'Create Reason',
             // 'Update Reason',
             // 'Delete Reason',
-            // 'View Reason',
+            'View Location',
 
             'Create Insurance',
             'Update Insurance',
