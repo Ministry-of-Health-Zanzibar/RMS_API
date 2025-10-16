@@ -185,9 +185,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('reports/timely', [ReportController::class, 'timelyReport']);
     Route::get('reports/patients', [ReportController::class, 'patientsReport']);
 
-    // Disese APIs
-    Route::apiResource('diseases', App\Http\Controllers\API\Disease\DiseaseController::class);
-
     // referrals by Gender
     Route::get('reports/referralsByGender', [ReportController::class, 'referralsReportByGendr']);
 

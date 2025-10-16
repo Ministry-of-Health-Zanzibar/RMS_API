@@ -15,6 +15,7 @@ class permission_info extends Seeder
         $permissions = [
             'View Referral Dashboard',
             'View Permission',
+            'Setup Management',
 
             'User Management',
             'Create User',

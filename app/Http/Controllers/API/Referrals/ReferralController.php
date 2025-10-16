@@ -77,7 +77,7 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        $referrals = Referral::with(['patient', 'reason', 'hospital','disease'])
+        $referrals = Referral::with(['patient', 'reason', 'hospital'])
             ->get()
             ->groupBy('referral_number')
             ->map(function ($group) {

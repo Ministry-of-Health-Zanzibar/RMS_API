@@ -462,13 +462,6 @@ public function referralReport(int $patientId)
             $query->where('reasons.referral_reason_name', 'ILIKE', '%' . $request->referral_reason_name . '%');
         }
 
-        // Disease filter (joins only when needed)
-        if ($request->filled('disease_name')) {
-            $query->join('patient_diseases', 'patient_diseases.patient_id', '=', 'patients.patient_id')
-                ->join('diseases', 'diseases.disease_id', '=', 'patient_diseases.disease_id')
-                ->where('diseases.disease_name', 'ILIKE', '%' . $request->disease_name . '%');
-        }
-
         // Date range filter
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('referrals.created_at', [$request->start_date, $request->end_date]);
