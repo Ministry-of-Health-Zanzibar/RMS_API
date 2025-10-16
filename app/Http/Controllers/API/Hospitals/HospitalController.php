@@ -13,7 +13,6 @@ class HospitalController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Hospital|Create Hospital|View Hospital|Update Hospital|Delete Hospital', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
     }
     /**
      * Display a listing of the resource.
@@ -69,7 +68,7 @@ class HospitalController extends Controller
             ], 403);
         }
 
-        $hospitals = Hospital::withTrashed()->get();
+        $hospitals = auth()->user()->hasRole('ROLE ADMIN') ? Hospital::withTrashed()->get() : Hospital::all();
 
         if ($hospitals) {
             return response([

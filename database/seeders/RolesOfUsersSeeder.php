@@ -307,7 +307,6 @@ class RolesOfUsersSeeder extends Seeder
             'Update Hospital Letter',
             'Delete Hospital Letter',
             'View Hospital Letter',
-            
 
             'View Reason',
             'View Location',
@@ -329,6 +328,8 @@ class RolesOfUsersSeeder extends Seeder
             'Delete Patient History',
 
             'View Diagnoses',
+            'View Hospital',
+
         ];
 
         foreach ($billVerificationPermissions as $perm) {
