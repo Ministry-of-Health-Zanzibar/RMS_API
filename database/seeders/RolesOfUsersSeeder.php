@@ -50,10 +50,6 @@ class RolesOfUsersSeeder extends Seeder
             'Delete Patient History',
 
             'View Diagnoses',
-            // 'Create Diagnoses',
-            // 'Update Diagnoses',
-            // 'Delete Diagnoses',
-            // 'Restore Diagnoses',
         ];
 
         foreach ($medicalBoardPermissions as $perm) {
@@ -279,72 +275,6 @@ class RolesOfUsersSeeder extends Seeder
          */
         $billVerificationPermissions = [
             'View Referral Dashboard',
-            'View Permission',
-            'System Audit',
-            'Report Management',
-
-            'User Management',
-            'Create User',
-            'Update User',
-            'Delete User',
-            'View User',
-
-            'Create Role',
-            'Update Role',
-            'Delete Role',
-            'View Role',
-
-            'Setup Management',
-            'Create Location',
-            'Update Location',
-            'Delete Location',
-
-            'Create Facility Level',
-            'Update Facility Level',
-            'Delete Facility Level',
-
-            'Create Identification',
-            'Update Identification',
-            'Delete Identification',
-
-            'Create Upload Types',
-            'Update Upload Types',
-            'Delete Upload Types',
-
-            'Create Parent Upload Type',
-            'Update Parent Upload Type',
-            'Delete Parent Upload Type',
-
-            'Create Hospital',
-            'Update Hospital',
-            'Delete Hospital',
-            'View Hospital',
-
-            'Create ReferralType',
-            'Update ReferralType',
-            'Delete ReferralType',
-            'View ReferralType',
-
-            'Create ReferralLetter',
-            'Update ReferralLetter',
-            'Delete ReferralLetter',
-            'View ReferralLetter',
-
-            'Create Reason',
-            'Update Reason',
-            'Delete Reason',
-            'View Reason',
-
-            'Create Insurance',
-            'Update Insurance',
-            'Delete Insurance',
-            'View Insurance',
-
-            'Patient Module',
-            'Create Patient',
-            'Update Patient',
-            'Delete Patient',
-            'View Patient',
 
             'Referral Module',
             'Create Referral',
@@ -352,28 +282,21 @@ class RolesOfUsersSeeder extends Seeder
             'Delete Referral',
             'View Referral',
 
+            'View BillFile',
+            'Create BillFile',
+            'Update BillFile',
+            'Delete BillFile',
+
             'Bill Module',
             'Create Bill',
             'Update Bill',
             'Delete Bill',
             'View Bill',
 
-            'Payment Module',
-            'Create Payment',
-            'Update Payment',
-            'Delete Payment',
-            'View Payment',
-
-            'Treatment Module',
-            'Create Treatment',
-            'Update Treatment',
-            'Delete Treatment',
-            'View Treatment',
-
-            'Create Patient List',
-            'Update Patient List',
-            'Delete Patient List',
-            'View Patient List',
+            'View Bill Item',
+            'Create Bill Item',
+            'Update Bill Item',
+            'Delete Bill Item',
 
             'Create FollowUp',
             'Update FollowUp',
@@ -385,20 +308,19 @@ class RolesOfUsersSeeder extends Seeder
             'Delete Hospital Letter',
             'View Hospital Letter',
 
-            'View BillFile',
-            'Create BillFile',
-            'Update BillFile',
-            'Delete BillFile',
+            'View Reason',
+            'View Location',
 
-            'View Bill Item',
-            'Create Bill Item',
-            'Update Bill Item',
-            'Delete Bill Item',
+            'Patient Module',
+            'Create Patient',
+            'Update Patient',
+            'Delete Patient',
+            'View Patient',
 
-            'View Disease',
-            'Create Disease',
-            'Update Disease',
-            'Delete Disease',
+            'Create Patient List',
+            'Update Patient List',
+            'Delete Patient List',
+            'View Patient List',
 
             'View Patient History',
             'Create Patient History',
@@ -406,10 +328,6 @@ class RolesOfUsersSeeder extends Seeder
             'Delete Patient History',
 
             'View Diagnoses',
-            'Create Diagnoses',
-            'Update Diagnoses',
-            'Delete Diagnoses',
-            'Restore Diagnoses',
         ];
 
         foreach ($billVerificationPermissions as $perm) {
