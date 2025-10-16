@@ -71,21 +71,8 @@ class RolesOfUsersSeeder extends Seeder
          * =============================
          */
         $accountantPermissions = [
-            'Accountant Module',
-
             'View Referral Dashboard',
-            'System Audit',
             'Report Management',
-
-            'View Hospital',
-
-            'Patient Module',
-            'Create Patient',
-            'Update Patient',
-            'Delete Patient',
-            'View Patient',
-
-            'View Referral',
 
             'Bill Module',
             'Create Bill',
@@ -98,11 +85,6 @@ class RolesOfUsersSeeder extends Seeder
             'Update Payment',
             'Delete Payment',
             'View Payment',
-
-            'Create Patient List',
-            'Update Patient List',
-            'Delete Patient List',
-            'View Patient List',
 
             'View BillFile',
 
