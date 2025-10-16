@@ -12,8 +12,6 @@ class PatientListController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Patient List|Create Patient List|Update Patient List|Delete Patient List',
-            ['only' => ['index', 'store', 'show', 'updatePatientList', 'destroy', 'unBlockParentList', 'getAllPatientsByPatientListId']]);
     }
 
     /**
@@ -271,39 +269,6 @@ class PatientListController extends Controller
         return response([
             'data' => $list,
             'statusCode' => 200,
-        ], 200);
-    }
-
-
-        /**
-     * Get total counts for Medical Boards, Patients, and Referrals.
-     */
-    public function getOverallCounts()
-    {
-        $user = auth()->user();
-
-        // Optional: Permission check
-        if (!$user->can('View Referral Dashboard')) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
-
-        // Count totals
-        $totalMedicalBoards = \App\Models\PatientList::count();
-        $totalPatients = \App\Models\Patient::count();
-        $totalReferrals = \App\Models\Referral::count();
-        $totalHospitals = \App\Models\Hospital::count();
-
-        return response([
-            'data' => [
-                'total_medical_boards' => $totalMedicalBoards,
-                'total_patients'       => $totalPatients,
-                'total_referrals'      => $totalReferrals,
-                'total_hospitals'      => $totalHospitals,
-            ],
-            'statusCode' => 200
         ], 200);
     }
 

@@ -15,8 +15,6 @@ class permission_info extends Seeder
         $permissions = [
             'View Referral Dashboard',
             'View Permission',
-            'System Audit',
-            'Report Management',
 
             'User Management',
             'Create User',
@@ -29,7 +27,6 @@ class permission_info extends Seeder
             'Delete Role',
             'View Role',
 
-            'Setup Management',
             'Create Location',
             'Update Location',
             'Delete Location',
@@ -109,11 +106,6 @@ class permission_info extends Seeder
             'Update Bill Item',
             'Delete Bill Item',
 
-            'View Disease',
-            'Create Disease',
-            'Update Disease',
-            'Delete Disease',
-
             'View Patient History',
             'Create Patient History',
             'Update Patient History',
@@ -124,6 +116,13 @@ class permission_info extends Seeder
             'Update Diagnoses',
             'Delete Diagnoses',
             'Restore Diagnoses',
+
+            'Report Module',
+            'View Report',
+            'Director General Report',
+            'Accountant Report',
+            'Verification Report',
+            'Medical Board Report',
         ];
 
         foreach ($permissions as $permission) {

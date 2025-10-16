@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\API\Accountants\AccountantReportController;
 use App\Http\Controllers\API\Accountants\CategoryController;
 use App\Http\Controllers\API\Accountants\DocumentTypeController;
 use App\Http\Controllers\API\Accountants\DocumentTypeFormController;
@@ -127,6 +126,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('reports/referralByHospital', [ReportController::class, 'referralReportByHospital']);
     Route::post('reports/getBillsBetweenDates', [ReportController::class, 'getBillsBetweenDates']);
     Route::post('reports/searchReferralReport', [ReportController::class, 'searchReferralReport']);
+    Route::post('reports/searchReferralReport', [ReportController::class, 'searchReferralReport']);
+    // Dasboard Counts
+    Route::get('/dashboard/totals', [ReportController::class, 'getOverallCounts']);
 
     // PAYMENT  API
     Route::resource('payments', PaymentController::class);
@@ -196,9 +198,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Disese APIs
     Route::apiResource('diseases', App\Http\Controllers\API\Disease\DiseaseController::class);
-
-    // Dasboard Counts
-    Route::get('/dashboard/totals', [PatientListController::class, 'getOverallCounts']);
 
     // referrals by Gender
     Route::get('reports/referralsByGender', [ReportController::class, 'referralsReportByGendr']);

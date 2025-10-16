@@ -25,9 +25,6 @@ class RolesOfUsersSeeder extends Seeder
         $medicalBoardPermissions = [
             'View Referral Dashboard',
 
-            'View Reason',
-            'View Location',
-
             'Create Insurance',
             'Update Insurance',
             'Delete Insurance',
@@ -49,7 +46,12 @@ class RolesOfUsersSeeder extends Seeder
             'Update Patient History',
             'Delete Patient History',
 
+            'View Reason',
+            'View Location',
             'View Diagnoses',
+
+            'Medical Board Report',
+            'View Report',
         ];
 
         foreach ($medicalBoardPermissions as $perm) {
@@ -72,7 +74,6 @@ class RolesOfUsersSeeder extends Seeder
          */
         $accountantPermissions = [
             'View Referral Dashboard',
-            'Report Management',
 
             'Bill Module',
             'Create Bill',
@@ -86,8 +87,10 @@ class RolesOfUsersSeeder extends Seeder
             'View Payment',
 
             'View BillFile',
-
             'View Bill Item',
+
+            'Accountant Report',
+            'View Report',
         ];
 
         foreach ($accountantPermissions as $perm) {
@@ -110,11 +113,6 @@ class RolesOfUsersSeeder extends Seeder
          */
         $dgPermissions = [
             'View Referral Dashboard',
-            'Report Management',
-
-            'View Hospital',
-
-            'View ReferralType',
 
             'Create ReferralLetter',
             'Update ReferralLetter',
@@ -127,15 +125,16 @@ class RolesOfUsersSeeder extends Seeder
             'Delete Referral',
             'View Referral',
 
+            'View Hospital',
+            'View ReferralType',
             'View FollowUp',
-
             'View Patient List',
-
             'View Hospital Letter',
-
             'View Patient History',
-
             'View Diagnoses',
+            
+            'Director General Report',
+            'View Report',
         ];
 
         foreach ($dgPermissions as $perm) {
@@ -213,6 +212,8 @@ class RolesOfUsersSeeder extends Seeder
             'View Diagnoses',
             'View Hospital',
 
+            'Verification Report',
+            'View Report',
         ];
 
         foreach ($billVerificationPermissions as $perm) {

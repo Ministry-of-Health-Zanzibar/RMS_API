@@ -59,6 +59,41 @@ class ReportController extends Controller
 // DASHBOARD ========================================================================//
 
     /**
+     * Get total counts for Medical Boards, Patients, and Referrals.
+     */
+    public function getOverallCounts()
+    {
+        $user = auth()->user();
+
+        // Optional: Permission check
+        if (!$user->can('View Referral Dashboard')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // Count totals
+        $totalMedicalBoards = \App\Models\PatientList::count();
+        $totalPatients = \App\Models\Patient::count();
+        $totalReferrals = \App\Models\Referral::count();
+        $totalHospitals = \App\Models\Hospital::count();
+
+        return response([
+            'data' => [
+                'total_medical_boards' => $totalMedicalBoards,
+                'total_patients'       => $totalPatients,
+                'total_referrals'      => $totalReferrals,
+                'total_hospitals'      => $totalHospitals,
+            ],
+            'statusCode' => 200
+        ], 200);
+    }
+
+// DASHBOARD ========================================================================//
+
+
+    /**
      * Report by reason
      */
     public function referralsReportByReason()
@@ -259,7 +294,7 @@ class ReportController extends Controller
 public function referralReport(int $patientId)
     {
         $user = auth()->user();
-        if (!$user->can('View Referral Dashboard')) {
+        if (!$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -297,10 +332,7 @@ public function referralReport(int $patientId)
     public function getBillsBetweenDates(Request $request)
     {
         $user = auth()->user();
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-            !$user->can('View Patient')
-        ) {
+        if (!$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -390,7 +422,7 @@ public function referralReport(int $patientId)
         $user = auth()->user();
 
         // Permission check
-        if (!$user->can('View Patient')) {
+        if (!$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -453,6 +485,14 @@ public function referralReport(int $patientId)
 
     public function rangeReport(Request $request)
     {
+        // Permission check
+        if (!$user->can('View Report')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         // Validate request input
         $request->validate([
             'start_date' => 'required|date',
@@ -491,6 +531,14 @@ public function referralReport(int $patientId)
 
     public function referralStatusReport()
     {
+        // Permission check
+        if (!$user->can('View Report')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $report = DB::table('referrals')
             ->select(
                 DB::raw('COUNT(CASE WHEN status = "Confirmed" THEN 1 END) as confirmed'),
@@ -505,6 +553,14 @@ public function referralReport(int $patientId)
 
     public function timelyReport(Request $request)
     {
+        // Permission check
+        if (!$user->can('View Report')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $period = $request->input('period'); // daily, weekly, monthly, yearly
 
         $query = DB::table('bills');
@@ -549,6 +605,14 @@ public function referralReport(int $patientId)
 
     public function patientsReport()
     {
+        // Permission check
+        if (!$user->can('View Report')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+        
         $report = DB::table('patients')
             ->select(
                 DB::raw('COUNT(CASE WHEN gender = "Male" THEN 1 END) as male'),
