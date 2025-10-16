@@ -242,12 +242,6 @@ class RolesOfUsersSeeder extends Seeder
             'Delete ReferralLetter',
             'View ReferralLetter',
 
-            'View Reason',
-
-            'View Insurance',
-
-            'View Patient',
-
             'Referral Module',
             'Create Referral',
             'Update Referral',
