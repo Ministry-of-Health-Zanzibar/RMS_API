@@ -80,7 +80,6 @@ class RolesOfUsersSeeder extends Seeder
             'Delete Bill',
             'View Bill',
 
-            'Payment Module',
             'Create Payment',
             'Update Payment',
             'Delete Payment',
