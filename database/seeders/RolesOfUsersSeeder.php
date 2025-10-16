@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\Schema;
 
 class RolesOfUsersSeeder extends Seeder
 {
@@ -13,9 +14,12 @@ class RolesOfUsersSeeder extends Seeder
      */
     public function run(): void
     {
+        // Detect if 'created_by' column exists in roles table
+        $hasCreatedBy = Schema::hasColumn('roles', 'created_by');
+
         /**
          * =============================
-         * 1️ MEDICAL BOARD MEMBER
+         * 1️ ROLE MEDICAL BOARD MEMBER
          * =============================
          */
         $medicalBoardPermissions = [
@@ -50,13 +54,22 @@ class RolesOfUsersSeeder extends Seeder
             'View Report',
         ];
 
-        $medicalBoardRole = Role::firstOrCreate(['name' => 'Medical Board Member']);
-        $medicalBoardRole->syncPermissions(Permission::whereIn('name', $medicalBoardPermissions)->get());
+        foreach ($medicalBoardPermissions as $perm) {
+            Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
+        }
+
+        $medicalBoardRoleData = ['name' => 'ROLE MEDICAL BOARD MEMBER', 'guard_name' => 'web'];
+        if ($hasCreatedBy) {
+            $medicalBoardRoleData['created_by'] = 1;
+        }
+
+        $medicalBoardRole = Role::firstOrCreate(['name' => 'ROLE MEDICAL BOARD MEMBER'], $medicalBoardRoleData);
+        $medicalBoardRole->syncPermissions($medicalBoardPermissions);
 
 
         /**
          * =============================
-         * 2️ ACCOUNTANT
+         * 2️ ROLE ACCOUNTANT
          * =============================
          */
         $accountantPermissions = [
@@ -88,13 +101,22 @@ class RolesOfUsersSeeder extends Seeder
             'View Report',
         ];
 
-        $accountantRole = Role::firstOrCreate(['name' => 'Accountant']);
-        $accountantRole->syncPermissions(Permission::whereIn('name', $accountantPermissions)->get());
+        foreach ($accountantPermissions as $perm) {
+            Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
+        }
+
+        $accountantRoleData = ['name' => 'ROLE ACCOUNTANT', 'guard_name' => 'web'];
+        if ($hasCreatedBy) {
+            $accountantRoleData['created_by'] = 1;
+        }
+
+        $accountantRole = Role::firstOrCreate(['name' => 'ROLE ACCOUNTANT'], $accountantRoleData);
+        $accountantRole->syncPermissions($accountantPermissions);
 
 
         /**
          * =============================
-         * 3️ DIRECTOR GENERAL (DG)
+         * 3️ ROLE DIRECTOR GENERAL (DG)
          * =============================
          */
         $dgPermissions = [
@@ -130,13 +152,22 @@ class RolesOfUsersSeeder extends Seeder
             'View Report',
         ];
 
-        $dgRole = Role::firstOrCreate(['name' => 'ROLE DG']);
-        $dgRole->syncPermissions(Permission::whereIn('name', $dgPermissions)->get());
+        foreach ($dgPermissions as $perm) {
+            Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
+        }
+
+        $dgRoleData = ['name' => 'ROLE DIRECTOR GENERAL', 'guard_name' => 'web'];
+        if ($hasCreatedBy) {
+            $dgRoleData['created_by'] = 1;
+        }
+
+        $dgRole = Role::firstOrCreate(['name' => 'ROLE DIRECTOR GENERAL'], $dgRoleData);
+        $dgRole->syncPermissions($dgPermissions);
 
 
         /**
          * =============================
-         * 4️ BILL VERIFICATION OFFICER
+         * 4️ ROLE BILL VERIFICATION OFFICER
          * =============================
          */
         $billVerificationPermissions = [
@@ -165,7 +196,16 @@ class RolesOfUsersSeeder extends Seeder
             'View Report',
         ];
 
-        $billVerificationRole = Role::firstOrCreate(['name' => 'Bill Verification Officer']);
-        $billVerificationRole->syncPermissions(Permission::whereIn('name', $billVerificationPermissions)->get());
+        foreach ($billVerificationPermissions as $perm) {
+            Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
+        }
+
+        $billVerificationRoleData = ['name' => 'ROLE BILL VERIFICATION OFFICER', 'guard_name' => 'web'];
+        if ($hasCreatedBy) {
+            $billVerificationRoleData['created_by'] = 1;
+        }
+
+        $billVerificationRole = Role::firstOrCreate(['name' => 'ROLE BILL VERIFICATION OFFICER'], $billVerificationRoleData);
+        $billVerificationRole->syncPermissions($billVerificationPermissions);
     }
 }

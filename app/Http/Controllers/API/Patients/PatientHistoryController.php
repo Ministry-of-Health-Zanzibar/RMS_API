@@ -129,12 +129,12 @@ class PatientHistoryController extends Controller
             'referring_date'                => 'nullable|string',
             'history_of_presenting_illness' => 'nullable|string',
             'physical_findings'             => 'nullable|string',
-            'investigations'               => 'nullable|string',
-            'management_done'              => 'nullable|string',
-            'board_comments'               => 'nullable|string',
-            'diagnosis_ids'                => 'required|array',
-            'diagnosis_ids.*'              => 'exists:diagnoses,diagnosis_id',
-            'history_file'                 => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'investigations'                => 'nullable|string',
+            'management_done'               => 'nullable|string',
+            'board_comments'                => 'nullable|string',
+            'diagnosis_ids'                 => 'nullable|array',
+            'diagnosis_ids.*'               => 'exists:diagnoses,diagnosis_id',
+            'history_file'                  => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -272,7 +272,10 @@ class PatientHistoryController extends Controller
     {
         $user = auth()->user();
         if (!$user->can('Update Patient History')) {
-            return response()->json(['message' => 'Forbidden','statusCode'=>403],403);
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
         }
 
         $history = PatientHistory::findOrFail($id);
@@ -281,7 +284,7 @@ class PatientHistoryController extends Controller
             'reason_id'                     => 'nullable|exists:reasons,reason_id',
             'referring_doctor'              => 'nullable|string',
             'file_number'                   => 'nullable|string',
-            'referring_date'                => 'nullable|date',
+            'referring_date'                => 'nullable|string',
             'history_of_presenting_illness' => 'nullable|string',
             'physical_findings'             => 'nullable|string',
             'investigations'                => 'nullable|string',
@@ -294,43 +297,72 @@ class PatientHistoryController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'status'=>'error',
-                'errors'=>$validator->errors(),
-                'statusCode'=>422
-            ],422);
+                'status' => 'error',
+                'errors' => $validator->errors(),
+                'statusCode' => 422
+            ], 422);
         }
 
         try {
             $data = $request->only([
-                'reason_id', 'referring_doctor','file_number','referring_date','history_of_presenting_illness',
-                'physical_findings','investigations','management_done','board_comments'
+                'reason_id', 
+                'referring_doctor',
+                'file_number',
+                'referring_date',
+                'history_of_presenting_illness',
+                'physical_findings',
+                'investigations',
+                'management_done',
+                'board_comments'
             ]);
 
+            // Normalize referring_date
+            if (empty($data['referring_date']) || strtolower($data['referring_date']) === 'default') {
+                $data['referring_date'] = null;
+            } else {
+                try {
+                    $data['referring_date'] = \Carbon\Carbon::parse($data['referring_date'])->format('Y-m-d');
+                } catch (\Exception $e) {
+                    $data['referring_date'] = null;
+                }
+            }
+
+            // Handle optional file upload
             if ($request->hasFile('history_file')) {
+                // Remove old file if exists
                 if ($history->history_file && file_exists(public_path($history->history_file))) {
                     unlink(public_path($history->history_file));
                 }
+
                 $file = $request->file('history_file');
                 $fileName = 'history_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
                 $file->move(public_path('uploads/historyFiles/'), $fileName);
                 $data['history_file'] = 'uploads/historyFiles/' . $fileName;
             }
 
+            // Update patient history
             $history->update($data);
 
-            if ($request->has('diagnosis_ids')) {
+            // Sync diagnoses if provided
+            if ($request->filled('diagnosis_ids')) {
                 $history->diagnoses()->sync($request->diagnosis_ids);
             }
 
             return response()->json([
                 'status' => true,
-                'data' => $history->load('patient','diagnoses'),
+                'data' => $history->load('patient','diagnoses','reason'),
                 'message' => 'Patient history updated successfully',
                 'statusCode' => 200
             ]);
+
         } catch (\Exception $e) {
             Log::error('Patient history update failed: ' . $e->getMessage());
-            return response()->json(['status'=>false,'message'=>'Update failed','error'=>$e->getMessage(),'statusCode'=>500],500);
+            return response()->json([
+                'status' => false,
+                'message' => 'Update failed',
+                'error' => $e->getMessage(),
+                'statusCode' => 500
+            ], 500);
         }
     }
 
