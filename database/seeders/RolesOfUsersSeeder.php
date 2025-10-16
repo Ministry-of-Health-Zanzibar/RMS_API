@@ -307,6 +307,7 @@ class RolesOfUsersSeeder extends Seeder
             'Update Hospital Letter',
             'Delete Hospital Letter',
             'View Hospital Letter',
+            
 
             'View Reason',
             'View Location',
