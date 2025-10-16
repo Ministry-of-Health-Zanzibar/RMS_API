@@ -132,7 +132,9 @@ class RolesOfUsersSeeder extends Seeder
             'View Hospital Letter',
             'View Patient History',
             'View Diagnoses',
-            
+
+            'View Reason',
+
             'Director General Report',
             'View Report',
         ];
