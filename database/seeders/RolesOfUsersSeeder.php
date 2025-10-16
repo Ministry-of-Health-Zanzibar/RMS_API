@@ -25,15 +25,15 @@ class RolesOfUsersSeeder extends Seeder
         $medicalBoardPermissions = [
             'View Referral Dashboard',
 
-            'Setup Management',
-            'Create Location',
-            'Update Location',
+            // 'Setup Management',
+            // 'Create Location',
+            // 'Update Location',
             // 'Delete Location',
 
-            'Create Reason',
-            'Update Reason',
-            'Delete Reason',
-            'View Reason',
+            // 'Create Reason',
+            // 'Update Reason',
+            // 'Delete Reason',
+            // 'View Reason',
 
             'Create Insurance',
             'Update Insurance',
@@ -56,11 +56,11 @@ class RolesOfUsersSeeder extends Seeder
             'Update Patient History',
             'Delete Patient History',
 
-            'View Diagnoses',
-            'Create Diagnoses',
-            'Update Diagnoses',
-            'Delete Diagnoses',
-            'Restore Diagnoses',
+            // 'View Diagnoses',
+            // 'Create Diagnoses',
+            // 'Update Diagnoses',
+            // 'Delete Diagnoses',
+            // 'Restore Diagnoses',
         ];
 
         foreach ($medicalBoardPermissions as $perm) {
