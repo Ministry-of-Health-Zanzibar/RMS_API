@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API\Patients;
 use App\Http\Controllers\Controller;
 use App\Models\PatientHistory;
 use App\Models\Diagnosis;
+use App\Models\Referral;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
