@@ -419,9 +419,8 @@ public function referralReport(int $patientId)
 
     public function searchReferralReport(Request $request)
     {
-        $user = auth()->user();
-
         // Permission check
+        $user = auth()->user();
         if (!$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
@@ -486,6 +485,7 @@ public function referralReport(int $patientId)
     public function rangeReport(Request $request)
     {
         // Permission check
+        $user = auth()->user();
         if (!$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
@@ -532,6 +532,7 @@ public function referralReport(int $patientId)
     public function referralStatusReport()
     {
         // Permission check
+        $user = auth()->user();
         if (!$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
@@ -554,6 +555,7 @@ public function referralReport(int $patientId)
     public function timelyReport(Request $request)
     {
         // Permission check
+        $user = auth()->user();
         if (!$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
@@ -606,13 +608,14 @@ public function referralReport(int $patientId)
     public function patientsReport()
     {
         // Permission check
+        $user = auth()->user();
         if (!$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
-        
+
         $report = DB::table('patients')
             ->select(
                 DB::raw('COUNT(CASE WHEN gender = "Male" THEN 1 END) as male'),
