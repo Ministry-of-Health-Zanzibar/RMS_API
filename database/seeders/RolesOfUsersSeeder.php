@@ -33,6 +33,7 @@ class RolesOfUsersSeeder extends Seeder
             // 'Create Reason',
             // 'Update Reason',
             // 'Delete Reason',
+            'View Reason',
             'View Location',
 
             'Create Insurance',
@@ -56,7 +57,7 @@ class RolesOfUsersSeeder extends Seeder
             'Update Patient History',
             'Delete Patient History',
 
-            // 'View Diagnoses',
+            'View Diagnoses',
             // 'Create Diagnoses',
             // 'Update Diagnoses',
             // 'Delete Diagnoses',
