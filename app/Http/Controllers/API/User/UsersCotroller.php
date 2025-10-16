@@ -21,7 +21,6 @@ class UsersCotroller extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:User Management|Create User|Create User|Update User|Update User|Delete User', ['only' => ['index', 'create', 'store', 'update', 'destroy']]);
     }
 
     /**
@@ -506,5 +505,33 @@ class UsersCotroller extends Controller
         }
     }
 
+    public function getBoardMembers()
+    {
+        $staffs = User::withTrashed()
+            ->whereHas('roles', function ($query) {
+                $query->where('name', 'ROLE MEDICAL BOARD MEMBER');
+            })
+            ->where('created_by', Auth::id())
+            ->with('roles:id,name')
+            ->get([
+                'id',
+                'first_name',
+                'middle_name',
+                'last_name',
+                'email',
+                'phone_no',
+                'address',
+                'gender',
+                'date_of_birth',
+                'deleted_at',
+            ]);
+
+        // ✅ Return a JSON response
+        return response()->json([
+            'data' => $staffs,
+            'message' => 'Board members retrieved successfully',
+            'statusCode' => 200
+        ]);
+    }
 
 }
