@@ -511,22 +511,13 @@ class UsersCotroller extends Controller
             ->whereHas('roles', function ($query) {
                 $query->where('name', 'ROLE MEDICAL BOARD MEMBER');
             })
-            ->where('created_by', Auth::id())
-            ->with('roles:id,name')
             ->get([
-                'id',
-                'first_name',
-                'middle_name',
-                'last_name',
-                'email',
-                'phone_no',
-                'address',
-                'gender',
-                'date_of_birth',
-                'deleted_at',
+                'id as user_id',
+                // Concatenate names as full_name
+                \DB::raw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) AS full_name")
             ]);
 
-        // ✅ Return a JSON response
+        // Return a JSON response
         return response()->json([
             'data' => $staffs,
             'message' => 'Board members retrieved successfully',
