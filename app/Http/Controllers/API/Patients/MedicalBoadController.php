@@ -487,4 +487,66 @@ class MedicalBoadController extends Controller
             'statusCode' => 200
         ]);
     }
+
+    public function assignPatientsToList(Request $request, int $patientListId)
+    {
+        $user = auth()->user();
+
+        // Check permission
+        if (!$user->can('Create Patient List')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // Validate request
+        $validator = Validator::make($request->all(), [
+            'patient_ids'   => ['required', 'array', 'min:1'],
+            'patient_ids.*' => ['integer', 'exists:patients,patient_id'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors(),
+                'statusCode' => 422,
+            ], 422);
+        }
+
+        // Find the target list
+        $patientList = PatientList::find($patientListId);
+        if (!$patientList) {
+            return response()->json([
+                'message' => 'Patient list not found',
+                'statusCode' => 404,
+            ], 404);
+        }
+
+        // Check capacity
+        $currentCount = $patientList->patients()->count();
+        $remainingCapacity = $patientList->no_of_patients - $currentCount;
+
+        $incomingCount = count($request->patient_ids);
+
+        if ($incomingCount > $remainingCapacity) {
+            return response()->json([
+                'message' => "Cannot assign {$incomingCount} patients. Only {$remainingCapacity} spots left in this list.",
+                'statusCode' => 422,
+            ], 422);
+        }
+
+        // Attach patients to list (avoid duplicates automatically)
+        $patientList->patients()->syncWithoutDetaching($request->patient_ids);
+
+        return response()->json([
+            'message' => 'Patients successfully assigned to the patient list.',
+            'data' => [
+                'patient_list_id' => $patientList->patient_list_id,
+                'assigned_patients' => $request->patient_ids,
+                'total_assigned' => $patientList->patients()->count(),
+            ],
+            'statusCode' => 200,
+        ], 200);
+    }
 }

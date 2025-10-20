@@ -158,6 +158,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('patient-lists/update/{id}', [MedicalBoadController::class, 'updatePatientList']);
     Route::patch('patient-lists/unblock/{id}', [PatientListController::class, 'unBlockParentList']);
     Route::get('patient-lists/body-form/{id}', [PatientListController::class, 'getAllPatientsByPatientListId']);
+    Route::post('patient-lists/assign-patients/{id}', [PatientListController::class, 'assignPatientsToList']);
 
     // Hospital Letters
     Route::resource('hospital-letters', HospitalLetterController::class);
