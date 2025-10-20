@@ -13,20 +13,15 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             nationality_info::class,
-            permission_info::class,
-            user_info::class,
-            admin_info::class,
+            permission_info::class,       // ✅ 1. create permissions first
+            RolesOfUsersSeeder::class,    // ✅ 2. create roles and assign permissions
+            user_info::class,             // ✅ 3. create admin and assign all
             national_role::class,
-                //dg_role::class,
-            batch_year::class,
-            ReasonSeeder::class,
-            HospitalSeeder::class,
             referralTypeSeeder::class,
+            HospitalSeeder::class,
             SourceSeeder::class,
             SourceTypeSeeder::class,
             DocumentTypeSeeder::class,
-            // AccountantRoleSeeder::class,
-            // AccountantInfoSeeder::class,
         ]);
     }
 }

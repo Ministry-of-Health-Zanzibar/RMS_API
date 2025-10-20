@@ -18,21 +18,32 @@ class Payment extends Model
     protected $primaryKey = 'payment_id';
 
     public $incrementing = true;
-    protected $keyType = 'int';
+    protected $keyType = 'integer';
 
     protected $fillable = [
-        'bill_id',
+        'monthly_bill_id',
+        'payer',
         'amount_paid',
+        'currency',
         'payment_method',
+        'reference_number',
+        'voucher_number',
+        'payment_date',
+        'created_by',
     ];
 
     protected $dates = ['deleted_at'];
 
-    // Relationships
-    public function bill()
+    public function bills()
     {
-        return $this->belongsTo(Bill::class, 'bill_id', 'bill_id');
+        return $this->belongsToMany(
+            Bill::class,        // Related model
+            'bill_payments',    // Pivot table
+            'payment_id',       // Foreign key on pivot table for this model
+            'bill_id'           // Foreign key on pivot table for related model
+        )->withPivot('allocated_amount', 'allocation_date', 'status');
     }
+
 
     public function getActivitylogOptions(): LogOptions
     {

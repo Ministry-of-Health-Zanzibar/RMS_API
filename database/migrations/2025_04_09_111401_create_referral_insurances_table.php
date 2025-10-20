@@ -12,12 +12,10 @@ return new class extends Migration {
     {
         Schema::create('insurances', function (Blueprint $table) {
             $table->bigIncrements('insurance_id');
-            $table->string('insurance_code')->unique();
             $table->unsignedBigInteger('patient_id');  // Foreign key from the patients table
-            $table->string('insurance_provider_name');  // Name of the insurance provider
-            $table->string('card_number')->unique();  // Unique card number for the insurance
-            $table->date('valid_until');  // Date until the insurance is valid
-            $table->unsignedBigInteger('created_by');
+            $table->string('insurance_provider_name')->nullable(); // Name of the insurance provider
+            $table->string('card_number')->unique()->nullable();  // Unique card number for the insurance
+            $table->date('valid_until')->nullable();  // Date until the insurance is valid
             $table->timestamps();
             $table->softDeletes();
 
@@ -31,6 +29,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('referral_insurances');
+        Schema::dropIfExists('insurances');
     }
 };

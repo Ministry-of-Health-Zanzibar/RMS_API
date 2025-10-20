@@ -19,7 +19,6 @@ class ReferralController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Referral|View Referral|Create Referral|View Referral|Update Referral|Delete Referral', ['only' => ['index', 'getReferralwithBills','store', 'show', 'update', 'destroy']]);
     }
 
     /**
@@ -53,7 +52,6 @@ class ReferralController extends Controller
      *                     @OA\Property(property="referral_id", type="integer"),
      *                     @OA\Property(property="patient_id", type="integer"),
      *                     @OA\Property(property="hospital_id", type="integer"),
-     *                     @OA\Property(property="referral_type_id", type="integer"),
      *                     @OA\Property(property="reason_id", type="integer"),
      *                     @OA\Property(property="start_date", type="string", format="date-time"),
      *                     @OA\Property(property="end_date", type="string", format="date-time"),
@@ -72,89 +70,76 @@ class ReferralController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Referral')) {
+        if (!$user->can('View Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        // $referrals = Referral::withTrashed()->get();
-        $referrals = DB::table('referrals')
-            ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
-            ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
-            ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
-            ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
-            ->select(
-                "referrals.*",
+        $referrals = Referral::with(['patient', 'reason', 'hospital'])
+            ->get()
+            ->groupBy('referral_number')
+            ->map(function ($group) {
+                $first = $group->first();
+                $patient = $first->patient;
 
-                "hospitals.hospital_name",
-                "hospitals.hospital_code",
-                "hospitals.hospital_address",
+                return [
+                    'referral_number' => $first->referral_number,
+                    'patient'         => $patient,
+                    'reason'          => $first->reason,
+                    'status'        => $group->pluck('status')->unique()->implode(', '),
+                    'hospitals'       => $group->pluck('hospital')->unique('hospital_id')->values(), // if multiple hospitals
+                    'referrals'       => $group->map(function ($ref) {
+                        return [
+                            'referral_id'   => $ref->referral_id,
+                            'parent_referral_id'   => $ref->parent_referral_id,
+                            'hospital_id'   => $ref->hospital_id,
+                            'reason_id'     => $ref->reason_id,
+                            'status'        => $ref->status,
+                            'confirmed_by'  => $ref->confirmed_by,
+                            'created_by'    => $ref->created_by,
+                            'created_at'    => $ref->created_at,
+                            'updated_at'    => $ref->updated_at,
+                            'deleted_at'    => $ref->deleted_at,
+                            'hospital'      => $ref->hospital,
+                        ];
+                    })->values(),
+                ];
+            })
+            ->values();
 
-                "patients.name as patient_name",
-                "patients.date_of_birth",
-                "patients.gender",
-                "patients.phone",
-
-                "referral_types.referral_type_name",
-                "referral_types.referral_type_code",
-
-                "reasons.referral_reason_name"
-            )
-            ->get();
-
-        if ($referrals) {
-            return response([
-                'data' => $referrals,
-                'statusCode' => 200,
-            ], 200);
-        } else {
-            return response([
-                'message' => 'No data found',
-                'statusCode' => 200,
-            ], 200);
-        }
+        return response([
+            'data' => $referrals,
+            'statusCode' => 200,
+        ], 200);
     }
 
     public function getReferralwithBills()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) || !$user->can('View Referral')) {
+        if (!$user->can('View Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        // $referrals = Referral::withTrashed()->get();
         $referrals = DB::table('referrals')
-            ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
             ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
-            ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
             ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
             ->leftjoin("bills", "bills.referral_id", '=', 'referrals.referral_id')
             ->select(
                 "referrals.*",
-
-                "hospitals.hospital_name",
-                "hospitals.hospital_code",
-                "hospitals.hospital_address",
 
                 "patients.name as patient_name",
                 "patients.date_of_birth",
                 "patients.gender",
                 "patients.phone",
 
-                "referral_types.referral_type_name",
-                "referral_types.referral_type_code",
-
                 "reasons.referral_reason_name",
 
-                "bills.bill_id",
-                "bills.amount",
-                "bills.sent_to",
-                "bills.bill_status",
+                "bills.*",
             )
             ->get();
 
@@ -185,8 +170,6 @@ class ReferralController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="patient_id", type="integer"),
-     *             @OA\Property(property="hospital_id", type="integer"),
-     *             @OA\Property(property="referral_type_id", type="integer"),
      *             @OA\Property(property="reason_id", type="integer"),
      *             @OA\Property(property="start_date", type="string", format="date-time"),
      *             @OA\Property(property="end_date", type="string", format="date-time"),
@@ -217,44 +200,50 @@ class ReferralController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF','ROLE DG OFFICER']) || !$user->can('Create Referral')) {
+        if (
+            !$user->can('Create Referral')
+        ) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $data = $request->validate([
-            'patient_id' => ['required', 'numeric'],
-            'hospital_id' => ['required', 'numeric'],
-            'referral_type_id' => ['required', 'numeric'],
-            'reason_id' => ['required', 'numeric'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date'],
+        $validator = Validator::make($request->all(), [
+            'patient_id' => ['required', 'numeric', 'exists:patients,patient_id'],
+            'reason_id'  => ['required', 'numeric', 'exists:reasons,reason_id'],
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors(),
+                'statusCode' => 422,
+            ], 422);
+        }
+
+        // --- Generate referral number ---
+        $today = now()->format('Y-m-d'); // e.g. 2025-09-01
+        $count = Referral::whereDate('created_at', $today)->count() + 1;
+        $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
 
         $referral = Referral::create([
-            'patient_id' => $data['patient_id'],
-            'hospital_id' => $data['hospital_id'],
-            'referral_type_id' => $data['referral_type_id'],
-            'reason_id' => $data['reason_id'],
-            'start_date' => $data['start_date'],
-            'end_date' => $data['end_date'],
-            'status' => 'Pending',
-            'confirmed_by' => Auth::id(),
-            'created_by' => Auth::id(),
+            'patient_id'       => $request['patient_id'],
+            'reason_id'        => $request['reason_id'],
+            'status'           => 'Pending',
+            'referral_number'  => $referralNumber,
+            'created_by'       => Auth::id(),
         ]);
 
         if ($referral) {
             return response([
-                'data' => $referral,
-                'message' => 'Referral created successfully.',
+                'data'       => $referral,
+                'message'    => 'Referral created successfully.',
                 'statusCode' => 201,
-            ], status: 201);
+            ], 201);
         } else {
             return response([
-                'message' => 'Internal server error',
+                'message'    => 'Internal server error',
                 'statusCode' => 500,
             ], 500);
         }
@@ -284,11 +273,7 @@ class ReferralController extends Controller
      *                 type="object",
      *                 @OA\Property(property="referral_id", type="integer"),
      *                     @OA\Property(property="patient_id", type="integer"),
-     *                     @OA\Property(property="hospital_id", type="integer"),
-     *                     @OA\Property(property="referral_type_id", type="integer"),
      *                     @OA\Property(property="reason_id", type="integer"),
-     *                     @OA\Property(property="start_date", type="string", format="date-time"),
-     *                     @OA\Property(property="end_date", type="string", format="date-time"),
      *                     @OA\Property(property="status", type="string"),
      *                     @OA\Property(property="confirmed_by", type="string"),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
@@ -303,51 +288,162 @@ class ReferralController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF','ROLE DG OFFICER']) || !$user->can('View Referral')) {
+
+        // Permission check
+        if (!$user->can('View Referral')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $referral = Referral::with([
+                'patient.patientHistories',
+                'patient.geographicalLocation',
+                'patient.patientList',
+                'patient.files',
+                'reason',
+                'hospital',
+                'hospitalLetters',
+                'referralLetters',
+                'parent',
+                'children',
+                'bills',
+                'confirmedBy',
+                'creator',
+                'diagnoses',
+            ])
+            ->where('referral_id', $id)
+            ->first();
+
+        // Handle missing referral
+        if (!$referral) {
+            return response()->json([
+                'message' => 'Referral not found',
+                'statusCode' => 404,
+            ], 404);
+        }
+
+        // Success
+        return response()->json([
+            'data' => $referral,
+            'statusCode' => 200,
+        ], 200);
+    }
+
+
+    public function getHospitalLettersByReferralId($id)
+    {
+        $user = auth()->user();
+        if (
+            !$user->can('View Referral')
+        ) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        // $referral = Referral::withTrashed()->find($id);
-        $referral = DB::table('referrals')
-            ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
-            ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
-            ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
-            ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
-            ->select(
-                "referrals.*",
-
-                "hospitals.hospital_name",
-                "hospitals.hospital_code",
-                "hospitals.hospital_address",
-
-                "patients.name as patient_name",
-                "patients.date_of_birth",
-                "patients.gender",
-                "patients.phone",
-
-                "referral_types.referral_type_name",
-                "referral_types.referral_type_code",
-
-                "reasons.referral_reason_name"
-            )
-            ->where("referrals.referral_id", '=', $id)
-            ->first();
-
+        // 1. Find the referral
+        $referral = Referral::find($id);
 
         if (!$referral) {
-            return response([
+            return response()->json([
                 'message' => 'Referral not found',
-                'statusCode' => 404,
-            ]);
-        } else {
-            return response([
-                'data' => $referral,
-                'statusCode' => 200,
-            ]);
+                'statusCode' => 404
+            ], 404);
         }
+
+        // 2. Get root referral
+        $rootReferralId = $referral->parent_referral_id ?? $referral->referral_id;
+
+        // 3. Get all referrals in the chain
+        $referrals = Referral::with([
+            'patient.geographicalLocation',
+            'patient.patientList',
+            'patient.files',
+            'reason',
+            'hospital',
+            'hospitalLetters.followups'
+        ])->where('referral_id', $rootReferralId)
+        ->orWhere('parent_referral_id', $rootReferralId)
+        ->get();
+
+        if ($referrals->isEmpty()) {
+            return response()->json([
+                'message' => 'No related referrals found',
+                'statusCode' => 404
+            ], 404);
+        }
+
+        // 4. Build merged response
+        $patient   = $referrals->first()->patient;
+        $reason    = $referrals->first()->reason;
+        $hospitals = $referrals->pluck('hospital')->unique('hospital_id')->values();
+        $letters   = $referrals->pluck('hospitalLetters')->flatten(1)->values();
+        $referralArr = $referrals->map(function ($r) {
+            return [
+                'referral_id'        => $r->referral_id,
+                'parent_referral_id' => $r->parent_referral_id,
+                'hospital_id'        => $r->hospital_id,
+                'status'             => $r->status,
+                'created_at'         => $r->created_at,
+                'updated_at'         => $r->updated_at,
+            ];
+        });
+
+        $result = [
+            'referral_number'  => $referrals->first()->referral_number,
+            'status'           => $referrals->pluck('status')->unique()->join(', '),
+            'patient'          => $patient,
+            'reason'           => $reason,
+            'hospitals'        => $hospitals,
+            'referrals'        => $referralArr,
+            'hospital_letters' => $letters,
+        ];
+
+        return response()->json([
+            'data'       => $result,
+            'statusCode' => 200
+        ]);
+    }
+
+
+
+    public function getReferralsByHospitalId(int $hospitalId, int $billFileId)
+    {
+        $user = auth()->user();
+
+        // Permission check
+        if (!$user->can('View Referral')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // Fetch referrals that have NOT been billed in this bill file
+        $referrals = DB::table('referrals')
+            ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
+            ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
+            ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
+            ->leftJoin("bills", function ($join) use ($billFileId) {
+                $join->on("bills.referral_id", '=', "referrals.referral_id")
+                    ->where("bills.bill_file_id", '=', $billFileId);
+            })
+            ->select(
+                "referrals.referral_id",
+                "referrals.referral_number",
+                "patients.name as patient_name"
+            )
+            ->where("hospitals.hospital_id", '=', $hospitalId)
+            ->whereNull("bills.referral_id") // exclude referrals already billed in this file
+            ->get();
+
+        return response()->json([
+            'data' => $referrals,
+            'statusCode' => 200,
+        ], 200);
     }
 
     /**
@@ -385,11 +481,7 @@ class ReferralController extends Controller
      *                 @OA\Items(
      *                     type="object",
      *                    @OA\Property(property="patient_id", type="integer"),
-     *                    @OA\Property(property="hospital_id", type="integer"),
-     *                    @OA\Property(property="referral_type_id", type="integer"),
      *                    @OA\Property(property="reason_id", type="integer"),
-     *                    @OA\Property(property="start_date", type="string", format="date-time"),
-     *                    @OA\Property(property="end_date", type="string", format="date-time"),
      *                    @OA\Property(property="status"),
      *                 )
      *             ),
@@ -401,7 +493,7 @@ class ReferralController extends Controller
     public function update(Request $request, int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF','ROLE DG OFFICER']) || !$user->can('Update Referral')) {
+        if (!$user->can('Update Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -410,25 +502,15 @@ class ReferralController extends Controller
 
         $data = $request->validate([
             'patient_id' => ['required', 'numeric'],
-            'hospital_id' => ['required', 'numeric'],
-            'referral_type_id' => ['required', 'numeric'],
             'reason_id' => ['required', 'numeric'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date'],
-            'status' => ['required', 'date'],
+            'hospital_id' => ['nullable', 'numeric']
         ]);
-
 
         $referral = Referral::findOrFail($id);
         $referral->update([
             'patient_id' => $data['patient_id'],
-            'hospital_id' => $data['hospital_id'],
-            'referral_type_id' => $data['referral_type_id'],
             'reason_id' => $data['reason_id'],
-            'start_date' => $data['start_date'],
-            'end_date' => $data['end_date'],
-            'status' => $data['status'],
-            'confirmed_by' => Auth::id(),
+            'hospital_id' => $data['hospital_id'] ?? null,
             'created_by' => Auth::id(),
         ]);
 
@@ -436,6 +518,41 @@ class ReferralController extends Controller
             return response([
                 'data' => $referral,
                 'message' => 'Referral updated successfully.',
+                'statusCode' => 201,
+            ], status: 201);
+        } else {
+            return response([
+                'message' => 'Internal server error',
+                'statusCode' => 500,
+            ], 500);
+        }
+    }
+
+    public function chooseHospitalAndConfirmReferral(Request $request, int $id)
+    {
+        $user = auth()->user();
+        if (!$user->can('Update Referral')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $data = $request->validate([
+            'hospital_id' => ['required', 'numeric']
+        ]);
+
+        $referral = Referral::findOrFail($id);
+        $referral->update([
+            'hospital_id' => $data['hospital_id'],
+            'status' => 'Confirmed',
+            'confirmed_by' => Auth::id(),
+        ]);
+
+        if ($referral) {
+            return response([
+                'data' => $referral,
+                'message' => 'Referral confirmed successfully.',
                 'statusCode' => 201,
             ], status: 201);
         } else {
@@ -484,7 +601,7 @@ class ReferralController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF','ROLE DG OFFICER']) || !$user->can('Delete Referral')) {
+        if (!$user->can('Delete Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -547,7 +664,6 @@ class ReferralController extends Controller
      */
     public function unBlockReferral(int $id)
     {
-
         $referral = Referral::withTrashed()->find($id);
 
         if (!$referral) {
@@ -564,19 +680,18 @@ class ReferralController extends Controller
             'statusCode' => 200,
         ], 200);
     }
-    // get all data of referral with bills
-    /* public function getReferralsWithBills($referral_id)
-    {
-        $referrals = Referral::with(['bills'])->where('referral_id', $referral_id)->get();
 
-        if ($referrals->isEmpty()) {
-            return response()->json(['message' => 'No referrals with bills found'], 404);
-        }
 
-        return response()->json($referrals, 200);
-    } */
     public function getReferralsWithBills($referral_id)
     {
+        $user = auth()->user();
+        if (!$user->can('View Referral')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
         $referrals = Referral::with('bills')
             ->where('referral_id', $referral_id)
             ->first();
@@ -584,8 +699,8 @@ class ReferralController extends Controller
         if (!$referrals) {
             return response()->json(['message' => 'No referrals with bills found'], 404);
         }
-         // Append full image URL
-         if ($referrals->referral_letter_file) {
+        // Append full image URL
+        if ($referrals->referral_letter_file) {
             $referrals->documentUrl = asset('storage/' . $referrals->referral_letter_file);
         } else {
             $referrals->documentUrl = null;
@@ -595,30 +710,11 @@ class ReferralController extends Controller
         return response()->json($referrals);
     }
 
-    // public function getReferralsWithBillPayment($bill_id)
-    // {
-    //     $referrals = Bill::with('payments')
-    //         ->where('bill_id', $bill_id)
-    //         ->first();
-
-    //     if (!$referrals) {
-    //         return response()->json(['message' => 'No referrals with bills found'], 404);
-    //     }
-    //      // Append full image URL
-    //      if ($referrals->referral_letter_file) {
-    //         $referrals->documentUrl = asset('storage/' . $referrals->referral_letter_file);
-    //     } else {
-    //         $referrals->documentUrl = null;
-    //     }
-
-    //     $referrals->bills = $referrals->bills ?? [];
-    //     return response()->json($referrals);
-    // }
 
     public function getReferralById(int $referral_id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF','ROLE DG OFFICER']) || !$user->can('View Referral')) {
+        if (!$user->can('View Referral')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -626,24 +722,15 @@ class ReferralController extends Controller
         }
 
         $referral = DB::table('referrals')
-            ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
             ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
-            ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
             ->join("reasons", "reasons.reason_id", '=', 'referrals.reason_id')
             ->select(
                 "referrals.*",
-
-                "hospitals.hospital_name",
-                "hospitals.hospital_code",
-                "hospitals.hospital_address",
 
                 "patients.name as patient_name",
                 "patients.date_of_birth",
                 "patients.gender",
                 "patients.phone",
-
-                "referral_types.referral_type_name",
-                "referral_types.referral_type_code",
 
                 "reasons.referral_reason_name"
             )
@@ -662,6 +749,5 @@ class ReferralController extends Controller
             ], 200);
         }
     }
-
 
 }

@@ -61,6 +61,10 @@ class ReferralLetter extends Model
         return $this->belongsTo(Referral_letter::class);
     }
 
+    public function referral()
+    {
+        return $this->belongsTo(Referral::class, 'referral_id', 'referral_id');
+    }
 
     // Automatically generate referral_letter_code before creating
     protected static function boot()

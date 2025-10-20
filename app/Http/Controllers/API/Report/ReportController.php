@@ -5,87 +5,93 @@ namespace App\Http\Controllers\API\Report;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+
 
 class ReportController extends Controller
 {
-    public function referralReport(int $patientId)
+     public function __construct()
     {
-        $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF'])) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
-
-
-        $referrals = DB::table("referrals")
-            ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
-            ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
-            ->select(
-                "referrals.*",
-                "hospitals.*",
-                "patients.*",
-            )
-            ->where("patients.patient_id", "=", $patientId)
-            ->get();
-
-
-        if ($referrals->isEmpty()) {
-            return response([
-                "message" => "No data found",
-                "statusCode" => 200
-            ], 200);
-        } else {
-            return response([
-                "data" => $referrals,
-                "statusCode" => 200,
-            ]);
-        }
-
-
-
-
-
+        $this->middleware('auth:sanctum');
     }
 
+// BASHBOARD ================================================================================
 
     /**
      * Report by referral type
      */
-    public function referralReportByReferralType()
+    // public function referralReportByReferralType()
+    // {
+    //     $user = auth()->user();
+    //     if (!$user->can('View Referral Dashboard')) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     try {
+    //         $totalReferralsByMAINLANDType = DB::table("referrals")
+    //             ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
+    //             ->whereNull("referrals.deleted_at")
+    //             ->where("referral_types.referral_type_name", "=", "MAINLAND")
+    //             ->count();
+
+    //         $totalReferralsByABROADType = DB::table("referrals")
+    //             ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
+    //             ->whereNull("referrals.deleted_at")
+    //             ->where("referral_types.referral_type_name", "=", "ABROAD")
+    //             ->count();
+
+
+    //         return response([
+    //             'totalReferralsByMAINLANDType' => $totalReferralsByMAINLANDType,
+    //             'totalReferralsByABROADType' => $totalReferralsByABROADType,
+    //         ]);
+    //     } catch (\Throwable $e) {
+    //         return response()
+    //             ->json(['message' => $e->getMessage(), 'statusCode' => 401]);
+    //     }
+    // }
+// DASHBOARD ========================================================================//
+
+
+// DASHBOARD ========================================================================//
+
+    /**
+     * Get total counts for Medical Boards, Patients, and Referrals.
+     */
+    public function getOverallCounts()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF'])) {
+
+        // Optional: Permission check
+        if (!$user->can('View Referral Dashboard')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        try {
-            $totalReferralsByMAINLANDType = DB::table("referrals")
-                ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
-                ->whereNull("referrals.deleted_at")
-                ->where("referral_types.referral_type_name", "=", "MAINLAND")
-                ->count();
+        // Count totals
+        $totalMedicalBoards = \App\Models\PatientList::count();
+        $totalPatients = \App\Models\Patient::count();
+        $totalReferrals = \App\Models\Referral::count();
+        $totalHospitals = \App\Models\Hospital::count();
 
-            $totalReferralsByABROADType = DB::table("referrals")
-                ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
-                ->whereNull("referrals.deleted_at")
-                ->where("referral_types.referral_type_name", "=", "ABROAD")
-                ->count();
-
-
-            return response([
-                'totalReferralsByMAINLANDType' => $totalReferralsByMAINLANDType,
-                'totalReferralsByABROADType' => $totalReferralsByABROADType,
-            ]);
-        } catch (\Throwable $e) {
-            return response()
-                ->json(['message' => $e->getMessage(), 'statusCode' => 401]);
-        }
+        return response([
+            'data' => [
+                'total_medical_boards' => $totalMedicalBoards,
+                'total_patients'       => $totalPatients,
+                'total_referrals'      => $totalReferrals,
+                'total_hospitals'      => $totalHospitals,
+            ],
+            'statusCode' => 200
+        ], 200);
     }
+
+// DASHBOARD ========================================================================//
+
 
     /**
      * Report by reason
@@ -93,7 +99,7 @@ class ReportController extends Controller
     public function referralsReportByReason()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF'])) {
+        if (!$user->can('View Referral Dashboard')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -145,7 +151,59 @@ class ReportController extends Controller
                 ->json(['message' => $e->getMessage(), 'statusCode' => 401]);
         }
     }
+// DASHBOARD ========================================================================//
 
+
+
+// DASHBOARD ========================================================================//
+
+    public function referralsReportByGendr()
+    {
+        $user = auth()->user();
+
+        if (!$user->can('View Referral Dashboard')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        try {
+            // Group by lowercase gender (case-insensitive)
+            $referralsByGender = DB::table("referrals")
+                ->join("patients", "patients.patient_id", '=', "referrals.patient_id")
+                ->whereNull("referrals.deleted_at")
+                ->select(
+                    DB::raw("LOWER(patients.gender) as gender"),
+                    DB::raw("COUNT(referrals.referral_id) as total")
+                )
+                ->groupBy(DB::raw("LOWER(patients.gender)"))
+                ->get();
+
+            // Convert to associative array and normalize keys
+            $genderStats = $referralsByGender->pluck('total', 'gender')->toArray();
+
+            // Normalize to Title Case keys (Female, Male)
+            $femaleCount = $genderStats['female'] ?? 0;
+            $maleCount   = $genderStats['male'] ?? 0;
+
+            return response([
+                'Male'   => $maleCount,
+                'Female' => $femaleCount,
+                'statusCode' => 200,
+            ], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'statusCode' => 401
+            ]);
+        }
+    }
+// DASHBOARD ========================================================================//
+
+
+// DASHBOARD ========================================================================//
 
     /**
      * Report by hospital
@@ -153,7 +211,7 @@ class ReportController extends Controller
     public function referralReportByHospital()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF'])) {
+        if (!$user->can('View Referral Dashboard')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -228,15 +286,53 @@ class ReportController extends Controller
         }
     }
 
+// DASHBOARD ========================================================================//
+
+
+// PRINTABLE REPORT ========================================================================//
+
+public function referralReport(int $patientId)
+    {
+        $user = auth()->user();
+        if (!$user->can('View Report')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+
+        $referrals = DB::table("referrals")
+            ->join("hospitals", "hospitals.hospital_id", '=', 'referrals.hospital_id')
+            ->join("patients", "patients.patient_id", '=', 'referrals.patient_id')
+            ->select(
+                "referrals.*",
+                "hospitals.*",
+                "patients.*",
+            )
+            ->where("patients.patient_id", "=", $patientId)
+            ->get();
+
+
+        if ($referrals->isEmpty()) {
+            return response([
+                "message" => "No data found",
+                "statusCode" => 200
+            ], 200);
+        } else {
+            return response([
+                "data" => $referrals,
+                "statusCode" => 200,
+            ]);
+        }
+
+    }
 
     // getBillsBetweenDates
     public function getBillsBetweenDates(Request $request)
     {
         $user = auth()->user();
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-            !$user->can('View Patient')
-        ) {
+        if (!$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -321,16 +417,11 @@ class ReportController extends Controller
         ]);
     }
 
-
-    // searchReferralReport
     public function searchReferralReport(Request $request)
     {
+        // Permission check
         $user = auth()->user();
-
-        if (
-            !$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL', 'ROLE STAFF', 'ROLE DG OFFICER']) ||
-            !$user->can('View Patient')
-        ) {
+        if (!$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -340,24 +431,21 @@ class ReportController extends Controller
         $query = DB::table('referrals')
             ->join('patients', 'patients.patient_id', '=', 'referrals.patient_id')
             ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
-            ->join('referral_types', 'referral_types.referral_type_id', '=', 'referrals.referral_type_id')
             ->join('reasons', 'reasons.reason_id', '=', 'referrals.reason_id')
             ->leftJoin('insurances', 'insurances.patient_id', '=', 'patients.patient_id')
             ->select(
                 'referrals.referral_id',
-                'referrals.start_date',
-                'referrals.end_date',
+                'referrals.created_at',
                 'referrals.status as referral_status',
                 'patients.patient_id',
                 'patients.name as patient_name',
                 'hospitals.hospital_name',
                 'hospitals.hospital_address',
-                'referral_types.referral_type_name',
                 'reasons.referral_reason_name',
                 'insurances.insurance_provider_name'
             );
 
-        // Optional filters
+        // Filters (Postgres uses ILIKE)
         if ($request->filled('patient_name')) {
             $query->where('patients.name', 'ILIKE', '%' . $request->patient_name . '%');
         }
@@ -370,37 +458,167 @@ class ReportController extends Controller
             $query->where('hospitals.hospital_address', 'ILIKE', '%' . $request->hospital_address . '%');
         }
 
-        if ($request->filled('referral_type_name')) {
-            $query->where('referral_types.referral_type_name', 'ILIKE', '%' . $request->referral_type_name . '%');
-        }
-
         if ($request->filled('referral_reason_name')) {
             $query->where('reasons.referral_reason_name', 'ILIKE', '%' . $request->referral_reason_name . '%');
         }
 
-        if ($request->filled('insurance_provider_name')) {
-            $query->where('insurances.insurance_provider_name', 'ILIKE', '%' . $request->insurance_provider_name . '%');
-        }
-
-        if ($request->filled('disease_name')) {
-            $query->join('patient_diseases', 'patient_diseases.patient_id', '=', 'patients.patient_id')
-                ->join('diseases', 'diseases.disease_id', '=', 'patient_diseases.disease_id')
-                ->where('diseases.disease_name', 'ILIKE', '%' . $request->disease_name . '%');
+        // Date range filter
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('referrals.created_at', [$request->start_date, $request->end_date]);
         }
 
         $results = $query->get();
-
-        if ($results->isEmpty()) {
-            return response([
-                'message' => 'No results found',
-                'statusCode' => 404,
-            ], 404);
-        }
 
         return response([
             'data' => $results,
             'statusCode' => 200,
         ], 200);
     }
+
+    public function rangeReport(Request $request)
+    {
+        // Permission check
+        $user = auth()->user();
+        if (!$user->can('View Report')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // Validate request input
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date'   => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $startDate = $request->input('start_date');
+        $endDate   = $request->input('end_date');
+
+        // Query hospital billing/payment report
+        $report = DB::table('hospitals')
+        ->join('bill_files', 'hospitals.hospital_id', '=', 'bill_files.hospital_id')
+        ->join('bills', 'bill_files.bill_file_id', '=', 'bills.bill_file_id')
+        ->leftJoin('bill_payments', 'bills.bill_id', '=', 'bill_payments.bill_id')
+        ->leftJoin('payments', 'bill_payments.payment_id', '=', 'payments.payment_id')
+        ->select(
+            'hospitals.hospital_name',
+            DB::raw('COUNT(DISTINCT bills.bill_id) as total_bills'),
+            DB::raw("SUM(CASE WHEN bills.bill_status = 'Paid' THEN 1 ELSE 0 END) as paid_bills"),
+            DB::raw("SUM(CASE WHEN bills.bill_status = 'Pending' THEN 1 ELSE 0 END) as pending_bills"),
+            DB::raw('SUM(bills.total_amount) as total_amount'),
+            DB::raw("SUM(CASE WHEN bills.bill_status = 'Paid' THEN bills.total_amount ELSE 0 END) as paid_amount"),
+            DB::raw("SUM(CASE WHEN bills.bill_status = 'Pending' THEN bills.total_amount ELSE 0 END) as pending_amount")
+        )
+        ->whereBetween('bills.bill_period_start', [$startDate, $endDate])
+        ->groupBy('hospitals.hospital_name')
+        ->orderBy('hospitals.hospital_name')
+        ->get();
+
+        return response()->json([
+            'start_date' => $startDate,
+            'end_date'   => $endDate,
+            'data'       => $report,
+        ]);
+    }
+
+    public function referralStatusReport()
+    {
+        // Permission check
+        $user = auth()->user();
+        if (!$user->can('View Report')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $report = DB::table('referrals')
+            ->select(
+                DB::raw('COUNT(CASE WHEN status = "Confirmed" THEN 1 END) as confirmed'),
+                DB::raw('COUNT(CASE WHEN status = "Cancelled" THEN 1 END) as cancelled'),
+                DB::raw('COUNT(CASE WHEN status = "Expired" THEN 1 END) as expired'),
+                DB::raw('COUNT(CASE WHEN status = "Closed" THEN 1 END) as closed')
+            )
+            ->first();
+
+        return response()->json($report);
+    }
+
+    public function timelyReport(Request $request)
+    {
+        // Permission check
+        $user = auth()->user();
+        if (!$user->can('View Report')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $period = $request->input('period'); // daily, weekly, monthly, yearly
+
+        $query = DB::table('bills');
+
+        switch ($period) {
+            case 'daily':
+                $query->select(
+                    DB::raw('DATE(bill_period_start) as period'),
+                    DB::raw('COUNT(bill_id) as total_bills'),
+                    DB::raw('SUM(total_amount) as total_amount')
+                )->groupBy(DB::raw('DATE(bill_period_start)'));
+                break;
+
+            case 'weekly':
+                $query->select(
+                    DB::raw('YEARWEEK(bill_period_start, 1) as period'),
+                    DB::raw('COUNT(bill_id) as total_bills'),
+                    DB::raw('SUM(total_amount) as total_amount')
+                )->groupBy(DB::raw('YEARWEEK(bill_period_start, 1)'));
+                break;
+
+            case 'monthly':
+                $query->select(
+                    DB::raw('DATE_FORMAT(bill_period_start, "%Y-%m") as period'),
+                    DB::raw('COUNT(bill_id) as total_bills'),
+                    DB::raw('SUM(total_amount) as total_amount')
+                )->groupBy(DB::raw('DATE_FORMAT(bill_period_start, "%Y-%m")'));
+                break;
+
+            case 'yearly':
+                $query->select(
+                    DB::raw('YEAR(bill_period_start) as period'),
+                    DB::raw('COUNT(bill_id) as total_bills'),
+                    DB::raw('SUM(total_amount) as total_amount')
+                )->groupBy(DB::raw('YEAR(bill_period_start)'));
+                break;
+        }
+
+        $report = $query->get();
+        return response()->json($report);
+    }
+
+    public function patientsReport()
+    {
+        // Permission check
+        $user = auth()->user();
+        if (!$user->can('View Report')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $report = DB::table('patients')
+            ->select(
+                DB::raw('COUNT(CASE WHEN gender = "Male" THEN 1 END) as male'),
+                DB::raw('COUNT(CASE WHEN gender = "Female" THEN 1 END) as female')
+            )
+            ->first();
+
+        return response()->json($report);
+    }
+
+// PRINTABLE REPORT ========================================================================//
 
 }

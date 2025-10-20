@@ -10,13 +10,15 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('diseases', function (Blueprint $table) {
-            $table->bigIncrements('disease_id'); // custom primary key with auto-increment
-            $table->string('disease_name');
-            $table->string('disease_code')->unique(); // optional: make code unique
+        Schema::create('patient_lists', function (Blueprint $table) {
+            $table->bigIncrements('patient_list_id');
+            $table->string('patient_list_title');
+            $table->string('patient_list_file');
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('created_by')->references('id')->on('users');
         });
     }
 
@@ -25,6 +27,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('diseases');
+        Schema::dropIfExists('patient_lists');
     }
 };

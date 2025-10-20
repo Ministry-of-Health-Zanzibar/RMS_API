@@ -4,24 +4,18 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
-use Illuminate\Support\Facades\DB;
 
 class permission_info extends Seeder
 {
     /**
      * Run the database seeds.
-     *
-     * @return void
      */
-    public function run()
+    public function run(): void
     {
-        DB::table('permissions')->delete();
-
         $permissions = [
             'View Referral Dashboard',
             'View Permission',
-            'System Audit',
-            'Report Management',
+            'Setup Management',
 
             'User Management',
             'Create User',
@@ -34,26 +28,10 @@ class permission_info extends Seeder
             'Delete Role',
             'View Role',
 
-            'Setup Management',
             'Create Location',
             'Update Location',
             'Delete Location',
-
-            'Create Facility Level',
-            'Update Facility Level',
-            'Delete Facility Level',
-
-            'Create Identification',
-            'Update Identification',
-            'Delete Identification',
-
-            'Create Upload Types',
-            'Update Upload Types',
-            'Delete Upload Types',
-
-            'Create Parent Upload Type',
-            'Update Parent Upload Type',
-            'Delete Parent Upload Type',
+            'View Location',
 
             'Create Hospital',
             'Update Hospital',
@@ -104,50 +82,54 @@ class permission_info extends Seeder
             'Delete Payment',
             'View Payment',
 
-            'Treatment Module',
-            'Create Treatment',
-            'Update Treatment',
-            'Delete Treatment',
-            'View Treatment',
+            'Create Patient List',
+            'Update Patient List',
+            'Delete Patient List',
+            'View Patient List',
 
-            'Monthly Bill Module',
-            'Create Monthly Bill',
-            'Update Monthly Bill',
-            'Delete Monthly Bill',
-            'View Monthly Bill',
+            'Create FollowUp',
+            'Update FollowUp',
+            'Delete FollowUp',
+            'View FollowUp',
 
-            // 'Accountant Module',
-            // 'Create Source',
-            // 'Update Source',
-            // 'Delete Source',
-            // 'View Source',
+            'Create Hospital Letter',
+            'Update Hospital Letter',
+            'Delete Hospital Letter',
+            'View Hospital Letter',
 
-            // 'Create Source Type',
-            // 'Update Source Type',
-            // 'Delete Source Type',
-            // 'View Source Type',
+            'View BillFile',
+            'Create BillFile',
+            'Update BillFile',
+            'Delete BillFile',
 
-            // 'Create Category',
-            // 'Update Category',
-            // 'Delete Category',
-            // 'View Category',
+            'View Bill Item',
+            'Create Bill Item',
+            'Update Bill Item',
+            'Delete Bill Item',
 
-            // 'Create Document Type',
-            // 'Update Document Type',
-            // 'Delete Document Type',
-            // 'View Document Type',
+            'View Patient History',
+            'Create Patient History',
+            'Update Patient History',
+            'Delete Patient History',
 
-            // 'Create Document Form',
-            // 'Update Document Form',
-            // 'Delete Document Form',
-            // 'View Document Form',
-            // 'View Report',
+            'View Diagnoses',
+            'Create Diagnoses',
+            'Update Diagnoses',
+            'Delete Diagnoses',
+            'Restore Diagnoses',
+
+            'Report Module',
+            'View Report',
+            'Director General Report',
+            'Accountant Report',
+            'Verification Report',
+            'Medical Board Report',
         ];
 
         foreach ($permissions as $permission) {
-
-            Permission::create(['name' => $permission, 'guard_name' => 'web']);
-
+            Permission::firstOrCreate(
+                ['name' => $permission, 'guard_name' => 'web']
+            );
         }
     }
 }

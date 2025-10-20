@@ -53,6 +53,12 @@ class GeographicalLocations extends Model
         'label'
     ];
 
+
+    public function patients()
+    {
+        return $this->hasMany(Patient::class, 'location_id', 'location_id');
+    }
+
     /**
     * The attributes that should be mutated to dates.
     *

@@ -49,7 +49,6 @@ class Insurance extends Model
         'card_number',
         'patient_id',
         'valid_until',
-        'created_by'
     ];
 
     /**
@@ -57,29 +56,7 @@ class Insurance extends Model
      */
     public function patient()
     {
-        return $this->belongsTo(Patient::class, 'patient_id', 'id');
-    }
-
-    // Automatically generate insurance_code before creating
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($insuaranceCodeNumber) {
-            if (empty($insuaranceCodeNumber->insurance_code)) {
-                $insuaranceCodeNumber->insurance_code = self::generateInsuaranceCodeNumber();
-            }
-        });
-    }
-
-    // Generate random unique insurance_code
-    private static function generateInsuaranceCodeNumber()
-    {
-        do {
-            $insuaranceCodeNumber = strtoupper(Str::random(10)); // Generates a 10-character random string
-        } while (self::where('insurance_code', $insuaranceCodeNumber)->exists());
-
-        return $insuaranceCodeNumber;
+        return $this->belongsTo(Patient::class, 'patient_id', 'patient_id');
     }
 
     public function getActivitylogOptions(): LogOptions

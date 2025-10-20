@@ -18,34 +18,61 @@ class Referral extends Model
 
     protected $fillable = [
         'patient_id',
+        'parent_referral_id',
+        'referral_number',
         'hospital_id',
-        'referral_type_id',
         'reason_id',
-        'start_date',
-        'end_date',
         'status',
         'confirmed_by',
         'created_by',
     ];
 
+    public function parent()
+    {
+        return $this->belongsTo(Referral::class, 'parent_referral_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Referral::class, 'parent_referral_id');
+    }
+
+    /**
+     * Referral has many hospital letters
+     */
+    public function hospitalLetters()
+    {
+        return $this->hasMany(HospitalLetter::class, 'referral_id', 'referral_id');
+    }
+
+    public function referral()
+    {
+        return $this->belongsTo(Referral::class, 'referral_id', 'referral_id')
+                    ->with(['patient', 'reason', 'hospital']);
+    }
+
+    /**
+     * Referral belongs to a patient
+     */
     public function patient()
     {
-        return $this->belongsTo(Patient::class);
+        return $this->belongsTo(Patient::class, 'patient_id', 'patient_id');
     }
 
+    /**
+     * Referral belongs to a hospital
+     */
     public function hospital()
     {
-        return $this->belongsTo(Hospital::class);
+        return $this->belongsTo(Hospital::class, 'hospital_id', 'hospital_id');
     }
 
-    public function referralType()
-    {
-        return $this->belongsTo(ReferralType::class);
-    }
-
+    /**
+     * Referral has a reason
+     */
     public function reason()
     {
-        return $this->belongsTo(Reason::class);
+        return $this->belongsTo(Reason::class, 'reason_id', 'reason_id');
     }
 
     public function bills()
@@ -56,6 +83,21 @@ class Referral extends Model
     public function confirmedBy()
     {
         return $this->belongsTo(User::class, 'confirmed_by');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by', 'id');
+    }
+
+    public function diagnoses()
+    {
+        return $this->belongsToMany(Diagnosis::class, 'diagnosis_referral', 'referral_id', 'diagnosis_id')->withTimestamps();
+    }
+
+    public function referralLetters()
+    {
+        return $this->hasOne(ReferralLetter::class, 'referral_id', 'referral_id');
     }
 
     public function getActivitylogOptions(): LogOptions

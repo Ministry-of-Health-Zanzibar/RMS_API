@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('batch_years', function (Blueprint $table) {
-            $table->bigIncrements('batch_year_id');
-            $table->string('batch_year',20);
-            $table->softDeletes();
+        Schema::create('diagnoses', function (Blueprint $table) {
+            $table->id('diagnosis_id'); // auto increment primary key
+            $table->uuid('uuid')->unique(); // uuid auto generated
+            $table->string('diagnosis_code')->unique();
+            $table->string('diagnosis_name');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -24,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('batch_years');
+        Schema::dropIfExists('diagnoses');
     }
 };

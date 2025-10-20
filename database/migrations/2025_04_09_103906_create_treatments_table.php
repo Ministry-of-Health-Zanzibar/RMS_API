@@ -26,7 +26,6 @@ return new class extends Migration {
 
             // Foreign key constraints
             $table->foreign('referral_id')->references('referral_id')->on('referrals');
-            // $table->foreign('disease_id')->references('disease_id')->on('diseases');
         });
     }
 

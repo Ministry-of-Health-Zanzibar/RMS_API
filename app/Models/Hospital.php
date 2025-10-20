@@ -48,19 +48,28 @@ class Hospital extends Model
         'contact_number',
         'hospital_email',
         'created_by',
+        'referral_type_id',
     ];
 
     protected $dates = [
         'deleted_at',
     ];
 
-    // Optional: Define relationships here if needed
     // e.g., A hospital has many referrals
     public function referrals()
     {
-        return $this->hasMany(Referral::class);
+        return $this->hasMany(Referral::class, 'hospital_id', 'hospital_id');
     }
 
+    public function referralType()
+    {
+        return $this->belongsTo(ReferralType::class, 'referral_type_id', 'referral_type_id');
+    }
+
+    public function billFiles()
+    {
+        return $this->hasMany(BillFile::class, 'hospital_id', 'hospital_id');
+    }
 
     // Automatically generate hospital_code before creating
     protected static function boot()

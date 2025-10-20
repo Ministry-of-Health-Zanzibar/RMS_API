@@ -6,13 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Hospital;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class HospitalController extends Controller
 {
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Hospital|Create Hospital|View Hospital|Update Hospital|Delete Hospital', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
     }
     /**
      * Display a listing of the resource.
@@ -61,14 +61,14 @@ class HospitalController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('View Hospital')) {
+        if (!$user->can('View Hospital')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $hospitals = Hospital::withTrashed()->get();
+        $hospitals = auth()->user()->hasRole('ROLE ADMIN') ? Hospital::withTrashed()->get() : Hospital::all();
 
         if ($hospitals) {
             return response([
@@ -125,7 +125,7 @@ class HospitalController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Create Hospital')) {
+        if (!$user->can('Create Hospital')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -137,6 +137,7 @@ class HospitalController extends Controller
             'hospital_address' => ['nullable', 'string'],
             'contact_number' => ['nullable', 'string'],
             'hospital_email' => ['nullable', 'email'],
+            'referral_type_id' => ['nullable', 'exists:referral_types,referral_type_id'],
         ]);
 
 
@@ -145,9 +146,9 @@ class HospitalController extends Controller
             'hospital_name' => $data['hospital_name'],
             'hospital_address' => $data['hospital_address'],
             'contact_number' => $data['contact_number'],
-            'hospital_email' => $data['hospital_email'],
+            'hospital_email' => $data['hospital_email'] ?? null,
+            'referral_type_id' => $data['referral_type_id'] ?? null,
             'created_by' => Auth::id(),
-            // 'created_by' => auth()->id(),
         ]);
 
         if ($hospital) {
@@ -206,7 +207,7 @@ class HospitalController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('View Hospital')) {
+        if (!$user->can('View Hospital')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -277,7 +278,7 @@ class HospitalController extends Controller
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Update Hospital')) {
+        if (!$user->can('Update Hospital')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -362,7 +363,7 @@ class HospitalController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Delete Hospital')) {
+        if (!$user->can('Delete Hospital')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -425,7 +426,7 @@ class HospitalController extends Controller
      */
     public function unBlockHospital(int $id)
     {
-
+        
         $hospital = Hospital::withTrashed()->find($id);
 
         if (!$hospital) {
@@ -441,5 +442,89 @@ class HospitalController extends Controller
             'message' => 'Hospital unblocked successfully',
             'statusCode' => 200,
         ], 200);
+    }
+    /**
+    * @OA\Get(
+     *     path="/api/reffered-hospitals",
+     *     summary="Get all hospitals",
+     *     tags={"hospitals"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\Header(
+     *             header="Cache-Control",
+     *             description="Cache control header",
+     *             @OA\Schema(type="string", example="no-cache, private")
+     *         ),
+     *         @OA\Header(
+     *             header="Content-Type",
+     *             description="Content type header",
+     *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
+     *         ),
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="hospital_id", type="integer"),
+     *                     @OA\Property(property="hospital_code", type="string"),
+     *                     @OA\Property(property="hospital_name", type="string"),
+     *                     @OA\Property(property="hospital_address", type="string"),
+     *                     @OA\Property(property="contact_number", type="string"),
+     *                     @OA\Property(property="hospital_email", type="string"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="deleted_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     )
+     * )
+     */
+    public function getReferredHospitals()
+    {
+        $user = auth()->user();
+        if (!$user->can('View Hospital')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $hospitals = Hospital::whereHas('referrals', function($query) {
+            // Only confirmed referrals
+            $query->where('status', 'Confirmed');
+        })
+        ->with([
+            'referrals' => function($query) {
+                // Only confirmed referrals (exclude Cancelled)
+                $query->where('status', 'Confirmed');
+            },
+            'referralType',
+        ])
+        ->withTrashed()
+        ->get([
+            'hospital_id', 
+            'hospital_name', 
+            'hospital_address', 
+            'hospital_code', 
+            'referral_type_id'
+        ]);
+
+
+        if ($hospitals) {
+            return response([
+                'data' => $hospitals,
+                'statusCode' => 200,
+            ], 200);
+        } else {
+            return response([
+                'message' => 'No data found',
+                'statusCode' => 200,
+            ], 200);
+        }
     }
 }

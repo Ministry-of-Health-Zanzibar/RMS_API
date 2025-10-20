@@ -62,7 +62,7 @@ class ReasonController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('View Reason')) {
+        if (!$user->can('View Reason')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -124,7 +124,7 @@ class ReasonController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Create Reason')) {
+        if (!$user->can('Create Reason')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -198,7 +198,7 @@ class ReasonController extends Controller
     public function show(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Create Reason')) {
+        if (!$user->can('Create Reason')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -267,7 +267,7 @@ class ReasonController extends Controller
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Update Reason')) {
+        if (!$user->can('Update Reason')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -348,7 +348,7 @@ class ReasonController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF']) || !$user->can('Delete Reason')) {
+        if (!$user->can('Delete Reason')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -411,7 +411,6 @@ class ReasonController extends Controller
      */
     public function unBlockReason(int $id)
     {
-
         $Reason = Reason::withTrashed()->find($id);
 
         if (!$Reason) {
