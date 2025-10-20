@@ -4074,13 +4074,13 @@
                 }
             }
         },
-        "/api/patients/{id}/histories": {
+        "/api/patients/histories/{patientId}": {
             "get": {
                 "tags": [
                     "Patients"
                 ],
                 "summary": "Get medical histories of a patient by ID",
-                "operationId": "2235b2d75d65b78ae5b113780660af53",
+                "operationId": "cae940b93166849cdc418f3de64fb96e",
                 "parameters": [
                     {
                         "name": "id",

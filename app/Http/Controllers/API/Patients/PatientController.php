@@ -219,12 +219,14 @@ class PatientController extends Controller
                 ], 404);
             }
 
-            // Check patient count limit
-            $existingCount = \App\Models\Patient::where('patient_list_id', $patientList->patient_list_id)->count();
+            // Check patient count limit using pivot
+            $existingCount = \App\Models\Patient::whereHas('patientLists', function ($query) use ($patientList) {
+                $query->where('patient_lists.patient_list_id', $patientList->patient_list_id);
+            })->count();
 
             if ($existingCount >= $patientList->no_of_patients) {
                 return response()->json([
-                    'message' => "The Medical Board (ID: {$patientListId}) already reached its patient limit ({$patientList->no_of_patients}).",
+                    'message' => "The Medical Board (ID: {$patientList->patient_list_id}) already reached its patient limit ({$patientList->no_of_patients}).",
                     'statusCode' => 422,
                 ], 422);
             }
@@ -753,7 +755,7 @@ class PatientController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/patients/{id}/histories",
+     *     path="/api/patients/histories/{patientId}",
      *     summary="Get medical histories of a patient by ID",
      *     tags={"Patients"},
      *     @OA\Parameter(
