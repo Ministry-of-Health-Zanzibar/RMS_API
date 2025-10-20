@@ -437,7 +437,7 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        // 🧩 Authorization
+        // Authorization
         if (!$user->can('Update Patient')) {
             return response()->json([
                 'message' => 'Forbidden',
@@ -445,13 +445,13 @@ class PatientController extends Controller
             ], 403);
         }
 
-        // 🧩 Normalize input
+        // Normalize input
         $request->merge([
             'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
             'patient_list_id' => (array) $request->input('patient_list_id'),
         ]);
 
-        // 🧩 Validation
+        // Validation
         $validator = Validator::make($request->all(), [
             'name'              => ['required', 'string'],
             'matibabu_card'     => ['nullable', 'string'],
@@ -466,8 +466,6 @@ class PatientController extends Controller
             'patient_list_id.*' => ['numeric', 'exists:patient_lists,patient_list_id'],
             'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
             'description'       => ['nullable', 'string'],
-
-            // Insurance fields
             'has_insurance'           => ['nullable', 'boolean'],
             'insurance_provider_name' => ['nullable', 'string'],
             'card_number'             => ['nullable', 'string'],
@@ -482,10 +480,10 @@ class PatientController extends Controller
             ], 422);
         }
 
-        // 🧩 Find patient
+        // Find patient
         $patient = Patient::findOrFail($id);
 
-        // 🧩 Validate each list and check capacity
+        // Check capacity for each list
         foreach ($request->patient_list_id as $patientListId) {
             $patientList = \App\Models\PatientList::find($patientListId);
 
@@ -496,32 +494,28 @@ class PatientController extends Controller
                 ], 404);
             }
 
-            $existingCount = \App\Models\Patient::where('patient_list_id', $patientList->patient_list_id)->count();
+            $existingCount = \App\Models\Patient::whereHas('patientList', function ($query) use ($patientList) {
+                $query->where('patient_lists.patient_list_id', $patientList->patient_list_id);
+            })->count();
 
             if ($existingCount >= $patientList->no_of_patients) {
                 return response()->json([
-                    'message' => "The Medical Board (ID: {$patientListId}) already reached its patient limit ({$patientList->no_of_patients}).",
+                    'message' => "The Medical Board (ID: {$patientList->patient_list_id}) already reached its patient limit ({$patientList->no_of_patients}).",
                     'statusCode' => 422,
                 ], 422);
             }
-
-            // 🧩 Update patient (use last valid list if multiple)
-            $patient->update([
-                'name'            => $request->input('name'),
-                'matibabu_card'   => $request->input('matibabu_card'),
-                'zan_id'          => $request->input('zan_id'),
-                'date_of_birth'   => $request->input('date_of_birth'),
-                'gender'          => $request->input('gender'),
-                'phone'           => $request->input('phone'),
-                'location_id'     => $request->input('location_id'),
-                'job'             => $request->input('job'),
-                'position'        => $request->input('position'),
-                'patient_list_id' => $patientList->patient_list_id,
-                'updated_by'      => Auth::id(),
-            ]);
         }
 
-        // 🧩 Handle File Upload (same as store)
+        // Update patient basic info
+        $patient->update($request->only([
+            'name', 'matibabu_card', 'zan_id', 'date_of_birth', 
+            'gender', 'phone', 'location_id', 'job', 'position'
+        ]));
+
+        // Sync pivot table with new patient lists
+        $patient->patientList()->sync($request->patient_list_id);
+
+        // Handle file uploads
         if ($request->hasFile('patient_file')) {
             $files = $request->file('patient_file');
             if (!is_array($files)) $files = [$files];
@@ -542,21 +536,15 @@ class PatientController extends Controller
             }
         }
 
-        // 🧩 Handle Insurance (same as store)
+        // Handle insurance
         if ($request->has('has_insurance')) {
-            $hasInsurance = $request->boolean('has_insurance');
-
-            if ($hasInsurance) {
-                $insuranceProvider = $request->insurance_provider_name ?: null;
-                $cardNumber        = $request->card_number ?: null;
-                $validUntil        = $request->valid_until ?: null;
-
+            if ($request->boolean('has_insurance')) {
                 \App\Models\Insurance::updateOrCreate(
                     ['patient_id' => $patient->patient_id],
                     [
-                        'insurance_provider_name' => $insuranceProvider,
-                        'card_number'             => $cardNumber,
-                        'valid_until'             => $validUntil,
+                        'insurance_provider_name' => $request->insurance_provider_name ?: null,
+                        'card_number'             => $request->card_number ?: null,
+                        'valid_until'             => $request->valid_until ?: null,
                     ]
                 );
             } else {
@@ -564,10 +552,9 @@ class PatientController extends Controller
             }
         }
 
-        // 🧩 Response
         return response()->json([
             'status' => 'success',
-            'data' => $patient->load(['files', 'insurances']),
+            'data' => $patient->load(['files', 'insurances', 'patientLists']),
             'message' => 'Patient updated successfully.',
             'statusCode' => 200,
         ], 200);
