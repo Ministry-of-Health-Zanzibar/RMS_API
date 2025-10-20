@@ -220,7 +220,7 @@ class PatientController extends Controller
             }
 
             // Check patient count limit using pivot
-            $existingCount = \App\Models\Patient::whereHas('patientLists', function ($query) use ($patientList) {
+            $existingCount = \App\Models\Patient::whereHas('patientList', function ($query) use ($patientList) {
                 $query->where('patient_lists.patient_list_id', $patientList->patient_list_id);
             })->count();
 
