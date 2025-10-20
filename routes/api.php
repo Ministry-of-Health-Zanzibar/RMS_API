@@ -87,6 +87,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::patch('patients/unBlock/{id}', [PatientController::class, 'unBlockPatient']);
     Route::get('patients-withinsurance/{id}', [PatientController::class, 'getAllPatientsWithInsurance']);
     Route::get('patients/for-referral/allowed', [PatientController::class, 'getAllPatients']);
+    Route::get('/patients/histories/{id}', [PatientController::class, 'getMedicalHistory']);
 
     // INSURANCES APIs
     Route::resource('insurances', InsuranceController::class);

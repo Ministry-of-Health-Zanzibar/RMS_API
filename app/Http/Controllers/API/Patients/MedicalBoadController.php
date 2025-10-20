@@ -14,8 +14,6 @@ class MedicalBoadController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Patient List|Create Patient List|Update Patient List|Delete Patient List', 
-            ['only' => ['index', 'store', 'show', 'updatePatientList', 'destroy', 'unBlockParentList', 'getAllPatientsByPatientListId']]);
     }
 
     /**
@@ -271,93 +269,6 @@ class MedicalBoadController extends Controller
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    // public function updatePatientList(Request $request, $id)
-    // {
-    //     $user = auth()->user();
-    //     if (!$user->can('Update Patient List')) {
-    //         return response()->json([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     $list = PatientList::findOrFail($id);
-
-    //     $validator = Validator::make($request->all(), [
-    //         'board_type' => ['nullable', 'in:Emergency,Routine'],
-    //         'patient_list_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
-    //         'board_date' => ['nullable', 'date'],
-    //         'no_of_patients' => ['nullable', 'integer', 'min:1'],
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         return response()->json([
-    //             'status' => 'error',
-    //             'errors' => $validator->errors(),
-    //             'statusCode' => 422,
-    //         ], 422);
-    //     }
-
-    //     // Handle file upload
-    //     $filePath = $list->patient_list_file;
-    //     if ($request->hasFile('patient_list_file')) {
-    //         if ($filePath && file_exists(public_path($filePath))) {
-    //             unlink(public_path($filePath));
-    //         }
-    //         $file = $request->file('patient_list_file');
-    //         $newFileName = 'patient_list_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
-    //         $file->move(public_path('uploads/patientLists/'), $newFileName);
-    //         $filePath = 'uploads/patientLists/' . $newFileName;
-    //     }
-
-    //     // Determine updated fields
-    //     $boardType = $request->board_type ?? $list->board_type;
-    //     $numPatients = $request->no_of_patients ?? $list->no_of_patients;
-    //     $boardDateInput = $request->board_date ?? $list->board_date;
-
-    //     // Parse board_date safely
-    //     try {
-    //         $boardDate = \Carbon\Carbon::parse($boardDateInput);
-    //     } catch (\Exception $e) {
-    //         $boardDate = \Carbon\Carbon::createFromTimestamp(strtotime($boardDateInput));
-    //     }
-
-    //     $formattedDateForRef = $boardDate->format('d/m/Y');
-    //     $formattedDateForTitle = $boardDate->format('d/m/Y');
-
-    //     $boardTypeAbbr = match (ucfirst(strtolower($boardType))) {
-    //         'Emergency' => 'EMG',
-    //         'Routine' => 'RTN',
-    //         default => substr($boardType, 0, 3),
-    //     };
-
-    //     // Update the model
-    //     $list->update([
-    //         'patient_list_file' => $filePath,
-    //         'board_type' => $boardType,
-    //         'board_date' => $boardDate->toDateString(),
-    //         'no_of_patients' => $numPatients,
-    //         'reference_number' => sprintf(
-    //             'MBM-%s-%s-%s-%s',
-    //             $formattedDateForRef,
-    //             $boardTypeAbbr,
-    //             str_pad($numPatients, 3, '0', STR_PAD_LEFT),
-    //             now()->format('H-i')
-    //         ),
-    //         'patient_list_title' => sprintf(
-    //             'MBM of %s at %s',
-    //             $formattedDateForTitle,
-    //             now()->format('h:i a')
-    //         ),
-    //         'updated_by' => $user->id,
-    //     ]);
-
-    //     return response()->json([
-    //         'data' => $list->load(['creator', 'patients', 'boardMembers']),
-    //         'message' => 'Patient list updated successfully',
-    //         'statusCode' => 200
-    //     ]);
-    // }
     public function updatePatientList(Request $request, $id)
     {
         $user = auth()->user();

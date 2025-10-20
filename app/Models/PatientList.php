@@ -97,7 +97,7 @@ class PatientList extends Model
 
     public function patients()
     {
-        return $this->hasMany(Patient::class, 'patient_list_id', 'patient_list_id');
+        return $this->belongsToMany(Patient::class, 'patient_list_patient', 'patient_list_id', 'patient_id')->withTimestamps();
     }
 
     public function getActivitylogOptions(): LogOptions

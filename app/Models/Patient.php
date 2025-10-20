@@ -29,7 +29,6 @@ class Patient extends Model
         'location_id',
         'job',
         'position',
-        'patient_list_id',
         'created_by',
     ];
 
@@ -50,7 +49,7 @@ class Patient extends Model
 
     public function patientList()
     {
-        return $this->belongsTo(PatientList::class, 'patient_list_id', 'patient_list_id');
+        return $this->belongsToMany(PatientList::class, 'patient_list_patient', 'patient_id', 'patient_list_id')->withTimestamps();
     }
 
     public function patientHistories()

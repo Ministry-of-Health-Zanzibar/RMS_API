@@ -12,2047 +12,6 @@
         }
     ],
     "paths": {
-        "/api/categories": {
-            "get": {
-                "tags": [
-                    "categories"
-                ],
-                "summary": "Get all categories",
-                "operationId": "9f84ae30d28bf11c78b6be070b45115c",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "category_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "category_code": {
-                                                        "type": "string"
-                                                    },
-                                                    "category_name": {
-                                                        "type": "string"
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "deleted_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "categories"
-                ],
-                "summary": "Create category",
-                "operationId": "1b597990762737155d8ef993c2a68f7c",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "category_name": {
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/categories/{categoryId}": {
-            "get": {
-                "tags": [
-                    "categories"
-                ],
-                "summary": "Find category",
-                "operationId": "daa6bf772609337580df84a09630af1d",
-                "parameters": [
-                    {
-                        "name": "categoryId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "properties": {
-                                                "category_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "category_code": {
-                                                    "type": "string"
-                                                },
-                                                "category_name": {
-                                                    "type": "string"
-                                                },
-                                                "created_by": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-04-10T10:44:31.000000Z"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-04-10T10:44:31.000000Z"
-                                                },
-                                                "deleted_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": null,
-                                                    "nullable": true
-                                                }
-                                            },
-                                            "type": "object"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "tags": [
-                    "categories"
-                ],
-                "summary": "Update category",
-                "operationId": "8b98279749a43b5e26871593870cf768",
-                "parameters": [
-                    {
-                        "name": "categoryId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "category_name": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "categories"
-                ],
-                "summary": "Delete category",
-                "operationId": "42e34686441c2ee05bfaa5c0986cb454",
-                "parameters": [
-                    {
-                        "name": "categoryId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/categories/unBlock/{categoryId}": {
-            "patch": {
-                "tags": [
-                    "categories"
-                ],
-                "summary": "Unblock source type",
-                "operationId": "3d214452aaac32a0e32fa0fafef879cd",
-                "parameters": [
-                    {
-                        "name": "categoryId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/documentTypes": {
-            "get": {
-                "tags": [
-                    "documentTypes"
-                ],
-                "summary": "Get all document types",
-                "operationId": "652bb4ddb37b58a8e0d8ec3133f7bac1",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "document_type_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "document_type_code": {
-                                                        "type": "string"
-                                                    },
-                                                    "document_type_name": {
-                                                        "type": "string"
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "deleted_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "documentTypes"
-                ],
-                "summary": "Create document type",
-                "operationId": "1be646cb2a56c53e419a4a31e033389a",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "document_type_name": {
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/documentTypes/{documentTypeId}": {
-            "get": {
-                "tags": [
-                    "documentTypes"
-                ],
-                "summary": "Find document type",
-                "operationId": "3a92e2234332dca89ba1ba560dd2856e",
-                "parameters": [
-                    {
-                        "name": "documentTypeId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "properties": {
-                                                "document_type_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "document_type_code": {
-                                                    "type": "string"
-                                                },
-                                                "document_type_name": {
-                                                    "type": "string"
-                                                },
-                                                "created_by": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-04-10T10:44:31.000000Z"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-04-10T10:44:31.000000Z"
-                                                },
-                                                "deleted_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": null,
-                                                    "nullable": true
-                                                }
-                                            },
-                                            "type": "object"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "tags": [
-                    "documentTypes"
-                ],
-                "summary": "Update document type",
-                "operationId": "603f343ad5c403097ebca3544db18245",
-                "parameters": [
-                    {
-                        "name": "documentTypeId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "document_type_name": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "documentTypes"
-                ],
-                "summary": "Delete document type",
-                "operationId": "2a71cc6a909a22dfc67e7bb5e30381a3",
-                "parameters": [
-                    {
-                        "name": "documentTypeId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/documentTypes/unBlock/{documentTypeId}": {
-            "patch": {
-                "tags": [
-                    "documentTypes"
-                ],
-                "summary": "Unblock document type",
-                "operationId": "292530d0e56a8f17ed000f67a23768cc",
-                "parameters": [
-                    {
-                        "name": "documentTypeId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/documentForms": {
-            "get": {
-                "tags": [
-                    "documentForms"
-                ],
-                "summary": "Get all document forms",
-                "operationId": "27aaed66c7b13dd45bb32457d648aa4c",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "document_form_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "document_form_code": {
-                                                        "type": "string"
-                                                    },
-                                                    "payee_name": {
-                                                        "type": "string"
-                                                    },
-                                                    "amount": {
-                                                        "type": "integer"
-                                                    },
-                                                    "tin_number": {
-                                                        "type": "string"
-                                                    },
-                                                    "year": {
-                                                        "type": "string"
-                                                    },
-                                                    "document": {
-                                                        "type": "string"
-                                                    },
-                                                    "documentFileUrl": {
-                                                        "type": "string"
-                                                    },
-                                                    "source_type_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "category_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "document_type_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "deleted_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "documentForms"
-                ],
-                "summary": "Create document form",
-                "operationId": "c3128b401c46d7ff62307f8adb76f1d3",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "payee_name": {
-                                        "type": "string"
-                                    },
-                                    "amount": {
-                                        "type": "integer"
-                                    },
-                                    "tin_number": {
-                                        "type": "string"
-                                    },
-                                    "year": {
-                                        "type": "string"
-                                    },
-                                    "document_file": {
-                                        "type": "string"
-                                    },
-                                    "source_type_id": {
-                                        "type": "integer"
-                                    },
-                                    "category_id": {
-                                        "type": "integer"
-                                    },
-                                    "document_type_id": {
-                                        "type": "integer"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/documentForms/{documentFormId}": {
-            "get": {
-                "tags": [
-                    "documentForms"
-                ],
-                "summary": "Find document form",
-                "operationId": "e52318b3f00fd19c8d54a9f5da93c8c6",
-                "parameters": [
-                    {
-                        "name": "documentFormId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "properties": {
-                                                "document_form_id": {
-                                                    "type": "integer"
-                                                },
-                                                "document_form_code": {
-                                                    "type": "string"
-                                                },
-                                                "payee_name": {
-                                                    "type": "string"
-                                                },
-                                                "amount": {
-                                                    "type": "integer"
-                                                },
-                                                "tin_number": {
-                                                    "type": "string"
-                                                },
-                                                "year": {
-                                                    "type": "string"
-                                                },
-                                                "documentFileUrl": {
-                                                    "type": "string"
-                                                },
-                                                "source_type_id": {
-                                                    "type": "integer"
-                                                },
-                                                "category_id": {
-                                                    "type": "integer"
-                                                },
-                                                "document_type_id": {
-                                                    "type": "integer"
-                                                },
-                                                "created_by": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-04-10T10:44:31.000000Z"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-04-10T10:44:31.000000Z"
-                                                },
-                                                "deleted_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": null,
-                                                    "nullable": true
-                                                }
-                                            },
-                                            "type": "object"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "documentForms"
-                ],
-                "summary": "Delete document form",
-                "operationId": "cf1c058998a0ebb93a900f2854f25f44",
-                "parameters": [
-                    {
-                        "name": "documentFormId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/documentForms/update/{documentFormId}": {
-            "post": {
-                "tags": [
-                    "documentForms"
-                ],
-                "summary": "Update document form",
-                "operationId": "de8c27b2c134f527103252405ffdb131",
-                "parameters": [
-                    {
-                        "name": "documentFormId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "payee_name": {
-                                                        "type": "string"
-                                                    },
-                                                    "amount": {
-                                                        "type": "integer"
-                                                    },
-                                                    "tin_number": {
-                                                        "type": "string"
-                                                    },
-                                                    "year": {
-                                                        "type": "string"
-                                                    },
-                                                    "document_file": {
-                                                        "type": "string"
-                                                    },
-                                                    "source_type_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "category_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "document_type_id": {
-                                                        "type": "integer"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/documentForms/unBlock/{documentFormId}": {
-            "patch": {
-                "tags": [
-                    "documentForms"
-                ],
-                "summary": "Unblock document form",
-                "operationId": "fee3f79f1bf47e9ee37e65c8b8f2668a",
-                "parameters": [
-                    {
-                        "name": "documentFormId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/sources": {
-            "get": {
-                "tags": [
-                    "sources"
-                ],
-                "summary": "Get all sources",
-                "operationId": "ff4b77224c8a7513a8bc65b0684458f7",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "source_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "source_name": {
-                                                        "type": "string"
-                                                    },
-                                                    "source_code": {
-                                                        "type": "string"
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "deleted_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "sources"
-                ],
-                "summary": "Create source",
-                "operationId": "6b9fcd105e22e6957dd0ca7734b7d51c",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "source_name": {
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/sources/{id}": {
-            "get": {
-                "tags": [
-                    "sources"
-                ],
-                "summary": "Find source",
-                "operationId": "2f67d4173fc2d3daec56de6e5848d162",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "properties": {
-                                                "source_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "source_name": {
-                                                    "type": "string",
-                                                    "example": "LUMUMBA"
-                                                },
-                                                "source_code": {
-                                                    "type": "string",
-                                                    "example": "Zanzibar"
-                                                },
-                                                "created_by": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-04-10T10:44:31.000000Z"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-04-10T10:44:31.000000Z"
-                                                },
-                                                "deleted_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": null,
-                                                    "nullable": true
-                                                }
-                                            },
-                                            "type": "object"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/sources/{sourceId}": {
-            "put": {
-                "tags": [
-                    "sources"
-                ],
-                "summary": "Update source",
-                "operationId": "f62f9df7414250e36b0f28c28aa7056d",
-                "parameters": [
-                    {
-                        "name": "sourceId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "source_name": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "sources"
-                ],
-                "summary": "Delete source",
-                "operationId": "96bd31068dbf0fcbc2940cbb69b9cb8d",
-                "parameters": [
-                    {
-                        "name": "sourceId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/sources/unBlock/{sourceId}": {
-            "patch": {
-                "tags": [
-                    "sources"
-                ],
-                "summary": "Unblock source",
-                "operationId": "835fab85f0d0dc6da62bcdbf744098d2",
-                "parameters": [
-                    {
-                        "name": "sourceId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/sourceTypes": {
-            "get": {
-                "tags": [
-                    "sourceTypes"
-                ],
-                "summary": "Get all source types",
-                "operationId": "617c23a573bf20a2f39ac907436a1a11",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "source_type_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "source_type_code": {
-                                                        "type": "string"
-                                                    },
-                                                    "source_type_name": {
-                                                        "type": "string"
-                                                    },
-                                                    "source_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "deleted_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "sourceTypes"
-                ],
-                "summary": "Create source type",
-                "operationId": "157416ab1e61087866b3fb59f418481c",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "source_type_name": {
-                                        "type": "string"
-                                    },
-                                    "source_id": {
-                                        "type": "integer"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/sourceTypes/{sourceTypeId}": {
-            "get": {
-                "tags": [
-                    "sourceTypes"
-                ],
-                "summary": "Find source type",
-                "operationId": "b2f8781de39933c2163856d8bc0290e5",
-                "parameters": [
-                    {
-                        "name": "sourceTypeId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "properties": {
-                                                "source_type_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "source_type_code": {
-                                                    "type": "string"
-                                                },
-                                                "source_type_name": {
-                                                    "type": "string"
-                                                },
-                                                "source_id": {
-                                                    "type": "integer"
-                                                },
-                                                "created_by": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-04-10T10:44:31.000000Z"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-04-10T10:44:31.000000Z"
-                                                },
-                                                "deleted_at": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": null,
-                                                    "nullable": true
-                                                }
-                                            },
-                                            "type": "object"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "sourceTypes"
-                ],
-                "summary": "Delete source type",
-                "operationId": "0c985f9b308940f26cc6d8dec01facf4",
-                "parameters": [
-                    {
-                        "name": "sourceTypeId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/sourceTypes/{id}": {
-            "put": {
-                "tags": [
-                    "sourceTypes"
-                ],
-                "summary": "Update source type",
-                "operationId": "abac51a26594f0a5e5127c5b924700de",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "source_type_name": {
-                                                        "type": "string"
-                                                    },
-                                                    "source_id": {
-                                                        "type": "integer"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/sourceTypes/unBlock/{sourceTypeId}": {
-            "patch": {
-                "tags": [
-                    "sourceTypes"
-                ],
-                "summary": "Unblock source type",
-                "operationId": "f10211f26545061afbb74795a4f09729",
-                "parameters": [
-                    {
-                        "name": "sourceTypeId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "statusCode": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/sourceTypes/source/{sourceName}": {
-            "get": {
-                "tags": [
-                    "sourceTypes"
-                ],
-                "summary": "Get all source types by source type name",
-                "operationId": "b276351c0a7cd6dda4566256478f55cc",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "headers": {
-                            "Cache-Control": {
-                                "description": "Cache control header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "no-cache, private"
-                                }
-                            },
-                            "Content-Type": {
-                                "description": "Content type header",
-                                "schema": {
-                                    "type": "string",
-                                    "example": "application/json; charset=UTF-8"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "source_type_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "source_type_code": {
-                                                        "type": "string"
-                                                    },
-                                                    "source_type_name": {
-                                                        "type": "string"
-                                                    },
-                                                    "source_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "deleted_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "statusCode": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/bill-files": {
             "get": {
                 "tags": [
@@ -5617,7 +3576,7 @@
         "/api/patients": {
             "get": {
                 "tags": [
-                    "patients"
+                    "Patients"
                 ],
                 "summary": "Get all patients",
                 "operationId": "83ecbc80ac9fb0279949fed567d77777",
@@ -5711,7 +3670,7 @@
             },
             "post": {
                 "tags": [
-                    "patients"
+                    "Patients"
                 ],
                 "summary": "Create patient",
                 "operationId": "bc2b6e3d7d0117805a6d78a5d45a7ef4",
@@ -5817,7 +3776,7 @@
         "/api/patients/{patientId}": {
             "get": {
                 "tags": [
-                    "patients"
+                    "Patients"
                 ],
                 "summary": "Find patient by ID",
                 "operationId": "578aa49950254967e99d182082d7574c",
@@ -5906,7 +3865,7 @@
             },
             "delete": {
                 "tags": [
-                    "patients"
+                    "Patients"
                 ],
                 "summary": "Delete patient",
                 "operationId": "a78b0466c202efe33adf388d1d1dccfd",
@@ -5961,7 +3920,7 @@
         "/api/patients/update/{patientId}": {
             "put": {
                 "tags": [
-                    "patients"
+                    "Patients"
                 ],
                 "summary": "Update patient",
                 "operationId": "0a97fa787e4d55dfb0a3b4068440dcc8",
@@ -6063,7 +4022,7 @@
         "/api/patients/unblock/{patientId}": {
             "patch": {
                 "tags": [
-                    "patients"
+                    "Patients"
                 ],
                 "summary": "Unblock patient",
                 "operationId": "1937e4cb67a96f9f2b4cb53f3db205f6",
@@ -6105,6 +4064,162 @@
                                         },
                                         "statusCode": {
                                             "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/patients/{id}/histories": {
+            "get": {
+                "tags": [
+                    "Patients"
+                ],
+                "summary": "Get medical histories of a patient by ID",
+                "operationId": "2235b2d75d65b78ae5b113780660af53",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Patient ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Patient medical histories retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "patient": {
+                                                    "properties": {
+                                                        "patient_id": {
+                                                            "type": "integer",
+                                                            "example": 5
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Jane Doe"
+                                                        },
+                                                        "gender": {
+                                                            "type": "string",
+                                                            "example": "Female"
+                                                        },
+                                                        "date_of_birth": {
+                                                            "type": "string",
+                                                            "format": "date",
+                                                            "example": "1995-09-10"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "medical_histories": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "patient_histories_id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "referring_doctor": {
+                                                                "type": "string",
+                                                                "example": "Dr. Ali"
+                                                            },
+                                                            "file_number": {
+                                                                "type": "string",
+                                                                "example": "FILE123"
+                                                            },
+                                                            "referring_date": {
+                                                                "type": "string",
+                                                                "format": "date",
+                                                                "example": "2025-03-15"
+                                                            },
+                                                            "history_of_presenting_illness": {
+                                                                "type": "string",
+                                                                "example": "Severe headache and nausea."
+                                                            },
+                                                            "physical_findings": {
+                                                                "type": "string",
+                                                                "example": "BP: 120/80, HR: 75 bpm"
+                                                            },
+                                                            "investigations": {
+                                                                "type": "string",
+                                                                "example": "CT scan, Blood tests"
+                                                            },
+                                                            "management_done": {
+                                                                "type": "string",
+                                                                "example": "Pain management and follow-up"
+                                                            },
+                                                            "board_comments": {
+                                                                "type": "string",
+                                                                "example": "Monitor condition"
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "format": "date-time",
+                                                                "example": "2025-03-15T08:20:00Z"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Forbidden"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 403
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Patient not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Patient not found"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 404
                                         }
                                     },
                                     "type": "object"
@@ -8444,116 +6559,6 @@
                                 }
                             }
                         }
-                    }
-                }
-            }
-        },
-        "/api/reports/range": {
-            "get": {
-                "tags": [
-                    "Reports"
-                ],
-                "summary": "Get Range Report",
-                "description": "Fetch aggregated hospital billing data (total bills, paid, pending, amounts) within a given date range.",
-                "operationId": "2f091ad24cb02d1ddd34cd562fba75a8",
-                "parameters": [
-                    {
-                        "name": "start_date",
-                        "in": "query",
-                        "description": "Start date for filtering (YYYY-MM-DD)",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "date",
-                            "example": "2025-01-01"
-                        }
-                    },
-                    {
-                        "name": "end_date",
-                        "in": "query",
-                        "description": "End date for filtering (YYYY-MM-DD)",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "date",
-                            "example": "2025-03-31"
-                        }
-                    },
-                    {
-                        "name": "hospital_id",
-                        "in": "query",
-                        "description": "Optional hospital ID to filter results",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful range report",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "start_date": {
-                                            "type": "string",
-                                            "format": "date",
-                                            "example": "2025-01-01"
-                                        },
-                                        "end_date": {
-                                            "type": "string",
-                                            "format": "date",
-                                            "example": "2025-03-31"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "hospital_name": {
-                                                        "type": "string",
-                                                        "example": "City Hospital"
-                                                    },
-                                                    "total_bills": {
-                                                        "type": "integer",
-                                                        "example": 15
-                                                    },
-                                                    "paid_bills": {
-                                                        "type": "integer",
-                                                        "example": 10
-                                                    },
-                                                    "pending_bills": {
-                                                        "type": "integer",
-                                                        "example": 5
-                                                    },
-                                                    "total_amount": {
-                                                        "type": "string",
-                                                        "example": "150000.00"
-                                                    },
-                                                    "paid_amount": {
-                                                        "type": "string",
-                                                        "example": "100000.00"
-                                                    },
-                                                    "pending_amount": {
-                                                        "type": "string",
-                                                        "example": "50000.00"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request (missing or invalid parameters)"
-                    },
-                    "500": {
-                        "description": "Server error"
                     }
                 }
             }
@@ -11857,26 +9862,6 @@
             "description": "API Endpoints for Managing Payments"
         },
         {
-            "name": "categories",
-            "description": "categories"
-        },
-        {
-            "name": "documentTypes",
-            "description": "documentTypes"
-        },
-        {
-            "name": "documentForms",
-            "description": "documentForms"
-        },
-        {
-            "name": "sources",
-            "description": "sources"
-        },
-        {
-            "name": "sourceTypes",
-            "description": "sourceTypes"
-        },
-        {
             "name": "Bill Files",
             "description": "Bill Files"
         },
@@ -11905,8 +9890,8 @@
             "description": "Patient Lists"
         },
         {
-            "name": "patients",
-            "description": "patients"
+            "name": "Patients",
+            "description": "Patients"
         },
         {
             "name": "Patient History",
@@ -11927,10 +9912,6 @@
         {
             "name": "referrals",
             "description": "referrals"
-        },
-        {
-            "name": "Reports",
-            "description": "Reports"
         },
         {
             "name": "countries",

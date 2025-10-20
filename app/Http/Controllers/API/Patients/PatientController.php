@@ -25,7 +25,7 @@ class PatientController extends Controller
      * @OA\Get(
      *     path="/api/patients",
      *     summary="Get all patients",
-     *     tags={"patients"},
+     *     tags={"Patients"},
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -115,7 +115,7 @@ class PatientController extends Controller
      * @OA\Post(
      *     path="/api/patients",
      *     summary="Create patient",
-     *     tags={"patients"},
+     *     tags={"Patients"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\MediaType(
@@ -175,6 +175,7 @@ class PatientController extends Controller
         // 🔹 Normalize boolean from Angular ("true"/"false" → true/false)
         $request->merge([
             'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+            'patient_list_id' => (array) $request->input('patient_list_id')
         ]);
 
         $data = Validator::make($request->all(), [
@@ -187,7 +188,8 @@ class PatientController extends Controller
             'location_id'       => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
             'job'               => ['nullable', 'string'],
             'position'          => ['nullable', 'string'],
-            'patient_list_id'   => ['required', 'numeric', 'exists:patient_lists,patient_list_id'],
+            'patient_list_id' => ['required'],
+            'patient_list_id.*' => ['numeric', 'exists:patient_lists,patient_list_id'],
             'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
             'description'       => ['nullable', 'string'],
 
@@ -206,39 +208,42 @@ class PatientController extends Controller
             ], 422);
         }
 
-        // Validate patient list limit
-        $patientList = \App\Models\PatientList::find($request->patient_list_id);
+        foreach ($request->patient_list_id as $patientListId) {
+            // Validate patient list existence
+            $patientList = \App\Models\PatientList::find($patientListId);
 
-        if (!$patientList) {
-            return response()->json([
-                'message' => 'Invalid Patient List ID',
-                'statusCode' => 404
-            ], 404);
+            if (!$patientList) {
+                return response()->json([
+                    'message' => "Invalid Patient List ID: {$patientListId}",
+                    'statusCode' => 404
+                ], 404);
+            }
+
+            // Check patient count limit
+            $existingCount = \App\Models\Patient::where('patient_list_id', $patientList->patient_list_id)->count();
+
+            if ($existingCount >= $patientList->no_of_patients) {
+                return response()->json([
+                    'message' => "The Medical Board (ID: {$patientListId}) already reached its patient limit ({$patientList->no_of_patients}).",
+                    'statusCode' => 422,
+                ], 422);
+            }
+
+            // Create the patient for this list
+            $patient = \App\Models\Patient::create([
+                'name'            => $request['name'],
+                'matibabu_card'   => $request['matibabu_card'],
+                'zan_id'          => $request['zan_id'],
+                'date_of_birth'   => $request['date_of_birth'],
+                'gender'          => $request['gender'],
+                'phone'           => $request['phone'],
+                'location_id'     => $request['location_id'],
+                'job'             => $request['job'],
+                'position'        => $request['position'],
+                'patient_list_id' => $patientList->patient_list_id,
+                'created_by'      => Auth::id(),
+            ]);
         }
-
-        $existingCount = Patient::where('patient_list_id', $patientList->patient_list_id)->count();
-
-        if ($existingCount >= $patientList->no_of_patients) {
-            return response()->json([
-                'message' => "The Medical Board already reached its patient limit ({$patientList->no_of_patients}).",
-                'statusCode' => 422,
-            ], 422);
-        }
-
-        // Create Patient
-        $patient = Patient::create([
-            'name'              => $request['name'],
-            'matibabu_card'     => $request['matibabu_card'],
-            'zan_id'            => $request['zan_id'],
-            'date_of_birth'     => $request['date_of_birth'],
-            'gender'            => $request['gender'],
-            'phone'             => $request['phone'],
-            'location_id'       => $request['location_id'],
-            'job'               => $request['job'],
-            'position'          => $request['position'],
-            'patient_list_id'   => $request['patient_list_id'],
-            'created_by'        => Auth::id(),
-        ]);
 
         // Optional Insurance creation (only if provided)
         if ($request->filled('has_insurance') && $request->boolean('has_insurance') === true) {
@@ -299,7 +304,7 @@ class PatientController extends Controller
      * @OA\Get(
      *     path="/api/patients/{patientId}",
      *     summary="Find patient by ID",
-     *     tags={"patients"},
+     *     tags={"Patients"},
      *     @OA\Parameter(
      *         name="patientId",
      *         in="path",
@@ -376,7 +381,7 @@ class PatientController extends Controller
      * @OA\Put(
      *     path="/api/patients/update/{patientId}",
      *     summary="Update patient",
-     *     tags={"patients"},
+     *     tags={"Patients"},
      *     @OA\Parameter(
      *         name="patientId",
      *         in="path",
@@ -430,7 +435,7 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        // Authorization
+        // 🧩 Authorization
         if (!$user->can('Update Patient')) {
             return response()->json([
                 'message' => 'Forbidden',
@@ -438,31 +443,33 @@ class PatientController extends Controller
             ], 403);
         }
 
-        // Normalize boolean from Angular ("true"/"false" → true/false)
+        // 🧩 Normalize input
         $request->merge([
             'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+            'patient_list_id' => (array) $request->input('patient_list_id'),
         ]);
 
-        // Validation
+        // 🧩 Validation
         $validator = Validator::make($request->all(), [
-            'name'             => ['required', 'string'],
-            'matibabu_card'    => ['nullable', 'string'],
-            'zan_id'           => ['nullable', 'string'],
-            'date_of_birth'    => ['nullable', 'date'],
-            'gender'           => ['nullable', 'string'],
-            'phone'            => ['nullable', 'string'],
-            'location_id'      => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
-            'job'              => ['nullable', 'string'],
-            'position'         => ['nullable', 'string'],
-            'patient_list_id'  => ['nullable', 'numeric', 'exists:patient_lists,patient_list_id'],
-            'patient_file.*'   => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
-            'description'      => ['nullable', 'string'],
+            'name'              => ['required', 'string'],
+            'matibabu_card'     => ['nullable', 'string'],
+            'zan_id'            => ['nullable', 'string'],
+            'date_of_birth'     => ['nullable', 'date'],
+            'gender'            => ['nullable', 'string'],
+            'phone'             => ['nullable', 'string'],
+            'location_id'       => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
+            'job'               => ['nullable', 'string'],
+            'position'          => ['nullable', 'string'],
+            'patient_list_id'   => ['required', 'array', 'min:1'],
+            'patient_list_id.*' => ['numeric', 'exists:patient_lists,patient_list_id'],
+            'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
+            'description'       => ['nullable', 'string'],
 
-            // Optional Insurance Fields
-            'has_insurance'            => ['nullable', 'boolean'],
-            'insurance_provider_name'  => ['nullable', 'string'],
-            'card_number'              => ['nullable', 'string'],
-            'valid_until'              => ['nullable', 'date'],
+            // Insurance fields
+            'has_insurance'           => ['nullable', 'boolean'],
+            'insurance_provider_name' => ['nullable', 'string'],
+            'card_number'             => ['nullable', 'string'],
+            'valid_until'             => ['nullable', 'date'],
         ]);
 
         if ($validator->fails()) {
@@ -473,24 +480,46 @@ class PatientController extends Controller
             ], 422);
         }
 
-        // Find Patient
+        // 🧩 Find patient
         $patient = Patient::findOrFail($id);
 
-        // Update Patient Data
-        $patient->update([
-            'name'            => $request->input('name'),
-            'matibabu_card'   => $request->input('matibabu_card'),
-            'zan_id'          => $request->input('zan_id'),
-            'date_of_birth'   => $request->input('date_of_birth'),
-            'gender'          => $request->input('gender'),
-            'phone'           => $request->input('phone'),
-            'location_id'     => $request->input('location_id'),
-            'job'             => $request->input('job'),
-            'position'        => $request->input('position'),
-            'patient_list_id' => $request->input('patient_list_id'),
-        ]);
+        // 🧩 Validate each list and check capacity
+        foreach ($request->patient_list_id as $patientListId) {
+            $patientList = \App\Models\PatientList::find($patientListId);
 
-        // Handle File Upload (if any)
+            if (!$patientList) {
+                return response()->json([
+                    'message' => "Invalid Patient List ID: {$patientListId}",
+                    'statusCode' => 404
+                ], 404);
+            }
+
+            $existingCount = \App\Models\Patient::where('patient_list_id', $patientList->patient_list_id)->count();
+
+            if ($existingCount >= $patientList->no_of_patients) {
+                return response()->json([
+                    'message' => "The Medical Board (ID: {$patientListId}) already reached its patient limit ({$patientList->no_of_patients}).",
+                    'statusCode' => 422,
+                ], 422);
+            }
+
+            // 🧩 Update patient (use last valid list if multiple)
+            $patient->update([
+                'name'            => $request->input('name'),
+                'matibabu_card'   => $request->input('matibabu_card'),
+                'zan_id'          => $request->input('zan_id'),
+                'date_of_birth'   => $request->input('date_of_birth'),
+                'gender'          => $request->input('gender'),
+                'phone'           => $request->input('phone'),
+                'location_id'     => $request->input('location_id'),
+                'job'             => $request->input('job'),
+                'position'        => $request->input('position'),
+                'patient_list_id' => $patientList->patient_list_id,
+                'updated_by'      => Auth::id(),
+            ]);
+        }
+
+        // 🧩 Handle File Upload (same as store)
         if ($request->hasFile('patient_file')) {
             $files = $request->file('patient_file');
             if (!is_array($files)) $files = [$files];
@@ -511,20 +540,17 @@ class PatientController extends Controller
             }
         }
 
-        // 🧩 Handle Optional Insurance Creation / Update / Deletion
+        // 🧩 Handle Insurance (same as store)
         if ($request->has('has_insurance')) {
-
             $hasInsurance = $request->boolean('has_insurance');
 
             if ($hasInsurance) {
-                // Cleanly handle possible empty inputs
                 $insuranceProvider = $request->insurance_provider_name ?: null;
                 $cardNumber        = $request->card_number ?: null;
                 $validUntil        = $request->valid_until ?: null;
 
-                // Create or update insurance
                 \App\Models\Insurance::updateOrCreate(
-                    ['patient_id' => $patient->patient_id], // match patient
+                    ['patient_id' => $patient->patient_id],
                     [
                         'insurance_provider_name' => $insuranceProvider,
                         'card_number'             => $cardNumber,
@@ -532,12 +558,11 @@ class PatientController extends Controller
                     ]
                 );
             } else {
-                // If has_insurance == false, delete existing insurance record
                 \App\Models\Insurance::where('patient_id', $patient->patient_id)->delete();
             }
         }
 
-        // Response
+        // 🧩 Response
         return response()->json([
             'status' => 'success',
             'data' => $patient->load(['files', 'insurances']),
@@ -553,7 +578,7 @@ class PatientController extends Controller
      * @OA\Delete(
      *     path="/api/patients/{patientId}",
      *     summary="Delete patient",
-     *     tags={"patients"},
+     *     tags={"Patients"},
      *     @OA\Parameter(
      *         name="patientId",
      *         in="path",
@@ -617,7 +642,7 @@ class PatientController extends Controller
      * @OA\Patch(
      *     path="/api/patients/unblock/{patientId}",
      *     summary="Unblock patient",
-     *     tags={"patients"},
+     *     tags={"Patients"},
      *     @OA\Parameter(
      *         name="patientId",
      *         in="path",
@@ -723,5 +748,107 @@ class PatientController extends Controller
             'data' => $patients,
             'statusCode' => 200,
         ], 200);
+    }
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/patients/{id}/histories",
+     *     summary="Get medical histories of a patient by ID",
+     *     tags={"Patients"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Patient ID",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=5)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Patient medical histories retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="patient",
+     *                     type="object",
+     *                     @OA\Property(property="patient_id", type="integer", example=5),
+     *                     @OA\Property(property="name", type="string", example="Jane Doe"),
+     *                     @OA\Property(property="gender", type="string", example="Female"),
+     *                     @OA\Property(property="date_of_birth", type="string", format="date", example="1995-09-10")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="medical_histories",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="patient_histories_id", type="integer", example=1),
+     *                         @OA\Property(property="referring_doctor", type="string", example="Dr. Ali"),
+     *                         @OA\Property(property="file_number", type="string", example="FILE123"),
+     *                         @OA\Property(property="referring_date", type="string", format="date", example="2025-03-15"),
+     *                         @OA\Property(property="history_of_presenting_illness", type="string", example="Severe headache and nausea."),
+     *                         @OA\Property(property="physical_findings", type="string", example="BP: 120/80, HR: 75 bpm"),
+     *                         @OA\Property(property="investigations", type="string", example="CT scan, Blood tests"),
+     *                         @OA\Property(property="management_done", type="string", example="Pain management and follow-up"),
+     *                         @OA\Property(property="board_comments", type="string", example="Monitor condition"),
+     *                         @OA\Property(property="created_at", type="string", format="date-time", example="2025-03-15T08:20:00Z")
+     *                     )
+     *                 )
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Forbidden"),
+     *             @OA\Property(property="statusCode", type="integer", example=403)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Patient not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Patient not found"),
+     *             @OA\Property(property="statusCode", type="integer", example=404)
+     *         )
+     *     )
+     * )
+     */
+    public function getMedicalHistory($patient_id)
+    {
+        $user = auth()->user();
+
+        // Optional: add permission check
+        if (!$user->can('View Patient')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $patient = \App\Models\Patient::with(['histories.reason'])
+            ->where('patient_id', $patient_id)
+            ->first();
+
+        if (!$patient) {
+            return response()->json([
+                'message' => 'Patient not found',
+                'statusCode' => 404,
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => [
+                'patient' => $patient->only(['patient_id', 'name', 'gender', 'date_of_birth']),
+                'medical_histories' => $patient->histories,
+            ],
+            'statusCode' => 200,
+        ]);
     }
 }
