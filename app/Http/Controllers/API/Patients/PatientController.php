@@ -821,7 +821,7 @@ class PatientController extends Controller
             ], 403);
         }
 
-        $patient = \App\Models\Patient::with(['histories.reason'])
+        $patient = \App\Models\Patient::with(['patientHistories.reason'])
             ->where('patient_id', $patient_id)
             ->first();
 
@@ -834,7 +834,7 @@ class PatientController extends Controller
 
         return response()->json([
             'data' => [
-                'patient' => $patient->only(['patient_id', 'name', 'gender', 'date_of_birth']),
+                'patient' => $patient,
                 'medical_histories' => $patient->histories,
             ],
             'statusCode' => 200,
