@@ -246,28 +246,41 @@ class PatientListController extends Controller
     public function getAllPatientsByPatientListId(int $patientListId)
     {
         $user = auth()->user();
+
         if (!$user->can('View Patient List')) {
-            return response([
+            return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $list = PatientList::with([
-            'patients.files',
-            'patients.geographicalLocation'
+        // Load PatientList with related patients
+        $patientList = \App\Models\PatientList::with([
+            'patients' => function ($query) {
+                $query->with(['files', 'geographicalLocation']);
+            }
         ])->find($patientListId);
 
-
-        if (!$list) {
-            return response([
+        if (!$patientList) {
+            return response()->json([
                 'message' => 'Patient list not found',
                 'statusCode' => 404
             ], 404);
         }
 
-        return response([
-            'data' => $list,
+        return response()->json([
+            'data' => [
+                'patient_list' => [
+                    'patient_list_id'   => $patientList->patient_list_id,
+                    'reference_number'  => $patientList->reference_number,
+                    'board_type'        => $patientList->board_type,
+                    'no_of_patients'    => $patientList->no_of_patients,
+                    'board_date'        => $patientList->board_date,
+                    'patient_list_title'=> $patientList->patient_list_title,
+                    'patient_list_file' => $patientList->patient_list_file,
+                ],
+                'patients' => $patientList->patients,
+            ],
             'statusCode' => 200,
         ], 200);
     }
