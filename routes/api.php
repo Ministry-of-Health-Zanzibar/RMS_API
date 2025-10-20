@@ -129,6 +129,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('reports/getBillsBetweenDates', [ReportController::class, 'getBillsBetweenDates']);
     Route::post('reports/searchReferralReport', [ReportController::class, 'searchReferralReport']);
     Route::post('reports/searchReferralReport', [ReportController::class, 'searchReferralReport']);
+    Route::get('reports/getMonthlyMaleAndFemaleReferralReport', [ReportController::class, 'getMonthlyMaleAndFemaleReferralReport']);
     // Dasboard Counts
     Route::get('/dashboard/totals', [ReportController::class, 'getOverallCounts']);
 
