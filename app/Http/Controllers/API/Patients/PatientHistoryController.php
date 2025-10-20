@@ -186,9 +186,6 @@ class PatientHistoryController extends Controller
             $history = PatientHistory::create($data);
 
             // Attach diagnoses if provided
-            // if ($request->filled('diagnosis_ids') ) {
-            //     $history->diagnoses()->sync($request->diagnosis_ids);
-            // }
             if ($request->filled('diagnosis_ids')) {
 
                 // Sync diagnoses to the history
@@ -246,14 +243,23 @@ class PatientHistoryController extends Controller
     public function show($id)
     {
         $user = auth()->user();
+
         if (!$user->can('View Patient History')) {
             return response()->json([
-                'message' => 'Forbidden', 
+                'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $history = PatientHistory::with('patient','diagnoses')->findOrFail($id);
+        $history = PatientHistory::with('patient','diagnoses')->find($id);
+
+        if (!$history) {
+            return response()->json([
+                'status' => false,   
+                'message' => 'Patient history not found',
+                'statusCode' => 404
+            ], 404);
+        }
 
         return response()->json([
             'status' => true,
@@ -262,6 +268,7 @@ class PatientHistoryController extends Controller
             'statusCode' => 200
         ]);
     }
+
 
     /**
      * @OA\Post(
@@ -303,6 +310,14 @@ class PatientHistoryController extends Controller
         }
 
         $history = PatientHistory::findOrFail($id);
+
+        if (!$history) {
+            return response()->json([
+                'status' => false,   
+                'message' => 'Patient history not found',
+                'statusCode' => 404
+            ], 404);
+        }
 
         $validator = Validator::make($request->all(), [
             'reason_id'                     => 'nullable|exists:reasons,reason_id',
