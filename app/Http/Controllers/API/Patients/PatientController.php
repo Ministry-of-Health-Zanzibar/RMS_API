@@ -242,7 +242,7 @@ class PatientController extends Controller
             'created_by'      => Auth::id(),
         ]);
 
-        // ✅ Attach patient to the list via pivot
+        // Attach patient to the list via pivot
         $patient->patientList()->attach($patientList->patient_list_id);
 
         // Optional Insurance creation (only if provided)
