@@ -212,4 +212,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/{id}/unblock', [PatientHistoryController::class, 'unblock']);
     });
 
+    Route::get('/analytics/referral-trend', [App\Http\Controllers\API\Charts\AnalyticsController::class, 'referralTrend']);
+
 });
