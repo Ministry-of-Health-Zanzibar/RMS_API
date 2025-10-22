@@ -300,7 +300,7 @@ class ReferralController extends Controller
         $referral = Referral::with([
                 'patient.patientHistories',
                 'patient.geographicalLocation',
-                'patient.patientList',
+                'patient.patientList.boardMembers',
                 'patient.files',
                 'reason',
                 'hospital',
