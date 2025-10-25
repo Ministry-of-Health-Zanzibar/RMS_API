@@ -723,7 +723,7 @@ class PatientController extends Controller
         ])
         ->whereDoesntHave('referrals') // patients with no referrals
         ->orWhereHas('referrals', function ($query) {
-            $query->whereIn('status', ['Cancelled', 'Expired', 'Closed']);
+            $query->whereIn('status', ['Cancelled', 'Expired', 'Closed', 'Pending']);
         })
         ->get();
 
