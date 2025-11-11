@@ -11,24 +11,20 @@ return new class extends Migration
         Schema::table('patient_histories', function (Blueprint $table) {
             // --- Workflow status ---
             $table->enum('status', [
-                'hospital_submitted',
-                'mkurugenzi_tiba_review',
-                'medical_board_review',
-                'returned_to_mkurugenzi',
-                'approved_by_mkurugenzi',
-                'sent_to_dg',
-                'approved_by_dg',
-                'rejected',
-            ])->default('hospital_submitted')->after('history_file');
+                'pending', // from hospital to mkurugenzi
+                'reviewed', // from mkurugenzi to medical board
+                'requested', // from medical board to mkurugenzi
+                'approved', // from mkurugenzi to DG
+                'confirmed', // from DG
+                'rejected', // from DG
+            ])->default('pending')->after('history_file');
 
             // --- Comments per reviewer ---
             $table->text('mkurugenzi_tiba_comments')->nullable()->after('status');
-            // $table->text('medical_board_comments')->nullable()->after('mkurugenzi_tiba_comments');
             $table->text('dg_comments')->nullable()->after('medical_board_comments');
 
             // --- Reviewer IDs ---
             $table->unsignedBigInteger('mkurugenzi_tiba_id')->nullable()->after('dg_comments');
-            // $table->unsignedBigInteger('medical_board_id')->nullable()->after('mkurugenzi_tiba_id');
             $table->unsignedBigInteger('dg_id')->nullable()->after('medical_board_id');
 
             // --- Foreign key relationships ---
@@ -36,11 +32,6 @@ return new class extends Migration
                 ->references('id')
                 ->on('users')
                 ->onDelete('set null');
-
-            // $table->foreign('medical_board_id')
-            //     ->references('id')
-            //     ->on('users')
-            //     ->onDelete('set null');
 
             $table->foreign('dg_id')
                 ->references('id')
@@ -61,10 +52,8 @@ return new class extends Migration
             $table->dropColumn([
                 'status',
                 'mkurugenzi_tiba_comments',
-                // 'medical_board_comments',
                 'dg_comments',
                 'mkurugenzi_tiba_id',
-                // 'medical_board_id',
                 'dg_id',
             ]);
         });

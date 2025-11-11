@@ -67,7 +67,7 @@ class PatientHistoryController extends Controller
         $user = auth()->user();
         if (!$user->can('View Patient History')) {
             return response()->json([
-                'message' => 'Forbidden', 
+                'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
@@ -117,7 +117,7 @@ class PatientHistoryController extends Controller
         $user = auth()->user();
         if (!$user->can('Create Patient History')) {
             return response()->json([
-                'message' => 'Forbidden', 
+                'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
@@ -149,10 +149,10 @@ class PatientHistoryController extends Controller
         try {
             // Extract only allowed data
             $data = $request->only([
-                'patient_id', 
-                'reason_id', 
-                'referring_doctor', 
-                'file_number', 
+                'patient_id',
+                'reason_id',
+                'referring_doctor',
+                'file_number',
                 'referring_date',
                 'history_of_presenting_illness',
                 'physical_findings',
@@ -255,7 +255,7 @@ class PatientHistoryController extends Controller
 
         if (!$history) {
             return response()->json([
-                'status' => false,   
+                'status' => false,
                 'message' => 'Patient history not found',
                 'statusCode' => 404
             ], 404);
@@ -313,7 +313,7 @@ class PatientHistoryController extends Controller
 
         if (!$history) {
             return response()->json([
-                'status' => false,   
+                'status' => false,
                 'message' => 'Patient history not found',
                 'statusCode' => 404
             ], 404);
@@ -344,7 +344,7 @@ class PatientHistoryController extends Controller
 
         try {
             $data = $request->only([
-                'reason_id', 
+                'reason_id',
                 'referring_doctor',
                 'file_number',
                 'referring_date',
@@ -465,5 +465,183 @@ class PatientHistoryController extends Controller
             'message'=>'Patient history unblocked successfully',
             'statusCode'=>200
         ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/patient-histories/update-status/{id}",
+     *     tags={"Patient History"},
+     *     summary="Update patient history status",
+     *     description="Allows authorized roles to update the status of a patient history record, add comments, and track reviewers.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Patient history ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="status",
+     *                 type="string",
+     *                 enum={"pending","reviewed","requested","approved","confirmed","rejected"},
+     *                 description="New status to set"
+     *             ),
+     *             @OA\Property(
+     *                 property="comment",
+     *                 type="string",
+     *                 description="Optional comment for the reviewer"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Status updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean"),
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid status transition",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean"),
+     *             @OA\Property(property="message", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized action for your role",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean"),
+     *             @OA\Property(property="message", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Patient history not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean"),
+     *             @OA\Property(property="message", type="string")
+     *         )
+     *     )
+     * )
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $user = Auth::user();
+        $history = PatientHistory::findOrFail($id);
+
+        // --- Use Validator instead of $request->validate() ---
+        $validator = \Validator::make($request->all(), [
+            'status' => 'required|string|in:pending,reviewed,requested,approved,confirmed,rejected',
+            'comment' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $validated = $validator->validated();
+        $newStatus = $validated['status'];
+        $comment = $validated['comment'] ?? null;
+
+        // Ensure only valid status transitions
+        if (!$this->isValidTransition($history->status, $newStatus)) {
+            return response()->json([
+                'success' => false,
+                'message' => "Invalid status transition from {$history->status} to {$newStatus}."
+            ], 400);
+        }
+
+        // Role-based action control
+        switch ($newStatus) {
+            case 'reviewed':
+                if (!$user->hasRole('ROLE DIRECTOR OF MEDICAL SERVICES')) {
+                    return $this->unauthorized();
+                }
+                $history->mkurugenzi_tiba_id = $user->id;
+                $history->mkurugenzi_tiba_comments = $comment;
+                break;
+
+            case 'requested':
+                if (!$user->hasRole('ROLE MEDICAL BOARD')) {
+                    return $this->unauthorized();
+                }
+                $history->medical_board_id = $user->id;
+                $history->board_comments = $comment;
+                break;
+
+            case 'approved':
+                if (!$user->hasRole('ROLE DIRECTOR OF MEDICAL SERVICES')) {
+                    return $this->unauthorized();
+                }
+                $history->mkurugenzi_tiba_comments = $comment;
+                break;
+
+            case 'confirmed':
+                if (!$user->hasRole('ROLE DIRECTOR GENERAL')) {
+                    return $this->unauthorized();
+                }
+                $history->dg_id = $user->id;
+                $history->dg_comments = $comment;
+                break;
+
+            case 'rejected':
+                if (!$user->hasAnyRole(['ROLE DIRECTOR OF MEDICAL SERVICES', 'ROLE MEDICAL BOARD', 'ROLE DIRECTOR GENERAL'])) {
+                    return $this->unauthorized();
+                }
+                $history->board_comments = $comment;
+                break;
+        }
+
+        $history->status = $newStatus;
+        $history->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Status updated successfully to {$newStatus}.",
+            'data' => $history,
+        ]);
+    }
+
+    /**
+     * Define allowed workflow transitions
+     */
+    private function isValidTransition($current, $next)
+    {
+        $allowed = [
+            'pending'   => ['reviewed'],          // hospital → director
+            'reviewed'  => ['requested', 'approved'], // director → medical board / approve to DG
+            'requested' => ['approved'],          // medical board → director
+            'approved'  => ['confirmed', 'rejected'], // director → DG
+            'confirmed' => [],                    // DG final
+            'rejected'  => [],                    // terminal
+        ];
+
+        return in_array($next, $allowed[$current] ?? []);
+    }
+
+    private function unauthorized()
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized action for your role.',
+            'statusCode' => 403
+        ], 403);
     }
 }
