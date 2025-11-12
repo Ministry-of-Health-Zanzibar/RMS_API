@@ -159,6 +159,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('patient-lists/update/{id}', [MedicalBoadController::class, 'updatePatientList']);
     Route::patch('patient-lists/unblock/{id}', [PatientListController::class, 'unBlockParentList']);
     Route::get('patient-lists/body-form/{id}', [PatientListController::class, 'getAllPatientsByPatientListId']);
+    Route::post('patient-lists/assign-patients/{id}', [MedicalBoadController::class, 'assignPatientsToList']);
 
     // Hospital Letters
     Route::resource('hospital-letters', HospitalLetterController::class);
@@ -204,11 +205,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Patient Histories
     Route::prefix('patient-histories')->group(function () {
         Route::get('/', [PatientHistoryController::class, 'index']);
-        Route::get('/{id}', [PatientHistoryController::class, 'show']); 
+        Route::get('/{id}', [PatientHistoryController::class, 'show']);
         Route::post('/', [PatientHistoryController::class, 'store']);
         Route::post('/update/{id}', [PatientHistoryController::class, 'update']);
         Route::delete('/{id}', [PatientHistoryController::class, 'destroy']);
         Route::post('/{id}/unblock', [PatientHistoryController::class, 'unblock']);
+        Route::post('/update-status/{id}', [PatientHistoryController::class, 'updateStatus']);
     });
+
+    Route::get('/analytics/referral-trend', [App\Http\Controllers\API\Charts\AnalyticsController::class, 'referralTrend']);
 
 });

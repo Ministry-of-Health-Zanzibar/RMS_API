@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::table('patient_lists', function (Blueprint $table) {
             $table->string('reference_number')->unique()->nullable()->after('patient_list_id');
-            $table->enum('board_type', ['Emergency', 'Routine'])->after('reference_number');
+            $table->enum('board_type', ['Emergency', 'Routine'])->nullable()->after('reference_number');
             $table->unsignedInteger('no_of_patients')->default(0)->after('board_type');
-            $table->string('board_date')->after('no_of_patients');
+            $table->string('board_date')->nullable()->after('no_of_patients');
         });
     }
 

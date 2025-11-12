@@ -124,6 +124,10 @@ class permission_info extends Seeder
             'Accountant Report',
             'Verification Report',
             'Medical Board Report',
+
+            'Forward Patient History to Board',
+            'Approve Patient History',
+            'Send Patient History to DG',
         ];
 
         foreach ($permissions as $permission) {

@@ -300,7 +300,7 @@ class ReferralController extends Controller
         $referral = Referral::with([
                 'patient.patientHistories',
                 'patient.geographicalLocation',
-                'patient.patientList',
+                'patient.patientList.boardMembers',
                 'patient.files',
                 'reason',
                 'hospital',
@@ -519,7 +519,7 @@ class ReferralController extends Controller
                 'data' => $referral,
                 'message' => 'Referral updated successfully.',
                 'statusCode' => 201,
-            ], status: 201);
+            ], 201);
         } else {
             return response([
                 'message' => 'Internal server error',
@@ -554,7 +554,7 @@ class ReferralController extends Controller
                 'data' => $referral,
                 'message' => 'Referral confirmed successfully.',
                 'statusCode' => 201,
-            ], status: 201);
+            ], 201);
         } else {
             return response([
                 'message' => 'Internal server error',

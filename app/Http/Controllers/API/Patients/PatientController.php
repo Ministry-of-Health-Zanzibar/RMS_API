@@ -175,7 +175,6 @@ class PatientController extends Controller
         // 🔹 Normalize boolean from Angular ("true"/"false" → true/false)
         $request->merge([
             'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
-            'patient_list_id' => (array) $request->input('patient_list_id')
         ]);
 
         $data = Validator::make($request->all(), [
@@ -188,8 +187,7 @@ class PatientController extends Controller
             'location_id'       => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
             'job'               => ['nullable', 'string'],
             'position'          => ['nullable', 'string'],
-            'patient_list_id' => ['required'],
-            'patient_list_id.*' => ['numeric', 'exists:patient_lists,patient_list_id'],
+            'patient_list_id'   => ['numeric', 'exists:patient_lists,patient_list_id'],
             'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
             'description'       => ['nullable', 'string'],
 
@@ -208,44 +206,44 @@ class PatientController extends Controller
             ], 422);
         }
 
-        foreach ($request->patient_list_id as $patientListId) {
-            // Validate patient list existence
-            $patientList = \App\Models\PatientList::find($patientListId);
+        // Validate patient list existence
+        $patientList = \App\Models\PatientList::find($request->patient_list_id);
 
-            if (!$patientList) {
-                return response()->json([
-                    'message' => "Invalid Patient List ID: {$patientListId}",
-                    'statusCode' => 404
-                ], 404);
-            }
-
-            // Check patient count limit using pivot
-            $existingCount = \App\Models\Patient::whereHas('patientList', function ($query) use ($patientList) {
-                $query->where('patient_lists.patient_list_id', $patientList->patient_list_id);
-            })->count();
-
-            if ($existingCount >= $patientList->no_of_patients) {
-                return response()->json([
-                    'message' => "The Medical Board (ID: {$patientList->patient_list_id}) already reached its patient limit ({$patientList->no_of_patients}).",
-                    'statusCode' => 422,
-                ], 422);
-            }
-
-            // Create the patient for this list
-            $patient = \App\Models\Patient::create([
-                'name'            => $request['name'],
-                'matibabu_card'   => $request['matibabu_card'],
-                'zan_id'          => $request['zan_id'],
-                'date_of_birth'   => $request['date_of_birth'],
-                'gender'          => $request['gender'],
-                'phone'           => $request['phone'],
-                'location_id'     => $request['location_id'],
-                'job'             => $request['job'],
-                'position'        => $request['position'],
-                'patient_list_id' => $patientList->patient_list_id,
-                'created_by'      => Auth::id(),
-            ]);
+        if (!$patientList) {
+            return response()->json([
+                'message' => "Invalid Patient List ID: {$request->patient_list_id}",
+                'statusCode' => 404
+            ], 404);
         }
+
+        // Check patient count limit using pivot
+        $existingCount = \App\Models\Patient::whereHas('patientList', function ($query) use ($patientList) {
+            $query->where('patient_lists.patient_list_id', $patientList->patient_list_id);
+        })->count();
+
+        if ($existingCount >= $patientList->no_of_patients) {
+            return response()->json([
+                'message' => "The Medical Board (ID: {$patientList->patient_list_id}) already reached its patient limit ({$patientList->no_of_patients}).",
+                'statusCode' => 422,
+            ], 422);
+        }
+
+        // Create the patient for this list
+        $patient = \App\Models\Patient::create([
+            'name'            => $request['name'],
+            'matibabu_card'   => $request['matibabu_card'],
+            'zan_id'          => $request['zan_id'],
+            'date_of_birth'   => $request['date_of_birth'],
+            'gender'          => $request['gender'],
+            'phone'           => $request['phone'],
+            'location_id'     => $request['location_id'],
+            'job'             => $request['job'],
+            'position'        => $request['position'],
+            'created_by'      => Auth::id(),
+        ]);
+
+        // Attach patient to the list via pivot
+        $patient->patientList()->attach($patientList->patient_list_id);
 
         // Optional Insurance creation (only if provided)
         if ($request->filled('has_insurance') && $request->boolean('has_insurance') === true) {
@@ -448,7 +446,6 @@ class PatientController extends Controller
         // Normalize input
         $request->merge([
             'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
-            'patient_list_id' => (array) $request->input('patient_list_id'),
         ]);
 
         // Validation
@@ -462,8 +459,7 @@ class PatientController extends Controller
             'location_id'       => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
             'job'               => ['nullable', 'string'],
             'position'          => ['nullable', 'string'],
-            'patient_list_id'   => ['required', 'array', 'min:1'],
-            'patient_list_id.*' => ['numeric', 'exists:patient_lists,patient_list_id'],
+            'patient_list_id' => ['numeric', 'exists:patient_lists,patient_list_id'],
             'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
             'description'       => ['nullable', 'string'],
             'has_insurance'           => ['nullable', 'boolean'],
@@ -484,26 +480,24 @@ class PatientController extends Controller
         $patient = Patient::findOrFail($id);
 
         // Check capacity for each list
-        foreach ($request->patient_list_id as $patientListId) {
-            $patientList = \App\Models\PatientList::find($patientListId);
+        $patientList = \App\Models\PatientList::find($request->patient_list_id);
 
-            if (!$patientList) {
-                return response()->json([
-                    'message' => "Invalid Patient List ID: {$patientListId}",
-                    'statusCode' => 404
-                ], 404);
-            }
+        if (!$patientList) {
+            return response()->json([
+                'message' => "Invalid Patient List ID: {$request->patient_list_id}",
+                'statusCode' => 404
+            ], 404);
+        }
 
-            $existingCount = \App\Models\Patient::whereHas('patientList', function ($query) use ($patientList) {
-                $query->where('patient_lists.patient_list_id', $patientList->patient_list_id);
-            })->count();
+        $existingCount = \App\Models\Patient::whereHas('patientList', function ($query) use ($patientList) {
+            $query->where('patient_lists.patient_list_id', $patientList->patient_list_id);
+        })->count();
 
-            if ($existingCount >= $patientList->no_of_patients) {
-                return response()->json([
-                    'message' => "The Medical Board (ID: {$patientList->patient_list_id}) already reached its patient limit ({$patientList->no_of_patients}).",
-                    'statusCode' => 422,
-                ], 422);
-            }
+        if ($existingCount >= $patientList->no_of_patients) {
+            return response()->json([
+                'message' => "The Medical Board (ID: {$patientList->patient_list_id}) already reached its patient limit ({$patientList->no_of_patients}).",
+                'statusCode' => 422,
+            ], 422);
         }
 
         // Update patient basic info
@@ -729,7 +723,7 @@ class PatientController extends Controller
         ])
         ->whereDoesntHave('referrals') // patients with no referrals
         ->orWhereHas('referrals', function ($query) {
-            $query->whereIn('status', ['Cancelled', 'Expired', 'Closed']);
+            $query->whereIn('status', ['Cancelled', 'Expired', 'Closed', 'Pending']);
         })
         ->get();
 

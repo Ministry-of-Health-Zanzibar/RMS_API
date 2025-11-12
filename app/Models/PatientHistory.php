@@ -29,6 +29,11 @@ class PatientHistory extends Model
         'management_done',
         'board_comments',
         'history_file',
+        'status',
+        'mkurugenzi_tiba_comments',
+        'dg_comments',
+        'mkurugenzi_tiba_id',
+        'dg_id',
     ];
 
     /**

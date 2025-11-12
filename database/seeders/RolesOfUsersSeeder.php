@@ -229,5 +229,62 @@ class RolesOfUsersSeeder extends Seeder
 
         $billVerificationRole = Role::firstOrCreate(['name' => 'ROLE BILL VERIFICATION OFFICER'], $billVerificationRoleData);
         $billVerificationRole->syncPermissions($billVerificationPermissions);
+
+        /**
+         * =============================
+         * 5 ROLE HOSPITAL USER
+         * =============================
+         */
+        $hospitalUserPermissions = [
+            'Patient Module',
+            'Create Patient',
+            'Update Patient',
+            'View Patient',
+
+            'Create Patient History',
+            'Update Patient History',
+            'View Patient History',
+            'View Reason',
+            'View Location',
+        ];
+
+        foreach ($hospitalUserPermissions as $perm) {
+            Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
+        }
+
+        $hospitalRoleData = ['name' => 'ROLE HOSPITAL USER', 'guard_name' => 'web'];
+        if ($hasCreatedBy) $hospitalRoleData['created_by'] = 1;
+        $hospitalRole = Role::firstOrCreate(['name' => 'ROLE HOSPITAL USER'], $hospitalRoleData);
+        $hospitalRole->syncPermissions($hospitalUserPermissions);
+
+
+
+        /**
+         * =============================
+         * 6 ROLE MKURUGENZI TIBA
+         * =============================
+         */
+        $mkurugenziTibaPermissions = [
+            'Patient Module',
+            'View Patient',
+
+            'View Patient History',
+            'Update Patient History',
+            'Review Patient History',
+            'Forward Patient History to Board',
+            'Approve Patient History',
+            'Send Patient History to DG',
+            'View Reason',
+            'View Location',
+        ];
+
+        foreach ($mkurugenziTibaPermissions as $perm) {
+            Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
+        }
+
+        $mkurugenziTibaRoleData = ['name' => 'ROLE MKURUGENZI TIBA', 'guard_name' => 'web'];
+        if ($hasCreatedBy) $mkurugenziTibaRoleData['created_by'] = 1;
+        $mkurugenziTibaRole = Role::firstOrCreate(['name' => 'ROLE MKURUGENZI TIBA'], $mkurugenziTibaRoleData);
+        $mkurugenziTibaRole->syncPermissions($mkurugenziTibaPermissions);
     }
 }

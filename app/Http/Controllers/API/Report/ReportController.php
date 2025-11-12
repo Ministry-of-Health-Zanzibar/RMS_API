@@ -277,7 +277,7 @@ class ReportController extends Controller
     public function getMonthlyMaleAndFemaleReferralReport()
     {
         $user = auth()->user();
-        if (! $user->can('View Referral Dashboard')) {
+        if (!$user->can('View Referral Dashboard')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403,
