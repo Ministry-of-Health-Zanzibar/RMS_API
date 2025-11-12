@@ -56,6 +56,7 @@ class MedicalBoadController extends Controller
     public function index()
     {
         $user = auth()->user();
+
         if (!$user->can('View Patient List')) {
             return response()->json([
                 'message' => 'Forbidden',
@@ -64,7 +65,10 @@ class MedicalBoadController extends Controller
         }
 
         $lists = PatientList::with(['creator', 'patients.geographicalLocation', 'boardMembers'])
-            ->when(!$user->hasRole('ROLE ADMIN'), fn($q) => $q) // normal users see only their lists?
+            ->when(!$user->hasRole('ROLE ADMIN'), function ($q) use ($user) {
+                // 👇 Example filter for non-admins
+                $q->where('created_by', $user->id);
+            })
             ->withTrashed()
             ->get();
 
@@ -325,11 +329,19 @@ class MedicalBoadController extends Controller
         $formattedDateForRef = $boardDate->format('d/m/Y');
         $formattedDateForTitle = $boardDate->format('d/m/Y');
 
-        $boardTypeAbbr = match (ucfirst(strtolower($boardType))) {
-            'Emergency' => 'EMG',
-            'Routine' => 'RTN',
-            default => substr($boardType, 0, 3),
-        };
+        $bt = ucfirst(strtolower($boardType));
+        switch ($bt) {
+            case 'Emergency':
+                $boardTypeAbbr = 'EMG';
+                break;
+            case 'Routine':
+                $boardTypeAbbr = 'RTN';
+                break;
+            default:
+                $boardTypeAbbr = substr($boardType, 0, 3);
+                break;
+        }
+
 
         // Update the model
         $list->update([
