@@ -408,7 +408,7 @@ class MedicalBoadController extends Controller
         ]);
     }
 
-    
+
     /**
      * @OA\Put(
      *     path="/api/patient-lists/unblock/{id}",

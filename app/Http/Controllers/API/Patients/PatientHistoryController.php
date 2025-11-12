@@ -571,7 +571,7 @@ class PatientHistoryController extends Controller
         // Role-based action control
         switch ($newStatus) {
             case 'reviewed':
-                if (!$user->hasRole('ROLE DIRECTOR OF MEDICAL SERVICES')) {
+                if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
                     return $this->unauthorized();
                 }
                 $history->mkurugenzi_tiba_id = $user->id;
@@ -579,7 +579,7 @@ class PatientHistoryController extends Controller
                 break;
 
             case 'requested':
-                if (!$user->hasRole('ROLE MEDICAL BOARD')) {
+                if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
                     return $this->unauthorized();
                 }
                 $history->medical_board_id = $user->id;
@@ -587,7 +587,7 @@ class PatientHistoryController extends Controller
                 break;
 
             case 'approved':
-                if (!$user->hasRole('ROLE DIRECTOR OF MEDICAL SERVICES')) {
+                if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
                     return $this->unauthorized();
                 }
                 $history->mkurugenzi_tiba_comments = $comment;
@@ -602,7 +602,7 @@ class PatientHistoryController extends Controller
                 break;
 
             case 'rejected':
-                if (!$user->hasAnyRole(['ROLE DIRECTOR OF MEDICAL SERVICES', 'ROLE MEDICAL BOARD', 'ROLE DIRECTOR GENERAL'])) {
+                if (!$user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE MEDICAL BOARD MEMBER', 'ROLE DIRECTOR GENERAL'])) {
                     return $this->unauthorized();
                 }
                 $history->board_comments = $comment;
