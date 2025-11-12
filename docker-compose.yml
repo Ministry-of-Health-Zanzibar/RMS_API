@@ -1,29 +1,29 @@
 services:
-  db:
-    image: postgres:latest
-    container_name: postgres-laravel-container
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: never@555
-      POSTGRES_DB: rms_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql
-      # - postgres_data:/var/lib/postgresql/data
+    db:
+        image: postgres:latest
+        container_name: postgres-rms-container
+        restart: always
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: never555%
+            POSTGRES_DB: rms_db
+        ports:
+            - "5432:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql
+            # - postgres_data:/var/lib/postgresql/data
 
-  # pgadmin:
-  #   image: dpage/pgadmin4
-  #   container_name: pgadmin4
-  #   restart: always
-  #   environment:
-  #     PGADMIN_DEFAULT_EMAIL: admin@admin.com
-  #     PGADMIN_DEFAULT_PASSWORD: admin123
-  #   ports:
-  #     - "8081:80"
-  #   depends_on:
-  #     - db
+    # pgadmin:
+    #   image: dpage/pgadmin4
+    #   container_name: pgadmin4
+    #   restart: always
+    #   environment:
+    #     PGADMIN_DEFAULT_EMAIL: admin@admin.com
+    #     PGADMIN_DEFAULT_PASSWORD: admin123
+    #   ports:
+    #     - "8081:80"
+    #   depends_on:
+    #     - db
 
 volumes:
-  postgres_data:
+    postgres_data:

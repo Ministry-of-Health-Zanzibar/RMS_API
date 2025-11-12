@@ -123,19 +123,19 @@ class PatientHistoryController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'patient_id'                    => 'required|exists:patients,patient_id',
-            'reason_id'                     => 'required|exists:reasons,reason_id',
-            'referring_doctor'              => 'nullable|string',
-            'file_number'                   => 'nullable|string',
-            'referring_date'                => 'nullable|string',
+            'patient_id' => 'required|exists:patients,patient_id',
+            'reason_id' => 'required|exists:reasons,reason_id',
+            'referring_doctor' => 'nullable|string',
+            'file_number' => 'nullable|string',
+            'referring_date' => 'nullable|string',
             'history_of_presenting_illness' => 'nullable|string',
-            'physical_findings'             => 'nullable|string',
-            'investigations'                => 'nullable|string',
-            'management_done'               => 'nullable|string',
-            'board_comments'                => 'nullable|string',
-            'diagnosis_ids'                 => 'nullable|array',
-            'diagnosis_ids.*'               => 'exists:diagnoses,diagnosis_id',
-            'history_file'                  => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'physical_findings' => 'nullable|string',
+            'investigations' => 'nullable|string',
+            'management_done' => 'nullable|string',
+            'board_comments' => 'nullable|string',
+            'diagnosis_ids' => 'nullable|array',
+            'diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
+            'history_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -199,11 +199,11 @@ class PatientHistoryController extends Controller
                 $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
 
                 $referral = Referral::create([
-                    'patient_id'      => $request->patient_id,
-                    'reason_id'       => $request->reason_id,
-                    'status'          => 'Pending',
+                    'patient_id' => $request->patient_id,
+                    'reason_id' => $request->reason_id,
+                    'status' => 'Pending',
                     'referral_number' => $referralNumber,
-                    'created_by'      => Auth::id(),
+                    'created_by' => Auth::id(),
                 ]);
 
                 // Attach the same diagnoses to the referral via pivot table
@@ -251,7 +251,7 @@ class PatientHistoryController extends Controller
             ], 403);
         }
 
-        $history = PatientHistory::with('patient','diagnoses')->find($id);
+        $history = PatientHistory::with('patient', 'diagnoses')->find($id);
 
         if (!$history) {
             return response()->json([
@@ -320,18 +320,18 @@ class PatientHistoryController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'reason_id'                     => 'nullable|exists:reasons,reason_id',
-            'referring_doctor'              => 'nullable|string',
-            'file_number'                   => 'nullable|string',
-            'referring_date'                => 'nullable|string',
+            'reason_id' => 'nullable|exists:reasons,reason_id',
+            'referring_doctor' => 'nullable|string',
+            'file_number' => 'nullable|string',
+            'referring_date' => 'nullable|string',
             'history_of_presenting_illness' => 'nullable|string',
-            'physical_findings'             => 'nullable|string',
-            'investigations'                => 'nullable|string',
-            'management_done'               => 'nullable|string',
-            'board_comments'                => 'nullable|string',
-            'diagnosis_ids'                 => 'nullable|array',
-            'diagnosis_ids.*'               => 'exists:diagnoses,diagnosis_id',
-            'history_file'                  => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'physical_findings' => 'nullable|string',
+            'investigations' => 'nullable|string',
+            'management_done' => 'nullable|string',
+            'board_comments' => 'nullable|string',
+            'diagnosis_ids' => 'nullable|array',
+            'diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
+            'history_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -389,7 +389,7 @@ class PatientHistoryController extends Controller
 
             return response()->json([
                 'status' => true,
-                'data' => $history->load('patient','diagnoses','reason'),
+                'data' => $history->load('patient', 'diagnoses', 'reason'),
                 'message' => 'Patient history updated successfully',
                 'statusCode' => 200
             ]);
@@ -421,18 +421,18 @@ class PatientHistoryController extends Controller
         $user = auth()->user();
         if (!$user->can('Delete Patient History')) {
             return response()->json([
-                'message'=>'Forbidden',
-                'statusCode'=>403
-            ],403);
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
         }
 
         $history = PatientHistory::findOrFail($id);
         $history->delete();
 
         return response()->json([
-            'status'=>true,
-            'message'=>'Patient history deleted successfully',
-            'statusCode'=>200
+            'status' => true,
+            'message' => 'Patient history deleted successfully',
+            'statusCode' => 200
         ]);
     }
 
@@ -452,18 +452,18 @@ class PatientHistoryController extends Controller
         $user = auth()->user();
         if (!$user->can('Update Patient History')) {
             return response()->json([
-                'message'=>'Forbidden',
-                'statusCode'=>403
-            ],403);
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
         }
 
         $history = PatientHistory::withTrashed()->findOrFail($id);
         $history->restore();
 
         return response()->json([
-            'status'=>true,
-            'message'=>'Patient history unblocked successfully',
-            'statusCode'=>200
+            'status' => true,
+            'message' => 'Patient history unblocked successfully',
+            'statusCode' => 200
         ]);
     }
 
@@ -582,7 +582,7 @@ class PatientHistoryController extends Controller
                 if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
                     return $this->unauthorized();
                 }
-                $history->medical_board_id = $user->id;
+                // $history->medical_board_id = $user->id;
                 $history->board_comments = $comment;
                 break;
 
@@ -625,12 +625,12 @@ class PatientHistoryController extends Controller
     private function isValidTransition($current, $next)
     {
         $allowed = [
-            'pending'   => ['reviewed'],          // hospital → director
-            'reviewed'  => ['requested', 'approved'], // director → medical board / approve to DG
+            'pending' => ['reviewed'],          // hospital → director
+            'reviewed' => ['requested', 'approved'], // director → medical board / approve to DG
             'requested' => ['approved'],          // medical board → director
-            'approved'  => ['confirmed', 'rejected'], // director → DG
+            'approved' => ['confirmed', 'rejected'], // director → DG
             'confirmed' => [],                    // DG final
-            'rejected'  => [],                    // terminal
+            'rejected' => [],                    // terminal
         ];
 
         return in_array($next, $allowed[$current] ?? []);
