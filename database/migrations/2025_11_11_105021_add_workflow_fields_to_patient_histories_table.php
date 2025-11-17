@@ -19,8 +19,6 @@ return new class extends Migration
                 'rejected', // from DG
             ])->default('pending')->after('history_file');
             
-            $table->text('board_diagnosis_ids')->nullable();
-            $table->text('board_reason')->nullable();
 
             // --- Comments per reviewer ---
             $table->text('mkurugenzi_tiba_comments')->nullable()->after('status');
@@ -29,6 +27,10 @@ return new class extends Migration
             // --- Reviewer IDs ---
             $table->unsignedBigInteger('mkurugenzi_tiba_id')->nullable()->after('dg_comments');
             $table->unsignedBigInteger('dg_id')->nullable()->after('medical_board_id');
+
+            // Ref reason table
+            $table->unsignedBigInteger('board_reason_id');
+
 
             // --- Foreign key relationships ---
             $table->foreign('mkurugenzi_tiba_id')
@@ -40,7 +42,10 @@ return new class extends Migration
                 ->references('id')
                 ->on('users')
                 ->onDelete('set null');
+
+            $table->foreign('board_reason_id')->references('reason_id')->on('reasons')->onDelete('cascade');
         });
+        
     }
 
     public function down(): void
