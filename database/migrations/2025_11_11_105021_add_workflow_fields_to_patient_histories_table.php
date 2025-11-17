@@ -18,6 +18,9 @@ return new class extends Migration
                 'confirmed', // from DG
                 'rejected', // from DG
             ])->default('pending')->after('history_file');
+            
+            $table->text('board_diagnosis_ids')->nullable();
+            $table->text('board_reason')->nullable();
 
             // --- Comments per reviewer ---
             $table->text('mkurugenzi_tiba_comments')->nullable()->after('status');
