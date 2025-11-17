@@ -59,7 +59,7 @@ class Patient extends Model
 
     public function latestHistory()
     {
-        return $this->hasOne(PatientHistory::class, 'patient_id', 'patient_id')->latestOfMany();
+        return $this->hasOne(PatientHistory::class, 'patient_id', 'patient_id')->latest('patient_histories_id');
     }
 
     public function files()
