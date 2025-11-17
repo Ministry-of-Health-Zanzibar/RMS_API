@@ -29,7 +29,7 @@ return new class extends Migration
             $table->unsignedBigInteger('dg_id')->nullable()->after('medical_board_id');
 
             // Ref reason table
-            $table->unsignedBigInteger('board_reason_id');
+            $table->unsignedBigInteger('board_reason_id')->nullable();
 
 
             // --- Foreign key relationships ---
