@@ -108,6 +108,33 @@ class PatientController extends Controller
         ], 200);
     }
 
+    public function patientsHistories(){
+
+        $user = auth()->user();
+
+        if (!$user->can('View Patient')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $query = Patient::with(['latestHistory']);
+
+        if ($user->hasAnyRole(['ROLE ADMIN'])) {
+            $query->withTrashed();
+        }
+
+        $patients = $query->get();
+
+        return response([
+            'data' => $patients,
+            'statusCode' => 200,
+        ], 200);
+
+    }
+
+
     /**
      * Store a newly created resource in storage.
      */
@@ -162,287 +189,153 @@ class PatientController extends Controller
      *     @OA\Response(response=500, description="Internal Server Error")
      * )
      */
-    // public function store(Request $request)
-    // {
-    //     $user = auth()->user();
-    //     if (!$user->can('Create Patient')) {
-    //         return response([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     // 🔹 Normalize boolean from Angular ("true"/"false" → true/false)
-    //     $request->merge([
-    //         'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
-    //     ]);
-
-    //     $data = Validator::make($request->all(), [
-    //         'name'              => ['required', 'string'],
-    //         'matibabu_card'     => ['nullable', 'string'],
-    //         'zan_id'            => ['nullable', 'string'],
-    //         'date_of_birth'     => ['required', 'string'],
-    //         'gender'            => ['required', 'string'],
-    //         'phone'             => ['nullable', 'string'],
-    //         'location_id'       => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
-    //         'job'               => ['nullable', 'string'],
-    //         'position'          => ['nullable', 'string'],
-    //         'patient_list_id'   => ['numeric', 'exists:patient_lists,patient_list_id'],
-    //         'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
-    //         'description'       => ['nullable', 'string'],
-
-    //         // Optional insurance validation
-    //         'has_insurance'           => ['required', 'boolean'],
-    //         'insurance_provider_name' => ['nullable', 'string'],
-    //         'card_number'             => ['nullable', 'string'], //, 'unique:insurances,card_number'],
-    //         'valid_until'             => ['nullable', 'string'],
-    //     ]);
-
-    //     if ($data->fails()) {
-    //         return response()->json([
-    //             'status' => 'error',
-    //             'errors' => $data->errors(),
-    //             'statusCode' => 422,
-    //         ], 422);
-    //     }
-
-    //     // Validate patient list existence
-    //     $patientList = \App\Models\PatientList::find($request->patient_list_id);
-
-    //     if (!$patientList) {
-    //         return response()->json([
-    //             'message' => "Invalid Patient List ID: {$request->patient_list_id}",
-    //             'statusCode' => 404
-    //         ], 404);
-    //     }
-
-    //     // Check patient count limit using pivot
-    //     $existingCount = \App\Models\Patient::whereHas('patientList', function ($query) use ($patientList) {
-    //         $query->where('patient_lists.patient_list_id', $patientList->patient_list_id);
-    //     })->count();
-
-    //     if ($existingCount >= $patientList->no_of_patients) {
-    //         return response()->json([
-    //             'message' => "The Medical Board (ID: {$patientList->patient_list_id}) already reached its patient limit ({$patientList->no_of_patients}).",
-    //             'statusCode' => 422,
-    //         ], 422);
-    //     }
-
-    //     // Create the patient for this list
-    //     $patient = \App\Models\Patient::create([
-    //         'name'            => $request['name'],
-    //         'matibabu_card'   => $request['matibabu_card'],
-    //         'zan_id'          => $request['zan_id'],
-    //         'date_of_birth'   => $request['date_of_birth'],
-    //         'gender'          => $request['gender'],
-    //         'phone'           => $request['phone'],
-    //         'location_id'     => $request['location_id'],
-    //         'job'             => $request['job'],
-    //         'position'        => $request['position'],
-    //         'created_by'      => Auth::id(),
-    //     ]);
-
-    //     // Attach patient to the list via pivot
-    //     $patient->patientList()->attach($patientList->patient_list_id);
-
-    //     // Optional Insurance creation (only if provided)
-    //     if ($request->filled('has_insurance') && $request->boolean('has_insurance') === true) {
-
-    //         // Prepare clean input (avoid "Default" or empty strings)
-    //         $insuranceProvider = $request->insurance_provider_name ?: null;
-    //         $cardNumber        = $request->card_number ?: null;
-    //         $validUntil        = $request->valid_until ?: null;
-
-    //         // Only create if not already existing for that patient
-    //         $existingInsurance = \App\Models\Insurance::where('patient_id', $patient->patient_id)->first();
-
-    //         if (!$existingInsurance) {
-    //             \App\Models\Insurance::create([
-    //                 'patient_id'             => $patient->patient_id,
-    //                 'insurance_provider_name'=> $insuranceProvider,
-    //                 'card_number'            => $cardNumber,
-    //                 'valid_until'            => $validUntil,
-    //             ]);
-    //         }
-    //     }
-
-    //     // File Upload
-    //     if ($request->hasFile('patient_file')) {
-    //         $files = $request->file('patient_file');
-    //         if (!is_array($files)) {
-    //             $files = [$files];
-    //         }
-
-    //         foreach ($files as $file) {
-    //             $extension = $file->getClientOriginalExtension();
-    //             $newFileName = 'patient_file_' . date('h-i-s_a_d-m-Y') . '.' . $extension;
-    //             $file->move(public_path('uploads/patientFiles/'), $newFileName);
-    //             $filePath = 'uploads/patientFiles/' . $newFileName;
-
-    //             PatientFile::create([
-    //                 'patient_id'  => $patient->patient_id,
-    //                 'file_name'   => $file->getClientOriginalName(),
-    //                 'file_path'   => $filePath,
-    //                 'file_type'   => $file->getClientMimeType(),
-    //                 'description' => $request->input('description') ?? null,
-    //                 'uploaded_by' => Auth::id(),
-    //             ]);
-    //         }
-    //     }
-
-    //     return response([
-    //         'data' => $patient->load(['files', 'insurances']),
-    //         'message' => 'Patient created successfully with file' . ($request->filled('insurance_provider_name') ? ' and insurance.' : '.'),
-    //         'statusCode' => 201,
-    //     ], 201);
-    // }
     public function store(Request $request)
-{
-    $user = auth()->user();
+    {
+        $user = auth()->user();
 
-    if (!$user->can('Create Patient')) {
-        return response([
-            'message' => 'Forbidden',
-            'statusCode' => 403
-        ], 403);
-    }
-
-    // Normalize boolean from Angular ("true"/"false" → true/false)
-    $request->merge([
-        'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
-    ]);
-
-    $data = Validator::make($request->all(), [
-        'name'              => ['required', 'string'],
-        'matibabu_card'     => ['nullable', 'string'],
-        'zan_id'            => ['nullable', 'string'],
-        'date_of_birth'     => ['required', 'string'],
-        'gender'            => ['required', 'string'],
-        'phone'             => ['nullable', 'string'],
-        'location_id'       => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
-        'job'               => ['nullable', 'string'],
-        'position'          => ['nullable', 'string'],
-
-        // Make patient_list_id optional
-        'patient_list_id'   => ['nullable', 'numeric', 'exists:patient_lists,patient_list_id'],
-
-        'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
-        'description'       => ['nullable', 'string'],
-
-        // Optional insurance validation
-        'has_insurance'           => ['required', 'boolean'],
-        'insurance_provider_name' => ['nullable', 'string'],
-        'card_number'             => ['nullable', 'string'],
-        'valid_until'             => ['nullable', 'string'],
-    ]);
-
-    if ($data->fails()) {
-        return response()->json([
-            'status' => 'error',
-            'errors' => $data->errors(),
-            'statusCode' => 422,
-        ], 422);
-    }
-
-    $patientList = null;
-
-    // If a patient_list_id is given, validate and check capacity
-    if ($request->filled('patient_list_id')) {
-        $patientList = \App\Models\PatientList::find($request->patient_list_id);
-
-        if (!$patientList) {
-            return response()->json([
-                'message' => "Invalid Patient List ID: {$request->patient_list_id}",
-                'statusCode' => 404
-            ], 404);
+        if (!$user->can('Create Patient')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
         }
 
-        // Check patient count limit using pivot
-        $existingCount = \App\Models\Patient::whereHas('patientList', function ($query) use ($patientList) {
-            $query->where('patient_lists.patient_list_id', $patientList->patient_list_id);
-        })->count();
+        // Normalize boolean from Angular ("true"/"false" → true/false)
+        $request->merge([
+            'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+        ]);
 
-        if ($existingCount >= $patientList->no_of_patients) {
+        $data = Validator::make($request->all(), [
+            'name'              => ['required', 'string'],
+            'matibabu_card'     => ['nullable', 'string'],
+            'zan_id'            => ['nullable', 'string'],
+            'date_of_birth'     => ['required', 'string'],
+            'gender'            => ['required', 'string'],
+            'phone'             => ['nullable', 'string'],
+            'location_id'       => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
+            'job'               => ['nullable', 'string'],
+            'position'          => ['nullable', 'string'],
+
+            // Make patient_list_id optional
+            'patient_list_id'   => ['nullable', 'numeric', 'exists:patient_lists,patient_list_id'],
+
+            'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
+            'description'       => ['nullable', 'string'],
+
+            // Optional insurance validation
+            'has_insurance'           => ['required', 'boolean'],
+            'insurance_provider_name' => ['nullable', 'string'],
+            'card_number'             => ['nullable', 'string'],
+            'valid_until'             => ['nullable', 'string'],
+        ]);
+
+        if ($data->fails()) {
             return response()->json([
-                'message' => "The Medical Board (ID: {$patientList->patient_list_id}) already reached its patient limit ({$patientList->no_of_patients}).",
+                'status' => 'error',
+                'errors' => $data->errors(),
                 'statusCode' => 422,
             ], 422);
         }
-    }
 
-    // Create the patient (patient_list_id optional)
-    $patient = \App\Models\Patient::create([
-        'name'            => $request['name'],
-        'matibabu_card'   => $request['matibabu_card'],
-        'zan_id'          => $request['zan_id'],
-        'date_of_birth'   => $request['date_of_birth'],
-        'gender'          => $request['gender'],
-        'phone'           => $request['phone'],
-        'location_id'     => $request['location_id'],
-        'job'             => $request['job'],
-        'position'        => $request['position'],
-        // use optional() helper instead of nullsafe operator
-        'patient_list_id' => optional($patientList)->patient_list_id,
-        'created_by'      => Auth::id(),
-    ]);
+        $patientList = null;
 
-    // Attach to list via pivot only if list provided
-    if ($patientList) {
-        $patient->patientList()->attach($patientList->patient_list_id);
-    }
+        // If a patient_list_id is given, validate and check capacity
+        if ($request->filled('patient_list_id')) {
+            $patientList = \App\Models\PatientList::find($request->patient_list_id);
 
-    // Optional Insurance creation
-    if ($request->filled('has_insurance') && $request->boolean('has_insurance') === true) {
-        $insuranceProvider = $request->insurance_provider_name ?: null;
-        $cardNumber        = $request->card_number ?: null;
-        $validUntil        = $request->valid_until ?: null;
+            if (!$patientList) {
+                return response()->json([
+                    'message' => "Invalid Patient List ID: {$request->patient_list_id}",
+                    'statusCode' => 404
+                ], 404);
+            }
 
-        // Only create if not already existing for that patient
-        $existingInsurance = \App\Models\Insurance::where('patient_id', $patient->patient_id)->first();
+            // Check patient count limit using pivot
+            $existingCount = \App\Models\Patient::whereHas('patientList', function ($query) use ($patientList) {
+                $query->where('patient_lists.patient_list_id', $patientList->patient_list_id);
+            })->count();
 
-        if (!$existingInsurance) {
-            \App\Models\Insurance::create([
-                'patient_id'             => $patient->patient_id,
-                'insurance_provider_name'=> $insuranceProvider,
-                'card_number'            => $cardNumber,
-                'valid_until'            => $validUntil,
-            ]);
-        }
-    }
-
-    // File Upload
-    if ($request->hasFile('patient_file')) {
-        $files = $request->file('patient_file');
-        if (!is_array($files)) {
-            $files = [$files];
+            if ($existingCount >= $patientList->no_of_patients) {
+                return response()->json([
+                    'message' => "The Medical Board (ID: {$patientList->patient_list_id}) already reached its patient limit ({$patientList->no_of_patients}).",
+                    'statusCode' => 422,
+                ], 422);
+            }
         }
 
-        foreach ($files as $file) {
-            $extension = $file->getClientOriginalExtension();
-            $newFileName = 'patient_file_' . date('h-i-s_a_d-m-Y') . '.' . $extension;
-            $file->move(public_path('uploads/patientFiles/'), $newFileName);
-            $filePath = 'uploads/patientFiles/' . $newFileName;
+        // Create the patient (patient_list_id optional)
+        $patient = \App\Models\Patient::create([
+            'name'            => $request['name'],
+            'matibabu_card'   => $request['matibabu_card'],
+            'zan_id'          => $request['zan_id'],
+            'date_of_birth'   => $request['date_of_birth'],
+            'gender'          => $request['gender'],
+            'phone'           => $request['phone'],
+            'location_id'     => $request['location_id'],
+            'job'             => $request['job'],
+            'position'        => $request['position'],
+            // use optional() helper instead of nullsafe operator
+            'patient_list_id' => optional($patientList)->patient_list_id,
+            'created_by'      => Auth::id(),
+        ]);
 
-            \App\Models\PatientFile::create([
-                'patient_id'  => $patient->patient_id,
-                'file_name'   => $file->getClientOriginalName(),
-                'file_path'   => $filePath,
-                'file_type'   => $file->getClientMimeType(),
-                'description' => $request->input('description') ?? null,
-                'uploaded_by' => Auth::id(),
-            ]);
+        // Attach to list via pivot only if list provided
+        if ($patientList) {
+            $patient->patientList()->attach($patientList->patient_list_id);
         }
-    }
 
-    // Response
-    return response([
-        'data' => $patient->load(['files', 'insurances']),
-        'message' => $patientList
-            ? 'Patient created successfully and linked to patient list.'
-            : 'Patient created successfully (not linked to any patient list).',
-        'statusCode' => 201,
-    ], 201);
-}
+        // Optional Insurance creation
+        if ($request->filled('has_insurance') && $request->boolean('has_insurance') === true) {
+            $insuranceProvider = $request->insurance_provider_name ?: null;
+            $cardNumber        = $request->card_number ?: null;
+            $validUntil        = $request->valid_until ?: null;
+
+            // Only create if not already existing for that patient
+            $existingInsurance = \App\Models\Insurance::where('patient_id', $patient->patient_id)->first();
+
+            if (!$existingInsurance) {
+                \App\Models\Insurance::create([
+                    'patient_id'             => $patient->patient_id,
+                    'insurance_provider_name'=> $insuranceProvider,
+                    'card_number'            => $cardNumber,
+                    'valid_until'            => $validUntil,
+                ]);
+            }
+        }
+
+        // File Upload
+        if ($request->hasFile('patient_file')) {
+            $files = $request->file('patient_file');
+            if (!is_array($files)) {
+                $files = [$files];
+            }
+
+            foreach ($files as $file) {
+                $extension = $file->getClientOriginalExtension();
+                $newFileName = 'patient_file_' . date('h-i-s_a_d-m-Y') . '.' . $extension;
+                $file->move(public_path('uploads/patientFiles/'), $newFileName);
+                $filePath = 'uploads/patientFiles/' . $newFileName;
+
+                \App\Models\PatientFile::create([
+                    'patient_id'  => $patient->patient_id,
+                    'file_name'   => $file->getClientOriginalName(),
+                    'file_path'   => $filePath,
+                    'file_type'   => $file->getClientMimeType(),
+                    'description' => $request->input('description') ?? null,
+                    'uploaded_by' => Auth::id(),
+                ]);
+            }
+        }
+
+        // Response
+        return response([
+            'data' => $patient->load(['files', 'insurances']),
+            'message' => $patientList
+                ? 'Patient created successfully and linked to patient list.'
+                : 'Patient created successfully (not linked to any patient list).',
+            'statusCode' => 201,
+        ], 201);
+    }
 
 
     /**
