@@ -236,6 +236,8 @@ class RolesOfUsersSeeder extends Seeder
          * =============================
          */
         $hospitalUserPermissions = [
+            'View Referral Dashboard',
+
             'Patient Module',
             'Create Patient',
             'Update Patient',
@@ -266,6 +268,8 @@ class RolesOfUsersSeeder extends Seeder
          * =============================
          */
         $mkurugenziTibaPermissions = [
+            'View Referral Dashboard',
+
             'Patient Module',
             'View Patient',
 
