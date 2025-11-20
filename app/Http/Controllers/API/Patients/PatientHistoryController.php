@@ -244,7 +244,7 @@ class PatientHistoryController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->can('View Patient History')) {
+        if (!$user->canAny(['View Patient History', 'View History'])) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403

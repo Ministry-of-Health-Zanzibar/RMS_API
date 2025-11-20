@@ -243,7 +243,7 @@ class RolesOfUsersSeeder extends Seeder
 
             'Create Patient History',
             'Update Patient History',
-            // 'View Patient History',
+            'View History',
             'View Reason',
             'View Diagnoses',
             'View Location',

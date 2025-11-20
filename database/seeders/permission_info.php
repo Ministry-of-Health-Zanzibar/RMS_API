@@ -128,6 +128,9 @@ class permission_info extends Seeder
             'Forward Patient History to Board',
             'Approve Patient History',
             'Send Patient History to DG',
+
+            'View History',
+
         ];
 
         foreach ($permissions as $permission) {
