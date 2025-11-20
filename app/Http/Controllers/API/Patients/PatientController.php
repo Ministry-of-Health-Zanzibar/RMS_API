@@ -108,20 +108,78 @@ class PatientController extends Controller
         ], 200);
     }
 
-    public function patientsHistories(){
+    // public function patientsHistories(){
 
+    //     $user = auth()->user();
+
+    //     if (!$user->canAny(['View Patient','View History'])) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $query = Patient::with(['latestHistory'])->whereHas('patientHistories')->latest();
+
+    //     if ($user->hasAnyRole(['ROLE ADMIN'])) {
+    //         $query->withTrashed();
+    //     }
+
+    //     $patients = $query->get();
+
+    //     return response([
+    //         'data' => $patients,
+    //         'statusCode' => 200,
+    //     ], 200);
+
+    // }
+    public function patientsHistories()
+    {
         $user = auth()->user();
 
-        if (!$user->canAny(['View Patient','View History'])) {
+        // Permissions check
+        if (!$user->canAny(['View Patient', 'View History'])) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $query = Patient::with(['latestHistory'])->whereHas('patientHistories')->latest();
+        // Base query
+        $query = Patient::with(['latestHistory'])
+            ->whereHas('patientHistories') // only patients with histories
+            ->latest();
 
-        if ($user->hasAnyRole(['ROLE ADMIN'])) {
+        /**
+         * ROLE: HOSPITAL USER
+         * See ALL statuses, BUT only their own patients
+         */
+        if ($user->hasRole('ROLE HOSPITAL USER')) {
+            $query->where('created_by', $user->id);
+        }
+
+        /**
+         * ROLE: MEDICAL BOARD MEMBER
+         * See ONLY reviewed cases
+         */
+        if ($user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+
+            // Only include patients whose histories include reviewed status
+            $query->whereHas('patientHistories', function ($q) {
+                $q->where('status', 'reviewed');
+            });
+
+            // And load only the reviewed history in the relationship
+            $query->with(['latestHistory' => function ($hist) {
+                $hist->where('status', 'reviewed');
+            }]);
+        }
+
+        /**
+         * ROLE: ADMIN + MKURUGENZI TIBA
+         * No filters, include trashed
+         */
+        if ($user->hasAnyRole(['ROLE ADMIN', 'ROLE MKURUGENZI TIBA'])) {
             $query->withTrashed();
         }
 
@@ -131,8 +189,9 @@ class PatientController extends Controller
             'data' => $patients,
             'statusCode' => 200,
         ], 200);
-
     }
+
+
 
 
     /**

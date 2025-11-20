@@ -30,11 +30,11 @@ class RolesOfUsersSeeder extends Seeder
             'Delete Insurance',
             'View Insurance',
 
-            'Patient Module',
-            'Create Patient',
-            'Update Patient',
-            'Delete Patient',
-            'View Patient',
+            // 'Patient Module',
+            // 'Create Patient',
+            // 'Update Patient',
+            // 'Delete Patient',
+            // 'View Patient',
 
             'Create Patient List',
             'Update Patient List',
@@ -49,6 +49,8 @@ class RolesOfUsersSeeder extends Seeder
             'View Reason',
             'View Location',
             'View Diagnoses',
+
+            'View History',
 
             'Medical Board Report',
             'View Report',
