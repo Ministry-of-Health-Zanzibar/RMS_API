@@ -50,7 +50,7 @@ class PatientHistoryController extends Controller
     /**
      * @OA\Get(
      *     path="/api/patient-histories",
-     *     tags={"Patient History"},
+     *     tags={"Patient Histories"},
      *     summary="Get all patient histories",
      *     security={{"sanctum":{}}},
      *     @OA\Response(
@@ -84,218 +84,68 @@ class PatientHistoryController extends Controller
         ]);
     }
 
-    // public function getPatientToBeAssignedToMedicalBoard()
-    // {
-    //     $user = auth()->user();
-
-    //     if (!$user->can('View Patient History')) {
-    //         return response()->json([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     // STEP 1: FILTER PATIENTS
-    //     $patients = Patient::query()
-    //         // Only patients whose latest history is reviewed
-    //         ->whereHas('latestHistory', function ($q) {
-    //             $q->where('status', 'reviewed');
-    //         })
-    //         // Patients NOT in any PatientList
-    //         ->whereDoesntHave('patientList')
-    //         // Patients with NO referral OR referral.status = 'closed'
-    //         ->where(function ($q) {
-    //             $q->whereDoesntHave('referrals')
-    //             ->orWhereHas('referrals', function ($ref) {
-    //                 $ref->where('status', 'closed');
-    //             });
-    //         })
-    //         ->with([
-    //             'latestHistory' => function ($q) {
-    //                 $q->with(['patient', 'diagnoses', 'reason']);
-    //             }
-    //         ])
-    //         ->latest()
-    //         ->get();
-
-    //     // STEP 2: Extract only the latestHistory from each patient
-    //     $histories = $patients->pluck('latestHistory')->filter();
-
-    //     return response()->json([
-    //         'status' => true,
-    //         'data' => $histories->values(), // reset array keys
-    //         'message' => 'Patient histories retrieved successfully',
-    //         'statusCode' => 200
-    //     ]);
-    // }
-
-//     public function getPatientToBeAssignedToMedicalBoard()
-// {
-//     $user = auth()->user();
-
-//     // Permission check
-//     if (!$user->canAny(['View Patient', 'View History'])) {
-//         return response()->json([
-//             'message' => 'Forbidden',
-//             'statusCode' => 403
-//         ], 403);
-//     }
-
-//     // Base query: patients with at least one history
-//     $query = Patient::whereHas('patientHistories')
-//         ->with(['latestHistory' => function ($q) {
-//             // Only load latest history that is reviewed
-//             $q->where('status', 'reviewed')
-//               ->with(['patient', 'diagnoses', 'reason']);
-//         }])
-//         ->latest();
-
-//     // ROLE: Medical Board Member -> only patients whose latest history is reviewed
-//     if ($user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
-//         $query->whereHas('patientHistories', function ($q) {
-//             $q->where('status', 'reviewed');
-//         });
-//     }
-
-//     // Get patients
-//     $patients = $query->get();
-
-//     // Extract latest reviewed histories
-//     $histories = $patients->map(function ($patient) {
-//         return $patient->latestHistory;
-//     })->filter(); // remove nulls
-
-//     // Transform to clean JSON (optional)
-//     $result = $histories->map(function ($history) {
-//         return [
-//             'patient_histories_id' => $history->patient_histories_id,
-//             'patient_id' => $history->patient_id,
-//             'referring_doctor' => $history->referring_doctor,
-//             'file_number' => $history->file_number,
-//             'referring_date' => $history->referring_date,
-//             'reason_id' => $history->reason_id,
-//             'history_of_presenting_illness' => $history->history_of_presenting_illness,
-//             'physical_findings' => $history->physical_findings,
-//             'investigations' => $history->investigations,
-//             'management_done' => $history->management_done,
-//             'board_comments' => $history->board_comments,
-//             'history_file' => $history->history_file,
-//             'created_at' => $history->created_at,
-//             'updated_at' => $history->updated_at,
-//             'deleted_at' => $history->deleted_at,
-//             'status' => $history->status,
-//             'mkurugenzi_tiba_comments' => $history->mkurugenzi_tiba_comments,
-//             'dg_comments' => $history->dg_comments,
-//             'mkurugenzi_tiba_id' => $history->mkurugenzi_tiba_id,
-//             'dg_id' => $history->dg_id,
-//             'board_reason_id' => $history->board_reason_id,
-//             'patient' => [
-//                 'patient_id' => $history->patient->patient_id,
-//                 'name' => $history->patient->name,
-//                 'matibabu_card' => $history->patient->matibabu_card,
-//                 'date_of_birth' => $history->patient->date_of_birth,
-//                 'gender' => $history->patient->gender,
-//                 'phone' => $history->patient->phone,
-//                 'location_id' => $history->patient->location_id,
-//                 'job' => $history->patient->job,
-//                 'position' => $history->patient->position,
-//                 'created_by' => $history->patient->created_by,
-//                 'created_at' => $history->patient->created_at,
-//                 'updated_at' => $history->patient->updated_at,
-//                 'deleted_at' => $history->patient->deleted_at,
-//                 'zan_id' => $history->patient->zan_id,
-//             ],
-//             'diagnoses' => $history->diagnoses->map(function ($d) {
-//                 return [
-//                     'diagnosis_id' => $d->diagnosis_id,
-//                     'diagnosis_name' => $d->diagnosis_name,
-//                     'pivot' => [
-//                         'patient_histories_id' => $d->pivot->patient_histories_id,
-//                         'diagnosis_id' => $d->pivot->diagnosis_id,
-//                     ],
-//                 ];
-//             }),
-//             'reason' => $history->reason ? [
-//                 'reason_id' => $history->reason->reason_id,
-//                 'referral_reason_name' => $history->reason->referral_reason_name,
-//             ] : null,
-//         ];
-//     });
-
-//     return response()->json([
-//         'status' => true,
-//         'data' => $result->values(),
-//         'message' => 'Patient histories retrieved successfully',
-//         'statusCode' => 200
-//     ]);
-// }
 
 
-public function getPatientToBeAssignedToMedicalBoard(Request $request)
-{
-    $user = auth()->user();
+    public function getPatientToBeAssignedToMedicalBoard(Request $request)
+    {
+        $user = auth()->user();
 
-    // Permission check
-    if (!$user->canAny(['View Patient', 'View History'])) {
+        // Permission check
+        if (!$user->canAny(['View Patient', 'View History'])) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // Optional patient list filter
+        $patientListId = $request->input('patient_list_id');
+
+        // Query patients whose latest history is reviewed
+        $patients = Patient::whereHas('latestHistory', function ($q) {
+                $q->where('status', 'reviewed');
+            })
+            ->when($patientListId, function ($q) use ($patientListId) {
+                // Exclude patients already in the given patient list
+                $q->whereDoesntHave('patientList', function ($query) use ($patientListId) {
+                    $query->where('patient_list_id', $patientListId);
+                });
+            })
+            ->when(!$patientListId, function ($q) {
+                // Exclude patients in any patient list
+                $q->whereDoesntHave('patientList');
+            })
+            ->with(['latestHistory' => function ($q) {
+                $q->where('status', 'reviewed')
+                ->with(['patient', 'diagnoses', 'reason']);
+            }])
+            ->latest()
+            ->get();
+
+        // Map to required fields
+        $result = $patients->map(function ($patient) {
+            return [
+                'patient_id' => $patient->patient_id,
+                'name' => $patient->name,
+                'phone' => $patient->phone,
+                'latest_history_id' => $patient->latestHistory->patient_histories_id ?? null,
+                'latest_history_status' => $patient->latestHistory->status ?? null,
+            ];
+        });
+
         return response()->json([
-            'message' => 'Forbidden',
-            'statusCode' => 403
-        ], 403);
+            'status' => true,
+            'data' => $result->values(),
+            'message' => 'Patients retrieved successfully',
+            'statusCode' => 200
+        ]);
     }
-
-    // Optional patient list filter
-    $patientListId = $request->input('patient_list_id');
-
-    // Query patients whose latest history is reviewed
-    $patients = Patient::whereHas('latestHistory', function ($q) {
-            $q->where('status', 'reviewed');
-        })
-        ->when($patientListId, function ($q) use ($patientListId) {
-            // Exclude patients already in the given patient list
-            $q->whereDoesntHave('patientList', function ($query) use ($patientListId) {
-                $query->where('patient_list_id', $patientListId);
-            });
-        })
-        ->when(!$patientListId, function ($q) {
-            // Exclude patients in any patient list
-            $q->whereDoesntHave('patientList');
-        })
-        ->with(['latestHistory' => function ($q) {
-            $q->where('status', 'reviewed')
-              ->with(['patient', 'diagnoses', 'reason']);
-        }])
-        ->latest()
-        ->get();
-
-    // Map to required fields
-    $result = $patients->map(function ($patient) {
-        return [
-            'patient_id' => $patient->patient_id,
-            'name' => $patient->name,
-            'phone' => $patient->phone,
-            'latest_history_id' => $patient->latestHistory->patient_histories_id ?? null,
-            'latest_history_status' => $patient->latestHistory->status ?? null,
-        ];
-    });
-
-    return response()->json([
-        'status' => true,
-        'data' => $result->values(),
-        'message' => 'Patients retrieved successfully',
-        'statusCode' => 200
-    ]);
-}
-
-
-
-
-
 
 
     /**
      * @OA\Post(
      *     path="/api/patient-histories",
-     *     tags={"Patient History"},
+     *     tags={"Patient Histories"},
      *     summary="Create a new patient history",
      *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
@@ -342,7 +192,6 @@ public function getPatientToBeAssignedToMedicalBoard(Request $request)
             'physical_findings' => 'nullable|string',
             'investigations' => 'nullable|string',
             'management_done' => 'nullable|string',
-            'board_comments' => 'nullable|string',
             'diagnosis_ids' => 'nullable|array',
             'diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
             'history_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
@@ -368,7 +217,6 @@ public function getPatientToBeAssignedToMedicalBoard(Request $request)
                 'physical_findings',
                 'investigations',
                 'management_done',
-                'board_comments'
             ]);
 
             $data['created_by'] = auth()->id();
@@ -400,30 +248,12 @@ public function getPatientToBeAssignedToMedicalBoard(Request $request)
 
                 // Sync diagnoses to the history
                 $history->diagnoses()->sync($request->diagnosis_ids);
-
-                // Automatically create a referral for this patient history
-
-                // Generate referral number
-                $today = now()->format('Y-m-d');
-                $count = Referral::whereDate('created_at', $today)->count() + 1;
-                $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
-
-                $referral = Referral::create([
-                    'patient_id' => $request->patient_id,
-                    'reason_id' => $request->reason_id,
-                    'status' => 'Pending',
-                    'referral_number' => $referralNumber,
-                    'created_by' => Auth::id(),
-                ]);
-
-                // Attach the same diagnoses to the referral via pivot table
-                $referral->diagnoses()->sync($request->diagnosis_ids);
             }
 
             return response()->json([
                 'status' => true,
                 'data' => $history->load('patient', 'diagnoses', 'reason'),
-                'message' => 'Patient history created and Referral requested successfully,',
+                'message' => 'Patient history created successfully,',
                 'statusCode' => 201
             ], 201);
 
@@ -441,7 +271,7 @@ public function getPatientToBeAssignedToMedicalBoard(Request $request)
     /**
      * @OA\Get(
      *     path="/api/patient-histories/{id}",
-     *     tags={"Patient History"},
+     *     tags={"Patient Histories"},
      *     summary="Get a patient history by ID",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
@@ -483,7 +313,7 @@ public function getPatientToBeAssignedToMedicalBoard(Request $request)
     /**
      * @OA\Post(
      *     path="/api/patient-histories/update/{id}",
-     *     tags={"Patient History"},
+     *     tags={"Patient Histories"},
      *     summary="Update patient history",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
@@ -512,6 +342,7 @@ public function getPatientToBeAssignedToMedicalBoard(Request $request)
     public function update(Request $request, $id)
     {
         $user = auth()->user();
+
         if (!$user->can('Update Patient History')) {
             return response()->json([
                 'message' => 'Forbidden',
@@ -521,15 +352,8 @@ public function getPatientToBeAssignedToMedicalBoard(Request $request)
 
         $history = PatientHistory::findOrFail($id);
 
-        if (!$history) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Patient history not found',
-                'statusCode' => 404
-            ], 404);
-        }
-
         $validator = Validator::make($request->all(), [
+            'patient_id' => 'nullable|exists:patients,patient_id', // optional if changing patient
             'reason_id' => 'nullable|exists:reasons,reason_id',
             'referring_doctor' => 'nullable|string',
             'file_number' => 'nullable|string',
@@ -538,7 +362,6 @@ public function getPatientToBeAssignedToMedicalBoard(Request $request)
             'physical_findings' => 'nullable|string',
             'investigations' => 'nullable|string',
             'management_done' => 'nullable|string',
-            'board_comments' => 'nullable|string',
             'diagnosis_ids' => 'nullable|array',
             'diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
             'history_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
@@ -554,6 +377,7 @@ public function getPatientToBeAssignedToMedicalBoard(Request $request)
 
         try {
             $data = $request->only([
+                'patient_id',
                 'reason_id',
                 'referring_doctor',
                 'file_number',
@@ -562,7 +386,6 @@ public function getPatientToBeAssignedToMedicalBoard(Request $request)
                 'physical_findings',
                 'investigations',
                 'management_done',
-                'board_comments'
             ]);
 
             // Normalize referring_date
@@ -576,9 +399,9 @@ public function getPatientToBeAssignedToMedicalBoard(Request $request)
                 }
             }
 
-            // Handle optional file upload
+            // Handle file upload
             if ($request->hasFile('history_file')) {
-                // Remove old file if exists
+                // Delete old file if exists
                 if ($history->history_file && file_exists(public_path($history->history_file))) {
                     unlink(public_path($history->history_file));
                 }
@@ -615,10 +438,278 @@ public function getPatientToBeAssignedToMedicalBoard(Request $request)
         }
     }
 
+    // public function update(Request $request, $id)
+    // {
+    //     $user = auth()->user();
+    //     if (!$user->can('Update Patient History')) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $history = PatientHistory::findOrFail($id);
+
+    //     if (!$history) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Patient history not found',
+    //             'statusCode' => 404
+    //         ], 404);
+    //     }
+
+    //     $validator = Validator::make($request->all(), [
+    //         'reason_id' => 'nullable|exists:reasons,reason_id',
+    //         'referring_doctor' => 'nullable|string',
+    //         'file_number' => 'nullable|string',
+    //         'referring_date' => 'nullable|string',
+    //         'history_of_presenting_illness' => 'nullable|string',
+    //         'physical_findings' => 'nullable|string',
+    //         'investigations' => 'nullable|string',
+    //         'management_done' => 'nullable|string',
+    //         'board_comments' => 'nullable|string',
+    //         'diagnosis_ids' => 'nullable|array',
+    //         'diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
+    //         'history_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'errors' => $validator->errors(),
+    //             'statusCode' => 422
+    //         ], 422);
+    //     }
+
+    //     try {
+    //         $data = $request->only([
+    //             'reason_id',
+    //             'referring_doctor',
+    //             'file_number',
+    //             'referring_date',
+    //             'history_of_presenting_illness',
+    //             'physical_findings',
+    //             'investigations',
+    //             'management_done',
+    //             'board_comments'
+    //         ]);
+
+    //         // Normalize referring_date
+    //         if (empty($data['referring_date']) || strtolower($data['referring_date']) === 'default') {
+    //             $data['referring_date'] = null;
+    //         } else {
+    //             try {
+    //                 $data['referring_date'] = \Carbon\Carbon::parse($data['referring_date'])->format('Y-m-d');
+    //             } catch (\Exception $e) {
+    //                 $data['referring_date'] = null;
+    //             }
+    //         }
+
+    //         // Handle optional file upload
+    //         if ($request->hasFile('history_file')) {
+    //             // Remove old file if exists
+    //             if ($history->history_file && file_exists(public_path($history->history_file))) {
+    //                 unlink(public_path($history->history_file));
+    //             }
+
+    //             $file = $request->file('history_file');
+    //             $fileName = 'history_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
+    //             $file->move(public_path('uploads/historyFiles/'), $fileName);
+    //             $data['history_file'] = 'uploads/historyFiles/' . $fileName;
+    //         }
+
+    //         // Update patient history
+    //         $history->update($data);
+
+    //         // Sync diagnoses if provided
+    //         if ($request->filled('diagnosis_ids')) {
+    //             $history->diagnoses()->sync($request->diagnosis_ids);
+    //         }
+
+    //         return response()->json([
+    //             'status' => true,
+    //             'data' => $history->load('patient', 'diagnoses', 'reason'),
+    //             'message' => 'Patient history updated successfully',
+    //             'statusCode' => 200
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         Log::error('Patient history update failed: ' . $e->getMessage());
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Update failed',
+    //             'error' => $e->getMessage(),
+    //             'statusCode' => 500
+    //         ], 500);
+    //     }
+    // }
+
+    /**
+     * @OA\Put(
+     *     path="/api/patient-histories/{id}/medical-board",
+     *     operationId="updateByMedicalBoard",
+     *     tags={"Patient Histories"},
+     *     summary="Update patient history by Medical Board",
+     *     description="Allows a Medical Board member to update patient history status, comments, reason, and diagnoses. Automatically creates a referral if board diagnoses are provided.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Patient history ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", enum={"pending","reviewed","requested","approved","confirmed","rejected"}, example="reviewed", description="Workflow status"),
+     *             @OA\Property(property="board_comments", type="string", example="Patient requires additional investigation", description="Comments by medical board"),
+     *             @OA\Property(property="board_reason_id", type="integer", example=2, description="Reason ID associated with the board update"),
+     *             @OA\Property(
+     *                 property="board_diagnosis_ids",
+     *                 type="array",
+     *                 description="List of diagnosis IDs assigned by the medical board",
+     *                 @OA\Items(type="integer", example=5)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Patient history updated and referral created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="patient_histories_id", type="integer", example=1),
+     *                 @OA\Property(property="patient_id", type="integer", example=10),
+     *                 @OA\Property(property="status", type="string", example="reviewed"),
+     *                 @OA\Property(property="board_comments", type="string", example="Patient requires additional investigation"),
+     *                 @OA\Property(property="board_reason_id", type="integer", example=2),
+     *                 @OA\Property(property="diagnoses", type="array",
+     *                     @OA\Items(
+     *                         @OA\Property(property="diagnosis_id", type="integer", example=5),
+     *                         @OA\Property(property="diagnosis_name", type="string", example="Hypertension")
+     *                     )
+     *                 ),
+     *                 @OA\Property(property="patient", type="object",
+     *                     @OA\Property(property="patient_id", type="integer", example=10),
+     *                     @OA\Property(property="name", type="string", example="John Doe"),
+     *                     @OA\Property(property="phone", type="string", example="255712345678")
+     *                 )
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Patient history updated and referral created successfully by Medical Board"),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden - user not a Medical Board member",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Forbidden"),
+     *             @OA\Property(property="statusCode", type="integer", example=403)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="boolean", example=false),
+     *             @OA\Property(property="errors", type="object"),
+     *             @OA\Property(property="statusCode", type="integer", example=422)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Update failed"),
+     *             @OA\Property(property="error", type="string"),
+     *             @OA\Property(property="statusCode", type="integer", example=500)
+     *         )
+     *     )
+     * )
+     */
+    public function updateByMedicalBoard(Request $request, $id)
+    {
+        $user = auth()->user();
+
+        // Check role
+        if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $history = PatientHistory::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|in:pending,reviewed,requested,approved,confirmed,rejected',
+            'board_comments' => 'nullable|string',
+            'board_reason_id' => 'nullable|exists:reasons,reason_id',
+            'board_diagnosis_ids' => 'nullable|array',
+            'board_diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors(),
+                'statusCode' => 422
+            ], 422);
+        }
+
+        try {
+            // Update workflow fields
+            $history->status = $request->input('status', $history->status);
+            $history->board_comments = $request->input('board_comments', $history->board_comments);
+            $history->board_reason_id = $request->input('board_reason_id', $history->board_reason_id);
+            $history->save();
+
+            // Update board_diagnosis_id in pivot table
+            if ($request->filled('board_diagnosis_ids')) {
+                // Sync diagnoses to the history pivot table
+                $history->diagnoses()->sync($request->board_diagnosis_ids);
+
+                // --- Automatically create a referral ---
+                $today = now()->format('Y-m-d');
+                $count = Referral::whereDate('created_at', $today)->count() + 1;
+                $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+
+                $referral = Referral::create([
+                    'patient_id' => $history->patient_id,
+                    'reason_id' => $history->board_reason_id,
+                    'status' => 'Pending',
+                    'referral_number' => $referralNumber,
+                    'created_by' => $user->id,
+                ]);
+
+                // Attach the same diagnoses to the referral
+                $referral->diagnoses()->sync($request->board_diagnosis_ids);
+            }
+
+            return response()->json([
+                'status' => true,
+                'data' => $history->load('patient', 'diagnoses', 'reason'),
+                'message' => 'Patient history updated and referral created successfully by Medical Board',
+                'statusCode' => 200
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Medical Board update failed: ' . $e->getMessage());
+            return response()->json([
+                'status' => false,
+                'message' => 'Update failed',
+                'error' => $e->getMessage(),
+                'statusCode' => 500
+            ], 500);
+        }
+    }
+
     /**
      * @OA\Delete(
      *     path="/api/patient-histories/{id}",
-     *     tags={"Patient History"},
+     *     tags={"Patient Histories"},
      *     summary="Delete patient history",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
@@ -649,7 +740,7 @@ public function getPatientToBeAssignedToMedicalBoard(Request $request)
     /**
      * @OA\Post(
      *     path="/api/patient-histories/unblock/{id}",
-     *     tags={"Patient History"},
+     *     tags={"Patient Histories"},
      *     summary="Unblock a patient history",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
@@ -680,7 +771,7 @@ public function getPatientToBeAssignedToMedicalBoard(Request $request)
     /**
      * @OA\Post(
      *     path="/api/patient-histories/update-status/{id}",
-     *     tags={"Patient History"},
+     *     tags={"Patient Histories"},
      *     summary="Update patient history status",
      *     description="Allows authorized roles to update the status of a patient history record, add comments, and track reviewers.",
      *     security={{"sanctum":{}}},

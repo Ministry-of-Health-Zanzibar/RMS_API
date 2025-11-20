@@ -212,6 +212,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/{id}', [PatientHistoryController::class, 'destroy']);
         Route::post('/{id}/unblock', [PatientHistoryController::class, 'unblock']);
         Route::post('/update-status/{id}', [PatientHistoryController::class, 'updateStatus']);
+        Route::put('/{id}/medical-board', [PatientHistoryController::class, 'updateByMedicalBoard']);
         Route::get('/allowed-to-assign/patients', [PatientHistoryController::class, 'getPatientToBeAssignedToMedicalBoard']);
     });
 

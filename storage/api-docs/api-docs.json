@@ -4233,7 +4233,7 @@
         "/api/patient-histories": {
             "get": {
                 "tags": [
-                    "Patient History"
+                    "Patient Histories"
                 ],
                 "summary": "Get all patient histories",
                 "operationId": "d7bc086ca6fb11cfb7b422d4e5f9a907",
@@ -4263,7 +4263,7 @@
             },
             "post": {
                 "tags": [
-                    "Patient History"
+                    "Patient Histories"
                 ],
                 "summary": "Create a new patient history",
                 "operationId": "b00facf26a299564ebd3f72eaa5fbd33",
@@ -4344,7 +4344,7 @@
         "/api/patient-histories/{id}": {
             "get": {
                 "tags": [
-                    "Patient History"
+                    "Patient Histories"
                 ],
                 "summary": "Get a patient history by ID",
                 "operationId": "73b6a99e077bf2a04e2bbfb9cd843d9d",
@@ -4377,7 +4377,7 @@
             },
             "delete": {
                 "tags": [
-                    "Patient History"
+                    "Patient Histories"
                 ],
                 "summary": "Delete patient history",
                 "operationId": "13dae0bc31e9fa1fdb0b46d2eba2d7bd",
@@ -4409,7 +4409,7 @@
         "/api/patient-histories/update/{id}": {
             "post": {
                 "tags": [
-                    "Patient History"
+                    "Patient Histories"
                 ],
                 "summary": "Update patient history",
                 "operationId": "a77b01896750133f711622edc1e26b4f",
@@ -4491,10 +4491,233 @@
                 ]
             }
         },
+        "/api/patient-histories/{id}/medical-board": {
+            "put": {
+                "tags": [
+                    "Patient Histories"
+                ],
+                "summary": "Update patient history by Medical Board",
+                "description": "Allows a Medical Board member to update patient history status, comments, reason, and diagnoses. Automatically creates a referral if board diagnoses are provided.",
+                "operationId": "updateByMedicalBoard",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Patient history ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "status": {
+                                        "description": "Workflow status",
+                                        "type": "string",
+                                        "enum": [
+                                            "pending",
+                                            "reviewed",
+                                            "requested",
+                                            "approved",
+                                            "confirmed",
+                                            "rejected"
+                                        ],
+                                        "example": "reviewed"
+                                    },
+                                    "board_comments": {
+                                        "description": "Comments by medical board",
+                                        "type": "string",
+                                        "example": "Patient requires additional investigation"
+                                    },
+                                    "board_reason_id": {
+                                        "description": "Reason ID associated with the board update",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "board_diagnosis_ids": {
+                                        "description": "List of diagnosis IDs assigned by the medical board",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Patient history updated and referral created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "patient_histories_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "patient_id": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "reviewed"
+                                                },
+                                                "board_comments": {
+                                                    "type": "string",
+                                                    "example": "Patient requires additional investigation"
+                                                },
+                                                "board_reason_id": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "diagnoses": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "diagnosis_id": {
+                                                                "type": "integer",
+                                                                "example": 5
+                                                            },
+                                                            "diagnosis_name": {
+                                                                "type": "string",
+                                                                "example": "Hypertension"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "patient": {
+                                                    "properties": {
+                                                        "patient_id": {
+                                                            "type": "integer",
+                                                            "example": 10
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "John Doe"
+                                                        },
+                                                        "phone": {
+                                                            "type": "string",
+                                                            "example": "255712345678"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Patient history updated and referral created successfully by Medical Board"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - user not a Medical Board member",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Forbidden"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 403
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 422
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Update failed"
+                                        },
+                                        "error": {
+                                            "type": "string"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 500
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/patient-histories/unblock/{id}": {
             "post": {
                 "tags": [
-                    "Patient History"
+                    "Patient Histories"
                 ],
                 "summary": "Unblock a patient history",
                 "operationId": "b10cafa27eea5dd92066c66e2930ee2b",
@@ -4526,7 +4749,7 @@
         "/api/patient-histories/update-status/{id}": {
             "post": {
                 "tags": [
-                    "Patient History"
+                    "Patient Histories"
                 ],
                 "summary": "Update patient history status",
                 "description": "Allows authorized roles to update the status of a patient history record, add comments, and track reviewers.",
@@ -10025,8 +10248,8 @@
             "description": "Patients"
         },
         {
-            "name": "Patient History",
-            "description": "Patient History"
+            "name": "Patient Histories",
+            "description": "Patient Histories"
         },
         {
             "name": "reasons",
