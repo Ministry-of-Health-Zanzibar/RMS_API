@@ -128,116 +128,251 @@ class PatientHistoryController extends Controller
     //         'statusCode' => 200
     //     ]);
     // }
-    public function getPatientToBeAssignedToMedicalBoard()
-    {
-        $user = auth()->user();
 
-        // Permission check
-        if (!$user->canAny(['View Patient', 'View History'])) {
-            return response()->json([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
+//     public function getPatientToBeAssignedToMedicalBoard()
+// {
+//     $user = auth()->user();
 
-        // Base query: patients with at least one history
-        $query = Patient::whereHas('patientHistories')
-            ->with(['latestHistory' => function ($q) {
-                // Only load latest history that is reviewed
-                $q->where('status', 'reviewed')
-                ->with(['patient', 'diagnoses', 'reason']);
-            }])
-            ->latest();
+//     // Permission check
+//     if (!$user->canAny(['View Patient', 'View History'])) {
+//         return response()->json([
+//             'message' => 'Forbidden',
+//             'statusCode' => 403
+//         ], 403);
+//     }
 
-        // ROLE: Hospital user -> only their patients
-        if ($user->hasRole('ROLE HOSPITAL USER')) {
-            $query->where('created_by', $user->id);
-        }
+//     // Base query: patients with at least one history
+//     $query = Patient::whereHas('patientHistories')
+//         ->with(['latestHistory' => function ($q) {
+//             // Only load latest history that is reviewed
+//             $q->where('status', 'reviewed')
+//               ->with(['patient', 'diagnoses', 'reason']);
+//         }])
+//         ->latest();
 
-        // ROLE: Medical Board Member -> only patients whose latest history is reviewed
-        if ($user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
-            $query->whereHas('patientHistories', function ($q) {
-                $q->where('status', 'reviewed');
-            });
-        }
+//     // ROLE: Medical Board Member -> only patients whose latest history is reviewed
+//     if ($user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+//         $query->whereHas('patientHistories', function ($q) {
+//             $q->where('status', 'reviewed');
+//         });
+//     }
 
-        // ROLE: Admin + MKURUGENZI TIBA -> see all
-        if ($user->hasAnyRole(['ROLE ADMIN', 'ROLE MKURUGENZI TIBA'])) {
-            $query->withTrashed();
-        }
+//     // Get patients
+//     $patients = $query->get();
 
-        // Get patients
-        $patients = $query->get();
+//     // Extract latest reviewed histories
+//     $histories = $patients->map(function ($patient) {
+//         return $patient->latestHistory;
+//     })->filter(); // remove nulls
 
-        // Extract latest reviewed histories
-        $histories = $patients->map(function ($patient) {
-            return $patient->latestHistory;
-        })->filter(); // remove nulls
+//     // Transform to clean JSON (optional)
+//     $result = $histories->map(function ($history) {
+//         return [
+//             'patient_histories_id' => $history->patient_histories_id,
+//             'patient_id' => $history->patient_id,
+//             'referring_doctor' => $history->referring_doctor,
+//             'file_number' => $history->file_number,
+//             'referring_date' => $history->referring_date,
+//             'reason_id' => $history->reason_id,
+//             'history_of_presenting_illness' => $history->history_of_presenting_illness,
+//             'physical_findings' => $history->physical_findings,
+//             'investigations' => $history->investigations,
+//             'management_done' => $history->management_done,
+//             'board_comments' => $history->board_comments,
+//             'history_file' => $history->history_file,
+//             'created_at' => $history->created_at,
+//             'updated_at' => $history->updated_at,
+//             'deleted_at' => $history->deleted_at,
+//             'status' => $history->status,
+//             'mkurugenzi_tiba_comments' => $history->mkurugenzi_tiba_comments,
+//             'dg_comments' => $history->dg_comments,
+//             'mkurugenzi_tiba_id' => $history->mkurugenzi_tiba_id,
+//             'dg_id' => $history->dg_id,
+//             'board_reason_id' => $history->board_reason_id,
+//             'patient' => [
+//                 'patient_id' => $history->patient->patient_id,
+//                 'name' => $history->patient->name,
+//                 'matibabu_card' => $history->patient->matibabu_card,
+//                 'date_of_birth' => $history->patient->date_of_birth,
+//                 'gender' => $history->patient->gender,
+//                 'phone' => $history->patient->phone,
+//                 'location_id' => $history->patient->location_id,
+//                 'job' => $history->patient->job,
+//                 'position' => $history->patient->position,
+//                 'created_by' => $history->patient->created_by,
+//                 'created_at' => $history->patient->created_at,
+//                 'updated_at' => $history->patient->updated_at,
+//                 'deleted_at' => $history->patient->deleted_at,
+//                 'zan_id' => $history->patient->zan_id,
+//             ],
+//             'diagnoses' => $history->diagnoses->map(function ($d) {
+//                 return [
+//                     'diagnosis_id' => $d->diagnosis_id,
+//                     'diagnosis_name' => $d->diagnosis_name,
+//                     'pivot' => [
+//                         'patient_histories_id' => $d->pivot->patient_histories_id,
+//                         'diagnosis_id' => $d->pivot->diagnosis_id,
+//                     ],
+//                 ];
+//             }),
+//             'reason' => $history->reason ? [
+//                 'reason_id' => $history->reason->reason_id,
+//                 'referral_reason_name' => $history->reason->referral_reason_name,
+//             ] : null,
+//         ];
+//     });
 
-        // Transform to clean JSON (optional)
-        $result = $histories->map(function ($history) {
-            return [
-                'patient_histories_id' => $history->patient_histories_id,
-                'patient_id' => $history->patient_id,
-                'referring_doctor' => $history->referring_doctor,
-                'file_number' => $history->file_number,
-                'referring_date' => $history->referring_date,
-                'reason_id' => $history->reason_id,
-                'history_of_presenting_illness' => $history->history_of_presenting_illness,
-                'physical_findings' => $history->physical_findings,
-                'investigations' => $history->investigations,
-                'management_done' => $history->management_done,
-                'board_comments' => $history->board_comments,
-                'history_file' => $history->history_file,
-                'created_at' => $history->created_at,
-                'updated_at' => $history->updated_at,
-                'deleted_at' => $history->deleted_at,
-                'status' => $history->status,
-                'mkurugenzi_tiba_comments' => $history->mkurugenzi_tiba_comments,
-                'dg_comments' => $history->dg_comments,
-                'mkurugenzi_tiba_id' => $history->mkurugenzi_tiba_id,
-                'dg_id' => $history->dg_id,
-                'board_reason_id' => $history->board_reason_id,
-                'patient' => [
-                    'patient_id' => $history->patient->patient_id,
-                    'name' => $history->patient->name,
-                    'matibabu_card' => $history->patient->matibabu_card,
-                    'date_of_birth' => $history->patient->date_of_birth,
-                    'gender' => $history->patient->gender,
-                    'phone' => $history->patient->phone,
-                    'location_id' => $history->patient->location_id,
-                    'job' => $history->patient->job,
-                    'position' => $history->patient->position,
-                    'created_by' => $history->patient->created_by,
-                    'created_at' => $history->patient->created_at,
-                    'updated_at' => $history->patient->updated_at,
-                    'deleted_at' => $history->patient->deleted_at,
-                    'zan_id' => $history->patient->zan_id,
-                ],
-                'diagnoses' => $history->diagnoses->map(function ($d) {
-                    return [
-                        'diagnosis_id' => $d->diagnosis_id,
-                        'diagnosis_name' => $d->diagnosis_name,
-                        'pivot' => [
-                            'patient_histories_id' => $d->pivot->patient_histories_id,
-                            'diagnosis_id' => $d->pivot->diagnosis_id,
-                        ],
-                    ];
-                }),
-                'reason' => $history->reason ? [
-                    'reason_id' => $history->reason->reason_id,
-                    'referral_reason_name' => $history->reason->referral_reason_name,
-                ] : null,
-            ];
-        });
+//     return response()->json([
+//         'status' => true,
+//         'data' => $result->values(),
+//         'message' => 'Patient histories retrieved successfully',
+//         'statusCode' => 200
+//     ]);
+// }
 
+// public function getPatientToBeAssignedToMedicalBoard()
+// {
+//     $user = auth()->user();
+
+//     // Permission check
+//     if (!$user->canAny(['View Patient', 'View History'])) {
+//         return response()->json([
+//             'message' => 'Forbidden',
+//             'statusCode' => 403
+//         ], 403);
+//     }
+
+//     // Get patients whose latest history is reviewed and not in any patient list
+//     $patients = Patient::whereHas('latestHistory', function ($q) {
+//             $q->where('status', 'reviewed');
+//         })
+//         ->with(['latestHistory' => function ($q) {
+//             $q->where('status', 'reviewed');
+//         }])
+//         ->latest()
+//         ->get();
+
+//     // Map only required fields
+//     $result = $patients->map(function ($patient) {
+//         return [
+//             'patient_id' => $patient->patient_id,
+//             'name' => $patient->name,
+//             'phone' => $patient->phone,
+//         ];
+//     });
+
+//     return response()->json([
+//         'status' => true,
+//         'data' => $result->values(),
+//         'message' => 'Patients retrieved successfully',
+//         'statusCode' => 200
+//     ]);
+// }
+// public function getPatientToBeAssignedToMedicalBoard(Request $request)
+// {
+//     $user = auth()->user();
+
+//     // Permission check
+//     if (!$user->canAny(['View Patient', 'View History'])) {
+//         return response()->json([
+//             'message' => 'Forbidden',
+//             'statusCode' => 403
+//         ], 403);
+//     }
+
+//     $patientListId = $request->input('patient_list_id'); // optional parameter
+
+//     // Get patients whose latest history is reviewed AND not in the given patient list
+//     $patients = Patient::whereHas('latestHistory', function ($q) {
+//             $q->where('status', 'reviewed');
+//         })
+//         ->when($patientListId, function ($q) use ($patientListId) {
+//             // Exclude patients already assigned to the given patient list
+//             $q->whereDoesntHave('patientList', function ($query) use ($patientListId) {
+//                 $query->where('patient_list_id', 1);
+//             });
+//         })
+//         ->with(['latestHistory' => function ($q) {
+//             $q->where('status', 'reviewed');
+//         }])
+//         ->latest()
+//         ->get();
+
+//     // Map only required fields
+//     $result = $patients->map(function ($patient) {
+//         return [
+//             'patient_id' => $patient->patient_id,
+//             'name' => $patient->name,
+//             'phone' => $patient->phone,
+//         ];
+//     });
+
+//     return response()->json([
+//         'status' => true,
+//         'data' => $result->values(),
+//         'message' => 'Patients retrieved successfully',
+//         'statusCode' => 200
+//     ]);
+// }
+
+public function getPatientToBeAssignedToMedicalBoard(Request $request)
+{
+    $user = auth()->user();
+
+    // Permission check
+    if (!$user->canAny(['View Patient', 'View History'])) {
         return response()->json([
-            'status' => true,
-            'data' => $result->values(),
-            'message' => 'Patient histories retrieved successfully',
-            'statusCode' => 200
-        ]);
+            'message' => 'Forbidden',
+            'statusCode' => 403
+        ], 403);
     }
+
+    // Optional patient list filter
+    $patientListId = $request->input('patient_list_id');
+
+    // Query patients whose latest history is reviewed
+    $patients = Patient::whereHas('latestHistory', function ($q) {
+            $q->where('status', 'reviewed');
+        })
+        ->when($patientListId, function ($q) use ($patientListId) {
+            // Exclude patients already in the given patient list
+            $q->whereDoesntHave('patientList', function ($query) use ($patientListId) {
+                $query->where('patient_list_id', $patientListId);
+            });
+        })
+        ->when(!$patientListId, function ($q) {
+            // Exclude patients in any patient list
+            $q->whereDoesntHave('patientList');
+        })
+        ->with(['latestHistory' => function ($q) {
+            $q->where('status', 'reviewed')
+              ->with(['patient', 'diagnoses', 'reason']);
+        }])
+        ->latest()
+        ->get();
+
+    // Map to required fields
+    $result = $patients->map(function ($patient) {
+        return [
+            'patient_id' => $patient->patient_id,
+            'name' => $patient->name,
+            'phone' => $patient->phone,
+            'latest_history_id' => $patient->latestHistory->patient_histories_id ?? null,
+            'latest_history_status' => $patient->latestHistory->status ?? null,
+        ];
+    });
+
+    return response()->json([
+        'status' => true,
+        'data' => $result->values(),
+        'message' => 'Patients retrieved successfully',
+        'statusCode' => 200
+    ]);
+}
+
+
+
+
 
 
 
