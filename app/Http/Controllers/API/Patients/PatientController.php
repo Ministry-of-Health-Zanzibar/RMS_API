@@ -108,31 +108,7 @@ class PatientController extends Controller
         ], 200);
     }
 
-    // public function patientsHistories(){
 
-    //     $user = auth()->user();
-
-    //     if (!$user->canAny(['View Patient','View History'])) {
-    //         return response([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     $query = Patient::with(['latestHistory'])->whereHas('patientHistories')->latest();
-
-    //     if ($user->hasAnyRole(['ROLE ADMIN'])) {
-    //         $query->withTrashed();
-    //     }
-
-    //     $patients = $query->get();
-
-    //     return response([
-    //         'data' => $patients,
-    //         'statusCode' => 200,
-    //     ], 200);
-
-    // }
     public function patientsHistories()
     {
         $user = auth()->user();

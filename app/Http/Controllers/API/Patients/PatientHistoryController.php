@@ -82,6 +82,51 @@ class PatientHistoryController extends Controller
         ]);
     }
 
+    public function getPatientToBeAssignedToMedicalBoard()
+    {
+        $user = auth()->user();
+
+        if (!$user->can('View Patient History')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // STEP 1: FILTER PATIENTS
+        $patients = Patient::query()
+            // Only patients whose latest history is reviewed
+            ->whereHas('latestHistory', function ($q) {
+                $q->where('status', 'reviewed');
+            })
+            // Patients NOT in any PatientList
+            ->whereDoesntHave('patientList')
+            // Patients with NO referral OR referral.status = 'closed'
+            ->where(function ($q) {
+                $q->whereDoesntHave('referrals')
+                ->orWhereHas('referrals', function ($ref) {
+                    $ref->where('status', 'closed');
+                });
+            })
+            ->with([
+                'latestHistory' => function ($q) {
+                    $q->with(['patient', 'diagnoses', 'reason']);
+                }
+            ])
+            ->latest()
+            ->get();
+
+        // STEP 2: Extract only the latestHistory from each patient
+        $histories = $patients->pluck('latestHistory')->filter();
+
+        return response()->json([
+            'status' => true,
+            'data' => $histories->values(), // reset array keys
+            'message' => 'Patient histories retrieved successfully',
+            'statusCode' => 200
+        ]);
+    }
+
     /**
      * @OA\Post(
      *     path="/api/patient-histories",
