@@ -119,7 +119,7 @@ class PatientController extends Controller
             ], 403);
         }
 
-        $query = Patient::with(['latestHistory']);
+        $query = Patient::with(['latestHistory'])->whereHas('patientHistories');
 
         if ($user->hasAnyRole(['ROLE ADMIN'])) {
             $query->withTrashed();
