@@ -212,7 +212,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/{id}', [PatientHistoryController::class, 'destroy']);
         Route::post('/{id}/unblock', [PatientHistoryController::class, 'unblock']);
         Route::post('/update-status/{id}', [PatientHistoryController::class, 'updateStatus']);
-        Route::post('/allowed-to-assign/patients', [PatientHistoryController::class, 'getPatientToBeAssignedToMedicalBoard']);
+        Route::get('/allowed-to-assign/patients', [PatientHistoryController::class, 'getPatientToBeAssignedToMedicalBoard']);
     });
 
     Route::get('/analytics/referral-trend', [App\Http\Controllers\API\Charts\AnalyticsController::class, 'referralTrend']);
