@@ -112,14 +112,14 @@ class PatientController extends Controller
 
         $user = auth()->user();
 
-        if (!$user->can('View Patient')) {
+        if (!$user->canAny(['View Patient','View History'])) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $query = Patient::with(['latestHistory'])->whereHas('patientHistories');
+        $query = Patient::with(['latestHistory'])->whereHas('patientHistories')->latest();
 
         if ($user->hasAnyRole(['ROLE ADMIN'])) {
             $query->withTrashed();

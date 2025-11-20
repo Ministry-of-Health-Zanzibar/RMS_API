@@ -270,15 +270,13 @@ class RolesOfUsersSeeder extends Seeder
         $mkurugenziTibaPermissions = [
             'View Referral Dashboard',
 
-            'Patient Module',
-            'View Patient',
-
             'View Patient History',
             'Update Patient History',
             'Review Patient History',
             'Forward Patient History to Board',
             'Approve Patient History',
             'Send Patient History to DG',
+            'View History',
             'View Reason',
             'View Location',
         ];
