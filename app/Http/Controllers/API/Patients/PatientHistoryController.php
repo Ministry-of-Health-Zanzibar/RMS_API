@@ -633,7 +633,6 @@ class PatientHistoryController extends Controller
     {
         $user = auth()->user();
 
-        // Check role
         if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
             return response()->json([
                 'message' => 'Forbidden',
@@ -644,7 +643,6 @@ class PatientHistoryController extends Controller
         $history = PatientHistory::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:pending,reviewed,requested,approved,confirmed,rejected',
             'board_comments' => 'nullable|string',
             'board_reason_id' => 'nullable|exists:reasons,reason_id',
             'board_diagnosis_ids' => 'nullable|array',
@@ -660,18 +658,16 @@ class PatientHistoryController extends Controller
         }
 
         try {
-            // Update workflow fields
-            $history->status = $request->input('status', $history->status);
+            // Update medical board fields only (NO status update!)
             $history->board_comments = $request->input('board_comments', $history->board_comments);
             $history->board_reason_id = $request->input('board_reason_id', $history->board_reason_id);
             $history->save();
 
-            // Update board_diagnosis_id in pivot table
+            // Sync diagnoses
             if ($request->filled('board_diagnosis_ids')) {
-                // Sync diagnoses to the history pivot table
                 $history->diagnoses()->sync($request->board_diagnosis_ids);
 
-                // --- Automatically create a referral ---
+                // Create referral auto
                 $today = now()->format('Y-m-d');
                 $count = Referral::whereDate('created_at', $today)->count() + 1;
                 $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
@@ -684,8 +680,10 @@ class PatientHistoryController extends Controller
                     'created_by' => $user->id,
                 ]);
 
-                // Attach the same diagnoses to the referral
                 $referral->diagnoses()->sync($request->board_diagnosis_ids);
+
+                // ✔ Auto-update status using existing logic
+                $this->applyStatusUpdate($history, 'requested', $request->board_comments, $user);
             }
 
             return response()->json([
@@ -945,4 +943,44 @@ class PatientHistoryController extends Controller
             'statusCode' => 403
         ], 403);
     }
+
+    private function applyStatusUpdate(PatientHistory $history, $newStatus, $comment = null, $user = null)
+    {
+        $user = $user ?? auth()->user();
+
+        // Ensure only valid status transitions
+        if (!$this->isValidTransition($history->status, $newStatus)) {
+            throw new \Exception("Invalid status transition from {$history->status} to {$newStatus}.");
+        }
+
+        switch ($newStatus) {
+            case 'reviewed':
+                $history->mkurugenzi_tiba_id = $user->id;
+                $history->mkurugenzi_tiba_comments = $comment;
+                break;
+
+            case 'requested':
+                $history->board_comments = $comment;
+                break;
+
+            case 'approved':
+                $history->mkurugenzi_tiba_comments = $comment;
+                break;
+
+            case 'confirmed':
+                $history->dg_id = $user->id;
+                $history->dg_comments = $comment;
+                break;
+
+            case 'rejected':
+                $history->board_comments = $comment;
+                break;
+        }
+
+        $history->status = $newStatus;
+        $history->save();
+
+        return $history;
+    }
+
 }

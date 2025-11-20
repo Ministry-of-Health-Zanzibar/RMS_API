@@ -43,11 +43,13 @@ class PatientList extends Model
             $boardTypeFull = ucfirst(strtolower($patientList->board_type ?? 'Routine'));
 
             // Abbreviation for reference number
-            $boardTypeAbbr = match ($boardTypeFull) {
+            $boardTypeMap = [
                 'Emergency' => 'EMG',
-                'Routine' => 'RTN',
-                default => substr($boardTypeFull, 0, 3),
-            };
+                'Routine'   => 'RTN',
+            ];
+
+            $boardTypeAbbr = $boardTypeMap[$boardTypeFull] ?? substr($boardTypeFull, 0, 3);
+
 
             // Use user-provided no_of_patients, default to 1
             $numPatients = $patientList->no_of_patients ?? 1;
