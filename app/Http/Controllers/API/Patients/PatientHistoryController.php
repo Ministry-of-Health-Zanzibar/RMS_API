@@ -684,14 +684,20 @@ class PatientHistoryController extends Controller
 
                 // ✔ Auto-update status using existing logic
                 $this->applyStatusUpdate($history, 'requested', $request->board_comments, $user);
-            }
 
-            return response()->json([
-                'status' => true,
-                'data' => $history->load('patient', 'diagnoses', 'reason'),
-                'message' => 'Patient history updated and referral created successfully by Medical Board',
-                'statusCode' => 200
-            ]);
+                return response()->json([
+                    'status' => true,
+                    'data' => $history->load('patient', 'diagnoses', 'reason'),
+                    'message' => 'Patient history updated and referral created successfully by Medical Board',
+                    'statusCode' => 200
+                ]);
+            }else{
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Failed to Update',
+                    'statusCode' => 200
+                ]);
+            }
 
         } catch (\Exception $e) {
             Log::error('Medical Board update failed: ' . $e->getMessage());
