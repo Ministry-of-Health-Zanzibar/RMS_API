@@ -970,7 +970,7 @@ class PatientHistoryController extends Controller
      *             @OA\Property(
      *                 property="status",
      *                 type="string",
-     *                 enum={"pending","reviewed","Requested","approved","confirmed","rejected"},
+     *                 enum={"pending","reviewed","requested","approved","confirmed","rejected"},
      *                 description="New status to set"
      *             ),
      *             @OA\Property(
@@ -1026,7 +1026,7 @@ class PatientHistoryController extends Controller
 
         // --- Use Validator instead of $request->validate() ---
         $validator = \Validator::make($request->all(), [
-            'status' => 'required|string|in:pending,reviewed,Requested,approved,confirmed,rejected',
+            'status' => 'required|string|in:pending,reviewed,requested,approved,confirmed,rejected',
             'comment' => 'nullable|string',
         ]);
 
@@ -1060,7 +1060,7 @@ class PatientHistoryController extends Controller
                 $history->mkurugenzi_tiba_comments = $comment;
                 break;
 
-            case 'Requested':
+            case 'requested':
                 if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
                     return $this->unauthorized();
                 }
@@ -1108,8 +1108,8 @@ class PatientHistoryController extends Controller
     {
         $allowed = [
             'pending' => ['reviewed'],          // hospital → director
-            'reviewed' => ['Requested', 'approved'], // director → medical board / approve to DG
-            'Requested' => ['approved'],          // medical board → director
+            'reviewed' => ['requested', 'approved'], // director → medical board / approve to DG
+            'requested' => ['approved'],          // medical board → director
             'approved' => ['confirmed', 'rejected'], // director → DG
             'confirmed' => [],                    // DG final
             'rejected' => [],                    // terminal
