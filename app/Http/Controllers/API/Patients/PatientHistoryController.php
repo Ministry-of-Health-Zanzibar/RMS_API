@@ -1142,7 +1142,7 @@ class PatientHistoryController extends Controller
                 $history->mkurugenzi_tiba_comments = $comment;
                 break;
 
-            case 'Requested':
+            case 'requested':
                 $history->board_comments = $comment;
                 break;
 
