@@ -62,6 +62,19 @@ class PatientHistory extends Model
         );
     }
 
+    public function referrals()
+    {
+        return $this->hasManyThrough(
+            Referral::class,
+            Patient::class,
+            'patient_id', // Foreign key on PatientHistory (belongs to patient)
+            'patient_id', // Foreign key on Referral
+            'patient_id', // Local key on PatientHistory
+            'patient_id'  // Local key on Patient
+        );
+    }
+
+
     /**
      * Activity log options
      */
