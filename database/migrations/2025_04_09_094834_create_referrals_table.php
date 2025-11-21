@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('patient_id');
             $table->unsignedBigInteger('hospital_id')->nullable();
             $table->unsignedBigInteger('reason_id');
-            $table->enum('status', ['Pending', 'Confirmed', 'Death', 'Cancelled', 'Transferred', 'Expired', 'Closed']);
+            $table->enum('status', ['Pending', 'Confirmed', 'Death', 'Cancelled', 'Transferred', 'Expired', 'Closed', 'Requested']);
             $table->unsignedBigInteger('confirmed_by')->nullable();  // DG user ID who confirmed the referral
             $table->unsignedBigInteger('created_by');
             $table->timestamps();

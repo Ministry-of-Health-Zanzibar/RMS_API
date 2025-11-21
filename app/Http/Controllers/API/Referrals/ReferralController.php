@@ -78,6 +78,7 @@ class ReferralController extends Controller
         }
 
         $referrals = Referral::with(['patient', 'reason', 'hospital'])
+            ->where('status', '<>', 'Requested') // <-- exclude Requested
             ->get()
             ->groupBy('referral_number')
             ->map(function ($group) {
@@ -88,21 +89,21 @@ class ReferralController extends Controller
                     'referral_number' => $first->referral_number,
                     'patient'         => $patient,
                     'reason'          => $first->reason,
-                    'status'        => $group->pluck('status')->unique()->implode(', '),
+                    'status'          => $group->pluck('status')->unique()->implode(', '),
                     'hospitals'       => $group->pluck('hospital')->unique('hospital_id')->values(), // if multiple hospitals
                     'referrals'       => $group->map(function ($ref) {
                         return [
-                            'referral_id'   => $ref->referral_id,
-                            'parent_referral_id'   => $ref->parent_referral_id,
-                            'hospital_id'   => $ref->hospital_id,
-                            'reason_id'     => $ref->reason_id,
-                            'status'        => $ref->status,
-                            'confirmed_by'  => $ref->confirmed_by,
-                            'created_by'    => $ref->created_by,
-                            'created_at'    => $ref->created_at,
-                            'updated_at'    => $ref->updated_at,
-                            'deleted_at'    => $ref->deleted_at,
-                            'hospital'      => $ref->hospital,
+                            'referral_id'        => $ref->referral_id,
+                            'parent_referral_id' => $ref->parent_referral_id,
+                            'hospital_id'        => $ref->hospital_id,
+                            'reason_id'          => $ref->reason_id,
+                            'status'             => $ref->status,
+                            'confirmed_by'       => $ref->confirmed_by,
+                            'created_by'         => $ref->created_by,
+                            'created_at'         => $ref->created_at,
+                            'updated_at'         => $ref->updated_at,
+                            'deleted_at'         => $ref->deleted_at,
+                            'hospital'           => $ref->hospital,
                         ];
                     })->values(),
                 ];
@@ -114,6 +115,7 @@ class ReferralController extends Controller
             'statusCode' => 200,
         ], 200);
     }
+
 
     public function getReferralwithBills()
     {
