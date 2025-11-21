@@ -683,7 +683,7 @@ class PatientHistoryController extends Controller
                 $referral->diagnoses()->sync($request->board_diagnosis_ids);
 
                 // ✔ Auto-update status using existing logic
-                $this->applyStatusUpdate($history, 'Requested', $request->board_comments, $user);
+                $this->applyStatusUpdate($history, 'requested', $request->board_comments, $user);
 
                 return response()->json([
                     'status' => true,
