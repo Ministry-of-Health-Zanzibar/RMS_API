@@ -629,25 +629,100 @@ class PatientHistoryController extends Controller
      *     )
      * )
      */
+    // public function updateByMedicalBoard(Request $request, $id)
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $history = PatientHistory::findOrFail($id);
+
+    //     $validator = Validator::make($request->all(), [
+    //         'board_comments' => 'required|string',
+    //         'board_reason_id' => 'required|exists:reasons,reason_id',
+    //         'board_diagnosis_ids' => 'required|array',
+    //         'board_diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'errors' => $validator->errors(),
+    //             'statusCode' => 422
+    //         ], 422);
+    //     }
+
+    //     try {
+    //         // Update medical board fields only (NO status update!)
+    //         $history->board_comments = $request->input('board_comments', $history->board_comments);
+    //         $history->board_reason_id = $request->input('board_reason_id', $history->board_reason_id);
+    //         $history->save();
+
+    //         // Sync diagnoses
+    //         if ($request->filled('board_diagnosis_ids')) {
+    //             $history->diagnoses()->sync($request->board_diagnosis_ids);
+
+    //             // Create referral auto
+    //             $today = now()->format('Y-m-d');
+    //             $count = Referral::whereDate('created_at', $today)->count() + 1;
+    //             $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+
+    //             $referral = Referral::create([
+    //                 'patient_id' => $history->patient_id,
+    //                 'reason_id' => $history->board_reason_id,
+    //                 'status' => 'Pending',
+    //                 'referral_number' => $referralNumber,
+    //                 'created_by' => $user->id,
+    //             ]);
+
+    //             $referral->diagnoses()->sync($request->board_diagnosis_ids);
+
+    //             // ✔ Auto-update status using existing logic
+    //             $this->applyStatusUpdate($history, 'requested', $request->board_comments, $user);
+
+    //             return response()->json([
+    //                 'status' => true,
+    //                 'data' => $history->load('patient', 'diagnoses', 'reason'),
+    //                 'message' => 'Patient history updated and referral created successfully by Medical Board',
+    //                 'statusCode' => 200
+    //             ]);
+    //         }else{
+    //             return response()->json([
+    //                 'status' => true,
+    //                 'message' => 'Failed to Update',
+    //                 'statusCode' => 200
+    //             ]);
+    //         }
+
+    //     } catch (\Exception $e) {
+    //         Log::error('Medical Board update failed: ' . $e->getMessage());
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Update failed',
+    //             'error' => $e->getMessage(),
+    //             'statusCode' => 500
+    //         ], 500);
+    //     }
+    // }
     public function updateByMedicalBoard(Request $request, $id)
     {
         $user = auth()->user();
-
-        if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
-            return response()->json([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
-
         $history = PatientHistory::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'board_comments' => 'required|string',
-            'board_reason_id' => 'required|exists:reasons,reason_id',
-            'board_diagnosis_ids' => 'required|array',
-            'board_diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
-        ]);
+        $rules = [
+            'board_comments'          => 'nullable|string',
+            'board_reason_id'         => 'nullable|exists:reasons,reason_id',
+            'board_diagnosis_ids'     => 'nullable|array',
+            'board_diagnosis_ids.*'   => 'exists:diagnoses,diagnosis_id',
+            'mkurugenzi_tiba_comments' => 'nullable|string',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             return response()->json([
@@ -658,49 +733,100 @@ class PatientHistoryController extends Controller
         }
 
         try {
-            // Update medical board fields only (NO status update!)
-            $history->board_comments = $request->input('board_comments', $history->board_comments);
-            $history->board_reason_id = $request->input('board_reason_id', $history->board_reason_id);
-            $history->save();
 
-            // Sync diagnoses
-            if ($request->filled('board_diagnosis_ids')) {
+            // ======================================================
+            //  ROLE 1: MEDICAL BOARD MEMBER
+            // ======================================================
+            if ($user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+
+                if (!$request->filled('board_comments') ||
+                    !$request->filled('board_reason_id') ||
+                    !$request->filled('board_diagnosis_ids')) {
+
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'board_comments, board_reason_id and board_diagnosis_ids are required',
+                        'statusCode' => 422
+                    ], 422);
+                }
+
+                // Save updates
+                $history->board_comments = $request->board_comments;
+                $history->board_reason_id = $request->board_reason_id;
+                $history->save();
+
+                // Sync diagnoses
                 $history->diagnoses()->sync($request->board_diagnosis_ids);
 
-                // Create referral auto
-                $today = now()->format('Y-m-d');
-                $count = Referral::whereDate('created_at', $today)->count() + 1;
-                $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
-
-                $referral = Referral::create([
-                    'patient_id' => $history->patient_id,
-                    'reason_id' => $history->board_reason_id,
-                    'status' => 'Pending',
-                    'referral_number' => $referralNumber,
-                    'created_by' => $user->id,
-                ]);
-
-                $referral->diagnoses()->sync($request->board_diagnosis_ids);
-
-                // ✔ Auto-update status using existing logic
+                // Status: MEDICAL BOARD → MKURUGENZI
                 $this->applyStatusUpdate($history, 'requested', $request->board_comments, $user);
 
                 return response()->json([
                     'status' => true,
                     'data' => $history->load('patient', 'diagnoses', 'reason'),
-                    'message' => 'Patient history updated and referral created successfully by Medical Board',
-                    'statusCode' => 200
-                ]);
-            }else{
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Failed to Update',
+                    'message' => 'Medical Board updated patient history successfully',
                     'statusCode' => 200
                 ]);
             }
 
+
+            // ======================================================
+            //  ROLE 2: MKURUGENZI TIBA
+            // ======================================================
+            if ($user->hasRole('ROLE MKURUGENZI TIBA')) {
+
+                if (!$request->filled('mkurugenzi_tiba_comments')) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'mkurugenzi_tiba_comments is required',
+                        'statusCode' => 422
+                    ], 422);
+                }
+
+                // Save comment
+                $history->mkurugenzi_tiba_comments = $request->mkurugenzi_tiba_comments;
+                $history->mkurugenzi_tiba_id = $user->id;
+                $history->save();
+
+                // CREATE REFERRAL USING MEDICAL BOARD DATA
+                $referral = Referral::create([
+                    'patient_id' => $history->patient_id,
+                    'history_id' => $history->patient_histories_id, // FIXED
+                    'reason_id'  => $history->board_reason_id,      // FROM BOARD
+                    'created_by' => $user->id,
+                    'comments'   => $request->mkurugenzi_tiba_comments,
+                    'status'     => 'pending',
+                ]);
+
+                // Attach diagnoses (board member diagnoses)
+                $referral->diagnoses()->sync(
+                    $history->diagnoses()->pluck('diagnosis_id')->toArray() // FIXED
+                );
+
+                // Status: MKURUGENZI → DG
+                $this->applyStatusUpdate($history, 'approved', $request->mkurugenzi_tiba_comments, $user);
+
+                return response()->json([
+                    'status' => true,
+                    'data' => [
+                        'history'  => $history->load('patient', 'diagnoses', 'reason'),
+                        'referral' => $referral->load('diagnoses', 'reason'),
+                    ],
+                    'message' => 'Mkurugenzi Tiba approved and referral created successfully',
+                    'statusCode' => 200
+                ]);
+            }
+
+
+            // Unauthorized
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+
         } catch (\Exception $e) {
             Log::error('Medical Board update failed: ' . $e->getMessage());
+
             return response()->json([
                 'status' => false,
                 'message' => 'Update failed',

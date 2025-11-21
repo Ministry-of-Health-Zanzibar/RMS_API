@@ -243,37 +243,6 @@ class PatientListController extends Controller
     /**
      * Get patients by patient list id using relationship.
      */
-    // public function getAllPatientsByPatientListId(int $patientListId)
-    // {
-    //     $user = auth()->user();
-
-    //     if (!$user->can('View Patient List')) {
-    //         return response()->json([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     // Load PatientList with related patients
-    //     $patientList = PatientList::with([
-    //         'patients' => function ($query) {
-    //             $query->with(['files', 'geographicalLocation']);
-    //         }
-    //     ])->find($patientListId);
-
-    //     if (!$patientList) {
-    //         return response()->json([
-    //             'message' => 'Patient list not found',
-    //             'statusCode' => 404
-    //         ], 404);
-    //     }
-
-    //     return response()->json([
-    //         'data' => $patientList,
-    //         'statusCode' => 200,
-    //     ], 200);
-    // }
-
     public function getAllPatientsByPatientListId(int $patientListId)
     {
         $user = auth()->user();
