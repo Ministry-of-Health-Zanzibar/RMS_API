@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             SourceSeeder::class,
             SourceTypeSeeder::class,
             DocumentTypeSeeder::class,
+            SampleUsersSeeder::class,
         ]);
     }
 }
