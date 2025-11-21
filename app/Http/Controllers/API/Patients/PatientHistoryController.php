@@ -643,9 +643,9 @@ class PatientHistoryController extends Controller
         $history = PatientHistory::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'board_comments' => 'nullable|string',
-            'board_reason_id' => 'nullable|exists:reasons,reason_id',
-            'board_diagnosis_ids' => 'nullable|array',
+            'board_comments' => 'required|string',
+            'board_reason_id' => 'required|exists:reasons,reason_id',
+            'board_diagnosis_ids' => 'required|array',
             'board_diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
         ]);
 
