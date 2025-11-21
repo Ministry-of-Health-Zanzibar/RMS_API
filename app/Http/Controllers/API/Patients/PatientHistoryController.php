@@ -674,7 +674,7 @@ class PatientHistoryController extends Controller
             $referral = Referral::create([
                 'patient_id'      => $history->patient_id,
                 'reason_id'       => $history->board_reason_id,
-                'status'          => 'Pending', // must match ENUM/check constraint
+                'status'          => 'Requested', // must match ENUM/check constraint
                 'referral_number' => $referralNumber,
                 'created_by'      => $user->id,
             ]);
