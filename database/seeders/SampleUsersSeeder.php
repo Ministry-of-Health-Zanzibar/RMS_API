@@ -100,28 +100,28 @@ class SampleUsersSeeder extends Seeder
         ];
 
         foreach ($users as $data) {
-            // Create user if not exists
+
             $user = User::firstOrCreate(
                 ['email' => $data['email']],
                 [
-                    'first_name'   => $data['first_name'],
-                    'middle_name'  => $data['middle_name'],
-                    'last_name'    => $data['last_name'],
-                    'address'      => $data['address'],
-                    'gender'       => $data['gender'],
-                    'phone_no'     => $data['phone_no'],
-                    'date_of_birth'=> $data['date_of_birth'],
-                    'password'     => Hash::make($data['password']),
-                    'created_by'   => 1,
-                    'login_status' => 1, // Automatically set login_status
+                    'first_name' => $data['first_name'],
+                    'middle_name' => $data['middle_name'],
+                    'last_name' => $data['last_name'],
+                    'address' => $data['address'],
+                    'gender' => $data['gender'],
+                    'phone_no' => $data['phone_no'],
+                    'date_of_birth' => $data['date_of_birth'],
+                    'password' => Hash::make($data['password']),
+                    'created_by' => 1,
+                    'login_status' => 1,
                 ]
             );
 
-            // Assign role
             $role = Role::where('name', $data['role'])->first();
+
             if ($role) {
-                $user->syncRoles([$role]);
-                $user->syncPermissions($role->permissions);
+                $user->syncRoles([$role->name]);
+                $user->syncPermissions($role->permissions->pluck('id')->toArray());
             }
         }
     }
