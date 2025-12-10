@@ -74,7 +74,7 @@ class PatientHistoryController extends Controller
             ], 403);
         }
 
-        $histories = PatientHistory::with('patient', 'diagnoses', 'reason')->latest()->get();
+        $histories = PatientHistory::with('patient.geographicalLocation', 'diagnoses', 'reason')->latest()->get();
 
         return response()->json([
             'status' => true,
@@ -291,7 +291,7 @@ class PatientHistoryController extends Controller
             ], 403);
         }
 
-        $history = PatientHistory::with('patient', 'diagnoses')->find($id);
+        $history = PatientHistory::with('patient.geographicalLocation', 'diagnoses', 'reason')->find($id);
 
         if (!$history) {
             return response()->json([

@@ -77,7 +77,7 @@ class SampleUsersSeeder extends Seeder
                 'first_name' => 'Hospital',
                 'middle_name' => 'User',
                 'last_name' => 'Sample',
-                'email' => 'hospitaluser@mohz.go.tz',
+                'email' => 'hospital@mohz.go.tz',
                 'password' => 'hospital@123',
                 'role' => 'ROLE HOSPITAL USER',
                 'address' => 'Vuga',
