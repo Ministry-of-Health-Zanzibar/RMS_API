@@ -130,9 +130,7 @@ class RolesOfUsersSeeder extends Seeder
             'View Hospital',
             'View ReferralType',
             'View FollowUp',
-            'View Patient List',
             'View Hospital Letter',
-            'View Patient History',
             'View Diagnoses',
 
             'View Reason',

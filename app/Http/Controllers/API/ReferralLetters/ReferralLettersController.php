@@ -4,11 +4,13 @@ namespace App\Http\Controllers\API\ReferralLetters;
 
 use App\Models\Referral;
 use App\Models\ReferralType;
-use DB;
 use Illuminate\Http\Request;
 use App\Models\ReferralLetter;
+use App\Models\PatientHistory;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
 
 class ReferralLettersController extends Controller
 {
@@ -131,6 +133,7 @@ class ReferralLettersController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
+
         if (!$user->can('Create ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
@@ -138,56 +141,75 @@ class ReferralLettersController extends Controller
             ], 403);
         }
 
-        // Validate request
         $data = $request->validate([
             'referral_id' => ['required', 'numeric'],
-            'hospital_id' => ['required', 'numeric'],
+            'hospital_id' => ['required_if:status,Confirmed', 'numeric'],
             'letter_text' => ['required', 'string'],
-            'status' => ['required', 'string'],
+            'status' => ['required', 'in:Confirmed,Cancelled'],
             'start_date' => ['nullable', 'string'],
             'end_date' => ['nullable', 'string'],
         ]);
 
-        // Find referral
-        $referral = Referral::findOrFail($data['referral_id']);
+        DB::beginTransaction();
 
-        if($data['status']=='Confirmed'){
+        try {
+            // 1️⃣ Find referral
+            $referral = Referral::findOrFail($data['referral_id']);
 
-            // Update hospital and status in the referral if confirmed
-            $referral->update([
-                'hospital_id' => $data['hospital_id'],
-                'status' => $data['status'],
+            // 2️⃣ Update referral
+            if ($data['status'] === 'Confirmed') {
+                $referral->update([
+                    'hospital_id' => $data['hospital_id'],
+                    'status' => 'Confirmed',
+                    'confirmed_by' => $user->id,
+                ]);
+            } else {
+                $referral->update([
+                    'status' => 'Cancelled',
+                    'confirmed_by' => $user->id,
+                ]);
+            }
+
+            // 3️⃣ Update patient history (DG decision) ✅ CORRECT
+            $patientHistory = PatientHistory::where('patient_id', $referral->patient_id)
+                ->where('status', 'approved') // only DG-ready history
+                ->latest('created_at')
+                ->firstOrFail();
+
+            $patientHistory->update([
+                'status' => $data['status'] === 'Confirmed' ? 'confirmed' : 'rejected',
+                'dg_comments' => $data['letter_text'],
+                'dg_id' => $user->id,
             ]);
-        }else{
 
-            // Update status in the referral if cacelled
-            $referral->update([
-                'status' => $data['status'],
+            // 4️⃣ Create referral letter
+            $referralLetter = ReferralLetter::create([
+                'referral_id' => $referral->referral_id,
+                'letter_text' => $data['letter_text'],
+                'start_date' => $data['start_date'] ?? null,
+                'end_date' => $data['end_date'] ?? null,
+                'created_by' => $user->id,
             ]);
-        }
 
-        // Create referral letter
-        $ReferralLetter = ReferralLetter::create([
-            'referral_id' => $data['referral_id'],
-            'letter_text' => $data['letter_text'],
-            'start_date' => $data['start_date'] ?? null,
-            'end_date' => $data['end_date'] ?? null,
-            'created_by' => $user->id,
-        ]);
+            DB::commit();
 
-        if (!$ReferralLetter) {
+            return response([
+                'data' => $referralLetter,
+                'message' => 'DG decision recorded successfully.',
+                'statusCode' => 201,
+            ], 201);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
             return response([
                 'message' => 'Internal server error',
+                'error' => $e->getMessage(),
                 'statusCode' => 500,
             ], 500);
         }
-
-        return response([
-            'data' => $ReferralLetter,
-            'message' => "Referral Letter created successfully.",
-            'statusCode' => 201,
-        ], 201);
     }
+
 
     /**
      * Display the specified resource.

@@ -291,7 +291,13 @@ class PatientHistoryController extends Controller
             ], 403);
         }
 
-        $history = PatientHistory::with('patient.geographicalLocation', 'diagnoses', 'reason')->find($id);
+        $history = PatientHistory::with([
+            'patient.geographicalLocation',
+            'diagnoses',
+            'boardDiagnoses',   // ✅ added
+            'reason',
+            'boardReason'       // ✅ added
+        ])->find($id);
 
         if (!$history) {
             return response()->json([
