@@ -291,7 +291,6 @@ class ReferralController extends Controller
     {
         $user = auth()->user();
 
-        // Permission check
         if (!$user->can('View Referral')) {
             return response()->json([
                 'message' => 'Forbidden',
@@ -300,27 +299,35 @@ class ReferralController extends Controller
         }
 
         $referral = Referral::with([
-                'patient.patientHistories',
-                'patient.patientHistories.boardDiagnoses',
-                'patient.patientHistories.boardReason',
-                'patient.geographicalLocation',
-                'patient.patientList.boardMembers',
-                'patient.files',
-                'reason',
-                'hospital',
-                'hospitalLetters',
-                'referralLetters',
-                'parent',
-                'children',
-                'bills',
-                'confirmedBy',
-                'creator',
-                'diagnoses',
-            ])
-            ->where('referral_id', $id)
-            ->first();
+            'patient' => function ($query) {
+                $query->with([
+                    'geographicalLocation',
+                    'files',
+                    'patientList.boardMembers',
+                    'patientHistories' => function ($q) {
+                        $q->with([
+                            'diagnoses',        // doctor diagnoses
+                            'boardDiagnoses',   // board diagnoses
+                            'reason',           // doctor reason
+                            'boardReason',      // board reason
+                        ]);
+                    },
+                ]);
+            },
+            // 'reason',
+            'hospital',
+            'hospitalLetters',
+            'referralLetters',
+            'parent',
+            'children',
+            'bills',
+            'confirmedBy',
+            'creator',
+            'diagnoses', // referral diagnoses
+        ])
+        ->where('referral_id', $id)
+        ->first();
 
-        // Handle missing referral
         if (!$referral) {
             return response()->json([
                 'message' => 'Referral not found',
@@ -328,7 +335,6 @@ class ReferralController extends Controller
             ], 404);
         }
 
-        // Success
         return response()->json([
             'data' => $referral,
             'statusCode' => 200,

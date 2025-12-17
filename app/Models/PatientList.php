@@ -94,12 +94,12 @@ class PatientList extends Model
 
     public function boardMembers()
     {
-        return $this->belongsToMany(User::class, 'medical_board_user', 'patient_list_id', 'user_id')->withTimestamps();
+        return $this->belongsToMany(User::class, 'medical_board_user', 'patient_list_id', 'user_id');
     }
 
     public function patients()
     {
-        return $this->belongsToMany(Patient::class, 'patient_list_patient', 'patient_list_id', 'patient_id')->withTimestamps();
+        return $this->belongsToMany(Patient::class, 'patient_list_patient', 'patient_list_id', 'patient_id');
     }
 
     public function getActivitylogOptions(): LogOptions

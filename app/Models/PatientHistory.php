@@ -65,7 +65,6 @@ class PatientHistory extends Model
             'diagnosis_id'
         )
         ->withPivot('added_by')
-        ->withTimestamps()
         ->wherePivot('added_by', 'doctor');
     }
 
@@ -79,7 +78,6 @@ class PatientHistory extends Model
             'diagnosis_id'
         )
         ->withPivot('added_by')
-        ->withTimestamps()
         ->wherePivot('added_by', 'medical_board');
     }
 
