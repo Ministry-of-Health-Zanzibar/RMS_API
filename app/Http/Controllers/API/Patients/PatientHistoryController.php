@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use App\Models\Patient;
+use DB;
 
 
 /**
@@ -245,10 +246,14 @@ class PatientHistoryController extends Controller
 
             // Attach diagnoses if provided
             if ($request->filled('diagnosis_ids')) {
+                $diagnosisIds = collect($request->diagnosis_ids)->mapWithKeys(function ($id) {
+                    return [$id => ['added_by' => 'doctor']];
+                })->toArray();
 
-                // Sync diagnoses to the history
-                $history->diagnoses()->sync($request->diagnosis_ids);
+                // Attach new diagnoses without detaching existing ones
+                $history->diagnoses()->syncWithoutDetaching($diagnosisIds);
             }
+
 
             return response()->json([
                 'status' => true,
@@ -294,9 +299,9 @@ class PatientHistoryController extends Controller
         $history = PatientHistory::with([
             'patient.geographicalLocation',
             'diagnoses',
-            'boardDiagnoses',   // ✅ added
+            'boardDiagnoses',
             'reason',
-            'boardReason'       // ✅ added
+            'boardReason'
         ])->find($id);
 
         if (!$history) {
@@ -640,7 +645,7 @@ class PatientHistoryController extends Controller
         $user = auth()->user();
         $history = PatientHistory::findOrFail($id);
 
-        // Only medical board member allowed for this API
+        // Only medical board member allowed
         if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
             return response()->json([
                 'message' => 'Forbidden',
@@ -649,10 +654,10 @@ class PatientHistoryController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'board_comments'      => 'required|string',
-            'board_reason_id'     => 'required|exists:reasons,reason_id',
-            'board_diagnosis_ids' => 'required|array',
-            'board_diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
+            'board_comments'         => 'required|string',
+            'board_reason_id'        => 'required|exists:reasons,reason_id',
+            'board_diagnosis_ids'    => 'required|array',
+            'board_diagnosis_ids.*'  => 'exists:diagnoses,diagnosis_id',
         ]);
 
         if ($validator->fails()) {
@@ -664,23 +669,32 @@ class PatientHistoryController extends Controller
         }
 
         try {
+            DB::beginTransaction();
+
             // Update board fields
-            $history->board_comments = $request->board_comments;
-            $history->board_reason_id = $request->board_reason_id;
-            $history->save();
+            $history->update([
+                'board_comments'  => $request->board_comments,
+                'board_reason_id' => $request->board_reason_id,
+            ]);
 
-            // Sync board diagnoses
-            $history->diagnoses()->sync($request->board_diagnosis_ids);
+            // Attach or update board diagnoses safely
+            if ($request->filled('board_diagnosis_ids')) {
+                $boardDiagnoses = collect($request->board_diagnosis_ids)->mapWithKeys(function ($id) {
+                    return [$id => ['added_by' => 'medical_board']];
+                })->toArray();
 
-            // --- Create referral if needed ---
+                $history->boardDiagnoses()->syncWithoutDetaching($boardDiagnoses);
+            }
+
+            // Create referral
             $today = now()->format('Y-m-d');
             $count = Referral::whereDate('created_at', $today)->count() + 1;
             $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
 
             $referral = Referral::create([
                 'patient_id'      => $history->patient_id,
-                'reason_id'       => $history->board_reason_id,
-                'status'          => 'Requested', // must match ENUM/check constraint
+                'reason_id'       => $request->board_reason_id,
+                'status'          => 'Requested',
                 'referral_number' => $referralNumber,
                 'created_by'      => $user->id,
             ]);
@@ -688,18 +702,27 @@ class PatientHistoryController extends Controller
             // Attach diagnoses to referral
             $referral->diagnoses()->sync($request->board_diagnosis_ids);
 
-            // --- Update patient history status ---
+            // Update workflow status
             $this->applyStatusUpdate($history, 'requested', $request->board_comments, $user);
+
+            DB::commit();
 
             return response()->json([
                 'status'  => true,
-                'data'    => $history->load('patient', 'diagnoses', 'reason'),
+                'data'    => $history->load([
+                    'patient',
+                    'diagnoses',
+                    'reason'
+                ]),
                 'message' => 'Patient history updated and referral created successfully',
                 'statusCode' => 200
             ]);
 
         } catch (\Exception $e) {
+            DB::rollBack();
+
             Log::error('Medical Board update failed: ' . $e->getMessage());
+
             return response()->json([
                 'status' => false,
                 'message' => 'Update failed',
@@ -708,7 +731,6 @@ class PatientHistoryController extends Controller
             ], 500);
         }
     }
-
 
 
     public function updateByMkurugenzi(Request $request, $id)

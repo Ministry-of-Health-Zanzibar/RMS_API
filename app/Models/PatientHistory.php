@@ -28,6 +28,7 @@ class PatientHistory extends Model
         'investigations',
         'management_done',
         'board_comments',
+        'board_reason_id',
         'history_file',
         'status',
         'mkurugenzi_tiba_comments',
@@ -54,20 +55,7 @@ class PatientHistory extends Model
         return $this->belongsTo(Reason::class, 'board_reason_id', 'reason_id');
     }
 
-    public function boardDiagnoses()
-    {
-        return $this->belongsToMany(
-            Diagnosis::class,
-            'history_diagnosis',
-            'patient_histories_id',
-            'board_diagnosis_id'
-        )->wherePivotNotNull('board_diagnosis_id');
-    }
-
-
-    /**
-     * Many-to-many relation with Diagnosis via pivot table
-     */
+    // Diagnoses
     public function diagnoses()
     {
         return $this->belongsToMany(
@@ -75,7 +63,24 @@ class PatientHistory extends Model
             'history_diagnosis',
             'patient_histories_id',
             'diagnosis_id'
-        );
+        )
+        ->withPivot('added_by')
+        ->withTimestamps()
+        ->wherePivot('added_by', 'doctor');
+    }
+
+    // Board diagnoses
+    public function boardDiagnoses()
+    {
+        return $this->belongsToMany(
+            Diagnosis::class,
+            'history_diagnosis',
+            'patient_histories_id',
+            'diagnosis_id'
+        )
+        ->withPivot('added_by')
+        ->withTimestamps()
+        ->wherePivot('added_by', 'medical_board');
     }
 
     public function referrals()
