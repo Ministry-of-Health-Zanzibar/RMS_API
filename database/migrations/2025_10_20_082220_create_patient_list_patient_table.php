@@ -20,14 +20,6 @@ return new class extends Migration {
 
             $table->unique(['patient_id', 'patient_list_id']); // avoid duplicates
         });
-
-        // 2️⃣ Migrate existing one-to-many data into the new pivot
-        DB::statement('
-            INSERT INTO patient_list_patient (patient_id, patient_list_id, created_at, updated_at)
-            SELECT patient_id, patient_list_id, NOW(), NOW()
-            FROM patients
-            WHERE patient_list_id IS NOT NULL
-        ');
     }
 
     public function down(): void

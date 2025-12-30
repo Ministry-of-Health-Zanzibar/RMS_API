@@ -30,7 +30,14 @@ class referralTypeSeeder extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now()
             ),
-            
+            array(
+                'referral_type_name' => 'INTERNAL',
+                'referral_type_code' => 'REFTYPE3',
+                'created_by' => '1',
+                'created_at' => \Carbon\Carbon::now(),
+                'updated_at' => \Carbon\Carbon::now(),
+            ),
+
         );
 
         DB::table('referral_types')->insert($referral_types);

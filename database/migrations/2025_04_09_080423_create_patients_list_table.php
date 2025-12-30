@@ -12,6 +12,10 @@ return new class extends Migration {
     {
         Schema::create('patient_lists', function (Blueprint $table) {
             $table->bigIncrements('patient_list_id');
+            $table->string('reference_number')->unique()->nullable();
+            $table->enum('board_type', ['Emergency', 'Routine'])->nullable();
+            $table->unsignedInteger('no_of_patients')->default(0);
+            $table->string('board_date')->nullable();
             $table->string('patient_list_title');
             $table->string('patient_list_file');
             $table->unsignedBigInteger('created_by');

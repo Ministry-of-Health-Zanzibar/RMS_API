@@ -26,7 +26,6 @@ return new class extends Migration {
             $table->timestamps();
             $table->softDeletes(); // adds deleted_at column
 
-
             // $table->foreign('source_id')->references('source_id')->on('sources');
             $table->foreign('source_type_id')->references('source_type_id')->on('source_types');
             $table->foreign('category_id')->references('category_id')->on('categories');
