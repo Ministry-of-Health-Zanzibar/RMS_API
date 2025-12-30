@@ -4522,7 +4522,7 @@
                                         "enum": [
                                             "pending",
                                             "reviewed",
-                                            "requested",
+                                            "Requested",
                                             "approved",
                                             "confirmed",
                                             "rejected"
@@ -6915,6 +6915,94 @@
                         }
                     }
                 }
+            }
+        },
+        "/reports/showEverythingByReferralId/{referral_id}": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Get full referral details by referral ID",
+                "description": "Returns full referral information including patient details, histories, diagnoses, hospital data, letters, bills, and relationships. Requires View Referral permission.",
+                "operationId": "showEverythingByReferralId",
+                "parameters": [
+                    {
+                        "name": "referral_id",
+                        "in": "path",
+                        "description": "Referral ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Referral found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 200
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Referral"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Forbidden"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 403
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Referral not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Referral not found"
+                                        },
+                                        "statusCode": {
+                                            "type": "integer",
+                                            "example": 404
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/countries": {
@@ -10169,6 +10257,63 @@
                 },
                 "type": "object"
             },
+            "Referral": {
+                "properties": {
+                    "referral_id": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "patient": {
+                        "type": "object"
+                    },
+                    "hospital": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "hospitalLetters": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "referralLetters": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "parent": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "children": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "bills": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "confirmedBy": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "creator": {
+                        "type": "object"
+                    },
+                    "diagnoses": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
             "Diagnosis": {
                 "title": "Diagnosis",
                 "required": [
@@ -10266,6 +10411,10 @@
         {
             "name": "referrals",
             "description": "referrals"
+        },
+        {
+            "name": "Reports",
+            "description": "Reports"
         },
         {
             "name": "countries",

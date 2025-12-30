@@ -7,6 +7,23 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @OA\Schema(
+ *     schema="Referral",
+ *     type="object",
+ *     @OA\Property(property="referral_id", type="integer", example=123),
+ *     @OA\Property(property="patient", type="object"),
+ *     @OA\Property(property="hospital", type="object", nullable=true),
+ *     @OA\Property(property="hospitalLetters", type="array", @OA\Items(type="object")),
+ *     @OA\Property(property="referralLetters", type="array", @OA\Items(type="object")),
+ *     @OA\Property(property="parent", type="object", nullable=true),
+ *     @OA\Property(property="children", type="array", @OA\Items(type="object")),
+ *     @OA\Property(property="bills", type="array", @OA\Items(type="object")),
+ *     @OA\Property(property="confirmedBy", type="object", nullable=true),
+ *     @OA\Property(property="creator", type="object"),
+ *     @OA\Property(property="diagnoses", type="array", @OA\Items(type="object"))
+ * )
+ */
 class ReportController extends Controller
 {
     public function __construct()
@@ -306,6 +323,206 @@ class ReportController extends Controller
     // DASHBOARD ========================================================================//
 
     // PRINTABLE REPORT ========================================================================//
+
+    /**
+     * @OA\Get(
+     *     path="/reports/showEverythingByReferralId/{referral_id}",
+     *     tags={"Reports"},
+     *     summary="Get full referral details by referral ID",
+     *     description="Returns full referral information including patient details, histories, diagnoses, hospital data, letters, bills, and relationships. Requires View Referral permission.",
+     *     operationId="showEverythingByReferralId",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="referral_id",
+     *         in="path",
+     *         required=true,
+     *         description="Referral ID",
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=123
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Referral found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="statusCode",
+     *                 type="integer",
+     *                 example=200
+     *             ),
+     *             @OA\Property(
+     *                 property="data",
+     *                 ref="#/components/schemas/Referral"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Forbidden"),
+     *             @OA\Property(property="statusCode", type="integer", example=403)
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Referral not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Referral not found"),
+     *             @OA\Property(property="statusCode", type="integer", example=404)
+     *         )
+     *     )
+     * )
+     */
+    public function showEverythingByReferralId(int $id)
+    {
+        $user = auth()->user();
+
+        if (!$user->can('View Referral')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $referral = \App\Models\Referral::with([
+            // =======================
+            // Patient & Deep Relations
+            // =======================
+            'patient' => function ($query) {
+                $query->with([
+                    'geographicalLocation',
+                    'files',
+                    'patientList.boardMembers',
+
+                    // Patient histories
+                    'patientHistories' => function ($q) {
+                        $q->with([
+                            'diagnoses',
+                            'boardDiagnoses',
+                            'reason',
+                            'boardReason',
+                        ]);
+                    },
+
+                    // NEW: Followups
+                    'followups',
+
+                    // NEW: Insurances
+                    'insurances',
+                ]);
+            },
+
+            // =======================
+            // Referral Relations
+            // =======================
+            'hospital',
+            'hospitalLetters',
+            'referralLetters',
+            'parent',
+            'children',
+            'confirmedBy',
+            'creator',
+            'diagnoses',
+
+            // =======================
+            // Bills (FULL TREE)
+            // =======================
+            'bills' => function ($billQuery) {
+                $billQuery->with([
+                    // Bill file (PDF / attachment)
+                    'billFile',
+
+                    // Bill items
+                    'billItems',
+
+                    // Payments with pivot data
+                    'payments' => function ($paymentQuery) {
+                        $paymentQuery->withPivot([
+                            'allocated_amount',
+                            'allocation_date',
+                            'status'
+                        ]);
+                    },
+                ]);
+            },
+        ])
+        ->where('referral_id', $id)
+        ->first();
+
+        if (!$referral) {
+            return response()->json([
+                'message' => 'Referral not found',
+                'statusCode' => 404,
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => $referral,
+            'statusCode' => 200,
+        ], 200);
+    }
+    // public function showEverythingByReferralId(int $id)
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->can('View Referral')) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $referral = \App\Models\Referral::with([
+    //         'patient' => function ($query) {
+    //             $query->with([
+    //                 'geographicalLocation',
+    //                 'files',
+    //                 'patientList.boardMembers',
+    //                 'patientHistories' => function ($q) {
+    //                     $q->with([
+    //                         'diagnoses',        // doctor diagnoses
+    //                         'boardDiagnoses',   // board diagnoses
+    //                         'reason',           // doctor reason
+    //                         'boardReason',      // board reason
+    //                     ]);
+    //                 },
+    //             ]);
+    //         },
+    //         // 'reason',
+    //         'hospital',
+    //         'hospitalLetters',
+    //         'referralLetters',
+    //         'parent',
+    //         'children',
+    //         'bills',
+    //         'confirmedBy',
+    //         'creator',
+    //         'diagnoses', // referral diagnoses
+    //     ])
+    //     ->where('referral_id', $id)
+    //     ->first();
+
+    //     if (!$referral) {
+    //         return response()->json([
+    //             'message' => 'Referral not found',
+    //             'statusCode' => 404,
+    //         ], 404);
+    //     }
+
+    //     return response()->json([
+    //         'data' => $referral,
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
 
     public function referralReport(int $patientId)
     {

@@ -191,6 +191,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // referrals by Gender
     Route::get('reports/referralsByGender', [ReportController::class, 'referralsReportByGendr']);
+    Route::get('reports/showEverythingByReferralId/{referral_id}', [ReportController::class, 'showEverythingByReferralId']);
 
     // Diagnoses
     Route::prefix('diagnoses')->group(function () {
