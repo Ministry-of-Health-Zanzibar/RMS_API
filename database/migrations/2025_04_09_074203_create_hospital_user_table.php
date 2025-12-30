@@ -18,7 +18,6 @@ return new class extends Migration {
 
             // Optional but VERY useful
             $table->string('role')->nullable(); // doctor, nurse, admin, accountant, etc
-            //$table->boolean('is_primary')->default(false); // main hospital
             $table->unsignedBigInteger('assigned_by')->nullable();
 
             $table->timestamps();

@@ -72,6 +72,11 @@ class Patient extends Model
         return $this->belongsTo(User::class, 'created_by', 'id');
     }
 
+    public function followups()
+    {
+        return $this->hasMany(Followup::class, 'patient_id', 'patient_id');
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['*']);

@@ -71,6 +71,13 @@ class Hospital extends Model
         return $this->hasMany(BillFile::class, 'hospital_id', 'hospital_id');
     }
 
+    // App\Models\Hospital.php
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class,'hospital_user','hospital_id','user_id')->withPivot(['role', 'assigned_by'])->withTimestamps();
+    }
+
     // Automatically generate hospital_code before creating
     protected static function boot()
     {

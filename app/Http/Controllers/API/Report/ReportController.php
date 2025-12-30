@@ -431,7 +431,6 @@ class ReportController extends Controller
             'children',
             'confirmedBy',
             'creator',
-            'diagnoses',
 
             // =======================
             // Bills (FULL TREE)
@@ -470,59 +469,6 @@ class ReportController extends Controller
             'statusCode' => 200,
         ], 200);
     }
-    // public function showEverythingByReferralId(int $id)
-    // {
-    //     $user = auth()->user();
-
-    //     if (!$user->can('View Referral')) {
-    //         return response()->json([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     $referral = \App\Models\Referral::with([
-    //         'patient' => function ($query) {
-    //             $query->with([
-    //                 'geographicalLocation',
-    //                 'files',
-    //                 'patientList.boardMembers',
-    //                 'patientHistories' => function ($q) {
-    //                     $q->with([
-    //                         'diagnoses',        // doctor diagnoses
-    //                         'boardDiagnoses',   // board diagnoses
-    //                         'reason',           // doctor reason
-    //                         'boardReason',      // board reason
-    //                     ]);
-    //                 },
-    //             ]);
-    //         },
-    //         // 'reason',
-    //         'hospital',
-    //         'hospitalLetters',
-    //         'referralLetters',
-    //         'parent',
-    //         'children',
-    //         'bills',
-    //         'confirmedBy',
-    //         'creator',
-    //         'diagnoses', // referral diagnoses
-    //     ])
-    //     ->where('referral_id', $id)
-    //     ->first();
-
-    //     if (!$referral) {
-    //         return response()->json([
-    //             'message' => 'Referral not found',
-    //             'statusCode' => 404,
-    //         ], 404);
-    //     }
-
-    //     return response()->json([
-    //         'data' => $referral,
-    //         'statusCode' => 200,
-    //     ], 200);
-    // }
 
     public function referralReport(int $patientId)
     {

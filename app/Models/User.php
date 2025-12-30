@@ -57,6 +57,13 @@ class User extends Authenticatable
         return $this->belongsToMany(PatientList::class, 'medical_board_user', 'user_id', 'patient_list_id')->withTimestamps();
     }
 
+    // App\Models\User.php
+
+    public function hospitals()
+    {
+        return $this->belongsToMany(Hospital::class,'hospital_user','user_id','hospital_id')->withPivot(['role', 'assigned_by'])->withTimestamps();
+    }
+
     /**
      * The attributes that should be cast.
      *
