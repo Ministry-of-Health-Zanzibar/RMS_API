@@ -525,4 +525,132 @@ class UsersCotroller extends Controller
         ]);
     }
 
+
+    /**
+     * @OA\Post(
+     *     path="/api/users/{userId}/assign-hospital",
+     *     summary="Assign a hospital to a user",
+     *     tags={"userAccounts"},
+     *     @OA\Parameter(
+     *         name="userId",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the user to assign hospital",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="hospital_id",
+     *                 type="integer",
+     *                 example=9,
+     *                 description="ID of the hospital to assign"
+     *             ),
+     *             @OA\Property(
+     *                 property="role",
+     *                 type="string",
+     *                 example="doctor",
+     *                 description="Role of the user in the hospital"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Hospital assigned successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Hospital assigned successfully"),
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="hospital_id", type="integer", example=9),
+     *                     @OA\Property(property="hospital_name", type="string", example="City Hospital"),
+     *                     @OA\Property(property="pivot", type="object",
+     *                         @OA\Property(property="role", type="string", example="doctor"),
+     *                         @OA\Property(property="assigned_by", type="integer", example=1),
+     *                         @OA\Property(property="created_at", type="string", example="2025-12-30 12:00:00"),
+     *                         @OA\Property(property="updated_at", type="string", example="2025-12-30 12:00:00")
+     *                     )
+     *                 )
+     *             ),
+     *             @OA\Property(property="statusCode", type="integer", example=200)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthorized"),
+     *             @OA\Property(property="statusCode", type="integer", example=401)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation Error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Validation Error"),
+     *             @OA\Property(property="errors", type="object"),
+     *             @OA\Property(property="statusCode", type="integer", example=422)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Failed to assign hospital",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Failed to assign hospital"),
+     *             @OA\Property(property="error", type="string", example="Error message"),
+     *             @OA\Property(property="statusCode", type="integer", example=500)
+     *         )
+     *     )
+     * )
+     */
+    public function assignHospital(Request $request, $userId)
+    {
+        $user = User::findOrFail($userId);
+
+        // Only admins or users with permission can assign hospitals
+        if (!auth()->user()->hasRole('ROLE ADMIN') && !auth()->user()->can('Assign Hospital')) {
+            return response()->json([
+                'message' => 'Unauthorized',
+                'statusCode' => 401
+            ]);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'hospital_id' => 'required|exists:hospitals,hospital_id',
+            'role'        => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation Error',
+                'errors' => $validator->errors(),
+                'statusCode' => 422
+            ]);
+        }
+
+        try {
+            // Attach hospital without removing existing ones
+            $user->hospitals()->attach($request->hospital_id, [
+                'role'        => $request->role ?? 'staff',
+                'assigned_by' => auth()->id(),
+            ]);
+
+            return response()->json([
+                'message' => 'Hospital assigned successfully',
+                'data' => $user->hospitals()->get(),
+                'statusCode' => 200
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to assign hospital',
+                'error' => $e->getMessage(),
+                'statusCode' => 500
+            ]);
+        }
+    }
+
 }

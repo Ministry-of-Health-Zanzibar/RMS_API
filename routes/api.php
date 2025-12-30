@@ -220,4 +220,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/analytics/referral-trend', [App\Http\Controllers\API\Charts\AnalyticsController::class, 'referralTrend']);
 
+    Route::post('/users/{userId}/assign-hospital', [App\Http\Controllers\API\User\UsersCotroller::class, 'assignHospital']);
+
 });
