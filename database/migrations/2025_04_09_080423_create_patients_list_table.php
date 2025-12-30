@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->unsignedInteger('no_of_patients')->default(0);
             $table->string('board_date')->nullable();
             $table->string('patient_list_title');
-            $table->string('patient_list_file');
+            $table->string('patient_list_file')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();

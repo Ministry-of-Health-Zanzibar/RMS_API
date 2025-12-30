@@ -134,7 +134,7 @@ class MedicalBoadController extends Controller
 
         $validator = Validator::make($request->all(), [
             'board_type' => ['required', 'in:Emergency,Routine'],
-            'patient_list_file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'patient_list_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
             'board_date' => ['required', 'string'],
             'no_of_patients' => ['required', 'integer', 'min:1'],
             'user_id' => ['required', 'array'], // array of user IDs
