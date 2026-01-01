@@ -78,29 +78,44 @@ class PatientController extends Controller
         }
 
         if ($user->hasAnyRole(['ROLE ADMIN'])) {
+
             $patients = Patient::with([
-                'patientList',          // patient list info
-                'files',                // all patient files
+                'patientList',
+                'files',
                 'insurances',
                 'geographicalLocation',
-                'referrals.reason',     // referrals + reason
-                'referrals.hospital',   // referrals + hospital
-                'referrals.creator',  // referral created by user
+                'referrals.reason',
+                'referrals.hospital',
+                'referrals.creator',
             ])
             ->withTrashed()
             ->get();
-        } else {
-             $patients = Patient::with([
-                'patientList',          // patient list info
-                'files',                // all patient files
+
+        } elseif ($user->hasAnyRole(['ROLE HOSPITAL USER'])) {
+
+            $patients = Patient::with([
+                'patientList',
+                'files',
                 'geographicalLocation',
-                'referrals.reason',     // referrals + reason
-                'referrals.hospital',   // referrals + hospital
-                'referrals.creator',  // referral created by user
+                'referrals.reason',
+                'referrals.hospital',
+                'referrals.creator',
+            ])
+            ->where('created_by', $user->id)
+            ->get();
+
+        } else {
+
+            $patients = Patient::with([
+                'patientList',
+                'files',
+                'geographicalLocation',
+                'referrals.reason',
+                'referrals.hospital',
+                'referrals.creator',
             ])
             ->get();
         }
-
 
         return response([
             'data' => $patients,
