@@ -123,7 +123,6 @@ class PatientController extends Controller
         ], 200);
     }
 
-
     public function patientsHistories()
     {
         $user = auth()->user();
@@ -137,50 +136,131 @@ class PatientController extends Controller
         }
 
         // Base query
-        $query = Patient::with(['latestHistory'])
-            ->whereHas('patientHistories') // only patients with histories
-            ->latest();
+        $query = Patient::query()
+            ->select('patients.*')
+            ->with(['latestHistory', 'creator'])
+            ->join('users', 'users.id', '=', 'patients.created_by')
+            ->leftJoin('hospital_user', 'hospital_user.user_id', '=', 'users.id')
+            ->leftJoin('hospitals', 'hospitals.hospital_id', '=', 'hospital_user.hospital_id')
+            ->whereHas('patientHistories')
+            ->latest('patients.created_at');
 
         /**
          * ROLE: HOSPITAL USER
-         * See ALL statuses, BUT only their own patients
+         * See all statuses, but only patients created by them
          */
         if ($user->hasRole('ROLE HOSPITAL USER')) {
-            $query->where('created_by', $user->id);
+            $query->where('patients.created_by', $user->id);
         }
 
         /**
          * ROLE: MEDICAL BOARD MEMBER
-         * See ONLY reviewed cases
+         * See only reviewed cases
          */
         if ($user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
-
-            // Only include patients whose histories include reviewed status
             $query->whereHas('patientHistories', function ($q) {
                 $q->where('status', 'reviewed');
             });
 
-            // And load only the reviewed history in the relationship
-            $query->with(['latestHistory' => function ($hist) {
-                $hist->where('status', 'reviewed');
+            $query->with(['latestHistory' => function ($q) {
+                $q->where('status', 'reviewed');
             }]);
         }
 
         /**
          * ROLE: ADMIN + MKURUGENZI TIBA
-         * No filters, include trashed
+         * See everything (including trashed)
          */
         if ($user->hasAnyRole(['ROLE ADMIN', 'ROLE MKURUGENZI TIBA'])) {
             $query->withTrashed();
         }
 
-        $patients = $query->get();
+        // Select hospital name + pivot role
+        $patients = $query
+            ->addSelect([
+                'hospitals.hospital_name as hospital_name',
+                'hospital_user.role as hospital_role',
+            ])
+            ->groupBy(
+                'patients.patient_id',
+                'hospitals.hospital_name',
+                'hospital_user.role'
+            )
+            ->get();
 
         return response([
-            'data' => $patients,
+            'data' => $patients->map(function ($patient) {
+                return [
+                    'patient_id'     => $patient->patient_id,
+                    'name'           => $patient->name,
+                    'latest_history' => $patient->latestHistory,
+
+                    // 👇 EXACT format you requested
+                    'hospital'       => $patient->hospital_name,
+                    'hospital_role'  => $patient->hospital_role,
+                ];
+            }),
             'statusCode' => 200,
         ], 200);
     }
+
+    // public function patientsHistories()
+    // {
+    //     $user = auth()->user();
+
+    //     // Permissions check
+    //     if (!$user->canAny(['View Patient', 'View History'])) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     // Base query
+    //     $query = Patient::with(['latestHistory'])
+    //         ->whereHas('patientHistories') // only patients with histories
+    //         ->latest();
+
+    //     /**
+    //      * ROLE: HOSPITAL USER
+    //      * See ALL statuses, BUT only their own patients
+    //      */
+    //     if ($user->hasRole('ROLE HOSPITAL USER')) {
+    //         $query->where('created_by', $user->id);
+    //     }
+
+    //     /**
+    //      * ROLE: MEDICAL BOARD MEMBER
+    //      * See ONLY reviewed cases
+    //      */
+    //     if ($user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+
+    //         // Only include patients whose histories include reviewed status
+    //         $query->whereHas('patientHistories', function ($q) {
+    //             $q->where('status', 'reviewed');
+    //         });
+
+    //         // And load only the reviewed history in the relationship
+    //         $query->with(['latestHistory' => function ($hist) {
+    //             $hist->where('status', 'reviewed');
+    //         }]);
+    //     }
+
+    //     /**
+    //      * ROLE: ADMIN + MKURUGENZI TIBA
+    //      * No filters, include trashed
+    //      */
+    //     if ($user->hasAnyRole(['ROLE ADMIN', 'ROLE MKURUGENZI TIBA'])) {
+    //         $query->withTrashed();
+    //     }
+
+    //     $patients = $query->get();
+
+    //     return response([
+    //         'data' => $patients,
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
 
 
 
