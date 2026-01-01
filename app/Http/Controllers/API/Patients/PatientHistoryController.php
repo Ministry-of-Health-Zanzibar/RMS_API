@@ -68,6 +68,7 @@ class PatientHistoryController extends Controller
     public function index()
     {
         $user = auth()->user();
+
         if (!$user->can('View Patient History')) {
             return response()->json([
                 'message' => 'Forbidden',
@@ -75,7 +76,21 @@ class PatientHistoryController extends Controller
             ], 403);
         }
 
-        $histories = PatientHistory::with('patient.geographicalLocation', 'diagnoses', 'reason')->latest()->get();
+        $histories = PatientHistory::with([
+            'patient.geographicalLocation',
+            'diagnoses',
+            'reason',
+
+            // 🔹 Creator of the patient
+            'patient.creator.hospitals' => function ($q) {
+                $q->select(
+                    'hospitals.hospital_id',
+                    'hospitals.hospital_name'
+                );
+            },
+        ])
+        ->latest()
+        ->get();
 
         return response()->json([
             'status' => true,
@@ -84,6 +99,25 @@ class PatientHistoryController extends Controller
             'statusCode' => 200
         ]);
     }
+    // public function index()
+    // {
+    //     $user = auth()->user();
+    //     if (!$user->can('View Patient History')) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $histories = PatientHistory::with('patient.geographicalLocation', 'diagnoses', 'reason')->latest()->get();
+
+    //     return response()->json([
+    //         'status' => true,
+    //         'data' => $histories,
+    //         'message' => 'Patient histories retrieved successfully',
+    //         'statusCode' => 200
+    //     ]);
+    // }
 
 
 
