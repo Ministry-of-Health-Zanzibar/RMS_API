@@ -65,40 +65,6 @@ class PatientHistoryController extends Controller
      *     @OA\Response(response=403, description="Forbidden")
      * )
      */
-    // public function index()
-    // {
-    //     $user = auth()->user();
-
-    //     if (!$user->can('View Patient History')) {
-    //         return response()->json([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     $histories = PatientHistory::with([
-    //         'patient.geographicalLocation',
-    //         'diagnoses',
-    //         'reason',
-
-    //         // 🔹 Creator of the patient
-    //         'patient.creator.hospitals' => function ($q) {
-    //             $q->select(
-    //                 'hospitals.hospital_id',
-    //                 'hospitals.hospital_name'
-    //             );
-    //         },
-    //     ])
-    //     ->latest()
-    //     ->get();
-
-    //     return response()->json([
-    //         'status' => true,
-    //         'data' => $histories,
-    //         'message' => 'Patient histories retrieved successfully',
-    //         'statusCode' => 200
-    //     ]);
-    // }
     public function index()
     {
         $user = auth()->user();
@@ -335,7 +301,12 @@ class PatientHistoryController extends Controller
             'diagnoses',
             'boardDiagnoses',
             'reason',
-            'boardReason'
+            'boardReason',
+            'patient.creator' => function ($query) {
+                $query->with(['hospitals' => function ($q) {
+                    $q->select('hospitals.hospital_id', 'hospitals.hospital_name');
+                }]);
+            },
         ])->find($id);
 
         if (!$history) {
@@ -346,6 +317,17 @@ class PatientHistoryController extends Controller
             ], 404);
         }
 
+        if ($history->patient && $history->patient->creator) {
+            $creator = $history->patient->creator;
+            $firstHospital = $creator->hospitals->first();
+
+            $history->hospital = $firstHospital ? $firstHospital->hospital_name : null;
+            $history->hospital_role = $firstHospital ? $firstHospital->pivot->role : null;
+        } else {
+            $history->hospital = null;
+            $history->hospital_role = null;
+        }
+
         return response()->json([
             'status' => true,
             'data' => $history,
@@ -353,6 +335,40 @@ class PatientHistoryController extends Controller
             'statusCode' => 200
         ]);
     }
+    // public function show($id)
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->canAny(['View Patient History', 'View History'])) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $history = PatientHistory::with([
+    //         'patient.geographicalLocation',
+    //         'diagnoses',
+    //         'boardDiagnoses',
+    //         'reason',
+    //         'boardReason'
+    //     ])->find($id);
+
+    //     if (!$history) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Patient history not found',
+    //             'statusCode' => 404
+    //         ], 404);
+    //     }
+
+    //     return response()->json([
+    //         'status' => true,
+    //         'data' => $history,
+    //         'message' => 'Patient history retrieved successfully',
+    //         'statusCode' => 200
+    //     ]);
+    // }
 
 
     /**
