@@ -76,13 +76,16 @@ class UsersCotroller extends Controller
                 $staffs = DB::table('users')
                     ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
                     ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                    ->leftJoin('hospital_user', 'hospital_user.user_id', '=', 'users.id')
+                    ->leftJoin('hospitals', 'hospitals.hospital_id', '=', 'hospital_user.hospital_id')
                     ->where('model_has_roles.model_type', User::class)
                     ->where('users.id', '!=', 1)
                     ->where('users.created_by', Auth::id())
                     ->select(
                         'users.*',
                         'roles.name as role_name',
-                        'roles.id as role_id'
+                        'roles.id as role_id',
+                        'hospitals.hospital_name as hospital'
                     )
                     ->get();
 

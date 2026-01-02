@@ -83,6 +83,31 @@ class HospitalController extends Controller
         }
     }
 
+    public function getInternalReferralHospitals()
+    {
+        $user = auth()->user();
+        if (!$user->can('View Hospital')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $hospitals = Hospital::with(['referralType'])->where('referral_type_id',3)->get();
+
+        if ($hospitals) {
+            return response([
+                'data' => $hospitals,
+                'statusCode' => 200,
+            ], 200);
+        } else {
+            return response([
+                'message' => 'No data found',
+                'statusCode' => 200,
+            ], 200);
+        }
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -155,7 +180,7 @@ class HospitalController extends Controller
             return response([
                 'data' => $hospital,
                 'statusCode' => 201,
-            ], status: 201);
+            ], 201);
         } else {
             return response([
                 'message' => 'Internal server error',
@@ -426,7 +451,7 @@ class HospitalController extends Controller
      */
     public function unBlockHospital(int $id)
     {
-        
+
         $hospital = Hospital::withTrashed()->find($id);
 
         if (!$hospital) {
@@ -507,10 +532,10 @@ class HospitalController extends Controller
         ])
         ->withTrashed()
         ->get([
-            'hospital_id', 
-            'hospital_name', 
-            'hospital_address', 
-            'hospital_code', 
+            'hospital_id',
+            'hospital_name',
+            'hospital_address',
+            'hospital_code',
             'referral_type_id'
         ]);
 

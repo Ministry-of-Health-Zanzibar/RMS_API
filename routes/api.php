@@ -64,6 +64,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // RMS RELATED APIs
     //HOSPITALS
     Route::get('hospitals/reffered-hospitals', [HospitalController::class, 'getReferredHospitals']);
+    Route::get('hospitals/internal-refferal-hospitals', [HospitalController::class, 'getInternalReferralHospitals']);
     Route::resource('hospitals', HospitalController::class);
     Route::patch('hospitals/unBlock/{hospitalId}', [HospitalController::class, 'unBlockHospital']);
 

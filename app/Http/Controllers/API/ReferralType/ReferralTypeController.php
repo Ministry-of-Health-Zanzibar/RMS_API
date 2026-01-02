@@ -136,7 +136,6 @@ class ReferralTypeController extends Controller
         $ReferralType = ReferralType::create([
             'referral_type_name' => $data['referral_type_name'],
             'created_by' => Auth::id(),
-            // 'created_by' => auth()->id(),
         ]);
 
         if ($ReferralType) {
@@ -144,7 +143,7 @@ class ReferralTypeController extends Controller
                 'data' => $ReferralType,
                 'message' => "Referral type created successfully.",
                 'statusCode' => 201,
-            ], status: 201);
+            ], 201);
         } else {
             return response([
                 'message' => 'Internal server error',

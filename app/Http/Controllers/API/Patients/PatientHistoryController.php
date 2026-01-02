@@ -335,40 +335,6 @@ class PatientHistoryController extends Controller
             'statusCode' => 200
         ]);
     }
-    // public function show($id)
-    // {
-    //     $user = auth()->user();
-
-    //     if (!$user->canAny(['View Patient History', 'View History'])) {
-    //         return response()->json([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     $history = PatientHistory::with([
-    //         'patient.geographicalLocation',
-    //         'diagnoses',
-    //         'boardDiagnoses',
-    //         'reason',
-    //         'boardReason'
-    //     ])->find($id);
-
-    //     if (!$history) {
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => 'Patient history not found',
-    //             'statusCode' => 404
-    //         ], 404);
-    //     }
-
-    //     return response()->json([
-    //         'status' => true,
-    //         'data' => $history,
-    //         'message' => 'Patient history retrieved successfully',
-    //         'statusCode' => 200
-    //     ]);
-    // }
 
 
     /**
