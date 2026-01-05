@@ -1,10 +1,10 @@
 <?php
 
-use App\Http\Controllers\API\Accountants\CategoryController;
-use App\Http\Controllers\API\Accountants\DocumentTypeController;
-use App\Http\Controllers\API\Accountants\DocumentTypeFormController;
-use App\Http\Controllers\API\Accountants\SouceController;
-use App\Http\Controllers\API\Accountants\SourceTypeController;
+//use App\Http\Controllers\API\Accountants\CategoryController;
+//use App\Http\Controllers\API\Accountants\DocumentTypeController;
+//use App\Http\Controllers\API\Accountants\DocumentTypeFormController;
+//use App\Http\Controllers\API\Accountants\SouceController;
+//use App\Http\Controllers\API\Accountants\SourceTypeController;
 use App\Http\Controllers\API\Bills\BillController;
 use App\Http\Controllers\API\Bills\MonthlyBillController;
 use App\Http\Controllers\API\Hospitals\HospitalController;
@@ -139,21 +139,21 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('payments', PaymentController::class);
 
     // SOURCE
-    Route::resource('sources', SouceController::class);
-    Route::patch('sources/unBlock/{sourceId}', [SouceController::class, 'unBlockSource']);
+  //  Route::resource('sources', SouceController::class);
+   // Route::patch('sources/unBlock/{sourceId}', [SouceController::class, 'unBlockSource']);
 
     // SOURCE TYPE
-    Route::resource('sourceTypes', SourceTypeController::class);
-    Route::get('sourceTypes/source/{sourceName}', [SourceTypeController::class, 'getAllSourceTypesBySourceName']);
-    Route::patch('sourceTypes/unBlock/{sourceId}', [SourceTypeController::class, 'unBlockSourceType']);
+  //  Route::resource('sourceTypes', SourceTypeController::class);
+  //  Route::get('sourceTypes/source/{sourceName}', [SourceTypeController::class, 'getAllSourceTypesBySourceName']);
+  //  Route::patch('sourceTypes/unBlock/{sourceId}', [SourceTypeController::class, 'unBlockSourceType']);
 
     // CATEGORY
-    Route::resource('categories', CategoryController::class);
-    Route::patch('categories/unBlock/{categoryId}', [CategoryController::class, 'unBlockCategory']);
+  //  Route::resource('categories', CategoryController::class);
+  //  Route::patch('categories/unBlock/{categoryId}', [CategoryController::class, 'unBlockCategory']);
 
     // DOCUMENT TYPE
-    Route::resource('documentTypes', DocumentTypeController::class);
-    Route::patch('documentTypes/unBlock/{documentTypeId}', [DocumentTypeController::class, 'unBlockDocumentType']);
+  //  Route::resource('documentTypes', DocumentTypeController::class);
+//    Route::patch('documentTypes/unBlock/{documentTypeId}', [DocumentTypeController::class, 'unBlockDocumentType']);
 
     // Patient Lis
     Route::resource('patient-lists', MedicalBoadController::class);
