@@ -74,7 +74,7 @@ class Patient extends Model
 
     public function followups()
     {
-        return $this->hasMany(Followup::class, 'patient_id', 'patient_id');
+        return $this->hasMany(FollowUp::class, 'patient_id', 'patient_id');
     }
 
     public function getActivitylogOptions(): LogOptions

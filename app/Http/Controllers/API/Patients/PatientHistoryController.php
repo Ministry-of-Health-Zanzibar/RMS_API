@@ -173,105 +173,250 @@ class PatientHistoryController extends Controller
      *     @OA\Response(response=403, description="Forbidden")
      * )
      */
-    public function store(Request $request)
-    {
-        $user = auth()->user();
-        if (!$user->can('Create Patient History')) {
-            return response()->json([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
+    // public function store(Request $request)
+    // {
+    //     $user = auth()->user();
+    //     if (!$user->can('Create Patient History')) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
 
-        $validator = Validator::make($request->all(), [
-            'patient_id' => 'required|exists:patients,patient_id',
-            'reason_id' => 'required|exists:reasons,reason_id',
-            'referring_doctor' => 'nullable|string',
-            'file_number' => 'nullable|string',
-            'referring_date' => 'nullable|string',
-            'history_of_presenting_illness' => 'nullable|string',
-            'physical_findings' => 'nullable|string',
-            'investigations' => 'nullable|string',
-            'management_done' => 'nullable|string',
-            'diagnosis_ids' => 'nullable|array',
-            'diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
-            'history_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+    //     $validator = Validator::make($request->all(), [
+    //         'patient_id' => 'required|exists:patients,patient_id',
+    //         'reason_id' => 'required|exists:reasons,reason_id',
+    //         'referring_doctor' => 'nullable|string',
+    //         'file_number' => 'nullable|string',
+    //         'referring_date' => 'nullable|string',
+    //         'history_of_presenting_illness' => 'nullable|string',
+    //         'physical_findings' => 'nullable|string',
+    //         'investigations' => 'nullable|string',
+    //         'management_done' => 'nullable|string',
+    //         'diagnosis_ids' => 'nullable|array',
+    //         'diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
+    //         'history_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'errors' => $validator->errors(),
+    //             'statusCode' => 422
+    //         ], 422);
+    //     }
+
+    //     try {
+    //         // Extract only allowed data
+    //         $data = $request->only([
+    //             'patient_id',
+    //             'reason_id',
+    //             'referring_doctor',
+    //             'file_number',
+    //             'referring_date',
+    //             'history_of_presenting_illness',
+    //             'physical_findings',
+    //             'investigations',
+    //             'management_done',
+    //         ]);
+
+    //         $data['created_by'] = auth()->id();
+
+    //         // Normalize referring_date
+    //         if (empty($data['referring_date']) || strtolower($data['referring_date']) === 'default') {
+    //             $data['referring_date'] = null;
+    //         } else {
+    //             try {
+    //                 $data['referring_date'] = \Carbon\Carbon::parse($data['referring_date'])->format('Y-m-d');
+    //             } catch (\Exception $e) {
+    //                 $data['referring_date'] = null;
+    //             }
+    //         }
+
+    //         // Handle optional file upload
+    //         if ($request->hasFile('history_file')) {
+    //             $file = $request->file('history_file');
+    //             $fileName = 'history_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
+    //             $file->move(public_path('uploads/historyFiles/'), $fileName);
+    //             $data['history_file'] = 'uploads/historyFiles/' . $fileName;
+    //         }
+
+    //         // Create patient history
+    //         $history = PatientHistory::create($data);
+
+    //         // Attach diagnoses if provided
+    //         if ($request->filled('diagnosis_ids')) {
+    //             $diagnosisIds = collect($request->diagnosis_ids)->mapWithKeys(function ($id) {
+    //                 return [$id => ['added_by' => 'doctor']];
+    //             })->toArray();
+
+    //             // Attach new diagnoses without detaching existing ones
+    //             $history->diagnoses()->syncWithoutDetaching($diagnosisIds);
+    //         }
+
+
+    //         return response()->json([
+    //             'status' => true,
+    //             'data' => $history->load('patient', 'diagnoses', 'reason'),
+    //             'message' => 'Patient history created successfully,',
+    //             'statusCode' => 201
+    //         ], 201);
+
+    //     } catch (\Exception $e) {
+    //         Log::error('Patient history creation failed: ' . $e->getMessage());
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Creation failed',
+    //             'error' => $e->getMessage(),
+    //             'statusCode' => 500
+    //         ], 500);
+    //     }
+    // }
+    public function store(Request $request)
+{
+    $user = auth()->user();
+    if (!$user->can('Create Patient History')) {
+        return response()->json([
+            'message' => 'Forbidden',
+            'statusCode' => 403
+        ], 403);
+    }
+
+    $validator = Validator::make($request->all(), [
+        'patient_id' => 'required|exists:patients,patient_id',
+        'reason_id' => 'required|exists:reasons,reason_id',
+        'referring_doctor' => 'nullable|string',
+        'file_number' => 'nullable|string',
+        'referring_date' => 'nullable|string',
+        'history_of_presenting_illness' => 'nullable|string',
+        'physical_findings' => 'nullable|string',
+        'investigations' => 'nullable|string',
+        'management_done' => 'nullable|string',
+        'diagnosis_ids' => 'nullable|array',
+        'diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
+        'history_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 'error',
+            'errors' => $validator->errors(),
+            'statusCode' => 422
+        ], 422);
+    }
+
+    try {
+        // Extract only allowed data
+        $data = $request->only([
+            'patient_id',
+            'reason_id',
+            'referring_doctor',
+            'file_number',
+            'referring_date',
+            'history_of_presenting_illness',
+            'physical_findings',
+            'investigations',
+            'management_done',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'errors' => $validator->errors(),
-                'statusCode' => 422
-            ], 422);
-        }
+        $data['created_by'] = auth()->id();
 
-        try {
-            // Extract only allowed data
-            $data = $request->only([
-                'patient_id',
-                'reason_id',
-                'referring_doctor',
-                'file_number',
-                'referring_date',
-                'history_of_presenting_illness',
-                'physical_findings',
-                'investigations',
-                'management_done',
-            ]);
+        /*
+        |--------------------------------------------------------------------------
+        | BLOCK CREATION BASED ON REFERRAL OR LAST HISTORY STATUS
+        |--------------------------------------------------------------------------
+        */
 
-            $data['created_by'] = auth()->id();
+        // 1️⃣ Check latest referral
+        $latestReferral = \App\Models\Referral::where('patient_id', $data['patient_id'])
+            ->latest('created_at')
+            ->first();
 
-            // Normalize referring_date
-            if (empty($data['referring_date']) || strtolower($data['referring_date']) === 'default') {
-                $data['referring_date'] = null;
-            } else {
-                try {
-                    $data['referring_date'] = \Carbon\Carbon::parse($data['referring_date'])->format('Y-m-d');
-                } catch (\Exception $e) {
-                    $data['referring_date'] = null;
-                }
-            }
+        $blockedReferralStatuses = [
+            'Pending',
+            'Confirmed',
+            'Death',
+            'Cancelled',
+            'Transferred',
+            'Requested',
+        ];
 
-            // Handle optional file upload
-            if ($request->hasFile('history_file')) {
-                $file = $request->file('history_file');
-                $fileName = 'history_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
-                $file->move(public_path('uploads/historyFiles/'), $fileName);
-                $data['history_file'] = 'uploads/historyFiles/' . $fileName;
-            }
-
-            // Create patient history
-            $history = PatientHistory::create($data);
-
-            // Attach diagnoses if provided
-            if ($request->filled('diagnosis_ids')) {
-                $diagnosisIds = collect($request->diagnosis_ids)->mapWithKeys(function ($id) {
-                    return [$id => ['added_by' => 'doctor']];
-                })->toArray();
-
-                // Attach new diagnoses without detaching existing ones
-                $history->diagnoses()->syncWithoutDetaching($diagnosisIds);
-            }
-
-
-            return response()->json([
-                'status' => true,
-                'data' => $history->load('patient', 'diagnoses', 'reason'),
-                'message' => 'Patient history created successfully,',
-                'statusCode' => 201
-            ], 201);
-
-        } catch (\Exception $e) {
-            Log::error('Patient history creation failed: ' . $e->getMessage());
+        if ($latestReferral && in_array($latestReferral->status, $blockedReferralStatuses)) {
             return response()->json([
                 'status' => false,
-                'message' => 'Creation failed',
-                'error' => $e->getMessage(),
-                'statusCode' => 500
-            ], 500);
+                'message' => 'Cannot create patient history. Last referral status is "'
+                            . $latestReferral->status . '".',
+                'statusCode' => 409
+            ], 409);
         }
+
+        // 2️⃣ If NO referral found → check last patient history status
+        if (!$latestReferral) {
+            $lastHistory = \App\Models\PatientHistory::where('patient_id', $data['patient_id'])
+                ->latest('created_at')
+                ->first();
+
+            $blockedHistoryStatuses = ['confirmed', 'rejected'];
+
+            if ($lastHistory && in_array(strtolower($lastHistory->status), $blockedHistoryStatuses)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Cannot create patient history. Last patient history status is "'
+                                . $lastHistory->status . '".',
+                    'statusCode' => 409
+                ], 409);
+            }
+        }
+
+        // Normalize referring_date
+        if (empty($data['referring_date']) || strtolower($data['referring_date']) === 'default') {
+            $data['referring_date'] = null;
+        } else {
+            try {
+                $data['referring_date'] = \Carbon\Carbon::parse($data['referring_date'])->format('Y-m-d');
+            } catch (\Exception $e) {
+                $data['referring_date'] = null;
+            }
+        }
+
+        // Handle optional file upload
+        if ($request->hasFile('history_file')) {
+            $file = $request->file('history_file');
+            $fileName = 'history_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads/historyFiles/'), $fileName);
+            $data['history_file'] = 'uploads/historyFiles/' . $fileName;
+        }
+
+        // Create patient history
+        $history = PatientHistory::create($data);
+
+        // Attach diagnoses if provided
+        if ($request->filled('diagnosis_ids')) {
+            $diagnosisIds = collect($request->diagnosis_ids)->mapWithKeys(function ($id) {
+                return [$id => ['added_by' => 'doctor']];
+            })->toArray();
+
+            $history->diagnoses()->syncWithoutDetaching($diagnosisIds);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $history->load('patient', 'diagnoses', 'reason'),
+            'message' => 'Patient history created successfully,',
+            'statusCode' => 201
+        ], 201);
+
+    } catch (\Exception $e) {
+        Log::error('Patient history creation failed: ' . $e->getMessage());
+        return response()->json([
+            'status' => false,
+            'message' => 'Creation failed',
+            'error' => $e->getMessage(),
+            'statusCode' => 500
+        ], 500);
     }
+}
+
 
     /**
      * @OA\Get(
