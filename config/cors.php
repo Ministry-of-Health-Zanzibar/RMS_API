@@ -1,14 +1,23 @@
 <?php
 
 return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cross-Origin Resource Sharing (CORS) Configuration
+    |--------------------------------------------------------------------------
+    */
+
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
 
-    // ⚠️ MUST be explicit origin, not *
+    // Explicitly list all origins you need: local + server
     'allowed_origins' => [
-        'http://102.223.7.168',
-        'http://102.223.7.168:4200' // if Angular dev server
+        'http://localhost:4200',        // Angular dev server local
+        'http://127.0.0.1:4200',        // optional for some dev setups
+        'http://102.223.7.168',         // server backend
+        'http://102.223.7.168:4200',    // Angular dev server on server IP
     ],
 
     'allowed_origins_patterns' => [],
@@ -16,12 +25,12 @@ return [
     'allowed_headers' => ['*'],
 
     'exposed_headers' => [
-        'Authorization'
+        'Authorization', // expose JWT or token headers
     ],
 
     'max_age' => 0,
 
-    // ✅ REQUIRED for login/auth
+    // Required for login/auth if sending cookies
     'supports_credentials' => true,
 ];
 

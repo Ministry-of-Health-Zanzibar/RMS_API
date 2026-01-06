@@ -16,6 +16,9 @@ use Spatie\Permission\Traits\HasRoles;
 use Spatie\Permission\Models\Permission;
 use App\Http\Controllers\API\Setup\GeneralController;
 
+use App\Mail\UserCredentialsMail;
+use Illuminate\Support\Facades\Mail;
+
 class UsersCotroller extends Controller
 {
     public function __construct()
@@ -335,11 +338,17 @@ class UsersCotroller extends Controller
     {
         $user_id = auth()->user()->id;
         $auto_id = random_int(10000, 99999) . time();
+
         if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Create User')) {
-            $check_value = DB::select("SELECT u.email FROM users u WHERE u.email = '$request->email'");
+
+            $check_value = DB::select("SELECT u.email FROM users u WHERE u.email = ?", [$request->email]);
             if (sizeof($check_value) == 0) {
                 try {
-                    $users = User::create([
+                    // 1️⃣ Generate a random password for the user
+                    $password_plain = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 8);
+
+                    // 2️⃣ Create the user
+                    $user = User::create([
                         'id' => $auto_id,
                         'first_name' => $request->first_name,
                         'middle_name' => $request->middle_name,
@@ -349,30 +358,36 @@ class UsersCotroller extends Controller
                         'gender' => $request->gender,
                         'date_of_birth' => date('Y-m-d', strtotime($request->date_of_birth)),
                         'email' => $request->email,
-                        'password' => Hash::make($auto_id),
+                        'password' => Hash::make($password_plain), // store hashed password
                         'login_status' => '0',
                         'created_by' => Auth::id(),
                     ]);
 
-                    $users->assignRole($request->role_id);
-                    $roleID = $request->role_id;
+                    // 3️⃣ Assign role
+                    $user->assignRole($request->role_id);
 
+                    // 4️⃣ Give permissions
                     $permissions = DB::table('role_has_permissions')
                         ->join('permissions', 'permissions.id', '=', 'role_has_permissions.permission_id')
                         ->select('permissions.id', 'permissions.name')
-                        ->where('role_has_permissions.role_id', '=', $request->roleID)
+                        ->where('role_has_permissions.role_id', '=', $request->role_id)
                         ->get();
 
-                    $users->givePermissionTo($permissions);
+                    $user->givePermissionTo($permissions);
 
+                    // 5️⃣ Send credentials email
+                    Mail::to($user->email)->send(new UserCredentialsMail($user, $password_plain));
+
+                    // 6️⃣ Return success response
                     $successResponse = [
-                        'message' => 'User Account Created Successfully',
-                        'password' => $auto_id,
+                        'message' => 'User Account Created Successfully and credentials sent via email',
+                        'password' => $password_plain,
                         'email' => $request->email,
                         'statusCode' => 201
                     ];
 
                     return response()->json($successResponse);
+
                 } catch (Exception $e) {
 
                     $errorResponse = [
@@ -382,16 +397,17 @@ class UsersCotroller extends Controller
                     ];
                     return response()->json($errorResponse);
                 }
+
             } else {
                 $errorResponse = [
-                    'message' => 'Email Already Exist',
+                    'message' => 'Email Already Exists',
                     'statusCode' => 400
                 ];
                 return response()->json($errorResponse);
             }
+
         } else {
-            return response()
-                ->json(['message' => 'Unauthorized', 'statusCode' => 401]);
+            return response()->json(['message' => 'Unauthorized', 'statusCode' => 401]);
         }
     }
 

@@ -1,10 +1,5 @@
 <?php
 
-//use App\Http\Controllers\API\Accountants\CategoryController;
-//use App\Http\Controllers\API\Accountants\DocumentTypeController;
-//use App\Http\Controllers\API\Accountants\DocumentTypeFormController;
-//use App\Http\Controllers\API\Accountants\SouceController;
-//use App\Http\Controllers\API\Accountants\SourceTypeController;
 use App\Http\Controllers\API\Bills\BillController;
 use App\Http\Controllers\API\Bills\MonthlyBillController;
 use App\Http\Controllers\API\Hospitals\HospitalController;
@@ -104,7 +99,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::patch('referrals/unBlock/{referralId}', [ReferralController::class, 'unBlockReferral']);
     Route::get('referrals-withbills/{referral_id}', [ReferralController::class, 'getReferralsWithBills']);
     Route::get('referrals-by-hospital/{hospital_id}/{bill_file_id}', [ReferralController::class, 'getReferralsByHospitalId']);
-    // Route::get('bill-payment/{bill_id}', [ReferralController::class, 'getReferralsWithBillPayment']);
     Route::get('hospital-letters/followup-by-referral-id/{referral_id}', [ReferralController::class, 'getHospitalLettersByReferralId']);
 
     // RMS REASON APIs
@@ -138,26 +132,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // PAYMENT  API
     Route::resource('payments', PaymentController::class);
 
-    // SOURCE
-  //  Route::resource('sources', SouceController::class);
-   // Route::patch('sources/unBlock/{sourceId}', [SouceController::class, 'unBlockSource']);
-
-    // SOURCE TYPE
-  //  Route::resource('sourceTypes', SourceTypeController::class);
-  //  Route::get('sourceTypes/source/{sourceName}', [SourceTypeController::class, 'getAllSourceTypesBySourceName']);
-  //  Route::patch('sourceTypes/unBlock/{sourceId}', [SourceTypeController::class, 'unBlockSourceType']);
-
-    // CATEGORY
-  //  Route::resource('categories', CategoryController::class);
-  //  Route::patch('categories/unBlock/{categoryId}', [CategoryController::class, 'unBlockCategory']);
-
-    // DOCUMENT TYPE
-  //  Route::resource('documentTypes', DocumentTypeController::class);
-//    Route::patch('documentTypes/unBlock/{documentTypeId}', [DocumentTypeController::class, 'unBlockDocumentType']);
-
     // Patient Lis
     Route::resource('patient-lists', MedicalBoadController::class);
-    // Route::post('patient-lists/with-trash/{id}', [PatientListController::class, 'patientListWithTrash']);
     Route::post('patient-lists/update/{id}', [MedicalBoadController::class, 'updatePatientList']);
     Route::patch('patient-lists/unblock/{id}', [PatientListController::class, 'unBlockParentList']);
     Route::get('patient-lists/body-form/{id}', [PatientListController::class, 'getAllPatientsByPatientListId']);
