@@ -229,8 +229,10 @@ class HospitalController extends Controller
      *     )
      * )
      */
-    public function show(int $id)
+    public function show($id)
     {
+        $id = (int) $id;
+
         $user = auth()->user();
         if (!$user->can('View Hospital')) {
             return response([
@@ -245,14 +247,13 @@ class HospitalController extends Controller
             return response([
                 'message' => 'Hospital not found',
                 'statusCode' => 404,
-            ]);
-        } else {
-            return response([
-                'data' => $hospital,
-                'statusCode' => 200,
-            ]);
+            ], 404);
         }
 
+        return response([
+            'data' => $hospital,
+            'statusCode' => 200,
+        ]);
     }
 
     /**
