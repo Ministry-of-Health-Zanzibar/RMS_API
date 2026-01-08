@@ -19,7 +19,7 @@ class UserRegisteredMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Welcome to MOHZ External Referral System')
+        return $this->subject('Welcome to External Referral Information System')
                     ->view('emails.user_registered');
     }
 }

@@ -18,8 +18,8 @@ return [
     ],
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'znzmoh@gmail.com'),
-        'name' => env('MAIL_FROM_NAME', 'MOHZ External Referral System'),
+        'address' => env('MAIL_FROM_ADDRESS', 'no-reply@eris.mohz.go.tz'),
+        'name' => env('MAIL_FROM_NAME', 'External Referral Information System'),
     ],
 
 ];
