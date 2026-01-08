@@ -27,7 +27,7 @@ class UserCredentialsMail extends Mailable
      */
     public function build()
     {
-        return $this->from('info@mohz.go.tz', 'ERIS')  // display to user
+        return $this->from('znzmoh@gmail.com', 'ERIS')  // display to user
                     ->subject('Your ERIS Login Credentials')
                     ->view('emails.user_credentials'); // we'll create this view next
     }
