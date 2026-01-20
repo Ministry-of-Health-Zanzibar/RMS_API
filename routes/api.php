@@ -38,12 +38,17 @@ use App\Http\Controllers\API\Setup\DiagnosisController;
 
 
 Route::post('login', [App\Http\Controllers\API\Auth\AuthController::class, 'login']);
+// Route::post('forgot-password', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'forgotPassword']);
+// Route::post('reset-forgot-password', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'forgotPasswordReset']);
+
+Route::post('forgot-password', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'forgotPassword'])->middleware('throttle:5,1');
+Route::post('reset-forgot-password', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'forgotPasswordReset'])->middleware('throttle:5,1');
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('checkPassword', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'index'])->name('checkPassword');
     Route::post('changePassword', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'change_password'])->name('changePassword');
-    Route::post('resetPassword', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'reset_password'])->name('resetPassword');
+    Route::post('resetPassword', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'resetPassword'])->name('resetPassword');
     Route::get('logsFunction', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'logs_function'])->name('logsFunction');
 
     Route::resource('uploadTypes', App\Http\Controllers\API\Setup\UploadTypesController::class);
