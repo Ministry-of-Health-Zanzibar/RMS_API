@@ -23,6 +23,17 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Reasons\ReasonController;
 use App\Http\Controllers\API\Payments\PaymentController;
 use App\Http\Controllers\API\Setup\DiagnosisController;
+use Illuminate\Support\Facades\Response;
+
+Route::get('/uploads/{path}', function ($path) {
+    $file = public_path('uploads/' . $path);
+
+    if (!file_exists($file)) {
+        abort(404);
+    }
+
+    return response()->file($file);
+})->where('path', '.*');   // ✅ NO auth middleware here
 
 
 /*
