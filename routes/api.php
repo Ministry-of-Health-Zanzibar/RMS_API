@@ -23,18 +23,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Reasons\ReasonController;
 use App\Http\Controllers\API\Payments\PaymentController;
 use App\Http\Controllers\API\Setup\DiagnosisController;
-use Illuminate\Support\Facades\Response;
-
-Route::get('/uploads/{path}', function ($path) {
-    $file = public_path('uploads/' . $path);
-
-    if (!file_exists($file)) {
-        abort(404);
-    }
-
-    return response()->file($file);
-})->where('path', '.*');   // ✅ NO auth middleware here
-
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,7 +35,22 @@ Route::get('/uploads/{path}', function ($path) {
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+Route::get('/uploads/{path}', function ($path) {
+    $file = public_path('uploads/' . $path);
 
+    if (!file_exists($file)) {
+        abort(404);
+    }
+
+    // Optional: allow only PDFs or images
+    $allowed = ['pdf','jpg','png'];
+    if (!in_array(pathinfo($file, PATHINFO_EXTENSION), $allowed)) {
+        abort(403);
+    }
+
+    return response()->file($file);
+})->where('path', '.*')
+  ->middleware([]); // NO middleware
 
 Route::post('login', [App\Http\Controllers\API\Auth\AuthController::class, 'login']);
 // Route::post('forgot-password', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'forgotPassword']);
