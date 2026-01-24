@@ -4282,7 +4282,7 @@
                                     "reason_id": {
                                         "type": "integer"
                                     },
-                                    "referring_doctor": {
+                                    "case_type": {
                                         "type": "string"
                                     },
                                     "file_number": {
