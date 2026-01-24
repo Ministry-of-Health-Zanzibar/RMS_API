@@ -86,7 +86,6 @@ class PatientHistoryController extends Controller
     }
 
 
-
     public function getPatientToBeAssignedToMedicalBoard(Request $request)
     {
         $user = auth()->user();
@@ -156,7 +155,7 @@ class PatientHistoryController extends Controller
      *             required={"patient_id"},
      *             @OA\Property(property="patient_id", type="integer"),
      *             @OA\Property(property="reason_id", type="integer"),
-     *             @OA\Property(property="referring_doctor", type="string"),
+     *             @OA\Property(property="case_type", type="string"),
      *             @OA\Property(property="file_number", type="string"),
      *             @OA\Property(property="referring_date", type="string", format="date"),
      *             @OA\Property(property="history_of_presenting_illness", type="string"),
@@ -186,7 +185,7 @@ class PatientHistoryController extends Controller
         $validator = Validator::make($request->all(), [
             'patient_id' => 'required|exists:patients,patient_id',
             'reason_id' => 'required|exists:reasons,reason_id',
-            'referring_doctor' => 'nullable|string',
+            'case_type' => 'nullable|in:Routine,Emergency',
             'file_number' => 'nullable|string',
             'referring_date' => 'nullable|string',
             'history_of_presenting_illness' => 'nullable|string',
@@ -211,8 +210,8 @@ class PatientHistoryController extends Controller
             $data = $request->only([
                 'patient_id',
                 'reason_id',
-                'referring_doctor',
                 'file_number',
+                'case_type',
                 'referring_date',
                 'history_of_presenting_illness',
                 'physical_findings',
@@ -221,6 +220,9 @@ class PatientHistoryController extends Controller
             ]);
 
             $data['created_by'] = auth()->id();
+            $data['referring_doctor'] = trim(
+                ($user->first_name ?? '') . ' ' . ($user->middle_name ?? ''). ' ' . ($user->last_name ?? '')
+            );
 
             /*
             |--------------------------------------------------------------------------
@@ -245,8 +247,7 @@ class PatientHistoryController extends Controller
             if ($latestReferral && in_array($latestReferral->status, $blockedReferralStatuses)) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Cannot create patient history. Last referral status is "'
-                                . $latestReferral->status . '".',
+                    'message' => 'Cannot create patient history. Last referral status is "'. $latestReferral->status . '".',
                     'statusCode' => 409
                 ], 409);
             }
@@ -428,7 +429,7 @@ class PatientHistoryController extends Controller
         $validator = Validator::make($request->all(), [
             'patient_id' => 'nullable|exists:patients,patient_id', // optional if changing patient
             'reason_id' => 'nullable|exists:reasons,reason_id',
-            'referring_doctor' => 'nullable|string',
+            // 'referring_doctor' => 'nullable|string',
             'file_number' => 'nullable|string',
             'referring_date' => 'nullable|string',
             'history_of_presenting_illness' => 'nullable|string',
@@ -452,6 +453,7 @@ class PatientHistoryController extends Controller
             $data = $request->only([
                 'patient_id',
                 'reason_id',
+                'case_type',
                 'referring_doctor',
                 'file_number',
                 'referring_date',

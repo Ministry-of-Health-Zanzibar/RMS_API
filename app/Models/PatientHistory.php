@@ -20,6 +20,7 @@ class PatientHistory extends Model
     protected $fillable = [
         'patient_id',
         'reason_id',
+        'case_type',
         'referring_doctor',
         'file_number',
         'referring_date',
