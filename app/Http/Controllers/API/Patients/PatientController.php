@@ -66,6 +66,63 @@ class PatientController extends Controller
      *     )
      * )
      */
+    // public function index()
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->can('View Patient')) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     if ($user->hasAnyRole(['ROLE ADMIN'])) {
+
+    //         $patients = Patient::with([
+    //             'patientList',
+    //             'files',
+    //             'insurances',
+    //             'geographicalLocation',
+    //             'referrals.reason',
+    //             'referrals.hospital',
+    //             'referrals.creator',
+    //         ])
+    //         ->withTrashed()
+    //         ->get();
+
+    //     } elseif ($user->hasAnyRole(['ROLE HOSPITAL USER'])) {
+
+    //         $patients = Patient::with([
+    //             'patientList',
+    //             'files',
+    //             'geographicalLocation',
+    //             'referrals.reason',
+    //             'referrals.hospital',
+    //             'referrals.creator',
+    //         ])
+    //         ->where('created_by', $user->id)
+    //         ->get();
+
+    //     } else {
+
+    //         $patients = Patient::with([
+    //             'patientList',
+    //             'files',
+    //             'geographicalLocation',
+    //             'referrals.reason',
+    //             'referrals.hospital',
+    //             'referrals.creator',
+    //         ])
+    //         ->get();
+    //     }
+
+    //     return response([
+    //         'data' => $patients,
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
+
     public function index()
     {
         $user = auth()->user();
@@ -77,44 +134,42 @@ class PatientController extends Controller
             ], 403);
         }
 
+        // Common relations
+        $relations = [
+            'patientList',
+            'files',
+            'insurances',
+            'geographicalLocation',
+            'referrals.reason',
+            'referrals.hospital',
+            'referrals.creator',
+
+            // ✅ ADD CREATOR + HOSPITALS (same as show)
+            'creator' => function ($query) {
+                $query->with(['hospitals' => function ($q) {
+                    $q->select(
+                        'hospitals.hospital_id',
+                        'hospitals.hospital_name'
+                    );
+                }]);
+            },
+        ];
+
         if ($user->hasAnyRole(['ROLE ADMIN'])) {
 
-            $patients = Patient::with([
-                'patientList',
-                'files',
-                'insurances',
-                'geographicalLocation',
-                'referrals.reason',
-                'referrals.hospital',
-                'referrals.creator',
-            ])
-            ->withTrashed()
-            ->get();
+            $patients = Patient::with($relations)
+                ->withTrashed()
+                ->get();
 
         } elseif ($user->hasAnyRole(['ROLE HOSPITAL USER'])) {
 
-            $patients = Patient::with([
-                'patientList',
-                'files',
-                'geographicalLocation',
-                'referrals.reason',
-                'referrals.hospital',
-                'referrals.creator',
-            ])
-            ->where('created_by', $user->id)
-            ->get();
+            $patients = Patient::with($relations)
+                ->where('created_by', $user->id)
+                ->get();
 
         } else {
 
-            $patients = Patient::with([
-                'patientList',
-                'files',
-                'geographicalLocation',
-                'referrals.reason',
-                'referrals.hospital',
-                'referrals.creator',
-            ])
-            ->get();
+            $patients = Patient::with($relations)->get();
         }
 
         return response([
@@ -122,6 +177,7 @@ class PatientController extends Controller
             'statusCode' => 200,
         ], 200);
     }
+
 
     public function patientsHistories()
     {
@@ -418,6 +474,8 @@ class PatientController extends Controller
             'location_id'       => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
             'job'               => ['nullable', 'string'],
             'position'          => ['nullable', 'string'],
+            'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
+
 
             // ---------- PATIENT HISTORY ----------
             'referring_doctor'              => ['nullable', 'string'],
@@ -433,7 +491,6 @@ class PatientController extends Controller
 
             // ---------- OPTIONAL ----------
             'patient_list_id'   => ['nullable', 'numeric', 'exists:patient_lists,patient_list_id'],
-            'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
 
             // ---------- INSURANCE ----------
             'has_insurance'           => ['required', 'boolean'],
