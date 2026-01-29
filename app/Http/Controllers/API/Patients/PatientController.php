@@ -391,6 +391,158 @@ class PatientController extends Controller
         ], 201);
     }
 
+    public function storePatientAndHistory(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->can('Create Patient')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // Normalize boolean from Angular
+        $request->merge([
+            'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+        ]);
+
+        $data = Validator::make($request->all(), [
+            // ---------- PATIENT ----------
+            'name'              => ['required', 'string'],
+            'matibabu_card'     => ['nullable', 'string'],
+            'zan_id'            => ['nullable', 'string'],
+            'date_of_birth'     => ['required', 'string'],
+            'gender'            => ['required', 'string'],
+            'phone'             => ['nullable', 'string'],
+            'location_id'       => ['nullable', 'numeric', 'exists:geographical_locations,location_id'],
+            'job'               => ['nullable', 'string'],
+            'position'          => ['nullable', 'string'],
+
+            // ---------- PATIENT HISTORY ----------
+            'referring_doctor'              => ['nullable', 'string'],
+            'file_number'                   => ['nullable', 'string'],
+            'referring_date'                => ['nullable', 'string'],
+            'reason_id'                     => ['required', 'numeric', 'exists:reasons,reason_id'],
+            'case_type'                     => ['nullable', 'in:Emergency,Routine'], // ✅ ADDED
+            'history_of_presenting_illness' => ['nullable', 'string'],
+            'physical_findings'             => ['nullable', 'string'],
+            'investigations'                => ['nullable', 'string'],
+            'management_done'               => ['nullable', 'string'],
+            'board_comments'                => ['nullable', 'string'],
+
+            // ---------- OPTIONAL ----------
+            'patient_list_id'   => ['nullable', 'numeric', 'exists:patient_lists,patient_list_id'],
+            'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
+
+            // ---------- INSURANCE ----------
+            'has_insurance'           => ['required', 'boolean'],
+            'insurance_provider_name' => ['nullable', 'string'],
+            'card_number'             => ['nullable', 'string'],
+            'valid_until'             => ['nullable', 'string'],
+        ]);
+
+        if ($data->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $data->errors(),
+                'statusCode' => 422,
+            ], 422);
+        }
+
+        // Default case_type if not sent
+        $request->merge([
+            'case_type' => $request->case_type ?? 'Routine',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+
+            // =======================
+            // CREATE PATIENT
+            // =======================
+            $patient = \App\Models\Patient::create([
+                'name'          => $request->name,
+                'matibabu_card' => $request->matibabu_card,
+                'zan_id'        => $request->zan_id,
+                'date_of_birth' => $request->date_of_birth,
+                'gender'        => $request->gender,
+                'phone'         => $request->phone,
+                'location_id'   => $request->location_id,
+                'job'           => $request->job,
+                'position'      => $request->position,
+                'created_by'    => Auth::id(),
+            ]);
+
+            // =======================
+            // CREATE PATIENT HISTORY
+            // =======================
+            $patientHistory = \App\Models\PatientHistory::create([
+                'patient_id'                    => $patient->patient_id,
+                'referring_doctor'              => $request->referring_doctor,
+                'file_number'                   => $request->file_number,
+                'referring_date'                => $request->referring_date,
+                'reason_id'                     => $request->reason_id,
+                'case_type'                     => $request->case_type, // ✅ ADDED
+                'history_of_presenting_illness' => $request->history_of_presenting_illness,
+                'physical_findings'             => $request->physical_findings,
+                'investigations'                => $request->investigations,
+                'management_done'               => $request->management_done,
+                'board_comments'                => $request->board_comments,
+                'status'                        => 'pending',
+            ]);
+
+            // =======================
+            // OPTIONAL INSURANCE
+            // =======================
+            if ($request->boolean('has_insurance')) {
+                \App\Models\Insurance::firstOrCreate(
+                    ['patient_id' => $patient->patient_id],
+                    [
+                        'insurance_provider_name' => $request->insurance_provider_name,
+                        'card_number'             => $request->card_number,
+                        'valid_until'             => $request->valid_until,
+                    ]
+                );
+            }
+
+            // =======================
+            // FILE UPLOAD (HISTORY)
+            // =======================
+            if ($request->hasFile('patient_file')) {
+                foreach ((array) $request->file('patient_file') as $file) {
+                    $fileName = 'history_' . time() . '.' . $file->getClientOriginalExtension();
+                    $file->move(public_path('uploads/patientFiles'), $fileName);
+
+                    $patientHistory->update([
+                        'history_file' => 'uploads/patientFiles/' . $fileName
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response([
+                'data' => [
+                    'patient' => $patient,
+                    'history' => $patientHistory
+                ],
+                'message' => 'Patient and medical history registered successfully',
+                'statusCode' => 201,
+            ], 201);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response([
+                'message' => 'Failed to register patient',
+                'error' => $e->getMessage(),
+                'statusCode' => 500,
+            ], 500);
+        }
+    }
+
 
     /**
      * Display the specified resource.
