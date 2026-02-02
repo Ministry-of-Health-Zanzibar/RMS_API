@@ -1107,38 +1107,6 @@ class PatientController extends Controller
      *     )
      * )
      */
-    // public function getMedicalHistory($patient_id)
-    // {
-    //     $user = auth()->user();
-
-    //     // Optional: add permission check
-    //     if (!$user->can('View Patient')) {
-    //         return response()->json([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     $patient = \App\Models\Patient::with(['patientHistories.reason'])
-    //         ->where('patient_id', $patient_id)
-    //         ->first();
-
-    //     if (!$patient) {
-    //         return response()->json([
-    //             'message' => 'Patient not found',
-    //             'statusCode' => 404,
-    //         ], 404);
-    //     }
-
-    //     return response()->json([
-    //         'data' => [
-    //             'patient' => $patient,
-    //             'medical_histories' => $patient->histories,
-    //         ],
-    //         'statusCode' => 200,
-    //     ]);
-    // }
-
     public function getMedicalHistory($patient_id)
     {
         $user = auth()->user();
@@ -1150,9 +1118,6 @@ class PatientController extends Controller
             ], 403);
         }
 
-        // $patient = \App\Models\Patient::with([
-        //     'patientHistories.reason',
-        // ])->where('patient_id', $patient_id)->first();
         $patient = Patient::with([
             'patientHistories' => function ($q) {
                 $q->latest();

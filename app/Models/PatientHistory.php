@@ -56,7 +56,7 @@ class PatientHistory extends Model
             'stage' => 3,
             'label' => 'More Info Requested',
             'current_holder' => 'Hospital / Mkurugenzi',
-            'description' => 'Medical board requested additional information',
+            'description' => 'Medical board requested initial request a referral',
         ],
         'approved' => [
             'stage' => 4,
