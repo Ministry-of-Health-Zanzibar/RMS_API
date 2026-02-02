@@ -1107,11 +1107,42 @@ class PatientController extends Controller
      *     )
      * )
      */
+    // public function getMedicalHistory($patient_id)
+    // {
+    //     $user = auth()->user();
+
+    //     // Optional: add permission check
+    //     if (!$user->can('View Patient')) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $patient = \App\Models\Patient::with(['patientHistories.reason'])
+    //         ->where('patient_id', $patient_id)
+    //         ->first();
+
+    //     if (!$patient) {
+    //         return response()->json([
+    //             'message' => 'Patient not found',
+    //             'statusCode' => 404,
+    //         ], 404);
+    //     }
+
+    //     return response()->json([
+    //         'data' => [
+    //             'patient' => $patient,
+    //             'medical_histories' => $patient->histories,
+    //         ],
+    //         'statusCode' => 200,
+    //     ]);
+    // }
+
     public function getMedicalHistory($patient_id)
     {
         $user = auth()->user();
 
-        // Optional: add permission check
         if (!$user->can('View Patient')) {
             return response()->json([
                 'message' => 'Forbidden',
@@ -1119,9 +1150,16 @@ class PatientController extends Controller
             ], 403);
         }
 
-        $patient = \App\Models\Patient::with(['patientHistories.reason'])
-            ->where('patient_id', $patient_id)
-            ->first();
+        // $patient = \App\Models\Patient::with([
+        //     'patientHistories.reason',
+        // ])->where('patient_id', $patient_id)->first();
+        $patient = Patient::with([
+            'patientHistories' => function ($q) {
+                $q->latest();
+            },
+            'patientHistories.reason',
+        ])->where('patient_id', $patient_id)->first();
+
 
         if (!$patient) {
             return response()->json([
@@ -1133,9 +1171,10 @@ class PatientController extends Controller
         return response()->json([
             'data' => [
                 'patient' => $patient,
-                'medical_histories' => $patient->histories,
+                'medical_histories' => $patient->patientHistories,
             ],
             'statusCode' => 200,
         ]);
     }
+
 }

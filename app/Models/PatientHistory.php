@@ -13,6 +13,7 @@ class PatientHistory extends Model
     use HasFactory, SoftDeletes, LogsActivity;
 
     protected $table = 'patient_histories';
+    protected $appends = ['status_tracking','progress_percentage'];
     protected $primaryKey = 'patient_histories_id';
     public $incrementing = true;
     protected $keyType = 'integer';
@@ -37,6 +38,66 @@ class PatientHistory extends Model
         'mkurugenzi_tiba_id',
         'dg_id',
     ];
+
+    public const STATUS_MAP = [
+        'pending' => [
+            'stage' => 1,
+            'label' => 'Submitted by Hospital',
+            'current_holder' => 'Mkurugenzi wa Tiba',
+            'description' => 'Medical history submitted and awaiting review',
+        ],
+        'reviewed' => [
+            'stage' => 2,
+            'label' => 'Reviewed by Mkurugenzi',
+            'current_holder' => 'Medical Board',
+            'description' => 'Reviewed and forwarded to medical board',
+        ],
+        'requested' => [
+            'stage' => 3,
+            'label' => 'More Info Requested',
+            'current_holder' => 'Hospital / Mkurugenzi',
+            'description' => 'Medical board requested additional information',
+        ],
+        'approved' => [
+            'stage' => 4,
+            'label' => 'Approved by Mkurugenzi',
+            'current_holder' => 'Director General (DG)',
+            'description' => 'Approved and sent to DG for confirmation',
+        ],
+        'confirmed' => [
+            'stage' => 5,
+            'label' => 'Confirmed by DG',
+            'current_holder' => 'Completed',
+            'description' => 'Final approval completed',
+        ],
+        'rejected' => [
+            'stage' => 0,
+            'label' => 'Rejected by DG',
+            'current_holder' => 'Closed',
+            'description' => 'Medical history rejected',
+        ],
+    ];
+
+    public function getStatusTrackingAttribute()
+    {
+        return self::STATUS_MAP[$this->status] ?? null;
+    }
+
+    public function getProgressPercentageAttribute()
+    {
+        if (!isset(self::STATUS_MAP[$this->status])) {
+            return '0%';
+        }
+
+        $maxStage = 5;
+        $stage = self::STATUS_MAP[$this->status]['stage'];
+
+        return (int) round(($stage / $maxStage) * 100) . '%';
+    }
+
+
+
+
 
     /**
      * Belongs to Patient
