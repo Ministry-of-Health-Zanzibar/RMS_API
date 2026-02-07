@@ -1142,4 +1142,109 @@ class PatientController extends Controller
         ]);
     }
 
+    /**
+     * Get a list of Matibabu Cards for autocomplete suggestions.
+     * Only returns cards for patients with 'Closed/Cancelled' referrals
+     * and a 'rejected' latest history.
+     */
+    public function autocompleteMatibabuCards(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->can('View Patient')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $term = $request->query('term');
+
+        if (empty($term)) {
+            return response()->json(['data' => [], 'statusCode' => 200], 200);
+        }
+
+        $cards = Patient::where('matibabu_card', 'LIKE', "%{$term}%")
+            ->whereHas('referrals', function ($query) {
+                $query->whereIn('status', ['Closed', 'Cancelled']);
+            })
+            ->whereHas('latestHistory', function ($query) {
+                $query->where('status', 'rejected');
+            })
+            ->distinct()
+            ->limit(15)
+            ->pluck('matibabu_card');
+
+        return response()->json([
+            'data' => $cards,
+            'statusCode' => 200,
+        ], 200);
+    }
+
+    /**
+     * Search for an eligible patient by Matibabu Card.
+     * Criteria:
+     * 1. Status in referral table is 'Closed' or 'Cancelled'
+     * 2. Latest patient history status is 'rejected'
+     */
+    public function searchByMatibabu(Request $request)
+    {
+        $user = auth()->user();
+
+        // Check permission (Using 'View Patient' as a baseline)
+        if (!$user->can('View Patient')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'matibabu_card' => ['required', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors(),
+                'statusCode' => 422,
+            ], 422);
+        }
+
+        $card = $request->matibabu_card;
+
+        $patient = Patient::where('matibabu_card', $card)
+            // 1. Referral check: Must have at least one referral that is Closed or Cancelled
+            ->whereHas('referrals', function ($query) {
+                $query->whereIn('status', ['Closed', 'Cancelled']);
+            })
+            // 2. Latest History check: The very last medical history must be 'rejected'
+            ->whereHas('latestHistory', function ($query) {
+                $query->where('status', 'rejected');
+            })
+            // Include related data for the frontend
+            ->with([
+                'latestHistory',
+                'referrals' => function ($q) {
+                    $q->latest();
+                },
+                'geographicalLocation',
+                'creator'
+            ])
+            ->first();
+
+        if (!$patient) {
+            return response()->json([
+                'message' => 'No patient found matching the eligibility criteria (Rejected history and Closed/Cancelled referral).',
+                'statusCode' => 404,
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => $patient,
+            'message' => 'Eligible patient retrieved successfully.',
+            'statusCode' => 200,
+        ], 200);
+    }
+
 }
