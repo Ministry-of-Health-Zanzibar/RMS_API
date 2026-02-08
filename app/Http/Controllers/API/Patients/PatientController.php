@@ -1271,10 +1271,10 @@ class PatientController extends Controller
         // IF CARD DOES NOT EXIST: Return nothing (or 204) to allow form filling
         if (!$patientExists) {
             return response()->json([
-                'message' => 'New patient Matibabu Card detected',
+                // 'message' => 'New patient Matibabu Card detected',
                 'data' => null,
-                'statusCode' => 204 // 204 means "No Content", perfect for "continue filling form"
-            ], 200);
+                // 'statusCode' => 204 // 204 means "No Content", perfect for "continue filling form"
+            ]);
         }
 
         // 2. If patient exists, check medical eligibility
