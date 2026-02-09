@@ -473,7 +473,7 @@ class PatientController extends Controller
             'location_id'       => ['nullable', 'string', 'exists:geographical_locations,location_id'],
             'job'               => ['nullable', 'string'],
             'position'          => ['nullable', 'string'],
-            'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
+            // 'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
 
             'referring_doctor'              => ['nullable', 'string'],
             'file_number'                   => ['nullable', 'string'],
@@ -485,6 +485,7 @@ class PatientController extends Controller
             'investigations'                => ['nullable', 'string'],
             'management_done'               => ['nullable', 'string'],
             'board_comments'                => ['nullable', 'string'],
+            'history_file'                  => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
 
             'has_insurance'           => ['required', 'boolean'],
             'insurance_provider_name' => ['nullable', 'string'],
@@ -556,17 +557,21 @@ class PatientController extends Controller
             }
 
             // =======================
-            // FILE UPLOAD (HISTORY)
+            // FILE UPLOAD (HISTORY) - SINGLE FILE
             // =======================
-            if ($request->hasFile('patient_file')) {
-                foreach ((array) $request->file('patient_file') as $file) {
-                    $fileName = 'history_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                    $file->move(public_path('uploads/patientFiles'), $fileName);
+            if ($request->hasFile('history_file')) {
+                $file = $request->file('history_file');
 
-                    $patientHistory->update([
-                        'history_file' => 'uploads/patientFiles/' . $fileName
-                    ]);
-                }
+                // Generate a unique name
+                $fileName = 'history_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+                // Move the file to the destination
+                $file->move(public_path('uploads/historyFiles'), $fileName);
+
+                // Save the single path string to the database
+                $patientHistory->update([
+                    'history_file' => 'uploads/historyFiles/' . $fileName
+                ]);
             }
 
             DB::commit();
@@ -753,7 +758,7 @@ class PatientController extends Controller
             'location_id'       => ['nullable', 'string', 'exists:geographical_locations,location_id'],
             'job'               => ['nullable', 'string'],
             'position'          => ['nullable', 'string'],
-            'patient_list_id' => ['numeric', 'exists:patient_lists,patient_list_id'],
+            'patient_list_id'   => ['numeric', 'exists:patient_lists,patient_list_id'],
             'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
             'description'       => ['nullable', 'string'],
             'has_insurance'           => ['nullable', 'boolean'],
@@ -1177,66 +1182,6 @@ class PatientController extends Controller
      * 1. Status in referral table is 'Closed' or 'Cancelled'
      * 2. Latest patient history status is 'rejected'
      */
-    // public function searchByMatibabu(Request $request)
-    // {
-    //     $user = auth()->user();
-
-    //     // Check permission (Using 'View Patient' as a baseline)
-    //     if (!$user->can('View Patient')) {
-    //         return response([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     $validator = Validator::make($request->all(), [
-    //         'matibabu_card' => ['required', 'string'],
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         return response()->json([
-    //             'status' => 'error',
-    //             'errors' => $validator->errors(),
-    //             'statusCode' => 422,
-    //         ], 422);
-    //     }
-
-    //     $card = $request->matibabu_card;
-
-    //     $patient = Patient::where('matibabu_card', $card)
-    //         // 1. Referral check: Must have at least one referral that is Closed or Cancelled
-    //         ->whereHas('referrals', function ($query) {
-    //             $query->whereIn('status', ['Closed', 'Cancelled']);
-    //         })
-    //         // 2. Latest History check: The very last medical history must be 'rejected'
-    //         ->whereHas('latestHistory', function ($query) {
-    //             $query->where('status', 'rejected');
-    //         })
-    //         // Include related data for the frontend
-    //         ->with([
-    //             'latestHistory',
-    //             'referrals' => function ($q) {
-    //                 $q->latest();
-    //             },
-    //             'geographicalLocation',
-    //             'creator'
-    //         ])
-    //         ->first();
-
-    //     if (!$patient) {
-    //         return response()->json([
-    //             'message' => 'No patient found matching the eligibility criteria (Rejected history and Closed/Cancelled referral).',
-    //             'statusCode' => 404,
-    //         ], 404);
-    //     }
-
-    //     return response()->json([
-    //         'data' => $patient,
-    //         'message' => 'Eligible patient retrieved successfully.',
-    //         'statusCode' => 200,
-    //     ], 200);
-    // }
-
     public function searchByMatibabu(Request $request)
     {
         $user = auth()->user();
