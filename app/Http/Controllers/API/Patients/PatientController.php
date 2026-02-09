@@ -1269,14 +1269,23 @@ class PatientController extends Controller
 
         // 2. If patient exists, check medical eligibility
         $eligiblePatient = Patient::where('matibabu_card', $card)
-            ->whereHas('referrals', function ($query) {
-                $query->whereIn('status', ['Closed', 'Cancelled']);
+        ->where(function ($query) {
+            $query->where(function ($q) {
+                // Path A: If patient HAS referrals, check their status
+                $q->whereHas('referrals', function ($subQuery) {
+                    $subQuery->whereIn('status', ['Closed', 'Cancelled']);
+                });
             })
-            ->whereHas('latestHistory', function ($query) {
-                $query->where('status', 'rejected');
-            })
-            ->with(['latestHistory', 'referrals', 'geographicalLocation', 'creator'])
-            ->first();
+            ->orWhere(function ($q) {
+                // Path B: If patient DOES NOT have referrals, check latest history status
+                $q->whereDoesntHave('referrals')
+                ->whereHas('latestHistory', function ($subQuery) {
+                    $subQuery->where('status', 'cancelled');
+                });
+            });
+        })
+        ->with(['latestHistory', 'referrals', 'geographicalLocation', 'creator'])
+        ->first();
 
         // IF EXISTS BUT NOT ELIGIBLE
         if (!$eligiblePatient) {
