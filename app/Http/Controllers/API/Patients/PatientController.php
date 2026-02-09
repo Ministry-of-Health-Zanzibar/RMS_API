@@ -1269,23 +1269,25 @@ class PatientController extends Controller
 
         // 2. If patient exists, check medical eligibility
         $eligiblePatient = Patient::where('matibabu_card', $card)
-        ->where(function ($query) {
-            $query->where(function ($q) {
-                // Path A: If patient HAS referrals, check their status
-                $q->whereHas('referrals', function ($subQuery) {
-                    $subQuery->whereIn('status', ['Closed', 'Cancelled']);
+            ->where(function ($query) {
+                $query->where(function ($q) {
+                    // Path A: Check referral status if they exist
+                    $q->whereHas('referrals', function ($subQuery) {
+                        $subQuery->whereIn('status', ['Closed', 'Cancelled']);
+                    });
+                })
+                ->orWhere(function ($q) {
+                    // Path B: ONLY if no referrals exist
+                    $q->whereDoesntHave('referrals')
+                        ->whereHas('latestHistory', function ($subQuery) {
+                        // Ensure the status is 'rejected' ON the latest record
+                        $subQuery->where('status', 'rejected')
+                                ->whereRaw('patient_histories_id = (select max(patient_histories_id) from patient_histories where patient_id = patients.patient_id)');
+                    });
                 });
             })
-            ->orWhere(function ($q) {
-                // Path B: If patient DOES NOT have referrals, check latest history status
-                $q->whereDoesntHave('referrals')
-                ->whereHas('latestHistory', function ($subQuery) {
-                    $subQuery->where('status', 'cancelled');
-                });
-            });
-        })
-        ->with(['latestHistory', 'referrals', 'geographicalLocation', 'creator'])
-        ->first();
+            ->with(['latestHistory', 'referrals', 'geographicalLocation', 'creator'])
+            ->first();
 
         // IF EXISTS BUT NOT ELIGIBLE
         if (!$eligiblePatient) {
