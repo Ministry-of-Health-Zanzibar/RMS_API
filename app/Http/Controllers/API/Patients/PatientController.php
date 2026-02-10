@@ -546,11 +546,13 @@ class PatientController extends Controller
 
             // Attach diagnoses if provided
             if ($request->filled('diagnosis_ids')) {
-                $diagnosisIds = collect($request->diagnosis_ids)->mapWithKeys(function ($id) {
+                // 1. You MUST add "use ($request)" so the function can see the doctor's name
+                $diagnosisIds = collect($request->diagnosis_ids)->mapWithKeys(function ($id) use ($request) {
                     return [$id => ['added_by' => $request->referring_doctor]];
                 })->toArray();
 
-                $history->diagnoses()->syncWithoutDetaching($diagnosisIds);
+                // 2. Change $history to $patientHistory to match your variable above
+                $patientHistory->diagnoses()->syncWithoutDetaching($diagnosisIds);
             }
 
             // =======================
