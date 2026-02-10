@@ -486,6 +486,8 @@ class PatientController extends Controller
             'management_done'               => ['nullable', 'string'],
             'board_comments'                => ['nullable', 'string'],
             'history_file'                  => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'diagnosis_ids'                 => ['nullable', 'array'],
+            'diagnosis_ids.*'               => ['exists:diagnoses,diagnosis_id'],
 
             'has_insurance'           => ['required', 'boolean'],
             'insurance_provider_name' => ['nullable', 'string'],
@@ -541,6 +543,15 @@ class PatientController extends Controller
                 'board_comments'                => $request->board_comments,
                 'status'                        => 'pending',
             ]);
+
+            // Attach diagnoses if provided
+            if ($request->filled('diagnosis_ids')) {
+                $diagnosisIds = collect($request->diagnosis_ids)->mapWithKeys(function ($id) {
+                    return [$id => ['added_by' => $request->referring_doctor]];
+                })->toArray();
+
+                $history->diagnoses()->syncWithoutDetaching($diagnosisIds);
+            }
 
             // =======================
             // OPTIONAL INSURANCE
