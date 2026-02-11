@@ -475,7 +475,7 @@ class PatientController extends Controller
             'position'          => ['nullable', 'string'],
             // 'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
 
-            'referring_doctor'              => ['nullable', 'string'],
+            // 'referring_doctor'              => ['nullable', 'string'],
             'file_number'                   => ['nullable', 'string'],
             'referring_date'                => ['nullable', 'string'],
             'reason_id'                     => ['required', 'numeric', 'exists:reasons,reason_id'],
@@ -531,7 +531,7 @@ class PatientController extends Controller
             // =======================
             $patientHistory = \App\Models\PatientHistory::create([
                 'patient_id'                    => $patient->patient_id,
-                'referring_doctor'              => $request->referring_doctor,
+                'referring_doctor'              => ($user->first_name ?? '') . ' ' . ($user->middle_name ?? ''). ' ' . ($user->last_name ?? ''),
                 'file_number'                   => $request->file_number,
                 'referring_date'                => $request->referring_date,
                 'reason_id'                     => $request->reason_id,
@@ -548,7 +548,7 @@ class PatientController extends Controller
             if ($request->filled('diagnosis_ids')) {
                 // 1. You MUST add "use ($request)" so the function can see the doctor's name
                 $diagnosisIds = collect($request->diagnosis_ids)->mapWithKeys(function ($id) use ($request) {
-                    return [$id => ['added_by' => $request->referring_doctor]];
+                    return [$id => ['added_by' => 'doctor']];
                 })->toArray();
 
                 // 2. Change $history to $patientHistory to match your variable above
@@ -1227,25 +1227,25 @@ class PatientController extends Controller
 
         // 2. If patient exists, check medical eligibility
         $eligiblePatient = Patient::where('matibabu_card', $card)
-            ->where(function ($query) {
-                $query->where(function ($q) {
-                    // Path A: Check referral status if they exist
-                    $q->whereHas('referrals', function ($subQuery) {
-                        $subQuery->whereIn('status', ['Closed', 'Cancelled']);
-                    });
-                })
-                ->orWhere(function ($q) {
-                    // Path B: ONLY if no referrals exist
-                    $q->whereDoesntHave('referrals')
-                        ->whereHas('latestHistory', function ($subQuery) {
-                        // Ensure the status is 'rejected' ON the latest record
-                        $subQuery->where('status', 'rejected')
-                                ->whereRaw('patient_histories_id = (select max(patient_histories_id) from patient_histories where patient_id = patients.patient_id)');
-                    });
-                });
+        ->whereDoesntHave('latestHistory', function ($q) {
+            // ❌ BLOCK if the latest history is still being processed
+            $q->whereIn('status', ['pending', 'reviewed', 'requested', 'approved']);
+        })
+        ->where(function ($query) {
+            // Path A: Has a completed past cycle
+            $query->whereHas('referrals', function ($subQuery) {
+                $subQuery->whereIn('status', ['Closed', 'Cancelled']);
             })
-            ->with(['latestHistory', 'referrals', 'geographicalLocation', 'creator'])
-            ->first();
+            // Path B: Or was rejected and never got a referral
+            ->orWhere(function ($q) {
+                $q->whereDoesntHave('referrals')
+                ->whereHas('latestHistory', function ($subQuery) {
+                    $subQuery->where('status', 'rejected');
+                });
+            });
+        })
+        ->with(['latestHistory', 'referrals', 'geographicalLocation', 'creator'])
+        ->first();
 
         // IF EXISTS BUT NOT ELIGIBLE
         if (!$eligiblePatient) {
