@@ -174,7 +174,7 @@ class MedicalBoadController extends Controller
 
         return response()->json([
             'data' => $list->load('boardMembers'), // load assigned users
-            'message' => 'Patient list created successfully with board members',
+            'message' => 'Medical Board Meeting created successfully',
             'statusCode' => 200
         ]);
     }
@@ -552,7 +552,7 @@ class MedicalBoadController extends Controller
         $patientList->patients()->syncWithoutDetaching($request->patient_ids);
 
         return response()->json([
-            'message' => 'Patients successfully assigned to the patient list.',
+            'message' => 'Patients successfully assigned to Medical Board Meeting.',
             'data' => [
                 'patient_list_id' => $patientList->patient_list_id,
                 'assigned_patients' => $request->patient_ids,

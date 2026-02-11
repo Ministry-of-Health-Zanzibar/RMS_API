@@ -57,10 +57,6 @@ class Patient extends Model
         return $this->hasMany(PatientHistory::class, 'patient_id', 'patient_id');
     }
 
-    // public function latestHistory()
-    // {
-    //     return $this->hasOne(PatientHistory::class, 'patient_id', 'patient_id')->latest('patient_histories_id');
-    // }
     public function latestHistory()
     {
         // latestOfMany() ensures the relationship only points to the absolute latest record

@@ -1228,7 +1228,7 @@ class PatientController extends Controller
         // 2. If patient exists, check medical eligibility
         $eligiblePatient = Patient::where('matibabu_card', $card)
         ->whereDoesntHave('latestHistory', function ($q) {
-            // ❌ BLOCK if the latest history is still being processed
+            // BLOCK if the latest history is still being processed
             $q->whereIn('status', ['pending', 'reviewed', 'requested', 'approved']);
         })
         ->where(function ($query) {

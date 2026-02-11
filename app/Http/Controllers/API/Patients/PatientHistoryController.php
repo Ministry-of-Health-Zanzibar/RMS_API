@@ -85,44 +85,38 @@ class PatientHistoryController extends Controller
         ]);
     }
 
-
     public function getPatientToBeAssignedToMedicalBoard(Request $request)
     {
         $user = auth()->user();
 
         // Permission check
         if (!$user->canAny(['View Patient', 'View History'])) {
-            return response()->json([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
+            return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
-        // Optional patient list filter
         $patientListId = $request->input('patient_list_id');
 
-        // Query patients whose latest history is reviewed
-        $patients = Patient::whereHas('latestHistory', function ($q) {
+        $patients = Patient::query()
+            // 1. MUST have a latest history with status 'reviewed'
+            ->whereHas('latestHistory', function ($q) {
                 $q->where('status', 'reviewed');
             })
+            // 2. Filter logic for lists
             ->when($patientListId, function ($q) use ($patientListId) {
-                // Exclude patients already in the given patient list
+                // If we provide a list ID, exclude patients already IN THAT SPECIFIC list
                 $q->whereDoesntHave('patientList', function ($query) use ($patientListId) {
                     $query->where('patient_list_id', $patientListId);
                 });
             })
-            ->when(!$patientListId, function ($q) {
-                // Exclude patients in any patient list
-                $q->whereDoesntHave('patientList');
-            })
+            /* NOTE: I removed the ->when(!$patientListId) block because
+            it was likely hiding all your patients who are already assigned somewhere.
+            */
             ->with(['latestHistory' => function ($q) {
-                $q->where('status', 'reviewed')
-                ->with(['patient', 'diagnoses', 'reason']);
+                $q->where('status', 'reviewed')->with(['diagnoses', 'reason']);
             }])
             ->latest()
             ->get();
 
-        // Map to required fields
         $result = $patients->map(function ($patient) {
             return [
                 'patient_id' => $patient->patient_id,
