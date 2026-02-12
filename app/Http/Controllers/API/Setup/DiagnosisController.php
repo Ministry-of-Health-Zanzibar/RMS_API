@@ -57,52 +57,17 @@ class DiagnosisController extends Controller
      *     )
      * )
      */
-    // public function index()
-    // {
-    //     $user = auth()->user();
-    //     if (!$user->can('View Diagnoses')) {
-    //         return response([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     $diagnoses = Diagnosis::withTrashed()->latest()->get();
-
-    //     return response()->json([
-    //         'message' => 'Diagnoses retrieved successfully',
-    //         'data' => $diagnoses,
-    //         'statusCode' => 200,
-    //     ], 200);
-    // }
-    public function index(Request $request)
+    public function index()
     {
         $user = auth()->user();
-
         if (!$user->can('View Diagnoses')) {
-            return response()->json([
+            return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
 
-        $term = $request->query('term');
-
-        // Initialize query with trashed items included
-        $query = Diagnosis::withTrashed();
-
-        if (!empty($term)) {
-            // Use a function grouping for the OR logic to keep it isolated
-            $query->where(function ($q) use ($term) {
-                $q->where('diagnosis_name', 'LIKE', "%{$term}%")
-                ->orWhere('diagnosis_code', 'LIKE', "%{$term}%");
-            });
-        }
-
-        // Get the results
-        $diagnoses = $query->latest()
-            ->limit(15)
-            ->get();
+        $diagnoses = Diagnosis::withTrashed()->latest()->get();
 
         return response()->json([
             'message' => 'Diagnoses retrieved successfully',
@@ -110,6 +75,41 @@ class DiagnosisController extends Controller
             'statusCode' => 200,
         ], 200);
     }
+    // public function index(Request $request)
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->can('View Diagnoses')) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $term = $request->query('term');
+
+    //     // Initialize query with trashed items included
+    //     $query = Diagnosis::withTrashed();
+
+    //     if (!empty($term)) {
+    //         // Use a function grouping for the OR logic to keep it isolated
+    //         $query->where(function ($q) use ($term) {
+    //             $q->where('diagnosis_name', 'LIKE', "%{$term}%")
+    //             ->orWhere('diagnosis_code', 'LIKE', "%{$term}%");
+    //         });
+    //     }
+
+    //     // Get the results
+    //     $diagnoses = $query->latest()
+    //         ->limit(15)
+    //         ->get();
+
+    //     return response()->json([
+    //         'message' => 'Diagnoses retrieved successfully',
+    //         'data' => $diagnoses,
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
 
     /**
      * @OA\Post(
