@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\API\Patients;
 
+use App\Models\Patient;
 use App\Models\PatientList;
+use App\Models\PatientHistory;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class MedicalBoadController extends Controller
 {
@@ -500,56 +503,122 @@ class MedicalBoadController extends Controller
         ]);
     }
 
+    // public function assignPatientsToList(Request $request, int $patientListId)
+    // {
+    //     $user = auth()->user();
+
+    //     // Check permission
+    //     if (!$user->can('Create Patient List')) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     // Validate request
+    //     $validator = Validator::make($request->all(), [
+    //         'patient_ids'   => ['required', 'array', 'min:1'],
+    //         'patient_ids.*' => ['integer', 'exists:patients,patient_id'],
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'errors' => $validator->errors(),
+    //             'statusCode' => 422,
+    //         ], 422);
+    //     }
+
+    //     // Find the target list
+    //     $patientList = PatientList::find($patientListId);
+    //     if (!$patientList) {
+    //         return response()->json([
+    //             'message' => 'Patient list not found',
+    //             'statusCode' => 404,
+    //         ], 404);
+    //     }
+
+    //     // Check capacity
+    //     $currentCount = $patientList->patients()->count();
+    //     $remainingCapacity = $patientList->no_of_patients - $currentCount;
+
+    //     $incomingCount = count($request->patient_ids);
+
+    //     if ($incomingCount > $remainingCapacity) {
+    //         return response()->json([
+    //             'message' => "Cannot assign {$incomingCount} patients. Only {$remainingCapacity} spots left in this list.",
+    //             'statusCode' => 422,
+    //         ], 422);
+    //     }
+
+    //     // Attach patients to list (avoid duplicates automatically)
+    //     $patientList->patients()->syncWithoutDetaching($request->patient_ids);
+
+    //     return response()->json([
+    //         'message' => 'Patients successfully assigned to Medical Board Meeting.',
+    //         'data' => [
+    //             'patient_list_id' => $patientList->patient_list_id,
+    //             'assigned_patients' => $request->patient_ids,
+    //             'total_assigned' => $patientList->patients()->count(),
+    //         ],
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
     public function assignPatientsToList(Request $request, int $patientListId)
-    {
-        $user = auth()->user();
+{
+    $user = auth()->user();
 
-        // Check permission
-        if (!$user->can('Create Patient List')) {
-            return response()->json([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
+    // Check permission
+    if (!$user->can('Create Patient List')) {
+        return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
+    }
 
-        // Validate request
-        $validator = Validator::make($request->all(), [
-            'patient_ids'   => ['required', 'array', 'min:1'],
-            'patient_ids.*' => ['integer', 'exists:patients,patient_id'],
-        ]);
+    // Validate request
+    $validator = Validator::make($request->all(), [
+        'patient_ids'   => ['required', 'array', 'min:1'],
+        'patient_ids.*' => ['integer', 'exists:patients,patient_id'],
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'errors' => $validator->errors(),
-                'statusCode' => 422,
-            ], 422);
-        }
+    if ($validator->fails()) {
+        return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
+    }
 
-        // Find the target list
-        $patientList = PatientList::find($patientListId);
-        if (!$patientList) {
-            return response()->json([
-                'message' => 'Patient list not found',
-                'statusCode' => 404,
-            ], 404);
-        }
+    $patientList = PatientList::find($patientListId);
+    if (!$patientList) {
+        return response()->json(['message' => 'Patient list not found', 'statusCode' => 404], 404);
+    }
 
-        // Check capacity
-        $currentCount = $patientList->patients()->count();
-        $remainingCapacity = $patientList->no_of_patients - $currentCount;
+    // Check capacity
+    $currentCount = $patientList->patients()->count();
+    $remainingCapacity = $patientList->no_of_patients - $currentCount;
+    $incomingCount = count($request->patient_ids);
 
-        $incomingCount = count($request->patient_ids);
+    if ($incomingCount > $remainingCapacity) {
+        return response()->json([
+            'message' => "Cannot assign {$incomingCount} patients. Only {$remainingCapacity} spots left.",
+            'statusCode' => 422,
+        ], 422);
+    }
 
-        if ($incomingCount > $remainingCapacity) {
-            return response()->json([
-                'message' => "Cannot assign {$incomingCount} patients. Only {$remainingCapacity} spots left in this list.",
-                'statusCode' => 422,
-            ], 422);
-        }
+    // Use a Transaction to ensure both the pivot and the status update happen together
+    try {
+        DB::beginTransaction();
 
-        // Attach patients to list (avoid duplicates automatically)
+        // 1. Attach to pivot table
         $patientList->patients()->syncWithoutDetaching($request->patient_ids);
+
+        // 2. Update status of the latest history for each patient to 'assigned'
+        foreach ($request->patient_ids as $pId) {
+            $patient = Patient::find($pId);
+            $history = $patient->latestHistory;
+
+            // Only update if current status is 'reviewed' (to follow your isValidTransition logic)
+            if ($history && $history->status === 'reviewed') {
+                $this->applyStatusUpdate($history, 'assigned');
+            }
+        }
+
+        DB::commit();
 
         return response()->json([
             'message' => 'Patients successfully assigned to Medical Board Meeting.',
@@ -560,5 +629,73 @@ class MedicalBoadController extends Controller
             ],
             'statusCode' => 200,
         ], 200);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'message' => 'Failed to assign patients: ' . $e->getMessage(),
+            'statusCode' => 500
+        ], 500);
     }
+}
+
+private function isValidTransition($current, $next)
+    {
+        $allowed = [
+            'pending'   => ['reviewed'],
+            'reviewed'  => ['assigned', 'requested'], // Director can assign to board or request info
+            'assigned'  => ['requested', 'approved'], // Board's primary actions
+            'requested' => ['reviewed', 'approved'],  // Path after info is provided
+            'approved'  => ['confirmed', 'rejected'], // Moves to DG for final say
+            'confirmed' => [],
+            'rejected'  => [],
+        ];
+
+        return in_array($next, $allowed[$current] ?? []);
+    }
+
+    private function applyStatusUpdate(PatientHistory $history, $newStatus, $comment = null, $user = null)
+    {
+        $user = $user ?? auth()->user();
+
+        // Ensure only valid status transitions
+        if (!$this->isValidTransition($history->status, $newStatus)) {
+            throw new \Exception("Invalid status transition from {$history->status} to {$newStatus}.");
+        }
+
+        switch ($newStatus) {
+            case 'reviewed':
+                $history->mkurugenzi_tiba_id = $user->id;
+                $history->mkurugenzi_tiba_comments = $comment;
+                break;
+
+            case 'assigned':
+                $history->board_comments = $comment;
+                break;
+
+            case 'requested':
+                $history->board_comments = $comment;
+                break;
+
+            case 'approved':
+                $history->mkurugenzi_tiba_comments = $comment;
+                break;
+
+            case 'confirmed':
+                $history->dg_id = $user->id;
+                $history->dg_comments = $comment;
+                break;
+
+            case 'rejected':
+                $history->board_comments = $comment;
+                break;
+        }
+
+        $history->status = $newStatus;
+        $history->save();
+
+        return $history;
+    }
+
+
 }

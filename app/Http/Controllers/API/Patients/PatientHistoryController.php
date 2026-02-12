@@ -918,14 +918,96 @@ class PatientHistoryController extends Controller
      *     )
      * )
      */
+    // public function updateStatus(Request $request, $id)
+    // {
+    //     $user = Auth::user();
+    //     $history = PatientHistory::findOrFail($id);
+
+    //     // --- Use Validator instead of $request->validate() ---
+    //     $validator = \Validator::make($request->all(), [
+    //         'status' => 'required|string|in:pending,reviewed,requested,approved,confirmed,rejected',
+    //         'comment' => 'nullable|string',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Validation failed',
+    //             'errors' => $validator->errors()
+    //         ], 422);
+    //     }
+
+    //     $validated = $validator->validated();
+    //     $newStatus = $validated['status'];
+    //     $comment = $validated['comment'] ?? null;
+
+    //     // Ensure only valid status transitions
+    //     if (!$this->isValidTransition($history->status, $newStatus)) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => "Invalid status transition from {$history->status} to {$newStatus}."
+    //         ], 400);
+    //     }
+
+    //     // Role-based action control
+    //     switch ($newStatus) {
+    //         case 'reviewed':
+    //             if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
+    //                 return $this->unauthorized();
+    //             }
+    //             $history->mkurugenzi_tiba_id = $user->id;
+    //             $history->mkurugenzi_tiba_comments = $comment;
+    //             break;
+
+    //         case 'requested':
+    //             if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+    //                 return $this->unauthorized();
+    //             }
+    //             // $history->medical_board_id = $user->id;
+    //             $history->board_comments = $comment;
+    //             break;
+
+    //         case 'approved':
+    //             if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
+    //                 return $this->unauthorized();
+    //             }
+    //             $history->mkurugenzi_tiba_comments = $comment;
+    //             break;
+
+    //         case 'confirmed':
+    //             if (!$user->hasRole('ROLE DIRECTOR GENERAL')) {
+    //                 return $this->unauthorized();
+    //             }
+    //             $history->dg_id = $user->id;
+    //             $history->dg_comments = $comment;
+    //             break;
+
+    //         case 'rejected':
+    //             if (!$user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE MEDICAL BOARD MEMBER', 'ROLE DIRECTOR GENERAL'])) {
+    //                 return $this->unauthorized();
+    //             }
+    //             $history->board_comments = $comment;
+    //             break;
+    //     }
+
+    //     $history->status = $newStatus;
+    //     $history->save();
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => "Status updated successfully to {$newStatus}.",
+    //         'data' => $history,
+    //     ]);
+    // }
+
     public function updateStatus(Request $request, $id)
     {
         $user = Auth::user();
         $history = PatientHistory::findOrFail($id);
 
-        // --- Use Validator instead of $request->validate() ---
+        // 1. Updated Validation to include 'assigned'
         $validator = \Validator::make($request->all(), [
-            'status' => 'required|string|in:pending,reviewed,requested,approved,confirmed,rejected',
+            'status' => 'required|string|in:pending,reviewed,assigned,requested,approved,confirmed,rejected',
             'comment' => 'nullable|string',
         ]);
 
@@ -941,7 +1023,7 @@ class PatientHistoryController extends Controller
         $newStatus = $validated['status'];
         $comment = $validated['comment'] ?? null;
 
-        // Ensure only valid status transitions
+        // 2. Transition Check (Uses the isValidTransition logic we updated earlier)
         if (!$this->isValidTransition($history->status, $newStatus)) {
             return response()->json([
                 'success' => false,
@@ -949,7 +1031,7 @@ class PatientHistoryController extends Controller
             ], 400);
         }
 
-        // Role-based action control
+        // 3. Role-based action control
         switch ($newStatus) {
             case 'reviewed':
                 if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
@@ -959,19 +1041,26 @@ class PatientHistoryController extends Controller
                 $history->mkurugenzi_tiba_comments = $comment;
                 break;
 
+            case 'assigned':
+                if (!$user->hasAnyRole(['ROLE MEDICAL BOARD MEMBER'])) {
+                    return $this->unauthorized();
+                }
+                // No specific comments usually required for assignment
+                break;
+
             case 'requested':
                 if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
                     return $this->unauthorized();
                 }
-                // $history->medical_board_id = $user->id;
                 $history->board_comments = $comment;
                 break;
 
             case 'approved':
+                // Logic for Board Member passing the patient
                 if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
                     return $this->unauthorized();
                 }
-                $history->mkurugenzi_tiba_comments = $comment;
+                $history->board_comments = $comment;
                 break;
 
             case 'confirmed':
@@ -1003,15 +1092,30 @@ class PatientHistoryController extends Controller
     /**
      * Define allowed workflow transitions
      */
+    // private function isValidTransition($current, $next)
+    // {
+    //     $allowed = [
+    //         'pending' => ['reviewed'],          // hospital → director
+    //         'reviewed' => ['requested', 'approved'], // director → medical board / approve to DG
+    //         'requested' => ['approved'],          // medical board → director
+    //         'approved' => ['confirmed', 'rejected'], // director → DG
+    //         'confirmed' => [],                    // DG final
+    //         'rejected' => [],                    // terminal
+    //     ];
+
+    //     return in_array($next, $allowed[$current] ?? []);
+    // }
+
     private function isValidTransition($current, $next)
     {
         $allowed = [
-            'pending' => ['reviewed'],          // hospital → director
-            'reviewed' => ['requested', 'approved'], // director → medical board / approve to DG
-            'requested' => ['approved'],          // medical board → director
-            'approved' => ['confirmed', 'rejected'], // director → DG
-            'confirmed' => [],                    // DG final
-            'rejected' => [],                    // terminal
+            'pending'   => ['reviewed'],
+            'reviewed'  => ['assigned', 'requested'], // Director can assign to board or request info
+            'assigned'  => ['requested', 'approved'], // Board's primary actions
+            'requested' => ['reviewed', 'approved'],  // Path after info is provided
+            'approved'  => ['confirmed', 'rejected'], // Moves to DG for final say
+            'confirmed' => [],
+            'rejected'  => [],
         ];
 
         return in_array($next, $allowed[$current] ?? []);
@@ -1041,6 +1145,10 @@ class PatientHistoryController extends Controller
                 $history->mkurugenzi_tiba_comments = $comment;
                 break;
 
+            case 'assigned':
+                $history->board_comments = $comment;
+                break;
+
             case 'requested':
                 $history->board_comments = $comment;
                 break;
@@ -1064,5 +1172,49 @@ class PatientHistoryController extends Controller
 
         return $history;
     }
+
+    // private function applyStatusUpdate(PatientHistory $history, $newStatus, $comment = null, $user = null)
+    // {
+    //     $user = $user ?? auth()->user();
+
+    //     if (!$this->isValidTransition($history->status, $newStatus)) {
+    //         throw new \Exception("Invalid status transition from {$history->status} to {$newStatus}.");
+    //     }
+
+    //     switch ($newStatus) {
+    //         case 'reviewed':
+    //             $history->mkurugenzi_tiba_id = $user->id;
+    //             $history->mkurugenzi_tiba_comments = $comment;
+    //             break;
+
+    //         case 'assigned':
+    //             // Usually an administrative bulk action, comment often null
+    //             if ($comment) {
+    //                 $history->board_comments = $comment;
+    //             }
+    //             break;
+
+    //         case 'requested':
+    //         case 'rejected':
+    //             // Board feedback loop
+    //             $history->board_comments = $comment;
+    //             break;
+
+    //         case 'approved':
+    //             // Passing the board stage
+    //             $history->mkurugenzi_tiba_comments = $comment ?? $history->mkurugenzi_tiba_comments;
+    //             break;
+
+    //         case 'confirmed':
+    //             $history->dg_id = $user->id;
+    //             $history->dg_comments = $comment;
+    //             break;
+    //     }
+
+    //     $history->status = $newStatus;
+    //     $history->save();
+
+    //     return $history;
+    // }
 
 }

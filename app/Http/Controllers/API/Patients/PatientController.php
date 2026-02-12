@@ -473,9 +473,7 @@ class PatientController extends Controller
             'location_id'       => ['nullable', 'string', 'exists:geographical_locations,location_id'],
             'job'               => ['nullable', 'string'],
             'position'          => ['nullable', 'string'],
-            // 'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
 
-            // 'referring_doctor'              => ['nullable', 'string'],
             'file_number'                   => ['nullable', 'string'],
             'referring_date'                => ['nullable', 'string'],
             'reason_id'                     => ['required', 'numeric', 'exists:reasons,reason_id'],

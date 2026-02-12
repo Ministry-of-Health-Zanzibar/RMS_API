@@ -52,6 +52,17 @@ class Patient extends Model
         return $this->belongsToMany(PatientList::class, 'patient_list_patient', 'patient_id', 'patient_list_id')->withTimestamps();
     }
 
+    public function patientLists()
+    {
+        // Note: Use the pivot table name and custom primary keys defined in your schema
+        return $this->belongsToMany(
+            PatientList::class,
+            'patient_list_patient',
+            'patient_id',
+            'patient_list_id'
+        );
+    }
+
     public function patientHistories()
     {
         return $this->hasMany(PatientHistory::class, 'patient_id', 'patient_id');

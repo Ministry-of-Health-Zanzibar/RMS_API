@@ -33,9 +33,9 @@ class PatientHistory extends Model
         'board_reason_id',
         'history_file',
         'status',
-        'mkurugenzi_tiba_comments',
+        'Director_tiba_comments',
         'dg_comments',
-        'mkurugenzi_tiba_id',
+        'Director_tiba_id',
         'dg_id',
     ];
 
@@ -43,29 +43,35 @@ class PatientHistory extends Model
         'pending' => [
             'stage' => 1,
             'label' => 'Submitted by Hospital',
-            'current_holder' => 'Mkurugenzi wa Tiba',
+            'current_holder' => 'Director',
             'description' => 'Medical history submitted and awaiting review',
         ],
         'reviewed' => [
             'stage' => 2,
-            'label' => 'Reviewed by Mkurugenzi',
+            'label' => 'Reviewed by Director',
             'current_holder' => 'Medical Board',
             'description' => 'Reviewed and forwarded to medical board',
         ],
-        'requested' => [
+        'assigned' => [
             'stage' => 3,
-            'label' => 'More Info Requested',
-            'current_holder' => 'Hospital / Mkurugenzi',
-            'description' => 'Medical board requested initial request a referral',
+            'label' => 'Assigned to Medical Board Meeting',
+            'current_holder' => 'Medical Board',
+            'description' => 'Patient officially assigned to a medical board Meeting',
+        ],
+        'requested' => [
+            'stage' => 4,
+            'label' => 'Medical Board Meeting Requested A Referral',
+            'current_holder' => 'Director',
+            'description' => 'Medical board requested additional information for the referral',
         ],
         'approved' => [
-            'stage' => 4,
-            'label' => 'Approved by Mkurugenzi',
+            'stage' => 5,
+            'label' => 'Approved by Director',
             'current_holder' => 'Director General (DG)',
             'description' => 'Approved and sent to DG for confirmation',
         ],
         'confirmed' => [
-            'stage' => 5,
+            'stage' => 6,
             'label' => 'Confirmed by DG',
             'current_holder' => 'Completed',
             'description' => 'Final approval completed',
@@ -89,7 +95,7 @@ class PatientHistory extends Model
             return '0%';
         }
 
-        $maxStage = 5;
+        $maxStage = 6;
         $stage = self::STATUS_MAP[$this->status]['stage'];
 
         return (int) round(($stage / $maxStage) * 100) . '%';
