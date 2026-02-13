@@ -66,63 +66,6 @@ class PatientController extends Controller
      *     )
      * )
      */
-    // public function index()
-    // {
-    //     $user = auth()->user();
-
-    //     if (!$user->can('View Patient')) {
-    //         return response([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     if ($user->hasAnyRole(['ROLE ADMIN'])) {
-
-    //         $patients = Patient::with([
-    //             'patientList',
-    //             'files',
-    //             'insurances',
-    //             'geographicalLocation',
-    //             'referrals.reason',
-    //             'referrals.hospital',
-    //             'referrals.creator',
-    //         ])
-    //         ->withTrashed()
-    //         ->get();
-
-    //     } elseif ($user->hasAnyRole(['ROLE HOSPITAL USER'])) {
-
-    //         $patients = Patient::with([
-    //             'patientList',
-    //             'files',
-    //             'geographicalLocation',
-    //             'referrals.reason',
-    //             'referrals.hospital',
-    //             'referrals.creator',
-    //         ])
-    //         ->where('created_by', $user->id)
-    //         ->get();
-
-    //     } else {
-
-    //         $patients = Patient::with([
-    //             'patientList',
-    //             'files',
-    //             'geographicalLocation',
-    //             'referrals.reason',
-    //             'referrals.hospital',
-    //             'referrals.creator',
-    //         ])
-    //         ->get();
-    //     }
-
-    //     return response([
-    //         'data' => $patients,
-    //         'statusCode' => 200,
-    //     ], 200);
-    // }
-
     public function index()
     {
         $user = auth()->user();
@@ -453,17 +396,15 @@ class PatientController extends Controller
         $user = auth()->user();
 
         if (!$user->can('Create Patient')) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
+            return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
+        // ... (Your existing merge logic) ...
         $request->merge([
             'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
         ]);
 
-        $data = Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             'name'              => ['required', 'string'],
             'matibabu_card'     => ['required', 'string'], // Made required to ensure lookup works
             'zan_id'            => ['nullable', 'string'],
@@ -493,14 +434,23 @@ class PatientController extends Controller
             'valid_until'             => ['nullable', 'string'],
         ]);
 
-        if ($data->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'errors' => $data->errors(),
-                'statusCode' => 422,
-            ], 422);
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
         }
 
+        // ============================================================
+        // NEW ELIGIBILITY CHECK
+        // ============================================================
+        if (!$this->isPatientEligible($request->matibabu_card)) {
+            return response()->json([
+                'message' => 'This patient is not eligible to create a new record. (Existing process not Closed/Cancelled or History not Rejected).',
+                'statusCode' => 403,
+            ], 200); // Keeping status 200 as per your searchByMatibabu style
+        }
+
+        // ============================================================
+        // START YOUR EXISTING PROCESS
+        // ============================================================
         $request->merge(['case_type' => $request->case_type ?? 'Routine']);
 
         DB::beginTransaction();
@@ -510,7 +460,7 @@ class PatientController extends Controller
             // UPSERT PATIENT (Find by card, Update if exists, or Create)
             // ============================================================
             $patient = \App\Models\Patient::updateOrCreate(
-                ['matibabu_card' => $request->matibabu_card], // Search criteria
+                ['matibabu_card' => $request->matibabu_card],
                 [
                     'name'          => $request->name,
                     'zan_id'        => $request->zan_id,
@@ -520,7 +470,7 @@ class PatientController extends Controller
                     'location_id'   => $request->location_id,
                     'job'           => $request->job,
                     'position'      => $request->position,
-                    'created_by'    => Auth::id(), // Only sets on creation if you use firstOrCreate, but updateOrCreate resets it. If you want to keep original creator, use logic below.
+                    'created_by'    => Auth::id(),
                 ]
             );
 
@@ -588,10 +538,7 @@ class PatientController extends Controller
             DB::commit();
 
             return response([
-                'data' => [
-                    'patient' => $patient,
-                    'history' => $patientHistory
-                ],
+                'data' => ['patient' => $patient, 'history' => $patientHistory],
                 'message' => 'Record processed successfully (Patient updated/synced and new history created)',
                 'statusCode' => 201,
             ], 201);
@@ -1149,50 +1096,120 @@ class PatientController extends Controller
     }
 
     /**
-     * Get a list of Matibabu Cards for autocomplete suggestions.
-     * Only returns cards for patients with 'Closed/Cancelled' referrals
-     * and a 'rejected' latest history.
-     */
-    public function autocompleteMatibabuCards(Request $request)
-    {
-        $user = auth()->user();
-
-        if (!$user->can('View Patient')) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
-
-        $term = $request->query('term');
-
-        if (empty($term)) {
-            return response()->json(['data' => [], 'statusCode' => 200], 200);
-        }
-
-        $cards = Patient::where('matibabu_card', 'LIKE', "%{$term}%")
-            ->whereHas('referrals', function ($query) {
-                $query->whereIn('status', ['Closed', 'Cancelled']);
-            })
-            ->whereHas('latestHistory', function ($query) {
-                $query->where('status', 'rejected');
-            })
-            ->distinct()
-            ->limit(15)
-            ->pluck('matibabu_card');
-
-        return response()->json([
-            'data' => $cards,
-            'statusCode' => 200,
-        ], 200);
-    }
-
-    /**
      * Search for an eligible patient by Matibabu Card.
      * Criteria:
      * 1. Status in referral table is 'Closed' or 'Cancelled'
      * 2. Latest patient history status is 'rejected'
      */
+    // public function searchByMatibabu(Request $request)
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->can('View Patient')) {
+    //         return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+    //     }
+
+    //     $validator = Validator::make($request->all(), [
+    //         'matibabu_card' => ['required', 'string'],
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json(['errors' => $validator->errors(), 'statusCode' => 422], 422);
+    //     }
+
+    //     $card = $request->matibabu_card;
+
+    //     // 1. Check if the patient exists first
+    //     $patientExists = Patient::where('matibabu_card', $card)->first();
+
+    //     // IF CARD DOES NOT EXIST: Return nothing (or 204) to allow form filling
+    //     if (!$patientExists) {
+    //         return response()->json([
+    //             'message' => 'New patient Matibabu Card detected',
+    //             'data' => null,
+    //             'statusCode' => 204 // 204 means "No Content", perfect for "continue filling form"
+    //         ]);
+    //     }
+
+    //     // 2. If patient exists, check medical eligibility
+    //     $eligiblePatient = Patient::where('matibabu_card', $card)
+    //     ->whereDoesntHave('latestHistory', function ($q) {
+    //         // BLOCK if the latest history is still being processed
+    //         $q->whereIn('status', ['pending', 'reviewed', 'assigned', 'requested', 'approved']);
+    //     })
+    //     ->where(function ($query) {
+    //         // Path A: Has a completed past cycle
+    //         $query->whereHas('referrals', function ($subQuery) {
+    //             $subQuery->whereIn('status', ['Closed', 'Cancelled']);
+    //         })
+    //         // Path B: Or was rejected and never got a referral
+    //         ->orWhere(function ($q) {
+    //             $q->whereDoesntHave('referrals')
+    //             ->whereHas('latestHistory', function ($subQuery) {
+    //                 $subQuery->where('status', 'rejected');
+    //             });
+    //         });
+    //     })
+    //     ->with(['latestHistory', 'referrals', 'geographicalLocation', 'creator'])
+    //     ->first();
+
+    //     // IF EXISTS BUT NOT ELIGIBLE
+    //     if (!$eligiblePatient) {
+    //         return response()->json([
+    //             'message' => 'This patient is not eligible (Referral not Closed/Cancelled or History not Rejected).',
+    //             'statusCode' => 403, // 403 Forbidden is often used for "Not Eligible" logic
+    //         ], 200);
+    //     }
+
+    //     // IF EXISTS AND ELIGIBLE
+    //     return response()->json([
+    //         'data' => $eligiblePatient,
+    //         'message' => 'Eligible patient retrieved successfully.',
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
+
+    private function isPatientEligible($card)
+    {
+        $patient = \App\Models\Patient::where('matibabu_card', $card)->first();
+
+        // If patient doesn't exist, they are eligible (it's a new registration)
+        if (!$patient) {
+            return true;
+        }
+
+        // 1. Block if the latest history is still being processed
+        $activeHistory = \App\Models\PatientHistory::where('patient_id', $patient->patient_id)
+            ->whereIn('status', ['pending', 'reviewed', 'assigned', 'requested', 'approved'])
+            ->latest()
+            ->first();
+
+        if ($activeHistory) {
+            return false;
+        }
+
+        // 2. Check the status of the absolute LATEST referral
+        $latestReferral = \App\Models\Referral::where('patient_id', $patient->patient_id)
+            ->latest()
+            ->first();
+
+        if ($latestReferral) {
+            // Eligibility depends ONLY on the latest referral status
+            return in_array($latestReferral->status, ['Closed', 'Cancelled']);
+        }
+
+        // 3. Path B: If NO referrals exist, check if the latest history was rejected
+        $latestHistory = \App\Models\PatientHistory::where('patient_id', $patient->patient_id)
+            ->latest()
+            ->first();
+
+        if ($latestHistory && $latestHistory->status === 'rejected') {
+            return true;
+        }
+
+        return false;
+    }
+
     public function searchByMatibabu(Request $request)
     {
         $user = auth()->user();
@@ -1210,50 +1227,31 @@ class PatientController extends Controller
         }
 
         $card = $request->matibabu_card;
+        $patient = Patient::where('matibabu_card', $card)->first();
 
-        // 1. Check if the patient exists first
-        $patientExists = Patient::where('matibabu_card', $card)->first();
-
-        // IF CARD DOES NOT EXIST: Return nothing (or 204) to allow form filling
-        if (!$patientExists) {
+        if (!$patient) {
             return response()->json([
                 'message' => 'New patient Matibabu Card detected',
                 'data' => null,
-                'statusCode' => 204 // 204 means "No Content", perfect for "continue filling form"
+                'statusCode' => 204
             ]);
         }
 
-        // 2. If patient exists, check medical eligibility
-        $eligiblePatient = Patient::where('matibabu_card', $card)
-        ->whereDoesntHave('latestHistory', function ($q) {
-            // BLOCK if the latest history is still being processed
-            $q->whereIn('status', ['pending', 'reviewed', 'assigned', 'requested', 'approved']);
-        })
-        ->where(function ($query) {
-            // Path A: Has a completed past cycle
-            $query->whereHas('referrals', function ($subQuery) {
-                $subQuery->whereIn('status', ['Closed', 'Cancelled']);
-            })
-            // Path B: Or was rejected and never got a referral
-            ->orWhere(function ($q) {
-                $q->whereDoesntHave('referrals')
-                ->whereHas('latestHistory', function ($subQuery) {
-                    $subQuery->where('status', 'rejected');
-                });
-            });
-        })
-        ->with(['latestHistory', 'referrals', 'geographicalLocation', 'creator'])
-        ->first();
+        // Use the helper to determine eligibility based on LATEST records
+        $isEligible = $this->isPatientEligible($card);
 
-        // IF EXISTS BUT NOT ELIGIBLE
-        if (!$eligiblePatient) {
+        if (!$isEligible) {
             return response()->json([
-                'message' => 'This patient is not eligible (Referral not Closed/Cancelled or History not Rejected).',
-                'statusCode' => 403, // 403 Forbidden is often used for "Not Eligible" logic
+                'message' => 'This patient is not eligible (Latest Referral not Closed/Cancelled or History not Rejected).',
+                'statusCode' => 403,
             ], 200);
         }
 
-        // IF EXISTS AND ELIGIBLE
+        // If eligible, return the patient with the necessary relationships
+        $eligiblePatient = Patient::where('patient_id', $patient->patient_id)
+            ->with(['latestHistory', 'referrals', 'geographicalLocation', 'creator'])
+            ->first();
+
         return response()->json([
             'data' => $eligiblePatient,
             'message' => 'Eligible patient retrieved successfully.',
