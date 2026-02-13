@@ -1227,7 +1227,7 @@ class PatientController extends Controller
         $eligiblePatient = Patient::where('matibabu_card', $card)
         ->whereDoesntHave('latestHistory', function ($q) {
             // BLOCK if the latest history is still being processed
-            $q->whereIn('status', ['pending', 'reviewed', 'requested', 'approved']);
+            $q->whereIn('status', ['pending', 'reviewed', 'assigned', 'requested', 'approved']);
         })
         ->where(function ($query) {
             // Path A: Has a completed past cycle
