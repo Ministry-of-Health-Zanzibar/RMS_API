@@ -127,10 +127,16 @@ class RolesOfUsersSeeder extends Seeder
             'Delete Referral',
             'View Referral',
 
+            'Create Hospital Letter',
+            'Update Hospital Letter',
+            'Delete Hospital Letter',
+            'View Hospital Letter',
+
+            'Create FollowUp',
+            'View FollowUp',
+
             'View Hospital',
             'View ReferralType',
-            'View FollowUp',
-            'View Hospital Letter',
             'View Diagnoses',
 
             'View Reason',

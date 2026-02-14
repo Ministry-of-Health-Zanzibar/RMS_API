@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Auth;
 use function PHPUnit\Framework\isEmpty;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Mail\NewPatientRecordNotification;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Mail;
 
 class PatientController extends Controller
 {
@@ -390,7 +394,6 @@ class PatientController extends Controller
         ], 201);
     }
 
-
     public function storePatientAndHistory(Request $request)
     {
         $user = auth()->user();
@@ -406,7 +409,7 @@ class PatientController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name'              => ['required', 'string'],
-            'matibabu_card'     => ['required', 'string'], // Made required to ensure lookup works
+            'matibabu_card'     => ['required', 'string'],
             'zan_id'            => ['nullable', 'string'],
             'date_of_birth'     => ['required', 'string'],
             'gender'            => ['required', 'string'],
@@ -536,6 +539,20 @@ class PatientController extends Controller
             }
 
             DB::commit();
+
+            try {
+                // This finds the Users directly using the 'HasRoles' trait from Spatie
+                $directors = \App\Models\User::role('ROLE MKURUGENZI TIBA')
+                    ->whereNull('deleted_at')
+                    ->get();
+
+                if ($directors->isNotEmpty()) {
+                    // $directors already contains the full User models with their emails
+                    Notification::send($directors, new NewPatientRecordNotification($patient, $patientHistory));
+                }
+            } catch (\Exception $e) {
+                \Log::error("Notification failed: " . $e->getMessage());
+            }
 
             return response([
                 'data' => ['patient' => $patient, 'history' => $patientHistory],
@@ -1096,78 +1113,22 @@ class PatientController extends Controller
     }
 
     /**
-     * Search for an eligible patient by Matibabu Card.
-     * Criteria:
-     * 1. Status in referral table is 'Closed' or 'Cancelled'
-     * 2. Latest patient history status is 'rejected'
+     * Standalone helper to validate the CHFID/Matibabu card math.
      */
-    // public function searchByMatibabu(Request $request)
-    // {
-    //     $user = auth()->user();
+    private function isValidMatibabuCard($chfid): bool
+    {
+        // 1. Basic format check
+        if (empty($chfid) || strlen($chfid) !== 12 || !ctype_digit($chfid)) {
+            return false;
+        }
 
-    //     if (!$user->can('View Patient')) {
-    //         return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
-    //     }
+        // 2. Logic: First 11 digits MOD 7 should equal the 12th digit
+        $lastDigit = (int) substr($chfid, -1);
+        $firstPart = substr($chfid, 0, 11);
 
-    //     $validator = Validator::make($request->all(), [
-    //         'matibabu_card' => ['required', 'string'],
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         return response()->json(['errors' => $validator->errors(), 'statusCode' => 422], 422);
-    //     }
-
-    //     $card = $request->matibabu_card;
-
-    //     // 1. Check if the patient exists first
-    //     $patientExists = Patient::where('matibabu_card', $card)->first();
-
-    //     // IF CARD DOES NOT EXIST: Return nothing (or 204) to allow form filling
-    //     if (!$patientExists) {
-    //         return response()->json([
-    //             'message' => 'New patient Matibabu Card detected',
-    //             'data' => null,
-    //             'statusCode' => 204 // 204 means "No Content", perfect for "continue filling form"
-    //         ]);
-    //     }
-
-    //     // 2. If patient exists, check medical eligibility
-    //     $eligiblePatient = Patient::where('matibabu_card', $card)
-    //     ->whereDoesntHave('latestHistory', function ($q) {
-    //         // BLOCK if the latest history is still being processed
-    //         $q->whereIn('status', ['pending', 'reviewed', 'assigned', 'requested', 'approved']);
-    //     })
-    //     ->where(function ($query) {
-    //         // Path A: Has a completed past cycle
-    //         $query->whereHas('referrals', function ($subQuery) {
-    //             $subQuery->whereIn('status', ['Closed', 'Cancelled']);
-    //         })
-    //         // Path B: Or was rejected and never got a referral
-    //         ->orWhere(function ($q) {
-    //             $q->whereDoesntHave('referrals')
-    //             ->whereHas('latestHistory', function ($subQuery) {
-    //                 $subQuery->where('status', 'rejected');
-    //             });
-    //         });
-    //     })
-    //     ->with(['latestHistory', 'referrals', 'geographicalLocation', 'creator'])
-    //     ->first();
-
-    //     // IF EXISTS BUT NOT ELIGIBLE
-    //     if (!$eligiblePatient) {
-    //         return response()->json([
-    //             'message' => 'This patient is not eligible (Referral not Closed/Cancelled or History not Rejected).',
-    //             'statusCode' => 403, // 403 Forbidden is often used for "Not Eligible" logic
-    //         ], 200);
-    //     }
-
-    //     // IF EXISTS AND ELIGIBLE
-    //     return response()->json([
-    //         'data' => $eligiblePatient,
-    //         'message' => 'Eligible patient retrieved successfully.',
-    //         'statusCode' => 200,
-    //     ], 200);
-    // }
+        // Using bcmod to handle large numbers accurately
+        return (int) bcmod($firstPart, '7') === $lastDigit;
+    }
 
     private function isPatientEligible($card)
     {
@@ -1210,6 +1171,12 @@ class PatientController extends Controller
         return false;
     }
 
+    /**
+     * Search for an eligible patient by Matibabu Card.
+     * Criteria:
+     * 1. Status in referral table is 'Closed' or 'Cancelled'
+     * 2. Latest patient history status is 'rejected'
+     */
     public function searchByMatibabu(Request $request)
     {
         $user = auth()->user();
@@ -1222,6 +1189,15 @@ class PatientController extends Controller
             'matibabu_card' => ['required', 'string'],
         ]);
 
+        // NEW MANUAL CHECKSUM VALIDATION
+        if (!$this->isValidMatibabuCard($request->matibabu_card)) {
+            return response()->json([
+                'message' => 'The Matibabu card number is invalid.',
+                'success' => false,
+                'statusCode' => 422
+            ], 422);
+        }
+
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors(), 'statusCode' => 422], 422);
         }
@@ -1232,7 +1208,7 @@ class PatientController extends Controller
         if (!$patient) {
             return response()->json([
                 'message' => 'New patient Matibabu Card detected',
-                'data' => null,
+                'success' => true,
                 'statusCode' => 204
             ]);
         }
@@ -1243,6 +1219,7 @@ class PatientController extends Controller
         if (!$isEligible) {
             return response()->json([
                 'message' => 'This patient is not eligible (Latest Referral not Closed/Cancelled or History not Rejected).',
+                'success' => false,
                 'statusCode' => 403,
             ], 200);
         }
@@ -1255,6 +1232,7 @@ class PatientController extends Controller
         return response()->json([
             'data' => $eligiblePatient,
             'message' => 'Eligible patient retrieved successfully.',
+            'success' => true,
             'statusCode' => 200,
         ], 200);
     }

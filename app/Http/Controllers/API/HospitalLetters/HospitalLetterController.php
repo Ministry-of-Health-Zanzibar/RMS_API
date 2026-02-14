@@ -266,11 +266,11 @@ class HospitalLetterController extends Controller
         $followUp->followup_date   = $followupData['followup_date'];
         $followUp->notes           = $followupData['notes'] ?? null;
         $followUp->followup_status = $followupData['followup_status'];
-    
+
         $followUp->save();
 
         return response()->json([
-            'message'    => 'Hospital Letter created successfully',
+            'message'    => 'Follow-up created successfully',
             'data'       => $letter,
             'statusCode' => 201
         ]);
