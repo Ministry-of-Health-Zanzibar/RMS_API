@@ -223,14 +223,15 @@ class UserProfileCotroller extends Controller
                 $user->login_status = 0;
                 $user->save();
 
-                // Send email with new password
-                Mail::raw(
-                    "Hello {$user->first_name},\n\nYour password has been reset by the admin.\n\nYour new password is: {$new_password}\n\nPlease log in and change it immediately.",
-                    function ($message) use ($user) {
-                        $message->to($user->email)
-                                ->subject('Your Password Has Been Reset');
-                    }
-                );
+                // Send email using the HTML template
+                Mail::send('emails.password_reset', [
+                    'first_name'   => $user->first_name,
+                    'email'        => $user->email,
+                    'new_password' => $new_password
+                ], function ($message) use ($user) {
+                    $message->to($user->email)
+                            ->subject('Your Password Has Been Reset');
+                });
 
                 return response()->json([
                     'message' => 'Password reset successfully and sent to user email',
