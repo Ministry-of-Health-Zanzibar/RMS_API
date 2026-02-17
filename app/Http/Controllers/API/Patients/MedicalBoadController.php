@@ -68,10 +68,10 @@ class MedicalBoadController extends Controller
         }
 
         $lists = PatientList::with(['creator', 'patients.geographicalLocation', 'boardMembers'])
-            ->when(!$user->hasRole('ROLE ADMIN'), function ($q) use ($user) {
-                // 👇 Example filter for non-admins
-                $q->where('created_by', $user->id);
-            })
+            // ->when(!$user->hasRole('ROLE ADMIN'), function ($q) use ($user) {
+            //     // 👇 Example filter for non-admins
+            //     $q->where('created_by', $user->id);
+            // })
             ->withTrashed()
             ->get();
 
