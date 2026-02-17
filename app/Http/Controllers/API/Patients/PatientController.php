@@ -1115,18 +1115,32 @@ class PatientController extends Controller
     /**
      * Standalone helper to validate the CHFID/Matibabu card math.
      */
+    // private function isValidMatibabuCard($chfid): bool
+    // {
+    //     if (empty($chfid) || strlen($chfid) !== 12 || !ctype_digit($chfid)) {
+    //         return false;
+    //     }
+
+    //     // MATCHING YOUR C# GENERATOR:
+    //     // Skip first 2 digits (Prefix), take next 9 digits
+    //     $middlePart = substr($chfid, 2, 9);
+    //     $lastDigit = (int) substr($chfid, -1);
+
+    //     return (int) bcmod($middlePart, '7') === $lastDigit;
+    // }
     private function isValidMatibabuCard($chfid): bool
     {
+        // 1. Basic format check
         if (empty($chfid) || strlen($chfid) !== 12 || !ctype_digit($chfid)) {
             return false;
         }
 
-        // MATCHING YOUR C# GENERATOR:
-        // Skip first 2 digits (Prefix), take next 9 digits
-        $middlePart = substr($chfid, 2, 9);
+        // 2. Logic: First 11 digits MOD 7 should equal the 12th digit
         $lastDigit = (int) substr($chfid, -1);
+        $firstPart = substr($chfid, 0, 11);
 
-        return (int) bcmod($middlePart, '7') === $lastDigit;
+        // Using bcmod to handle large numbers accurately
+        return (int) bcmod($firstPart, '7') === $lastDigit;
     }
 
     private function isPatientEligible($card)
