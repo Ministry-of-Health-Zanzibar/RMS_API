@@ -1117,17 +1117,16 @@ class PatientController extends Controller
      */
     private function isValidMatibabuCard($chfid): bool
     {
-        // 1. Basic format check
         if (empty($chfid) || strlen($chfid) !== 12 || !ctype_digit($chfid)) {
             return false;
         }
 
-        // 2. Logic: First 11 digits MOD 7 should equal the 12th digit
+        // MATCHING YOUR C# GENERATOR:
+        // Skip first 2 digits (Prefix), take next 9 digits
+        $middlePart = substr($chfid, 2, 9);
         $lastDigit = (int) substr($chfid, -1);
-        $firstPart = substr($chfid, 0, 11);
 
-        // Using bcmod to handle large numbers accurately
-        return (int) bcmod($firstPart, '7') === $lastDigit;
+        return (int) bcmod($middlePart, '7') === $lastDigit;
     }
 
     private function isPatientEligible($card)
@@ -1194,8 +1193,8 @@ class PatientController extends Controller
             return response()->json([
                 'message' => 'The Matibabu card number is invalid.',
                 'success' => false,
-                'statusCode' => 422
-            ], 422);
+                'statusCode' => 403
+            ], 200);
         }
 
         if ($validator->fails()) {
@@ -1210,7 +1209,7 @@ class PatientController extends Controller
                 'message' => 'New patient Matibabu Card detected',
                 'success' => true,
                 'statusCode' => 204
-            ]);
+            ],200);
         }
 
         // Use the helper to determine eligibility based on LATEST records
