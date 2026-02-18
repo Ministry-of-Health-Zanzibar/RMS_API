@@ -14,6 +14,8 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
         $schedule->command('clean:expired-password-resets')->hourly();
+        // ADD THIS LINE HERE
+        $schedule->command('sanctum:prune-expired --hours=24')->daily();
     }
 
     /**
