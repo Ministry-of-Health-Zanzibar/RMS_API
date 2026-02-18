@@ -256,34 +256,6 @@ class ReportController extends Controller
         }
     }
 
-    // public function getMonthlyMaleAndFemaleReferralReport()
-    // {
-    //     $user = auth()->user();
-    //     if (!$user->can('View Referral Dashboard')) {
-    //         return response([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403,
-    //         ], 403);
-    //     }
-
-    //     $data = DB::table('referrals')
-    //         ->join('patients', 'referrals.patient_id', '=', 'patients.patient_id')
-    //         ->where('referrals.status', '!=', 'Pending') // exclude Pending
-    //         ->select(
-    //             DB::raw("TO_CHAR(referrals.created_at, 'YYYY-MM') as month"), // PostgreSQL
-    //             DB::raw("SUM(CASE WHEN patients.gender = 'male' THEN 1 ELSE 0 END) as male_referrals"),
-    //             DB::raw("SUM(CASE WHEN patients.gender = 'female' THEN 1 ELSE 0 END) as female_referrals"),
-    //             DB::raw('COUNT(referrals.referral_id) as total_referrals')
-    //         )
-    //         ->groupBy(DB::raw("TO_CHAR(referrals.created_at, 'YYYY-MM')"))
-    //         ->orderBy(DB::raw("TO_CHAR(referrals.created_at, 'YYYY-MM')"))
-    //         ->get();
-
-    //     return response()->json([
-    //         'data' => $data,
-    //         'statusCode' => 200,
-    //     ]);
-    // }
     public function getMonthlyMaleAndFemaleReferralReport()
     {
         $user = auth()->user();
@@ -294,7 +266,7 @@ class ReportController extends Controller
         $data = DB::table('referrals')
             ->join('patients', 'referrals.patient_id', '=', 'patients.patient_id')
             // Match the exclusion logic used in your overall counts
-            ->whereNotIn('referrals.status', ['Pending', 'Cancelled'])
+            ->whereNotIn('referrals.status', ['Pending', 'Cancelled', 'Requested'])
             ->whereNull('referrals.deleted_at')
             ->select(
                 DB::raw("TO_CHAR(referrals.created_at, 'YYYY-MM') as month"),
