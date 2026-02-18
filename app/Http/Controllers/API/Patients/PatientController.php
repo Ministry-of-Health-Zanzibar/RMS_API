@@ -550,13 +550,14 @@ class PatientController extends Controller
             DB::commit();
 
             try {
-                // This finds the Users directly using the 'HasRoles' trait from Spatie
+                // This finds the Users directly using the Spatie role check
                 $directors = \App\Models\User::role('ROLE MKURUGENZI TIBA')
                     ->whereNull('deleted_at')
+                    // Exclude the specific email here
+                    ->where('email', '!=', 'mkurugenzi@mohz.go.tz')
                     ->get();
 
                 if ($directors->isNotEmpty()) {
-                    // $directors already contains the full User models with their emails
                     Notification::send($directors, new NewPatientRecordNotification($patient, $patientHistory));
                 }
             } catch (\Exception $e) {
