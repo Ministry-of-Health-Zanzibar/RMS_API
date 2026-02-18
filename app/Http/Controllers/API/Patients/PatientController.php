@@ -126,73 +126,192 @@ class PatientController extends Controller
     }
 
 
+    // public function patientsHistories()
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->canAny(['View Patient', 'View History'])) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $query = Patient::query()
+    //         ->with(['latestHistory', 'creator'])
+    //         ->join('users', 'users.id', '=', 'patients.created_by')
+    //         ->leftJoin('hospital_user', 'hospital_user.user_id', '=', 'users.id')
+    //         ->leftJoin('hospitals', 'hospitals.hospital_id', '=', 'hospital_user.hospital_id')
+    //         ->whereHas('patientHistories')
+    //         ->latest('patients.created_at');
+
+    //     /**
+    //      * ROLE: HOSPITAL USER
+    //      */
+    //     if ($user->hasRole('ROLE HOSPITAL USER')) {
+    //         $query->where('patients.created_by', $user->id);
+    //     }
+
+    //     /**
+    //      * ROLE: MEDICAL BOARD MEMBER
+    //      */
+    //     if ($user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+    //         // Show patients who have any history record
+    //         $query->whereHas('patientHistories');
+
+    //         // Load history and sort by newest first
+    //         $query->with(['patientHistories' => function ($q) {
+    //             $q->latest();
+    //         }]);
+    //     }
+
+    //     /**
+    //      * ROLE: ADMIN + MKURUGENZI TIBA
+    //      */
+    //     if ($user->hasAnyRole(['ROLE ADMIN', 'ROLE MKURUGENZI TIBA'])) {
+    //         $query->withTrashed();
+    //     }
+
+    //     // Select full patient columns + hospital name + role
+    //     $patients = $query
+    //     ->select(
+    //         'patients.*',
+    //         'hospitals.hospital_name as hospital',
+    //         'hospital_user.role as hospital_role',
+    //         // 🔥 Get the max date from the patient_histories table for each patient
+    //         DB::raw('(SELECT MAX(created_at) FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id) as last_history_date')
+    //     )
+    //     ->groupBy(
+    //         'patients.patient_id',
+    //         'hospitals.hospital_name',
+    //         'hospital_user.role'
+    //     )
+    //     // 🔥 Sort by the date we just fetched
+    //     ->orderBy('last_history_date', 'desc')
+    //     ->get();
+
+    //     return response([
+    //         'data' => $patients,
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
+
+    // public function patientsHistories()
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->canAny(['View Patient', 'View History'])) {
+    //         return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+    //     }
+
+    //     $query = Patient::query()
+    //         ->with(['latestHistory', 'creator'])
+    //         ->join('users', 'users.id', '=', 'patients.created_by')
+    //         ->leftJoin('hospital_user', 'hospital_user.user_id', '=', 'users.id')
+    //         ->leftJoin('hospitals', 'hospitals.hospital_id', '=', 'hospital_user.hospital_id')
+    //         ->whereHas('patientHistories');
+
+    //     if ($user->hasRole('ROLE HOSPITAL USER')) {
+    //         $query->where('patients.created_by', $user->id);
+    //     }
+
+    //     if ($user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+    //         $query->whereHas('patientHistories');
+    //         $query->with(['patientHistories' => function ($q) {
+    //             $q->latest();
+    //         }]);
+    //     }
+
+    //     if ($user->hasAnyRole(['ROLE ADMIN', 'ROLE MKURUGENZI TIBA'])) {
+    //         $query->withTrashed();
+    //     }
+
+    //     $patients = $query
+    //         ->select(
+    //             'patients.*',
+    //             'hospitals.hospital_name as hospital',
+    //             'hospital_user.role as hospital_role',
+    //             // 1. Get the latest history timestamp
+    //             DB::raw('(SELECT MAX(created_at) FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id) as last_history_date'),
+    //             // 2. Get the status of that specific latest record
+    //             DB::raw('(SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY created_at DESC LIMIT 1) as latest_status')
+    //         )
+    //         ->groupBy(
+    //             'patients.patient_id',
+    //             'hospitals.hospital_name',
+    //             'hospital_user.role'
+    //         )
+    //         // 3. Apply custom sorting logic (Priority order)
+    //         ->orderByRaw("
+    //             CASE
+    //                 WHEN (SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY created_at DESC LIMIT 1) = 'pending' THEN 1
+    //                 WHEN (SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY created_at DESC LIMIT 1) = 'reviewed' THEN 2
+    //                 WHEN (SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY created_at DESC LIMIT 1) = 'assigned' THEN 3
+    //                 WHEN (SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY created_at DESC LIMIT 1) = 'requested' THEN 4
+    //                 WHEN (SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY created_at DESC LIMIT 1) = 'approved' THEN 5
+    //                 WHEN (SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY created_at DESC LIMIT 1) = 'confirmed' THEN 6
+    //                 WHEN (SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY created_at DESC LIMIT 1) = 'rejected' THEN 7
+    //                 ELSE 8
+    //             END ASC
+    //         ")
+    //         // 4. Secondary sort by date (newest within same status group)
+    //         ->orderBy('last_history_date', 'desc')
+    //         ->get();
+
+    //     return response([
+    //         'data' => $patients,
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
+
     public function patientsHistories()
     {
         $user = auth()->user();
 
         if (!$user->canAny(['View Patient', 'View History'])) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
+            return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
         $query = Patient::query()
+            // We keep this for the JSON response data
             ->with(['latestHistory', 'creator'])
             ->join('users', 'users.id', '=', 'patients.created_by')
             ->leftJoin('hospital_user', 'hospital_user.user_id', '=', 'users.id')
             ->leftJoin('hospitals', 'hospitals.hospital_id', '=', 'hospital_user.hospital_id')
-            ->whereHas('patientHistories')
-            ->latest('patients.created_at');
+            ->whereHas('patientHistories');
 
-        /**
-         * ROLE: HOSPITAL USER
-         */
-        if ($user->hasRole('ROLE HOSPITAL USER')) {
-            $query->where('patients.created_by', $user->id);
-        }
+        // ... (Keep your Role-based filters here) ...
 
-        /**
-         * ROLE: MEDICAL BOARD MEMBER
-         */
-        // if ($user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
-        //     $query->whereHas('patientHistories', function ($q) {
-        //         $q->where('status', 'reviewed');
-        //     });
-
-        //     $query->with(['latestHistory' => function ($q) {
-        //         $q->where('status', 'reviewed');
-        //     }]);
-        // }
-        if ($user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
-            // Show patients who have any history record
-            $query->whereHas('patientHistories');
-
-            // Load history and sort by newest first
-            $query->with(['patientHistories' => function ($q) {
-                $q->latest();
-            }]);
-        }
-
-        /**
-         * ROLE: ADMIN + MKURUGENZI TIBA
-         */
-        if ($user->hasAnyRole(['ROLE ADMIN', 'ROLE MKURUGENZI TIBA'])) {
-            $query->withTrashed();
-        }
-
-        // Select full patient columns + hospital name + role
         $patients = $query
             ->select(
                 'patients.*',
                 'hospitals.hospital_name as hospital',
-                'hospital_user.role as hospital_role'
+                'hospital_user.role as hospital_role',
+                // Get the ID of the latest history for sorting
+                DB::raw('(SELECT status FROM patient_histories
+                        WHERE patient_histories.patient_id = patients.patient_id
+                        ORDER BY patient_histories_id DESC LIMIT 1) as latest_status_text')
             )
             ->groupBy(
                 'patients.patient_id',
                 'hospitals.hospital_name',
                 'hospital_user.role'
             )
+            // Apply Custom Priority Sort
+            ->orderByRaw("
+                CASE
+                    WHEN (SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY patient_histories_id DESC LIMIT 1) = 'pending' THEN 1
+                    WHEN (SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY patient_histories_id DESC LIMIT 1) = 'reviewed' THEN 2
+                    WHEN (SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY patient_histories_id DESC LIMIT 1) = 'assigned' THEN 3
+                    WHEN (SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY patient_histories_id DESC LIMIT 1) = 'requested' THEN 4
+                    WHEN (SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY patient_histories_id DESC LIMIT 1) = 'approved' THEN 5
+                    WHEN (SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY patient_histories_id DESC LIMIT 1) = 'confirmed' THEN 6
+                    WHEN (SELECT status FROM patient_histories WHERE patient_histories.patient_id = patients.patient_id ORDER BY patient_histories_id DESC LIMIT 1) = 'rejected' THEN 7
+                    ELSE 8
+                END ASC
+            ")
+            // Secondary Sort: Newest IDs first
+            ->orderBy('patients.patient_id', 'desc')
             ->get();
 
         return response([

@@ -31,45 +31,6 @@ class ReportController extends Controller
         $this->middleware('auth:sanctum');
     }
 
-    // BASHBOARD ================================================================================
-
-    /**
-     * Report by referral type
-     */
-    // public function referralReportByReferralType()
-    // {
-    //     $user = auth()->user();
-    //     if (!$user->can('View Referral Dashboard')) {
-    //         return response([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     try {
-    //         $totalReferralsByMAINLANDType = DB::table("referrals")
-    //             ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
-    //             ->whereNull("referrals.deleted_at")
-    //             ->where("referral_types.referral_type_name", "=", "MAINLAND")
-    //             ->count();
-
-    //         $totalReferralsByABROADType = DB::table("referrals")
-    //             ->join("referral_types", "referral_types.referral_type_id", '=', 'referrals.referral_type_id')
-    //             ->whereNull("referrals.deleted_at")
-    //             ->where("referral_types.referral_type_name", "=", "ABROAD")
-    //             ->count();
-
-    //         return response([
-    //             'totalReferralsByMAINLANDType' => $totalReferralsByMAINLANDType,
-    //             'totalReferralsByABROADType' => $totalReferralsByABROADType,
-    //         ]);
-    //     } catch (\Throwable $e) {
-    //         return response()
-    //             ->json(['message' => $e->getMessage(), 'statusCode' => 401]);
-    //     }
-    // }
-    // DASHBOARD ========================================================================//
-
     // DASHBOARD ========================================================================//
 
     /**
@@ -173,52 +134,6 @@ class ReportController extends Controller
     // DASHBOARD ========================================================================//
 
     // DASHBOARD ========================================================================//
-
-    // public function referralsReportByGendr()
-    // {
-    //     $user = auth()->user();
-
-    //     if (! $user->can('View Referral Dashboard')) {
-    //         return response([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403,
-    //         ], 403);
-    //     }
-
-    //     try {
-    //         // Group by lowercase gender (case-insensitive)
-    //         $referralsByGender = DB::table('referrals')
-    //             ->join('patients', 'patients.patient_id', '=', 'referrals.patient_id')
-    //             ->whereNull('referrals.deleted_at')
-    //             ->where('referrals.status','confirmed')
-    //             ->select(
-    //                 DB::raw('LOWER(patients.gender) as gender'),
-    //                 DB::raw('COUNT(referrals.referral_id) as total')
-    //             )
-    //             ->groupBy(DB::raw('LOWER(patients.gender)'))
-    //             ->get();
-
-    //         // Convert to associative array and normalize keys
-    //         $genderStats = $referralsByGender->pluck('total', 'gender')->toArray();
-
-    //         // Normalize to Title Case keys (Female, Male)
-    //         $femaleCount = $genderStats['female'] ?? 0;
-    //         $maleCount = $genderStats['male'] ?? 0;
-
-    //         return response([
-    //             'Male' => $maleCount,
-    //             'Female' => $femaleCount,
-    //             'statusCode' => 200,
-    //         ], 200);
-
-    //     } catch (\Throwable $e) {
-    //         return response()->json([
-    //             'message' => $e->getMessage(),
-    //             'statusCode' => 401,
-    //         ]);
-    //     }
-    // }
-
     public function referralsReportByGendr()
     {
         $user = auth()->user();
@@ -231,7 +146,7 @@ class ReportController extends Controller
             $referralsByGender = DB::table('referrals')
                 ->join('patients', 'patients.patient_id', '=', 'referrals.patient_id')
                 ->whereNull('referrals.deleted_at')
-                // 🔥 Match the PascalCase 'Confirmed' from your migration
+                // Match the PascalCase 'Confirmed' from your migration
                 ->whereNotIn('referrals.status', ['Cancelled', 'Pending'])
                 ->select(
                     DB::raw('LOWER(patients.gender) as gender'),
