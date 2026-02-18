@@ -453,42 +453,224 @@ class PatientController extends Controller
         ], 201);
     }
 
+    // public function storePatientAndHistory(Request $request)
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->can('Create Patient')) {
+    //         return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+    //     }
+
+    //     // ... (Your existing merge logic) ...
+    //     $request->merge([
+    //         'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+    //     ]);
+
+    //     $validator = Validator::make($request->all(), [
+    //         'name'              => ['required', 'string'],
+    //         'matibabu_card'     => ['required', 'string'],
+    //         'zan_id'            => ['nullable', 'string'],
+    //         'date_of_birth'     => ['required', 'string'],
+    //         'gender'            => ['required', 'string'],
+    //         'phone'             => ['nullable', 'string'],
+    //         'location_id'       => ['nullable', 'string', 'exists:geographical_locations,location_id'],
+    //         'job'               => ['nullable', 'string'],
+    //         'position'          => ['nullable', 'string'],
+
+    //         'file_number'                   => ['nullable', 'string'],
+    //         'referring_date'                => ['nullable', 'string'],
+    //         'reason_id'                     => ['required', 'numeric', 'exists:reasons,reason_id'],
+    //         'case_type'                     => ['nullable', 'in:Emergency,Routine'],
+    //         'history_of_presenting_illness' => ['nullable', 'string'],
+    //         'physical_findings'             => ['nullable', 'string'],
+    //         'investigations'                => ['nullable', 'string'],
+    //         'management_done'               => ['nullable', 'string'],
+    //         'board_comments'                => ['nullable', 'string'],
+    //         'history_file'                  => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+    //         'diagnosis_ids'                 => ['nullable', 'array'],
+    //         'diagnosis_ids.*'               => ['exists:diagnoses,diagnosis_id'],
+
+    //         'has_insurance'           => ['required', 'boolean'],
+    //         'insurance_provider_name' => ['nullable', 'string'],
+    //         'card_number'             => ['nullable', 'string'],
+    //         'valid_until'             => ['nullable', 'string'],
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
+    //     }
+
+    //     if (!$this->isValidMatibabuCard($request->matibabu_card)) {
+    //         return response()->json([
+    //             'message' => 'The Matibabu card number is invalid.',
+    //             'success' => false,
+    //             'statusCode' => 403
+    //         ], 200);
+    //     }
+
+    //     // ============================================================
+    //     // NEW ELIGIBILITY CHECK
+    //     // ============================================================
+    //     if (!$this->isPatientEligible($request->matibabu_card)) {
+    //         return response()->json([
+    //             'message' => 'This patient is not eligible to create a new record. (Existing process not Closed/Cancelled or History not Rejected).',
+    //             'statusCode' => 403,
+    //         ], 200); // Keeping status 200 as per your searchByMatibabu style
+    //     }
+
+    //     // ============================================================
+    //     // START YOUR EXISTING PROCESS
+    //     // ============================================================
+    //     $request->merge(['case_type' => $request->case_type ?? 'Routine']);
+
+    //     DB::beginTransaction();
+
+    //     try {
+    //         // ============================================================
+    //         // UPSERT PATIENT (Find by card, Update if exists, or Create)
+    //         // ============================================================
+    //         $patient = \App\Models\Patient::updateOrCreate(
+    //             ['matibabu_card' => $request->matibabu_card],
+    //             [
+    //                 'name'          => $request->name,
+    //                 'zan_id'        => $request->zan_id,
+    //                 'date_of_birth' => $request->date_of_birth,
+    //                 'gender'        => $request->gender,
+    //                 'phone'         => $request->phone,
+    //                 'location_id'   => $request->location_id,
+    //                 'job'           => $request->job,
+    //                 'position'      => $request->position,
+    //                 'created_by'    => Auth::id(),
+    //             ]
+    //         );
+
+    //         // =======================
+    //         // ALWAYS CREATE NEW HISTORY
+    //         // =======================
+    //         $patientHistory = \App\Models\PatientHistory::create([
+    //             'patient_id'                    => $patient->patient_id,
+    //             'referring_doctor'              => ($user->first_name ?? '') . ' ' . ($user->middle_name ?? ''). ' ' . ($user->last_name ?? ''),
+    //             'file_number'                   => $request->file_number,
+    //             'referring_date'                => $request->referring_date,
+    //             'reason_id'                     => $request->reason_id,
+    //             'case_type'                     => $request->case_type,
+    //             'history_of_presenting_illness' => $request->history_of_presenting_illness,
+    //             'physical_findings'             => $request->physical_findings,
+    //             'investigations'                => $request->investigations,
+    //             'management_done'               => $request->management_done,
+    //             'board_comments'                => $request->board_comments,
+    //             'status'                        => 'pending',
+    //         ]);
+
+    //         // Attach diagnoses if provided
+    //         if ($request->filled('diagnosis_ids')) {
+    //             // 1. You MUST add "use ($request)" so the function can see the doctor's name
+    //             $diagnosisIds = collect($request->diagnosis_ids)->mapWithKeys(function ($id) use ($request) {
+    //                 return [$id => ['added_by' => 'doctor']];
+    //             })->toArray();
+
+    //             // 2. Change $history to $patientHistory to match your variable above
+    //             $patientHistory->diagnoses()->syncWithoutDetaching($diagnosisIds);
+    //         }
+
+    //         // =======================
+    //         // OPTIONAL INSURANCE
+    //         // =======================
+    //         if ($request->boolean('has_insurance')) {
+    //             \App\Models\Insurance::updateOrCreate(
+    //                 ['patient_id' => $patient->patient_id],
+    //                 [
+    //                     'insurance_provider_name' => $request->insurance_provider_name,
+    //                     'card_number'             => $request->card_number,
+    //                     'valid_until'             => $request->valid_until,
+    //                 ]
+    //             );
+    //         }
+
+    //         // =======================
+    //         // FILE UPLOAD (HISTORY) - SINGLE FILE
+    //         // =======================
+    //         if ($request->hasFile('history_file')) {
+    //             $file = $request->file('history_file');
+
+    //             // Generate a unique name
+    //             $fileName = 'history_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+    //             // Move the file to the destination
+    //             $file->move(public_path('uploads/historyFiles'), $fileName);
+
+    //             // Save the single path string to the database
+    //             $patientHistory->update([
+    //                 'history_file' => 'uploads/historyFiles/' . $fileName
+    //             ]);
+    //         }
+
+    //         DB::commit();
+
+    //         try {
+    //             // This finds the Users directly using the Spatie role check
+    //             $directors = \App\Models\User::role('ROLE MKURUGENZI TIBA')
+    //                 ->whereNull('deleted_at')
+    //                 // Exclude the specific email here
+    //                 ->where('email', '!=', 'mkurugenzi@mohz.go.tz')
+    //                 ->get();
+
+    //             if ($directors->isNotEmpty()) {
+    //                 Notification::send($directors, new NewPatientRecordNotification($patient, $patientHistory));
+    //             }
+    //         } catch (\Exception $e) {
+    //             \Log::error("Notification failed: " . $e->getMessage());
+    //         }
+
+    //         return response([
+    //             'data' => ['patient' => $patient, 'history' => $patientHistory],
+    //             'message' => 'Record processed successfully (Patient updated/synced and new history created)',
+    //             'statusCode' => 201,
+    //         ], 201);
+
+    //     } catch (\Throwable $e) {
+    //         DB::rollBack();
+    //         return response([
+    //             'message' => 'Failed to process request',
+    //             'error' => $e->getMessage(),
+    //             'statusCode' => 500,
+    //         ], 500);
+    //     }
+    // }
+
     public function storePatientAndHistory(Request $request)
     {
         $user = auth()->user();
 
+        // 1. Authorization
         if (!$user->can('Create Patient')) {
             return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
-        // ... (Your existing merge logic) ...
+        // 2. Data Preparation
         $request->merge([
             'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
         ]);
 
+        // 3. Robust Validation
         $validator = Validator::make($request->all(), [
-            'name'              => ['required', 'string'],
-            'matibabu_card'     => ['required', 'string'],
-            'zan_id'            => ['nullable', 'string'],
-            'date_of_birth'     => ['required', 'string'],
+            'name'              => ['required', 'string', 'max:255'],
+            'matibabu_card'     => ['required', 'string', 'max:50'],
+            'zan_id'            => ['nullable', 'string', 'max:50'],
+            'date_of_birth'     => ['required', 'string'], // Keep as string or date depending on your format
             'gender'            => ['required', 'string'],
-            'phone'             => ['nullable', 'string'],
-            'location_id'       => ['nullable', 'string', 'exists:geographical_locations,location_id'],
+            'phone'             => ['nullable', 'string', 'max:20'],
+            'location_id'       => ['nullable', 'exists:geographical_locations,location_id'],
             'job'               => ['nullable', 'string'],
             'position'          => ['nullable', 'string'],
 
-            'file_number'                   => ['nullable', 'string'],
-            'referring_date'                => ['nullable', 'string'],
-            'reason_id'                     => ['required', 'numeric', 'exists:reasons,reason_id'],
-            'case_type'                     => ['nullable', 'in:Emergency,Routine'],
-            'history_of_presenting_illness' => ['nullable', 'string'],
-            'physical_findings'             => ['nullable', 'string'],
-            'investigations'                => ['nullable', 'string'],
-            'management_done'               => ['nullable', 'string'],
-            'board_comments'                => ['nullable', 'string'],
-            'history_file'                  => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
-            'diagnosis_ids'                 => ['nullable', 'array'],
-            'diagnosis_ids.*'               => ['exists:diagnoses,diagnosis_id'],
+            'file_number'       => ['nullable', 'string'],
+            'referring_date'    => ['nullable', 'string'],
+            'reason_id'         => ['required', 'numeric', 'exists:reasons,reason_id'],
+            'case_type'         => ['required', 'in:Emergency,Routine'],
+            'history_file'      => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'diagnosis_ids'     => ['nullable', 'array'],
+            'diagnosis_ids.*'   => ['exists:diagnoses,diagnosis_id'],
 
             'has_insurance'           => ['required', 'boolean'],
             'insurance_provider_name' => ['nullable', 'string'],
@@ -500,27 +682,18 @@ class PatientController extends Controller
             return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
         }
 
-        // ============================================================
-        // NEW ELIGIBILITY CHECK
-        // ============================================================
-        if (!$this->isPatientEligible($request->matibabu_card)) {
-            return response()->json([
-                'message' => 'This patient is not eligible to create a new record. (Existing process not Closed/Cancelled or History not Rejected).',
-                'statusCode' => 403,
-            ], 200); // Keeping status 200 as per your searchByMatibabu style
+        // 4. Custom Business Logic Checks
+        if (!$this->isValidMatibabuCard($request->matibabu_card)) {
+            return response()->json(['message' => 'Invalid Matibabu card number.', 'statusCode' => 403], 403);
         }
 
-        // ============================================================
-        // START YOUR EXISTING PROCESS
-        // ============================================================
-        $request->merge(['case_type' => $request->case_type ?? 'Routine']);
+        if (!$this->isPatientEligible($request->matibabu_card)) {
+            return response()->json(['message' => 'Patient has an active referral process.', 'statusCode' => 403], 200);
+        }
 
         DB::beginTransaction();
-
         try {
-            // ============================================================
-            // UPSERT PATIENT (Find by card, Update if exists, or Create)
-            // ============================================================
+            // 5. UPSERT PATIENT
             $patient = \App\Models\Patient::updateOrCreate(
                 ['matibabu_card' => $request->matibabu_card],
                 [
@@ -536,12 +709,12 @@ class PatientController extends Controller
                 ]
             );
 
-            // =======================
-            // ALWAYS CREATE NEW HISTORY
-            // =======================
+            // 6. CREATE HISTORY
+            $doctorName = trim(($user->first_name ?? '') . ' ' . ($user->middle_name ?? ''). ' ' . ($user->last_name ?? ''));
+
             $patientHistory = \App\Models\PatientHistory::create([
                 'patient_id'                    => $patient->patient_id,
-                'referring_doctor'              => ($user->first_name ?? '') . ' ' . ($user->middle_name ?? ''). ' ' . ($user->last_name ?? ''),
+                'referring_doctor'              => $doctorName,
                 'file_number'                   => $request->file_number,
                 'referring_date'                => $request->referring_date,
                 'reason_id'                     => $request->reason_id,
@@ -554,20 +727,15 @@ class PatientController extends Controller
                 'status'                        => 'pending',
             ]);
 
-            // Attach diagnoses if provided
+            // 7. DIAGNOSES
             if ($request->filled('diagnosis_ids')) {
-                // 1. You MUST add "use ($request)" so the function can see the doctor's name
-                $diagnosisIds = collect($request->diagnosis_ids)->mapWithKeys(function ($id) use ($request) {
+                $diagnosisData = collect($request->diagnosis_ids)->mapWithKeys(function ($id) {
                     return [$id => ['added_by' => 'doctor']];
                 })->toArray();
-
-                // 2. Change $history to $patientHistory to match your variable above
-                $patientHistory->diagnoses()->syncWithoutDetaching($diagnosisIds);
+                $patientHistory->diagnoses()->sync($diagnosisData);
             }
 
-            // =======================
-            // OPTIONAL INSURANCE
-            // =======================
+            // 8. INSURANCE
             if ($request->boolean('has_insurance')) {
                 \App\Models\Insurance::updateOrCreate(
                     ['patient_id' => $patient->patient_id],
@@ -579,31 +747,20 @@ class PatientController extends Controller
                 );
             }
 
-            // =======================
-            // FILE UPLOAD (HISTORY) - SINGLE FILE
-            // =======================
+            // 9. FILE UPLOAD
             if ($request->hasFile('history_file')) {
                 $file = $request->file('history_file');
-
-                // Generate a unique name
                 $fileName = 'history_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-
-                // Move the file to the destination
                 $file->move(public_path('uploads/historyFiles'), $fileName);
-
-                // Save the single path string to the database
-                $patientHistory->update([
-                    'history_file' => 'uploads/historyFiles/' . $fileName
-                ]);
+                $patientHistory->update(['history_file' => 'uploads/historyFiles/' . $fileName]);
             }
 
             DB::commit();
 
+            // 10. NOTIFICATIONS (Keep in secondary try-catch)
             try {
-                // This finds the Users directly using the Spatie role check
                 $directors = \App\Models\User::role('ROLE MKURUGENZI TIBA')
                     ->whereNull('deleted_at')
-                    // Exclude the specific email here
                     ->where('email', '!=', 'mkurugenzi@mohz.go.tz')
                     ->get();
 
@@ -616,12 +773,13 @@ class PatientController extends Controller
 
             return response([
                 'data' => ['patient' => $patient, 'history' => $patientHistory],
-                'message' => 'Record processed successfully (Patient updated/synced and new history created)',
+                'message' => 'Record processed successfully',
                 'statusCode' => 201,
             ], 201);
 
         } catch (\Throwable $e) {
             DB::rollBack();
+            \Log::error("Store Patient Error: " . $e->getMessage());
             return response([
                 'message' => 'Failed to process request',
                 'error' => $e->getMessage(),
