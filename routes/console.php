@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Artisan;
 | simple approach to interacting with each command's IO methods.
 |
 */
+// Clean up tokens that have been expired for 24 hours
+Schedule::command('sanctum:prune-expired --hours=24')->daily();
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
