@@ -689,6 +689,14 @@ class PatientHistoryController extends Controller
     {
         $user = auth()->user();
 
+        if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized action for your role.',
+                'statusCode' => 403
+            ], 403);
+        }
+
         // Load history + patient + referrals that are "Requested"
         $history = PatientHistory::with([
             'patient',
