@@ -79,7 +79,6 @@ class ReportController extends Controller
     {
         $user = auth()->user();
 
-        // Optional: Permission check
         if (! $user->can('View Referral Dashboard')) {
             return response([
                 'message' => 'Forbidden',
@@ -87,17 +86,26 @@ class ReportController extends Controller
             ], 403);
         }
 
-        // Count totals
+        // 1. Total Medical Boards
         $totalMedicalBoards = \App\Models\PatientList::count();
+
+        // 2. Total Patients (excluding soft deleted)
         $totalPatients = \App\Models\Patient::count();
-        $totalReferrals = \App\Models\Referral::count();
+
+        // 3. Total Referrals (Excluding 'Cancelled' and 'Pending')
+        // We use whereNotIn to focus on active/finalized cases
+        $totalReferrals = \App\Models\Referral::whereNotIn('status', ['Cancelled', 'Pending'])
+            ->whereNull('deleted_at') // Ensure we respect soft deletes
+            ->count();
+
+        // 4. Total Hospitals
         $totalHospitals = \App\Models\Hospital::count();
 
         return response([
             'data' => [
                 'total_medical_boards' => $totalMedicalBoards,
                 'total_patients' => $totalPatients,
-                'total_referrals' => $totalReferrals,
+                'total_referrals' => $totalReferrals, // Now filtered
                 'total_hospitals' => $totalHospitals,
             ],
             'statusCode' => 200,
@@ -166,22 +174,65 @@ class ReportController extends Controller
 
     // DASHBOARD ========================================================================//
 
+    // public function referralsReportByGendr()
+    // {
+    //     $user = auth()->user();
+
+    //     if (! $user->can('View Referral Dashboard')) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403,
+    //         ], 403);
+    //     }
+
+    //     try {
+    //         // Group by lowercase gender (case-insensitive)
+    //         $referralsByGender = DB::table('referrals')
+    //             ->join('patients', 'patients.patient_id', '=', 'referrals.patient_id')
+    //             ->whereNull('referrals.deleted_at')
+    //             ->where('referrals.status','confirmed')
+    //             ->select(
+    //                 DB::raw('LOWER(patients.gender) as gender'),
+    //                 DB::raw('COUNT(referrals.referral_id) as total')
+    //             )
+    //             ->groupBy(DB::raw('LOWER(patients.gender)'))
+    //             ->get();
+
+    //         // Convert to associative array and normalize keys
+    //         $genderStats = $referralsByGender->pluck('total', 'gender')->toArray();
+
+    //         // Normalize to Title Case keys (Female, Male)
+    //         $femaleCount = $genderStats['female'] ?? 0;
+    //         $maleCount = $genderStats['male'] ?? 0;
+
+    //         return response([
+    //             'Male' => $maleCount,
+    //             'Female' => $femaleCount,
+    //             'statusCode' => 200,
+    //         ], 200);
+
+    //     } catch (\Throwable $e) {
+    //         return response()->json([
+    //             'message' => $e->getMessage(),
+    //             'statusCode' => 401,
+    //         ]);
+    //     }
+    // }
+
     public function referralsReportByGendr()
     {
         $user = auth()->user();
 
-        if (! $user->can('View Referral Dashboard')) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403,
-            ], 403);
+        if (!$user->can('View Referral Dashboard')) {
+            return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
         try {
-            // Group by lowercase gender (case-insensitive)
             $referralsByGender = DB::table('referrals')
                 ->join('patients', 'patients.patient_id', '=', 'referrals.patient_id')
                 ->whereNull('referrals.deleted_at')
+                // 🔥 Match the PascalCase 'Confirmed' from your migration
+                ->whereNotIn('referrals.status', ['Cancelled', 'Pending'])
                 ->select(
                     DB::raw('LOWER(patients.gender) as gender'),
                     DB::raw('COUNT(referrals.referral_id) as total')
@@ -189,12 +240,11 @@ class ReportController extends Controller
                 ->groupBy(DB::raw('LOWER(patients.gender)'))
                 ->get();
 
-            // Convert to associative array and normalize keys
             $genderStats = $referralsByGender->pluck('total', 'gender')->toArray();
 
-            // Normalize to Title Case keys (Female, Male)
-            $femaleCount = $genderStats['female'] ?? 0;
-            $maleCount = $genderStats['male'] ?? 0;
+            // Handle various gender string formats (m, male, f, female)
+            $femaleCount = ($genderStats['female'] ?? 0) + ($genderStats['f'] ?? 0);
+            $maleCount = ($genderStats['male'] ?? 0) + ($genderStats['m'] ?? 0);
 
             return response([
                 'Male' => $maleCount,
@@ -204,9 +254,9 @@ class ReportController extends Controller
 
         } catch (\Throwable $e) {
             return response()->json([
-                'message' => $e->getMessage(),
-                'statusCode' => 401,
-            ]);
+                'message' => 'Report Error: ' . $e->getMessage(),
+                'statusCode' => 500, // Use 500 for server/query errors
+            ], 500);
         }
     }
     // DASHBOARD ========================================================================//
