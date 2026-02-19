@@ -683,9 +683,9 @@ class PatientController extends Controller
         }
 
         // 4. Custom Business Logic Checks
-        if (!$this->isValidMatibabuCard($request->matibabu_card)) {
-            return response()->json(['message' => 'Invalid Matibabu card number.', 'statusCode' => 403], 403);
-        }
+        // if (!$this->isValidMatibabuCard($request->matibabu_card)) {
+        //     return response()->json(['message' => 'Invalid Matibabu card number.', 'statusCode' => 403], 403);
+        // }
 
         if (!$this->isPatientEligible($request->matibabu_card)) {
             return response()->json(['message' => 'Patient has an active referral process.', 'statusCode' => 403], 200);
