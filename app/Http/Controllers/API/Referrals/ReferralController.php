@@ -67,55 +67,6 @@ class ReferralController extends Controller
      *     )
      * )
      */
-    // public function index()
-    // {
-    //     $user = auth()->user();
-    //     if (!$user->can('View Referral')) {
-    //         return response([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     $referrals = Referral::with(['patient', 'reason', 'hospital'])
-    //         ->where('status', '<>', 'Requested') // <-- exclude Requested
-    //         ->get()
-    //         ->groupBy('referral_number')
-    //         ->map(function ($group) {
-    //             $first = $group->first();
-    //             $patient = $first->patient;
-
-    //             return [
-    //                 'referral_number' => $first->referral_number,
-    //                 'patient'         => $patient,
-    //                 'reason'          => $first->reason,
-    //                 'status'          => $group->pluck('status')->unique()->implode(', '),
-    //                 'hospitals'       => $group->pluck('hospital')->unique('hospital_id')->values(), // if multiple hospitals
-    //                 'referrals'       => $group->map(function ($ref) {
-    //                     return [
-    //                         'referral_id'        => $ref->referral_id,
-    //                         'parent_referral_id' => $ref->parent_referral_id,
-    //                         'hospital_id'        => $ref->hospital_id,
-    //                         'reason_id'          => $ref->reason_id,
-    //                         'status'             => $ref->status,
-    //                         'confirmed_by'       => $ref->confirmed_by,
-    //                         'created_by'         => $ref->created_by,
-    //                         'created_at'         => $ref->created_at,
-    //                         'updated_at'         => $ref->updated_at,
-    //                         'deleted_at'         => $ref->deleted_at,
-    //                         'hospital'           => $ref->hospital,
-    //                     ];
-    //                 })->values(),
-    //             ];
-    //         })
-    //         ->values();
-
-    //     return response([
-    //         'data' => $referrals,
-    //         'statusCode' => 200,
-    //     ], 200);
-    // }
-
     public function index()
     {
         $user = auth()->user();
@@ -127,34 +78,19 @@ class ReferralController extends Controller
         }
 
         $referrals = Referral::with(['patient', 'reason', 'hospital'])
-            ->where('status', '<>', 'Requested')
+            ->where('status', '<>', 'Requested') // <-- exclude Requested
             ->get()
             ->groupBy('referral_number')
             ->map(function ($group) {
                 $first = $group->first();
                 $patient = $first->patient;
 
-                // --- AGE CALCULATION LOGIC ---
-                if ($patient && $patient->date_of_birth) {
-                    $dob = \Carbon\Carbon::parse($patient->date_of_birth);
-                    $now = \Carbon\Carbon::now();
-                    $diff = $dob->diff($now);
-
-                    $patient->age_details = [
-                        'years'  => $diff->y,
-                        'months' => $diff->m,
-                        'days'   => $diff->d,
-                        'string' => "{$diff->y}y {$diff->m}m {$diff->d}d"
-                    ];
-                }
-                // -----------------------------
-
                 return [
                     'referral_number' => $first->referral_number,
                     'patient'         => $patient,
                     'reason'          => $first->reason,
                     'status'          => $group->pluck('status')->unique()->implode(', '),
-                    'hospitals'       => $group->pluck('hospital')->unique('hospital_id')->values(),
+                    'hospitals'       => $group->pluck('hospital')->unique('hospital_id')->values(), // if multiple hospitals
                     'referrals'       => $group->map(function ($ref) {
                         return [
                             'referral_id'        => $ref->referral_id,
