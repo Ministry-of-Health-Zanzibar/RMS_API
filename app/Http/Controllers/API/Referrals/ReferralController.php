@@ -339,17 +339,29 @@ class ReferralController extends Controller
         $patient = $referral->patient;
 
         if ($patient && $patient->date_of_birth) {
-            $dob = \Carbon\Carbon::parse($patient->date_of_birth);
-            $now = \Carbon\Carbon::now();
-            $diff = $dob->diff($now);
+            // Check if the value is just a number (like '8')
+            if (is_numeric($patient->date_of_birth)) {
+                $patient->age_details = [
+                    'years'  => 0, 'months' => 0, 'days' => 0,
+                    'string' => "Invalid Date Data"
+                ];
+            } else {
+                try {
+                    $dob = \Carbon\Carbon::parse($patient->date_of_birth);
+                    $now = \Carbon\Carbon::now();
+                    $diff = $dob->diff($now);
 
-            // Inject the details directly into the patient object
-            $patient->age_details = [
-                'years'  => $diff->y,
-                'months' => $diff->m,
-                'days'   => $diff->d,
-                'string' => "{$diff->y}y {$diff->m}m {$diff->d}d"
-            ];
+                    $patient->age_details = [
+                        'years'  => $diff->y,
+                        'months' => $diff->m,
+                        'days'   => $diff->d,
+                        'string' => "{$diff->y}y {$diff->m}m {$diff->d}d"
+                    ];
+                } catch (\Exception $e) {
+                    // Handle cases where data is "broken" but not numeric
+                    $patient->age_details = ['string' => "Unknown"];
+                }
+            }
         }
 
         return response()->json([
