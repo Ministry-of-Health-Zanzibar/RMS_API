@@ -143,27 +143,8 @@ class ReferralController extends Controller
         /** * Hapa tunapanga (sort) ili zile zenye 'Pending' ziwe juu.
          * str_contains inatusaidia hata kama status imekuwa 'imploded' (mfano: "Pending, Approved")
          */
-        // ->sortByDesc(function ($item) {
-        //     return str_contains(strtolower($item['status']), 'Pending');
-        // })
-        // ->values();
-        ->values()
-        ->sort(function ($a, $b) {
-            // 1. Sort by Pending Status
-            $aPending = str_contains(strtolower($a['status']), 'pending');
-            $bPending = str_contains(strtolower($b['status']), 'pending');
-
-            if ($aPending !== $bPending) {
-                return $bPending <=> $aPending;
-            }
-
-            // 2. Sort by Date
-            // Since 'created_at' is inside the 'referrals' array,
-            // we grab the date from the first item in that array.
-            $aDate = $a['referrals'][0]['created_at'] ?? 0;
-            $bDate = $b['referrals'][0]['created_at'] ?? 0;
-
-            return $bDate <=> $aDate;
+        ->sortByDesc(function ($item) {
+            return str_contains(strtolower($item['status']), 'Pending');
         })
         ->values();
 
