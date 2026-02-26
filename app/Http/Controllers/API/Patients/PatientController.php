@@ -835,22 +835,176 @@ class PatientController extends Controller
         }
     }
 
-    public function updatePatientAndHistory(Request $request, $patient_id, $history_id)
+    // public function updatePatientAndHistory(Request $request, $patient_id, $history_id)
+    // {
+    //     $user = auth()->user();
+
+    //     // 1. Authorization
+    //     if (!$user->can('Update Patient')) {
+    //         return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+    //     }
+
+    //     // 2. Data Preparation
+    //     $request->merge([
+    //         'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+    //     ]);
+
+    //     // 3. Validation
+    //     $validator = Validator::make($request->all(), [
+    //         'name'              => ['required', 'string', 'max:255'],
+    //         'matibabu_card'     => ['required', 'string', 'max:50'],
+    //         'zan_id'            => ['nullable', 'string', 'max:50'],
+    //         'date_of_birth'     => ['required', 'string'],
+    //         'gender'            => ['required', 'string'],
+    //         'phone'             => ['nullable', 'string', 'max:20'],
+    //         'location_id'       => ['nullable', 'exists:geographical_locations,location_id'],
+    //         'job'               => ['nullable', 'string'],
+    //         'position'          => ['nullable', 'string'],
+
+    //         'file_number'       => ['nullable', 'string'],
+    //         'referring_date'    => ['nullable', 'string'],
+    //         'reason_id'         => ['required', 'numeric', 'exists:reasons,reason_id'],
+    //         'case_type'         => ['required', 'in:Emergency,Routine'],
+    //         'history_file'      => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+    //         'diagnosis_ids'     => ['nullable', 'array'],
+    //         'diagnosis_ids.*'   => ['exists:diagnoses,diagnosis_id'],
+
+    //         'has_insurance'           => ['required', 'boolean'],
+    //         'insurance_provider_name' => ['nullable', 'string'],
+    //         'card_number'             => ['nullable', 'string'],
+    //         'valid_until'             => ['nullable', 'string'],
+
+    //         'patient_file'            => ['nullable', 'file', 'mimes:pdf,jpg,png,doc,docx', 'max:5000'],
+    //         'description'             => ['nullable', 'string'],
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
+    //     }
+
+    //     DB::beginTransaction();
+    //     try {
+    //         // 4. UPDATE PATIENT
+    //         $patient = \App\Models\Patient::findOrFail($patient_id);
+    //         $patient->update([
+    //             'name'          => $request->name,
+    //             'matibabu_card' => $request->matibabu_card,
+    //             'zan_id'        => $request->zan_id,
+    //             'date_of_birth' => $request->date_of_birth,
+    //             'gender'        => $request->gender,
+    //             'phone'         => $request->phone,
+    //             'location_id'   => $request->location_id,
+    //             'job'           => $request->job,
+    //             'position'      => $request->position,
+    //         ]);
+
+    //         // 5. UPDATE HISTORY
+    //         $patientHistory = \App\Models\PatientHistory::where('patient_id', $patient_id)
+    //             ->findOrFail($history_id);
+
+    //         $patientHistory->update([
+    //             'file_number'                   => $request->file_number,
+    //             'referring_date'                => $request->referring_date,
+    //             'reason_id'                     => $request->reason_id,
+    //             'case_type'                     => $request->case_type,
+    //             'history_of_presenting_illness' => $request->history_of_presenting_illness,
+    //             'physical_findings'             => $request->physical_findings,
+    //             'investigations'                => $request->investigations,
+    //             'management_done'               => $request->management_done,
+    //             'board_comments'                => $request->board_comments,
+    //         ]);
+
+    //         // 6. SYNC DIAGNOSES
+    //         if ($request->filled('diagnosis_ids')) {
+    //             $diagnosisData = collect($request->diagnosis_ids)->mapWithKeys(function ($id) {
+    //                 return [$id => ['added_by' => 'doctor']];
+    //             })->toArray();
+    //             $patientHistory->diagnoses()->sync($diagnosisData);
+    //         }
+
+    //         // 7. UPDATE INSURANCE
+    //         if ($request->boolean('has_insurance')) {
+    //             \App\Models\Insurance::updateOrCreate(
+    //                 ['patient_id' => $patient->patient_id],
+    //                 [
+    //                     'insurance_provider_name' => $request->insurance_provider_name,
+    //                     'card_number'             => $request->card_number,
+    //                     'valid_until'             => $request->valid_until,
+    //                 ]
+    //             );
+    //         }
+
+    //         // 8. UPDATE HISTORY FILE (With Physical Deletion of Old File)
+    //         if ($request->hasFile('history_file')) {
+    //             // Delete old file if it exists
+    //             if ($patientHistory->history_file && file_exists(public_path($patientHistory->history_file))) {
+    //                 unlink(public_path($patientHistory->history_file));
+    //             }
+
+    //             $file = $request->file('history_file');
+    //             $fileName = 'history_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+    //             $file->move(public_path('uploads/historyFiles'), $fileName);
+    //             $patientHistory->update(['history_file' => 'uploads/historyFiles/' . $fileName]);
+    //         }
+
+    //         // 9. ADD NEW PATIENT FILE
+    //         if ($request->hasFile('patient_file')) {
+    //             $file = $request->file('patient_file');
+    //             $extension = $file->getClientOriginalExtension();
+    //             $newFileName = 'patient_file_' . date('h-i-s_a_d-m-Y') . '_' . uniqid() . '.' . $extension;
+
+    //             $file->move(public_path('uploads/patientFiles/'), $newFileName);
+    //             $filePath = 'uploads/patientFiles/' . $newFileName;
+
+    //             \App\Models\PatientFile::create([
+    //                 'patient_id'  => $patient->patient_id,
+    //                 'file_name'   => $file->getClientOriginalName(),
+    //                 'file_path'   => $filePath,
+    //                 'file_type'   => $extension,
+    //                 'description' => $request->description,
+    //                 'uploaded_by' => Auth::id(),
+    //             ]);
+    //         }
+
+    //         DB::commit();
+
+    //         return response([
+    //             'data' => ['patient' => $patient, 'history' => $patientHistory],
+    //             'message' => 'Information updated successfully',
+    //             'statusCode' => 200,
+    //         ], 200);
+
+    //     } catch (\Throwable $e) {
+    //         DB::rollBack();
+    //         \Log::error("Update Patient Error: " . $e->getMessage());
+    //         return response([
+    //             'message' => 'Failed to update record',
+    //             'error' => $e->getMessage(),
+    //             'statusCode' => 500,
+    //         ], 500);
+    //     }
+    // }
+    /**
+ * Inasasisha taarifa za mgonjwa na historia yake ya matibabu ya hivi karibuni.
+ * Inapokea Request na patient_id pekee.
+ */
+    public function updatePatientAndHistory(Request $request, $patient_id)
     {
         $user = auth()->user();
 
-        // 1. Authorization
+        // 1. Authorization - Hakiki kama mtumiaji anaruhusiwa
         if (!$user->can('Update Patient')) {
             return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
-        // 2. Data Preparation
+        // 2. Data Preparation - Badilisha has_insurance kuwa boolean halisi
         $request->merge([
             'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
         ]);
 
-        // 3. Validation
+        // 3. Validation - Hakiki data zinazoingia
         $validator = Validator::make($request->all(), [
+            // Patient Fields
             'name'              => ['required', 'string', 'max:255'],
             'matibabu_card'     => ['required', 'string', 'max:50'],
             'zan_id'            => ['nullable', 'string', 'max:50'],
@@ -861,6 +1015,7 @@ class PatientController extends Controller
             'job'               => ['nullable', 'string'],
             'position'          => ['nullable', 'string'],
 
+            // History Fields
             'file_number'       => ['nullable', 'string'],
             'referring_date'    => ['nullable', 'string'],
             'reason_id'         => ['required', 'numeric', 'exists:reasons,reason_id'],
@@ -868,23 +1023,34 @@ class PatientController extends Controller
             'history_file'      => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
             'diagnosis_ids'     => ['nullable', 'array'],
             'diagnosis_ids.*'   => ['exists:diagnoses,diagnosis_id'],
+            'history_of_presenting_illness' => ['nullable', 'string'],
+            'physical_findings'             => ['nullable', 'string'],
+            'investigations'                => ['nullable', 'string'],
+            'management_done'               => ['nullable', 'string'],
+            'board_comments'                => ['nullable', 'string'],
 
+            // Insurance Fields
             'has_insurance'           => ['required', 'boolean'],
             'insurance_provider_name' => ['nullable', 'string'],
             'card_number'             => ['nullable', 'string'],
             'valid_until'             => ['nullable', 'string'],
 
+            // New Patient File Fields
             'patient_file'            => ['nullable', 'file', 'mimes:pdf,jpg,png,doc,docx', 'max:5000'],
             'description'             => ['nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors(),
+                'statusCode' => 422
+            ], 422);
         }
 
         DB::beginTransaction();
         try {
-            // 4. UPDATE PATIENT
+            // 4. TAFUTA NA SASISHA (UPDATE) PATIENT
             $patient = \App\Models\Patient::findOrFail($patient_id);
             $patient->update([
                 'name'          => $request->name,
@@ -898,10 +1064,19 @@ class PatientController extends Controller
                 'position'      => $request->position,
             ]);
 
-            // 5. UPDATE HISTORY
+            // 5. TAFUTA LATEST HISTORY YA MGONJWA HUYU
             $patientHistory = \App\Models\PatientHistory::where('patient_id', $patient_id)
-                ->findOrFail($history_id);
+                ->latest('patient_histories_id')
+                ->first();
 
+            if (!$patientHistory) {
+                return response([
+                    'message' => 'No medical history found for this patient to update.',
+                    'statusCode' => 404
+                ], 404);
+            }
+
+            // SASISHA HISTORY
             $patientHistory->update([
                 'file_number'                   => $request->file_number,
                 'referring_date'                => $request->referring_date,
@@ -932,11 +1107,13 @@ class PatientController extends Controller
                         'valid_until'             => $request->valid_until,
                     ]
                 );
+            } else {
+                // Hiari: Futa insurance kama amechagua "Hapana" (kulingana na mfumo wako)
+                // \App\Models\Insurance::where('patient_id', $patient->patient_id)->delete();
             }
 
-            // 8. UPDATE HISTORY FILE (With Physical Deletion of Old File)
+            // 8. SASISHA HISTORY FILE (Futa ya zamani, weka mpya)
             if ($request->hasFile('history_file')) {
-                // Delete old file if it exists
                 if ($patientHistory->history_file && file_exists(public_path($patientHistory->history_file))) {
                     unlink(public_path($patientHistory->history_file));
                 }
@@ -947,30 +1124,32 @@ class PatientController extends Controller
                 $patientHistory->update(['history_file' => 'uploads/historyFiles/' . $fileName]);
             }
 
-            // 9. ADD NEW PATIENT FILE
+            // 9. ONGEZA PATIENT FILE MPYA (Kama lipo)
             if ($request->hasFile('patient_file')) {
                 $file = $request->file('patient_file');
                 $extension = $file->getClientOriginalExtension();
                 $newFileName = 'patient_file_' . date('h-i-s_a_d-m-Y') . '_' . uniqid() . '.' . $extension;
 
                 $file->move(public_path('uploads/patientFiles/'), $newFileName);
-                $filePath = 'uploads/patientFiles/' . $newFileName;
 
                 \App\Models\PatientFile::create([
                     'patient_id'  => $patient->patient_id,
                     'file_name'   => $file->getClientOriginalName(),
-                    'file_path'   => $filePath,
+                    'file_path'   => 'uploads/patientFiles/' . $newFileName,
                     'file_type'   => $extension,
                     'description' => $request->description,
-                    'uploaded_by' => Auth::id(),
+                    'uploaded_by' => auth()->id(),
                 ]);
             }
 
             DB::commit();
 
             return response([
-                'data' => ['patient' => $patient, 'history' => $patientHistory],
-                'message' => 'Information updated successfully',
+                'data' => [
+                    'patient' => $patient->load('geographicalLocation'),
+                    'history' => $patientHistory->load(['diagnoses', 'reason'])
+                ],
+                'message' => 'Patient and medical history updated successfully',
                 'statusCode' => 200,
             ], 200);
 
@@ -985,79 +1164,77 @@ class PatientController extends Controller
         }
     }
 
-    public function showForUpdate($patient_id, $history_id)
+    public function showForUpdate($patient_id)
     {
         $user = auth()->user();
 
-        // 1. Authorization
         if (!$user->can('View Patient')) {
             return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
         try {
-            // 2. Fetch Patient with Eager Loading
-            // We load the specific history, insurance, and the files
+            // 1. Eager Load kila kitu.
+            // Tunatumia latest('patient_histories_id') kupata ya mwisho kuingizwa.
             $patient = \App\Models\Patient::with([
                 'insurance',
                 'patientFiles',
-                'patientHistories' => function ($query) use ($history_id) {
-                    $query->where('patient_histories_id', $history_id)->with('diagnoses');
+                'geographicalLocation',
+                'patientHistories' => function ($query) {
+                    $query->latest('patient_histories_id')
+                        ->with(['diagnoses', 'reason'])
+                        ->limit(1);
                 }
             ])->findOrFail($patient_id);
 
+            // Kuchukua historia ya kwanza (ambayo ni latest kutokana na query hapo juu)
             $history = $patient->patientHistories->first();
-
-            if (!$history) {
-                return response(['message' => 'Record not found', 'statusCode' => 404], 404);
-            }
-
-            // 3. Prepare the data for the Form
-            // We extract the diagnosis IDs so the frontend dropdown knows what to select
-            $selectedDiagnosisIds = $history->diagnoses->pluck('diagnosis_id')->toArray();
 
             return response([
                 'data' => [
                     'patient' => [
-                        'patient_id'    => $patient->patient_id,
-                        'name'          => $patient->name,
-                        'matibabu_card' => $patient->matibabu_card,
-                        'zan_id'        => $patient->zan_id,
-                        'date_of_birth' => $patient->date_of_birth,
-                        'gender'        => $patient->gender,
-                        'phone'         => $patient->phone,
-                        'location_id'   => $patient->location_id,
-                        'job'           => $patient->job,
-                        'position'      => $patient->position,
+                        'patient_id'       => $patient->patient_id,
+                        'name'             => $patient->name,
+                        'matibabu_card'    => $patient->matibabu_card,
+                        'zan_id'           => $patient->zan_id,
+                        'date_of_birth'    => $patient->date_of_birth,
+                        'gender'           => $patient->gender,
+                        'phone'            => $patient->phone,
+                        'job'              => $patient->job,
+                        'position'         => $patient->position,
+                        'location_details' => $patient->geographicalLocation,
                     ],
-                    'history' => [
+                    // Ikiwa historia haipo, tunarudisha null badala ya kutoa Error
+                    'history' => $history ? [
                         'history_id'                    => $history->patient_histories_id,
                         'file_number'                   => $history->file_number,
                         'referring_date'                => $history->referring_date,
-                        'reason_id'                     => $history->reason_id,
                         'case_type'                     => $history->case_type,
                         'history_of_presenting_illness' => $history->history_of_presenting_illness,
                         'physical_findings'             => $history->physical_findings,
                         'investigations'                => $history->investigations,
                         'management_done'               => $history->management_done,
-                        'board_comments'                => $history->board_comments,
-                        'existing_history_file'         => $history->history_file ? asset($history->history_file) : null,
-                        'diagnosis_ids'                 => $selectedDiagnosisIds,
-                    ],
+                        'history_file'         => $history->history_file ? asset($history->history_file) : null,
+                        'reason_details'                => $history->reason,
+                        'diagnoses'                     => $history->diagnoses,
+                    ] : null,
+
                     'insurance' => $patient->insurance ? [
                         'has_insurance'           => true,
+                        'insurance_id'            => $patient->insurance->insurance_id,
                         'insurance_provider_name' => $patient->insurance->insurance_provider_name,
                         'card_number'             => $patient->insurance->card_number,
                         'valid_until'             => $patient->insurance->valid_until,
+                        'created_at'              => $patient->insurance->created_at,
                     ] : ['has_insurance' => false],
 
-                    'existing_files' => $patient->patientFiles->map(function($file) {
+                    'patient_summary_file' => $patient->patientFiles->sortByDesc('id')->map(function($file) {
                         return [
                             'id'          => $file->id,
                             'file_name'   => $file->file_name,
                             'file_path'   => asset($file->file_path),
                             'description' => $file->description
                         ];
-                    })
+                    })->first() // Hapa tunachukua faili la kwanza baada ya kupanga kwa ID (Latest)
                 ],
                 'statusCode' => 200
             ], 200);

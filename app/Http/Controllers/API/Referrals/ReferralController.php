@@ -77,38 +77,76 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        $referrals = Referral::with(['patient', 'reason', 'hospital'])
-            ->where('status', '<>', 'Requested') // <-- exclude Requested
-            ->get()
-            ->groupBy('referral_number')
-            ->map(function ($group) {
-                $first = $group->first();
-                $patient = $first->patient;
+        // $referrals = Referral::with(['patient', 'reason', 'hospital'])
+        //     ->where('status', '<>', 'Requested') // <-- exclude Requested
+        //     ->get()
+        //     ->groupBy('referral_number')
+        //     ->map(function ($group) {
+        //         $first = $group->first();
+        //         $patient = $first->patient;
 
-                return [
-                    'referral_number' => $first->referral_number,
-                    'patient'         => $patient,
-                    'reason'          => $first->reason,
-                    'status'          => $group->pluck('status')->unique()->implode(', '),
-                    'hospitals'       => $group->pluck('hospital')->unique('hospital_id')->values(), // if multiple hospitals
-                    'referrals'       => $group->map(function ($ref) {
-                        return [
-                            'referral_id'        => $ref->referral_id,
-                            'parent_referral_id' => $ref->parent_referral_id,
-                            'hospital_id'        => $ref->hospital_id,
-                            'reason_id'          => $ref->reason_id,
-                            'status'             => $ref->status,
-                            'confirmed_by'       => $ref->confirmed_by,
-                            'created_by'         => $ref->created_by,
-                            'created_at'         => $ref->created_at,
-                            'updated_at'         => $ref->updated_at,
-                            'deleted_at'         => $ref->deleted_at,
-                            'hospital'           => $ref->hospital,
-                        ];
-                    })->values(),
-                ];
-            })
-            ->values();
+        //         return [
+        //             'referral_number' => $first->referral_number,
+        //             'patient'         => $patient,
+        //             'reason'          => $first->reason,
+        //             'status'          => $group->pluck('status')->unique()->implode(', '),
+        //             'hospitals'       => $group->pluck('hospital')->unique('hospital_id')->values(), // if multiple hospitals
+        //             'referrals'       => $group->map(function ($ref) {
+        //                 return [
+        //                     'referral_id'        => $ref->referral_id,
+        //                     'parent_referral_id' => $ref->parent_referral_id,
+        //                     'hospital_id'        => $ref->hospital_id,
+        //                     'reason_id'          => $ref->reason_id,
+        //                     'status'             => $ref->status,
+        //                     'confirmed_by'       => $ref->confirmed_by,
+        //                     'created_by'         => $ref->created_by,
+        //                     'created_at'         => $ref->created_at,
+        //                     'updated_at'         => $ref->updated_at,
+        //                     'deleted_at'         => $ref->deleted_at,
+        //                     'hospital'           => $ref->hospital,
+        //                 ];
+        //             })->values(),
+        //         ];
+        //     })
+        //     ->values();
+        $referrals = Referral::with(['patient', 'reason', 'hospital'])
+        ->where('status', '<>', 'Requested') // <-- exclude Requested
+        ->get()
+        ->groupBy('referral_number')
+        ->map(function ($group) {
+            $first = $group->first();
+            $patient = $first->patient;
+
+            return [
+                'referral_number' => $first->referral_number,
+                'patient'         => $patient,
+                'reason'          => $first->reason,
+                'status'          => $group->pluck('status')->unique()->implode(', '),
+                'hospitals'       => $group->pluck('hospital')->unique('hospital_id')->values(),
+                'referrals'       => $group->map(function ($ref) {
+                    return [
+                        'referral_id'        => $ref->referral_id,
+                        'parent_referral_id' => $ref->parent_referral_id,
+                        'hospital_id'        => $ref->hospital_id,
+                        'reason_id'          => $ref->reason_id,
+                        'status'             => $ref->status,
+                        'confirmed_by'       => $ref->confirmed_by,
+                        'created_by'         => $ref->created_by,
+                        'created_at'         => $ref->created_at,
+                        'updated_at'         => $ref->updated_at,
+                        'deleted_at'         => $ref->deleted_at,
+                        'hospital'           => $ref->hospital,
+                    ];
+                })->values(),
+            ];
+        })
+        /** * Hapa tunapanga (sort) ili zile zenye 'Pending' ziwe juu.
+         * str_contains inatusaidia hata kama status imekuwa 'imploded' (mfano: "Pending, Approved")
+         */
+        ->sortByDesc(function ($item) {
+            return str_contains(strtolower($item['status']), 'pending');
+        })
+        ->values();
 
         return response([
             'data' => $referrals,

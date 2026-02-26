@@ -63,6 +63,18 @@ class Patient extends Model
         );
     }
 
+    // Add this so 'insurance' (singular) works
+    public function insurance()
+    {
+        return $this->hasOne(Insurance::class, 'patient_id', 'patient_id')->latest();
+    }
+
+    // Change 'files' to 'patientFiles' in App\Models\Patient.php
+    public function patientFiles()
+    {
+        return $this->hasMany(PatientFile::class, 'patient_id', 'patient_id');
+    }
+
     public function patientHistories()
     {
         return $this->hasMany(PatientHistory::class, 'patient_id', 'patient_id');
