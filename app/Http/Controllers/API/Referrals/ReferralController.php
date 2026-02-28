@@ -67,30 +67,81 @@ class ReferralController extends Controller
      *     )
      * )
      */
-    public function index()
-    {
-        $user = auth()->user();
-        if (!$user->can('View Referral')) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
+    // public function index()
+    // {
+    //     $user = auth()->user();
+    //     if (!$user->can('View Referral')) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
 
-        $referrals = Referral::with(['patient', 'reason', 'hospital'])
-        ->where('status', '<>', 'Requested') // <-- exclude Requested
+    //     $referrals = Referral::with(['patient', 'reason', 'hospital'])
+    //     ->where('status', '<>', 'Requested') // <-- exclude Requested
+    //     ->get()
+    //     ->groupBy('referral_number')
+    //     ->map(function ($group) {
+    //         $first = $group->first();
+    //         $patient = $first->patient;
+
+    //         return [
+    //             'referral_number' => $first->referral_number,
+    //             'patient'         => $patient,
+    //             'reason'          => $first->reason,
+    //             'status'          => $group->pluck('status')->unique()->implode(', '),
+    //             'hospitals'       => $group->pluck('hospital')->unique('hospital_id')->values(),
+    //             'referrals'       => $group->map(function ($ref) {
+    //                 return [
+    //                     'referral_id'        => $ref->referral_id,
+    //                     'parent_referral_id' => $ref->parent_referral_id,
+    //                     'hospital_id'        => $ref->hospital_id,
+    //                     'reason_id'          => $ref->reason_id,
+    //                     'status'             => $ref->status,
+    //                     'confirmed_by'       => $ref->confirmed_by,
+    //                     'created_by'         => $ref->created_by,
+    //                     'created_at'         => $ref->created_at,
+    //                     'updated_at'         => $ref->updated_at,
+    //                     'deleted_at'         => $ref->deleted_at,
+    //                     'hospital'           => $ref->hospital,
+    //                 ];
+    //             })->values(),
+    //         ];
+    //     })
+    //     ->sortByDesc(function ($item) {
+    //         return str_contains(($item['status']), 'Pending');
+    //     })
+    //     ->values();
+
+    //     return response([
+    //         'data' => $referrals,
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
+
+    public function index()
+{
+    $user = auth()->user();
+    if (!$user->can('View Referral')) {
+        return response([
+            'message' => 'Forbidden',
+            'statusCode' => 403
+        ], 403);
+    }
+
+    $referrals = Referral::with(['patient', 'reason', 'hospital'])
+        ->where('status', '<>', 'Requested')
         ->get()
         ->groupBy('referral_number')
         ->map(function ($group) {
             $first = $group->first();
-            $patient = $first->patient;
 
             return [
                 'referral_number' => $first->referral_number,
-                'patient'         => $patient,
+                'patient'         => $first->patient,
                 'reason'          => $first->reason,
                 'status'          => $group->pluck('status')->unique()->implode(', '),
-                'hospitals'       => $group->pluck('hospital')->unique('hospital_id')->values(),
+                'hospitals'       => $group->pluck('hospital')->filter()->unique('hospital_id')->values(),
                 'referrals'       => $group->map(function ($ref) {
                     return [
                         'referral_id'        => $ref->referral_id,
@@ -108,16 +159,22 @@ class ReferralController extends Controller
                 })->values(),
             ];
         })
+        ->values() // Reset keys before sorting
+        /**
+         * Use sortByDesc with a truthy check.
+         * stripos returns a number (position) or false.
+         * By casting to (bool), we ensure 'Pending' is 1 (Top) and others are 0 (Bottom).
+         */
         ->sortByDesc(function ($item) {
-            return str_contains(($item['status']), 'Pending');
+            return (bool) stripos($item['status'], 'Pending');
         })
-        ->values();
+        ->values(); // Reset keys after sorting for clean JSON array
 
-        return response([
-            'data' => $referrals,
-            'statusCode' => 200,
-        ], 200);
-    }
+    return response([
+        'data' => $referrals,
+        'statusCode' => 200,
+    ], 200);
+}
 
 
     public function getReferralwithBills()
