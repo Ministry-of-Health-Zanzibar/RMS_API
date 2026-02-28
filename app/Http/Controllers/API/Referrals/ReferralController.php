@@ -218,23 +218,17 @@ public function index()
                 })->values(),
             ];
         })
-        ->values() // CRITICAL: Reset keys from groupBy before sorting
-        ->sort(function ($a, $b) {
-            // 1. Assign weights (Pending = 1, Everything else = 0)
-            // Using stripos to handle "Pending", "pending", etc.
-            $aWeight = stripos($a['status'], 'Pending') !== false ? 1 : 0;
-            $bWeight = stripos($b['status'], 'Pending') !== false ? 1 : 0;
+        ->sortByDesc(function ($item) {
+            // 1. Create a sort string or number
+            // If it contains 'Pending', we give it a high priority (1)
+            // Otherwise, we give it a low priority (0)
+            $isPending = (stripos($item['status'], 'Pending') !== false) ? '1' : '0';
 
-            // 2. If weights are different, higher weight (Pending) goes to Top
-            if ($aWeight !== $bWeight) {
-                return $bWeight <=> $aWeight;
-            }
-
-            // 3. If both are Pending (or both are Confirmed),
-            // sort by Date (Newest first)
-            return $b['created_at'] <=> $a['created_at'];
+            // 2. We concatenate the priority with the timestamp
+            // This forces Pending items to the top, and then sorts by date within those groups
+            return $isPending . '_' . $item['created_at'];
         })
-        ->values(); // CRITICAL: Reset keys again after sorting for a clean JSON Array
+        ->values();
 
     return response([
         'data' => $referrals,
