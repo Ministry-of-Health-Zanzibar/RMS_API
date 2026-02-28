@@ -119,71 +119,11 @@ class ReferralController extends Controller
     //     ], 200);
     // }
 
-//     public function index()
-// {
-//     $user = auth()->user();
-//     if (!$user->can('View Referral')) {
-//         return response([
-//             'message' => 'Forbidden',
-//             'statusCode' => 403
-//         ], 403);
-//     }
-
-//     $referrals = Referral::with(['patient', 'reason', 'hospital'])
-//         ->where('status', '<>', 'Requested')
-//         ->get()
-//         ->groupBy('referral_number')
-//         ->map(function ($group) {
-//             $first = $group->first();
-
-//             return [
-//                 'referral_number' => $first->referral_number,
-//                 'patient'         => $first->patient,
-//                 'reason'          => $first->reason,
-//                 'status'          => $group->pluck('status')->unique()->implode(', '),
-//                 'hospitals'       => $group->pluck('hospital')->filter()->unique('hospital_id')->values(),
-//                 'referrals'       => $group->map(function ($ref) {
-//                     return [
-//                         'referral_id'        => $ref->referral_id,
-//                         'parent_referral_id' => $ref->parent_referral_id,
-//                         'hospital_id'        => $ref->hospital_id,
-//                         'reason_id'          => $ref->reason_id,
-//                         'status'             => $ref->status,
-//                         'confirmed_by'       => $ref->confirmed_by,
-//                         'created_by'         => $ref->created_by,
-//                         'created_at'         => $ref->created_at,
-//                         'updated_at'         => $ref->updated_at,
-//                         'deleted_at'         => $ref->deleted_at,
-//                         'hospital'           => $ref->hospital,
-//                     ];
-//                 })->values(),
-//             ];
-//         })
-//         ->values() // Reset keys before sorting
-//         /**
-//          * Use sortByDesc with a truthy check.
-//          * stripos returns a number (position) or false.
-//          * By casting to (bool), we ensure 'Pending' is 1 (Top) and others are 0 (Bottom).
-//          */
-//         ->sortByDesc(function ($item) {
-//             return (bool) stripos($item['status'], 'Pending');
-//         })
-//         ->values(); // Reset keys after sorting for clean JSON array
-
-//     return response([
-//         'data' => $referrals,
-//         'statusCode' => 200,
-//     ], 200);
-// }
-
-public function index()
+    public function index()
 {
     $user = auth()->user();
     if (!$user->can('View Referral')) {
-        return response([
-            'message' => 'Forbidden',
-            'statusCode' => 403
-        ], 403);
+        return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
     }
 
     $referrals = Referral::with(['patient', 'reason', 'hospital'])
@@ -193,40 +133,40 @@ public function index()
         ->map(function ($group) {
             $first = $group->first();
 
+            // 1. Get all statuses in this group as an array
+            $statuses = $group->pluck('status')->map(fn($s) => strtolower(trim($s)))->toArray();
+
+            // 2. Determine Priority: If ANY status in the group is pending, priority is 1
+            $priority = in_array('pending', $statuses) ? 1 : 0;
+
             return [
                 'referral_number' => $first->referral_number,
                 'patient'         => $first->patient,
                 'reason'          => $first->reason,
                 'status'          => $group->pluck('status')->unique()->implode(', '),
                 'hospitals'       => $group->pluck('hospital')->filter()->unique('hospital_id')->values(),
-                // Keep the date at this level so the sorter can see it
-                'created_at'      => $first->created_at,
+                'priority'        => $priority, // We use this for sorting
+                'created_at_sort' => $first->created_at->format('Y-m-d H:i:s'),
                 'referrals'       => $group->map(function ($ref) {
                     return [
-                        'referral_id'        => $ref->referral_id,
-                        'parent_referral_id' => $ref->parent_referral_id,
-                        'hospital_id'        => $ref->hospital_id,
-                        'reason_id'          => $ref->reason_id,
-                        'status'             => $ref->status,
-                        'confirmed_by'       => $ref->confirmed_by,
-                        'created_by'         => $ref->created_by,
-                        'created_at'         => $ref->created_at,
-                        'updated_at'         => $ref->updated_at,
-                        'deleted_at'         => $ref->deleted_at,
-                        'hospital'           => $ref->hospital,
+                        'referral_id' => $ref->referral_id,
+                        'status'      => $ref->status,
+                        'created_at'  => $ref->created_at,
+                        'hospital'    => $ref->hospital,
                     ];
                 })->values(),
             ];
         })
-        ->sortByDesc(function ($item) {
-            // 1. Create a sort string or number
-            // If it contains 'Pending', we give it a high priority (1)
-            // Otherwise, we give it a low priority (0)
-            $isPending = (stripos($item['status'], 'Pending') !== false) ? '1' : '0';
+        ->values()
+        // SORTING BLOCK
+        ->sort(function ($a, $b) {
+            // First, sort by priority (1 comes before 0)
+            if ($a['priority'] !== $b['priority']) {
+                return $b['priority'] <=> $a['priority'];
+            }
 
-            // 2. We concatenate the priority with the timestamp
-            // This forces Pending items to the top, and then sorts by date within those groups
-            return $isPending . '_' . $item['created_at'];
+            // Second, sort by date (Newest first)
+            return $b['created_at_sort'] <=> $a['created_at_sort'];
         })
         ->values();
 
