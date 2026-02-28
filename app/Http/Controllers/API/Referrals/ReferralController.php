@@ -108,10 +108,12 @@ class ReferralController extends Controller
     //             })->values(),
     //         ];
     //     })
-    //     ->sortByDesc(function ($item) {
-    //         return str_contains(($item['status']), 'Pending');
-    //     })
-    //     ->values();
+    //     ->sortBy(function ($item) {
+    //         if (str_contains($item['status'], 'Pending')) {
+    //             return 1; // Lowest number comes first in sortBy
+    //         }
+    //         return 2;
+    //     });
 
     //     return response([
     //         'data' => $referrals,
@@ -122,8 +124,12 @@ class ReferralController extends Controller
     public function index()
 {
     $user = auth()->user();
+
     if (!$user->can('View Referral')) {
-        return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+        return response([
+            'message' => 'Forbidden',
+            'statusCode' => 403
+        ], 403);
     }
 
     $referrals = Referral::with(['patient', 'reason', 'hospital'])
@@ -131,42 +137,60 @@ class ReferralController extends Controller
         ->get()
         ->groupBy('referral_number')
         ->map(function ($group) {
+
             $first = $group->first();
-
-            // 1. Get all statuses in this group as an array
-            $statuses = $group->pluck('status')->map(fn($s) => strtolower(trim($s)))->toArray();
-
-            // 2. Determine Priority: If ANY status in the group is pending, priority is 1
-            $priority = in_array('pending', $statuses) ? 1 : 0;
 
             return [
                 'referral_number' => $first->referral_number,
                 'patient'         => $first->patient,
                 'reason'          => $first->reason,
                 'status'          => $group->pluck('status')->unique()->implode(', '),
-                'hospitals'       => $group->pluck('hospital')->filter()->unique('hospital_id')->values(),
-                'priority'        => $priority, // We use this for sorting
-                'created_at_sort' => $first->created_at->format('Y-m-d H:i:s'),
-                'referrals'       => $group->map(function ($ref) {
+
+                'hospitals' => $group
+                    ->pluck('hospital')
+                    ->unique('hospital_id')
+                    ->values(),
+
+                'referrals' => $group->map(function ($ref) {
                     return [
-                        'referral_id' => $ref->referral_id,
-                        'status'      => $ref->status,
-                        'created_at'  => $ref->created_at,
-                        'hospital'    => $ref->hospital,
+                        'referral_id'        => $ref->referral_id,
+                        'parent_referral_id' => $ref->parent_referral_id,
+                        'hospital_id'        => $ref->hospital_id,
+                        'reason_id'          => $ref->reason_id,
+                        'status'             => $ref->status,
+                        'confirmed_by'       => $ref->confirmed_by,
+                        'created_by'         => $ref->created_by,
+                        'created_at'         => $ref->created_at,
+                        'updated_at'         => $ref->updated_at,
+                        'deleted_at'         => $ref->deleted_at,
+                        'hospital'           => $ref->hospital,
                     ];
                 })->values(),
             ];
         })
-        ->values()
-        // SORTING BLOCK
+
+        // ✅ PROPER MULTI-LEVEL SORT
         ->sort(function ($a, $b) {
-            // First, sort by priority (1 comes before 0)
-            if ($a['priority'] !== $b['priority']) {
-                return $b['priority'] <=> $a['priority'];
+
+            $aHasPending = collect($a['referrals'])
+                ->contains(fn ($ref) => $ref['status'] === 'Pending');
+
+            $bHasPending = collect($b['referrals'])
+                ->contains(fn ($ref) => $ref['status'] === 'Pending');
+
+            // 1️⃣ Pending first
+            if ($aHasPending !== $bHasPending) {
+                return $aHasPending ? -1 : 1;
             }
 
-            // Second, sort by date (Newest first)
-            return $b['created_at_sort'] <=> $a['created_at_sort'];
+            // 2️⃣ Newest created_at first
+            $aLatest = collect($a['referrals'])
+                ->max(fn ($ref) => strtotime($ref['created_at']));
+
+            $bLatest = collect($b['referrals'])
+                ->max(fn ($ref) => strtotime($ref['created_at']));
+
+            return $bLatest <=> $aLatest; // descending
         })
         ->values();
 
