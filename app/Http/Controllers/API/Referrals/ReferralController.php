@@ -119,7 +119,64 @@ class ReferralController extends Controller
     //     ], 200);
     // }
 
-    public function index()
+//     public function index()
+// {
+//     $user = auth()->user();
+//     if (!$user->can('View Referral')) {
+//         return response([
+//             'message' => 'Forbidden',
+//             'statusCode' => 403
+//         ], 403);
+//     }
+
+//     $referrals = Referral::with(['patient', 'reason', 'hospital'])
+//         ->where('status', '<>', 'Requested')
+//         ->get()
+//         ->groupBy('referral_number')
+//         ->map(function ($group) {
+//             $first = $group->first();
+
+//             return [
+//                 'referral_number' => $first->referral_number,
+//                 'patient'         => $first->patient,
+//                 'reason'          => $first->reason,
+//                 'status'          => $group->pluck('status')->unique()->implode(', '),
+//                 'hospitals'       => $group->pluck('hospital')->filter()->unique('hospital_id')->values(),
+//                 'referrals'       => $group->map(function ($ref) {
+//                     return [
+//                         'referral_id'        => $ref->referral_id,
+//                         'parent_referral_id' => $ref->parent_referral_id,
+//                         'hospital_id'        => $ref->hospital_id,
+//                         'reason_id'          => $ref->reason_id,
+//                         'status'             => $ref->status,
+//                         'confirmed_by'       => $ref->confirmed_by,
+//                         'created_by'         => $ref->created_by,
+//                         'created_at'         => $ref->created_at,
+//                         'updated_at'         => $ref->updated_at,
+//                         'deleted_at'         => $ref->deleted_at,
+//                         'hospital'           => $ref->hospital,
+//                     ];
+//                 })->values(),
+//             ];
+//         })
+//         ->values() // Reset keys before sorting
+//         /**
+//          * Use sortByDesc with a truthy check.
+//          * stripos returns a number (position) or false.
+//          * By casting to (bool), we ensure 'Pending' is 1 (Top) and others are 0 (Bottom).
+//          */
+//         ->sortByDesc(function ($item) {
+//             return (bool) stripos($item['status'], 'Pending');
+//         })
+//         ->values(); // Reset keys after sorting for clean JSON array
+
+//     return response([
+//         'data' => $referrals,
+//         'statusCode' => 200,
+//     ], 200);
+// }
+
+public function index()
 {
     $user = auth()->user();
     if (!$user->can('View Referral')) {
@@ -142,6 +199,8 @@ class ReferralController extends Controller
                 'reason'          => $first->reason,
                 'status'          => $group->pluck('status')->unique()->implode(', '),
                 'hospitals'       => $group->pluck('hospital')->filter()->unique('hospital_id')->values(),
+                // Keep the date at this level so the sorter can see it
+                'created_at'      => $first->created_at,
                 'referrals'       => $group->map(function ($ref) {
                     return [
                         'referral_id'        => $ref->referral_id,
@@ -159,16 +218,23 @@ class ReferralController extends Controller
                 })->values(),
             ];
         })
-        ->values() // Reset keys before sorting
-        /**
-         * Use sortByDesc with a truthy check.
-         * stripos returns a number (position) or false.
-         * By casting to (bool), we ensure 'Pending' is 1 (Top) and others are 0 (Bottom).
-         */
-        ->sortByDesc(function ($item) {
-            return (bool) stripos($item['status'], 'Pending');
+        ->values() // CRITICAL: Reset keys from groupBy before sorting
+        ->sort(function ($a, $b) {
+            // 1. Assign weights (Pending = 1, Everything else = 0)
+            // Using stripos to handle "Pending", "pending", etc.
+            $aWeight = stripos($a['status'], 'Pending') !== false ? 1 : 0;
+            $bWeight = stripos($b['status'], 'Pending') !== false ? 1 : 0;
+
+            // 2. If weights are different, higher weight (Pending) goes to Top
+            if ($aWeight !== $bWeight) {
+                return $bWeight <=> $aWeight;
+            }
+
+            // 3. If both are Pending (or both are Confirmed),
+            // sort by Date (Newest first)
+            return $b['created_at'] <=> $a['created_at'];
         })
-        ->values(); // Reset keys after sorting for clean JSON array
+        ->values(); // CRITICAL: Reset keys again after sorting for a clean JSON Array
 
     return response([
         'data' => $referrals,
