@@ -121,6 +121,97 @@ class ReferralController extends Controller
     //     ], 200);
     // }
 
+    // public function index()
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->can('View Referral')) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $referrals = Referral::with(['patient', 'reason', 'hospital'])
+    //         ->where('status', '<>', 'Requested')
+    //         ->get()
+    //         ->groupBy('referral_number')
+    //         ->map(function ($group) {
+
+    //             $first = $group->first();
+
+    //             return [
+    //                 'referral_number' => $first->referral_number,
+    //                 'patient'         => $first->patient,
+    //                 'reason'          => $first->reason,
+    //                 'status'          => $group->pluck('status')->unique()->implode(', '),
+
+    //                 'hospitals' => $group
+    //                     ->pluck('hospital')
+    //                     ->unique('hospital_id')
+    //                     ->values(),
+
+    //                 'referrals' => $group->map(function ($ref) {
+    //                     return [
+    //                         'referral_id'        => $ref->referral_id,
+    //                         'parent_referral_id' => $ref->parent_referral_id,
+    //                         'hospital_id'        => $ref->hospital_id,
+    //                         'reason_id'          => $ref->reason_id,
+    //                         'status'             => $ref->status,
+    //                         'confirmed_by'       => $ref->confirmed_by,
+    //                         'created_by'         => $ref->created_by,
+    //                         'created_at'         => $ref->created_at,
+    //                         'updated_at'         => $ref->updated_at,
+    //                         'deleted_at'         => $ref->deleted_at,
+    //                         'hospital'           => $ref->hospital,
+    //                     ];
+    //                 })->values(),
+    //             ];
+    //         })
+
+    //         // ✅ PROPER MULTI-LEVEL SORT
+    //         ->sort(function ($a, $b) {
+
+    //         $aHasPending = collect($a['referrals'])
+    //             ->contains(function ($ref) {
+    //                 return $ref['status'] === 'Pending';
+    //             });
+
+    //         $bHasPending = collect($b['referrals'])
+    //             ->contains(function ($ref) {
+    //                 return $ref['status'] === 'Pending';
+    //             });
+
+    //         // 1️⃣ Pending first
+    //         if ($aHasPending != $bHasPending) {
+    //             return $aHasPending ? -1 : 1;
+    //         }
+
+    //         // 2️⃣ Newest created_at first
+    //         $aLatest = collect($a['referrals'])
+    //             ->max(function ($ref) {
+    //                 return strtotime($ref['created_at']);
+    //             });
+
+    //         $bLatest = collect($b['referrals'])
+    //             ->max(function ($ref) {
+    //                 return strtotime($ref['created_at']);
+    //             });
+
+    //         if ($aLatest == $bLatest) {
+    //             return 0;
+    //         }
+
+    //         return ($aLatest > $bLatest) ? -1 : 1;
+    //     })
+    //     ->values();
+
+    //     return response([
+    //         'data' => $referrals,
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
+
     public function index()
     {
         $user = auth()->user();
@@ -132,12 +223,19 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        $referrals = Referral::with(['patient', 'reason', 'hospital'])
-            ->where('status', '<>', 'Requested')
-            ->get()
+        // 1. Start the query
+        $query = Referral::with(['patient', 'reason', 'hospital'])
+            ->where('status', '<>', 'Requested');
+
+        // 2. 🛡️ Role-based restriction: 
+        // If the user is NOT a Director General, hide 'Pending' status referrals.
+        if (!$user->hasRole('DIRECTOR GENERAL')) {
+            $query->where('status', '<>', 'Pending');
+        }
+
+        $referrals = $query->get()
             ->groupBy('referral_number')
             ->map(function ($group) {
-
                 $first = $group->first();
 
                 return [
@@ -145,12 +243,10 @@ class ReferralController extends Controller
                     'patient'         => $first->patient,
                     'reason'          => $first->reason,
                     'status'          => $group->pluck('status')->unique()->implode(', '),
-
                     'hospitals' => $group
                         ->pluck('hospital')
                         ->unique('hospital_id')
                         ->values(),
-
                     'referrals' => $group->map(function ($ref) {
                         return [
                             'referral_id'        => $ref->referral_id,
@@ -168,43 +264,21 @@ class ReferralController extends Controller
                     })->values(),
                 ];
             })
-
-            // ✅ PROPER MULTI-LEVEL SORT
+            // Sorting logic remains the same (Pending will only appear for DG anyway)
             ->sort(function ($a, $b) {
+                $aHasPending = collect($a['referrals'])->contains('status', 'Pending');
+                $bHasPending = collect($b['referrals'])->contains('status', 'Pending');
 
-            $aHasPending = collect($a['referrals'])
-                ->contains(function ($ref) {
-                    return $ref['status'] === 'Pending';
-                });
+                if ($aHasPending != $bHasPending) {
+                    return $aHasPending ? -1 : 1;
+                }
 
-            $bHasPending = collect($b['referrals'])
-                ->contains(function ($ref) {
-                    return $ref['status'] === 'Pending';
-                });
+                $aLatest = collect($a['referrals'])->max(fn($ref) => strtotime($ref['created_at']));
+                $bLatest = collect($b['referrals'])->max(fn($ref) => strtotime($ref['created_at']));
 
-            // 1️⃣ Pending first
-            if ($aHasPending != $bHasPending) {
-                return $aHasPending ? -1 : 1;
-            }
-
-            // 2️⃣ Newest created_at first
-            $aLatest = collect($a['referrals'])
-                ->max(function ($ref) {
-                    return strtotime($ref['created_at']);
-                });
-
-            $bLatest = collect($b['referrals'])
-                ->max(function ($ref) {
-                    return strtotime($ref['created_at']);
-                });
-
-            if ($aLatest == $bLatest) {
-                return 0;
-            }
-
-            return ($aLatest > $bLatest) ? -1 : 1;
-        })
-        ->values();
+                return ($aLatest > $bLatest) ? -1 : 1;
+            })
+            ->values();
 
         return response([
             'data' => $referrals,
