@@ -33,55 +33,49 @@ class PatientList extends Model
         parent::boot();
 
         static::creating(function ($patientList) {
-
-            // Ensure board_date exists
+            // 1. Ensure board_date is not empty
             if (empty($patientList->board_date)) {
                 $patientList->board_date = now()->toDateString();
             }
-
-            // Full board type
-            $boardTypeFull = ucfirst(strtolower($patientList->board_type ?? 'Routine'));
-
-            // Abbreviation for reference number
+        
+            // 2. Safely parse the date
+            try {
+                // Handle JS Date strings (like "Thu Feb 05 2026...")
+                $boardDate = \Carbon\Carbon::parse($patientList->board_date);
+                
+                // If Carbon parsed it but it ended up as 1970 (false positive),
+                // or if it's way in the past, fall back to now.
+                if ($boardDate->year <= 1970) {
+                    $boardDate = now();
+                }
+            } catch (\Exception $e) {
+                $boardDate = now(); // Fallback to current date instead of 1970
+            }
+        
+            // 3. Update the field to a clean Y-m-d format for the database
+            $patientList->board_date = $boardDate->toDateString();
+        
+            // 4. Generate Reference and Title using the valid $boardDate
+            $formattedDate = $boardDate->format('d/m/Y');
+        
             $boardTypeMap = [
                 'Emergency' => 'EMG',
                 'Routine'   => 'RTN',
             ];
-
-            $boardTypeAbbr = $boardTypeMap[$boardTypeFull] ?? substr($boardTypeFull, 0, 3);
-
-
-            // Use user-provided no_of_patients, default to 1
-            $numPatients = $patientList->no_of_patients ?? 1;
-
-            // Format to 3 digits for reference number
-            $formattedNum = str_pad($numPatients, 3, '0', STR_PAD_LEFT);
-
-            // Format data for referance
-            // Parse board_date safely even if it's JS-style string
-            try {
-                $boardDate = \Carbon\Carbon::parse($patientList->board_date);
-            } catch (\Exception $e) {
-                // fallback for JS date formats
-                $boardDate = \Carbon\Carbon::createFromTimestamp(strtotime($patientList->board_date));
-            }
-
-            $formattedDateForRef = $boardDate->format('d/m/Y');
-            $formattedDateForTitle = $boardDate->format('d/m/Y');
-
-            // Generate reference number
+            $boardTypeAbbr = $boardTypeMap[ucfirst(strtolower($patientList->board_type))] ?? 'RTN';
+            $formattedNum = str_pad($patientList->no_of_patients ?? 1, 3, '0', STR_PAD_LEFT);
+        
             $patientList->reference_number = sprintf(
                 'MBM-%s-%s-%s-%s',
-                $formattedDateForRef,
+                $formattedDate,
                 $boardTypeAbbr,
                 $formattedNum,
                 now()->format('H-i')
             );
-
-            // Generate human-readable title
+        
             $patientList->patient_list_title = sprintf(
                 'MBM of %s at %s',
-                $formattedDateForTitle,
+                $formattedDate,
                 now()->format('h:i a')
             );
         });
