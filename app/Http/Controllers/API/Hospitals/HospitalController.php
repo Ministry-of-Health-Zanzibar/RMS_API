@@ -304,6 +304,8 @@ class HospitalController extends Controller
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
+        
+        // 1. Permission Check
         if (!$user->can('Update Hospital')) {
             return response([
                 'message' => 'Forbidden',
@@ -311,44 +313,50 @@ class HospitalController extends Controller
             ], 403);
         }
 
+        // 2. Validation
+        // Note: I included 'referral_type_id' to keep it consistent with your store method
         $data = $request->validate([
             'hospital_name' => ['required', 'string'],
             'hospital_address' => ['nullable', 'string'],
             'contact_number' => ['nullable', 'string'],
             'hospital_email' => ['nullable', 'email'],
+            'referral_type_id' => ['nullable', 'exists:referral_types,referral_type_id'],
         ]);
 
+        // 3. Find the Resource
         $hospital = Hospital::find($id);
 
         if (!$hospital) {
             return response([
                 'message' => 'Hospital not found',
                 'statusCode' => 404,
-            ]);
+            ], 404);
         }
 
-
-        $hospital->update([
+        // 4. Update the Resource
+        $updated = $hospital->update([
             'hospital_name' => $data['hospital_name'],
             'hospital_address' => $data['hospital_address'],
             'contact_number' => $data['contact_number'],
-            'hospital_email' => $data['hospital_email'],
-            'created_by' => Auth::id(),
+            'hospital_email' => $data['hospital_email'] ?? $hospital->hospital_email,
+            'referral_type_id' => $data['referral_type_id'] ?? $hospital->referral_type_id,
+            // Usually, for updates, we track 'updated_by', 
+            // but keeping Auth::id() here if that's your requirement.
         ]);
 
-        if ($hospital) {
+        // 5. Response
+        if ($updated) {
             return response([
-                'data' => $hospital,
+                'data' => $hospital->refresh(), // refresh to get the latest DB state
                 'message' => 'Hospital updated successfully',
                 'statusCode' => 200,
-            ], 201);
-        } else {
-            return response([
-                'message' => 'Internal server error',
-                'statusCode' => 500,
-            ], 500);
+            ], 200);
         }
 
+        return response([
+            'message' => 'Internal server error',
+            'statusCode' => 500,
+        ], 500);
     }
 
     /**
