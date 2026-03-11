@@ -592,7 +592,7 @@ class PatientHistoryController extends Controller
      *     )
      * )
      */
-    public function updateByMedicalBoard(Request $request, $id)
+    public function updateByMedicalBoardWithReferralCreation(Request $request, $id)
     {
         $user = auth()->user();
         $history = PatientHistory::findOrFail($id);
@@ -704,6 +704,99 @@ class PatientHistoryController extends Controller
         }
     }
 
+    public function updateByMedicalBoardWithoutReferralCreation(Request $request, $id)
+    {
+        $user = auth()->user();
+        $history = PatientHistory::findOrFail($id);
+
+        // if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+        //     return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
+        // }
+
+        $validator = Validator::make($request->all(), [
+            'board_comments'         => 'required|string',
+            'board_reason_id'        => 'required|exists:reasons,reason_id',
+            'board_diagnosis_ids'    => 'required|array',
+            'board_diagnosis_ids.*'  => 'exists:diagnoses,diagnosis_id',
+            'patient_file'           => 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:5000',
+            'description'            => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'errors' => $validator->errors(), 'statusCode' => 422], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // 1. Update Board fields in History
+            $history->update([
+                'board_comments'  => $request->board_comments,
+                'board_reason_id' => $request->board_reason_id,
+            ]);
+
+            // 2. Sync Board Diagnoses (Sync ensures removals are processed)
+            $boardDiagnoses = collect($request->board_diagnosis_ids)->mapWithKeys(function ($diagId) {
+                return [$diagId => ['added_by' => 'medical_board']];
+            })->toArray();
+            $history->boardDiagnoses()->sync($boardDiagnoses);
+
+            // 3. Find and Update Existing Referral
+            // We look for a referral linked to this patient that is still in 'Requested' status
+            $referral = Referral::where('patient_id', $history->patient_id)
+                ->whereIn('status', ['Requested', 'Pending'])
+                ->latest()
+                ->first();
+
+            if ($referral) {
+                $referral->update([
+                    'reason_id' => $request->board_reason_id,
+                ]);
+                // Sync the diagnoses to the referral as well
+                $referral->diagnoses()->sync($request->board_diagnosis_ids);
+            }
+
+            // 4. Update workflow status (Apply logic if not already requested)
+            // $this->applyStatusUpdate($history, 'requested', $request->board_comments, $user);
+
+            // 5. Handle Patient File (Replace logic)
+            if ($request->hasFile('patient_file')) {
+                $file = $request->file('patient_file');
+                $extension = $file->getClientOriginalExtension();
+                $newFileName = 'patient_file_' . date('His_dmY') . '_' . uniqid() . '.' . $extension;
+                $file->move(public_path('uploads/patientFiles/'), $newFileName);
+
+                // Update existing or create new file record
+                \App\Models\PatientFile::updateOrCreate(
+                    [
+                        'patient_id'  => $history->patient_id,
+                        'uploaded_by' => $user->id,
+                        'description' => $request->description, // Matches specific update
+                    ],
+                    [
+                        'file_name'   => $file->getClientOriginalName(),
+                        'file_path'   => 'uploads/patientFiles/' . $newFileName,
+                        'file_type'   => $extension,
+                    ]
+                );
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success'  => true,
+                'data'    => $history->load(['patient.referrals', 'boardDiagnoses', 'reason']),
+                'message' => 'Medical Board update successful (Referral synchronized)',
+                'statusCode' => 200
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Medical Board update failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Update failed', 'error' => $e->getMessage(), 'statusCode' => 500], 500);
+        }
+    }
+
     public function getMedicalBoardUpdate($id)
     {
         try {
@@ -711,7 +804,7 @@ class PatientHistoryController extends Controller
             
             // 1. Fetch history with specific board-added relations using your table column names
             $history = PatientHistory::with([
-                'patient:patient_id,first_name,last_name',
+                'patient:patient_id',
                 'boardDiagnoses' => function($query) {
                     $query->wherePivot('added_by', 'medical_board')
                         ->select('diagnoses.diagnosis_id', 'diagnoses.diagnosis_name', 'diagnoses.diagnosis_code');
@@ -727,29 +820,29 @@ class PatientHistoryController extends Controller
 
             // 3. Structure the response for your React/Vite UI
             $boardData = [
-                'history_id'          => $history->id,
+                'patient_histories_id'          => $history->patient_histories_id,
                 'board_comments'      => $history->board_comments,
                 
                 // Full Reason Object for the dropdown/select initial value
-                'board_reason'        => $history->reason ? [
-                    'id'   => $history->reason->reason_id,
-                    'name' => $history->reason->referral_reason_name
+                'board_reason' => $history->reason ? [
+                    'reason_id'   => $history->reason->reason_id,
+                    'referral_reason_name' => $history->reason->referral_reason_name
                 ] : null,
                 
                 // The Raw ID for basic form state
-                'board_reason_id'     => $history->board_reason_id,
+                // 'board_reason_id'     => $history->board_reason_id,
 
                 // Full Diagnosis Objects (useful for multi-select tags/chips)
                 'board_diagnoses'     => $history->boardDiagnoses->map(function ($diagnosis) {
                     return [
-                        'id'   => $diagnosis->diagnosis_id,
-                        'name' => $diagnosis->diagnosis_name,
-                        'code' => $diagnosis->diagnosis_code,
+                        'diagnosis_id'   => $diagnosis->diagnosis_id,
+                        'diagnosis_name' => $diagnosis->diagnosis_name,
+                        'diagnosis_code' => $diagnosis->diagnosis_code,
                     ];
                 }),
                 
                 // Just the IDs (useful for setting the initial state of a checkbox list)
-                'board_diagnosis_ids' => $history->boardDiagnoses->pluck('diagnosis_id'),
+                // 'board_diagnosis_ids' => $history->boardDiagnoses->pluck('diagnosis_id'),
 
                 // Patient File Information
                 'patient_file' => [
@@ -760,14 +853,14 @@ class PatientHistoryController extends Controller
             ];
 
             return response()->json([
-                'status'     => true,
+                'success'     => true,
                 'data'       => $boardData,
                 'statusCode' => 200
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'status' => false,
+                'success' => false,
                 'message' => 'Data retrieval failed',
                 'error' => $e->getMessage(),
                 'statusCode' => 404

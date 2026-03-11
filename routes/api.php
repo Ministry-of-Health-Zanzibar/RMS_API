@@ -194,7 +194,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/{id}/unblock', [PatientHistoryController::class, 'unblock']);
         Route::post('/update-status/{id}', [PatientHistoryController::class, 'updateStatus']);
         // Route::put('/{id}/medical-board', [PatientHistoryController::class, 'updateByMedicalBoard']);
-        Route::post('/{id}/medical-board', [PatientHistoryController::class, 'updateByMedicalBoard']);
+        Route::post('/{id}/medical-board', [PatientHistoryController::class, 'updateByMedicalBoardWithReferralCreation']);
+        Route::post('/{id}/medical-board/update', [PatientHistoryController::class, 'updateByMedicalBoardWithoutReferralCreation']);
         Route::get('/{id}/medical-board', [PatientHistoryController::class, 'getMedicalBoardUpdate']);
         Route::put('/{id}/mkurugenzi-tiba', [PatientHistoryController::class, 'updateByMkurugenzi']);
         Route::get('/allowed-to-assign/patients', [PatientHistoryController::class, 'getPatientToBeAssignedToMedicalBoard']);
