@@ -756,9 +756,6 @@ class PatientHistoryController extends Controller
                 $referral->diagnoses()->sync($request->board_diagnosis_ids);
             }
 
-            // 4. Update workflow status (Apply logic if not already requested)
-            // $this->applyStatusUpdate($history, 'requested', $request->board_comments, $user);
-
             // 5. Handle Patient File (Replace logic)
             if ($request->hasFile('patient_file')) {
                 $file = $request->file('patient_file');
@@ -785,7 +782,7 @@ class PatientHistoryController extends Controller
 
             return response()->json([
                 'success'  => true,
-                'data'    => $history->load(['patient.referrals', 'boardDiagnoses', 'reason']),
+                'data'    => $history->load(['patient.referrals', 'boardDiagnoses', 'boardReason']),
                 'message' => 'Medical Board update successful (Referral synchronized)',
                 'statusCode' => 200
             ]);
