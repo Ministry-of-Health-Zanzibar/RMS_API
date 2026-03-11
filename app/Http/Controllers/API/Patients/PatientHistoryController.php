@@ -704,6 +704,76 @@ class PatientHistoryController extends Controller
         }
     }
 
+    public function getMedicalBoardUpdate($id)
+    {
+        try {
+            $user = auth()->user();
+            
+            // 1. Fetch history with specific board-added relations using your table column names
+            $history = PatientHistory::with([
+                'patient:patient_id,first_name,last_name',
+                'boardDiagnoses' => function($query) {
+                    $query->wherePivot('added_by', 'medical_board')
+                        ->select('diagnoses.diagnosis_id', 'diagnoses.diagnosis_name', 'diagnoses.diagnosis_code');
+                },
+                'reason:reason_id,referral_reason_name'
+            ])->findOrFail($id);
+
+            // 2. Fetch the specific file uploaded by this board member
+            $patientFile = \App\Models\PatientFile::where('patient_id', $history->patient_id)
+                ->where('uploaded_by', $user->id)
+                ->latest()
+                ->first();
+
+            // 3. Structure the response for your React/Vite UI
+            $boardData = [
+                'history_id'          => $history->id,
+                'board_comments'      => $history->board_comments,
+                
+                // Full Reason Object for the dropdown/select initial value
+                'board_reason'        => $history->reason ? [
+                    'id'   => $history->reason->reason_id,
+                    'name' => $history->reason->referral_reason_name
+                ] : null,
+                
+                // The Raw ID for basic form state
+                'board_reason_id'     => $history->board_reason_id,
+
+                // Full Diagnosis Objects (useful for multi-select tags/chips)
+                'board_diagnoses'     => $history->boardDiagnoses->map(function ($diagnosis) {
+                    return [
+                        'id'   => $diagnosis->diagnosis_id,
+                        'name' => $diagnosis->diagnosis_name,
+                        'code' => $diagnosis->diagnosis_code,
+                    ];
+                }),
+                
+                // Just the IDs (useful for setting the initial state of a checkbox list)
+                'board_diagnosis_ids' => $history->boardDiagnoses->pluck('diagnosis_id'),
+
+                // Patient File Information
+                'patient_file' => [
+                    'name' => $patientFile ? $patientFile->file_name : null,
+                    'url'  => $patientFile ? asset($patientFile->file_path) : null,
+                    'type' => $patientFile ? $patientFile->file_type : null,
+                ],
+            ];
+
+            return response()->json([
+                'status'     => true,
+                'data'       => $boardData,
+                'statusCode' => 200
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Data retrieval failed',
+                'error' => $e->getMessage(),
+                'statusCode' => 404
+            ], 404);
+        }
+    }
 
     public function updateByMkurugenzi(Request $request, $id)
     {
