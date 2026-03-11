@@ -705,10 +705,6 @@ class PatientController extends Controller
             'insurance_provider_name' => ['nullable', 'string'],
             'card_number'             => ['nullable', 'string'],
             'valid_until'             => ['nullable', 'string'],
-
-            // Added validation for the single patient file
-            'patient_file'            => ['nullable', 'file', 'mimes:pdf,jpg,png,doc,docx', 'max:5000'],
-            'description'             => ['nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
@@ -751,7 +747,6 @@ class PatientController extends Controller
                 'physical_findings'             => $request->physical_findings,
                 'investigations'                => $request->investigations,
                 'management_done'               => $request->management_done,
-                'board_comments'                => $request->board_comments,
                 'status'                        => 'pending',
             ]);
 
@@ -781,25 +776,6 @@ class PatientController extends Controller
                 $fileName = 'history_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
                 $file->move(public_path('uploads/historyFiles'), $fileName);
                 $patientHistory->update(['history_file' => 'uploads/historyFiles/' . $fileName]);
-            }
-
-            // NEW: 10. PATIENT FILE UPLOAD (Medical Records/Attachments)
-            if ($request->hasFile('patient_file')) {
-                $file = $request->file('patient_file');
-                $extension = $file->getClientOriginalExtension();
-                $newFileName = 'patient_file_' . date('h-i-s_a_d-m-Y') . '_' . uniqid() . '.' . $extension;
-
-                $file->move(public_path('uploads/patientFiles/'), $newFileName);
-                $filePath = 'uploads/patientFiles/' . $newFileName;
-
-                PatientFile::create([
-                    'patient_id'  => $patient->patient_id,
-                    'file_name'   => $file->getClientOriginalName(),
-                    'file_path'   => $filePath,
-                    'file_type'   => $extension,
-                    'description' => $request->description,
-                    'uploaded_by' => Auth::id(),
-                ]);
             }
 
             DB::commit();
@@ -1027,17 +1003,12 @@ class PatientController extends Controller
             'physical_findings'             => ['nullable', 'string'],
             'investigations'                => ['nullable', 'string'],
             'management_done'               => ['nullable', 'string'],
-            'board_comments'                => ['nullable', 'string'],
 
             // Insurance Fields
             'has_insurance'           => ['required', 'boolean'],
             'insurance_provider_name' => ['nullable', 'string'],
             'card_number'             => ['nullable', 'string'],
             'valid_until'             => ['nullable', 'string'],
-
-            // New Patient File Fields
-            'patient_file'            => ['nullable', 'file', 'mimes:pdf,jpg,png,doc,docx', 'max:5000'],
-            'description'             => ['nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
@@ -1086,7 +1057,6 @@ class PatientController extends Controller
                 'physical_findings'             => $request->physical_findings,
                 'investigations'                => $request->investigations,
                 'management_done'               => $request->management_done,
-                'board_comments'                => $request->board_comments,
             ]);
 
             // 6. SYNC DIAGNOSES
@@ -1122,24 +1092,6 @@ class PatientController extends Controller
                 $fileName = 'history_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
                 $file->move(public_path('uploads/historyFiles'), $fileName);
                 $patientHistory->update(['history_file' => 'uploads/historyFiles/' . $fileName]);
-            }
-
-            // 9. ONGEZA PATIENT FILE MPYA (Kama lipo)
-            if ($request->hasFile('patient_file')) {
-                $file = $request->file('patient_file');
-                $extension = $file->getClientOriginalExtension();
-                $newFileName = 'patient_file_' . date('h-i-s_a_d-m-Y') . '_' . uniqid() . '.' . $extension;
-
-                $file->move(public_path('uploads/patientFiles/'), $newFileName);
-
-                \App\Models\PatientFile::create([
-                    'patient_id'  => $patient->patient_id,
-                    'file_name'   => $file->getClientOriginalName(),
-                    'file_path'   => 'uploads/patientFiles/' . $newFileName,
-                    'file_type'   => $extension,
-                    'description' => $request->description,
-                    'uploaded_by' => auth()->id(),
-                ]);
             }
 
             DB::commit();

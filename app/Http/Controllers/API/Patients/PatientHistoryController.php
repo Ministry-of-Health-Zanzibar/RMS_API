@@ -610,6 +610,8 @@ class PatientHistoryController extends Controller
             'board_reason_id'        => 'required|exists:reasons,reason_id',
             'board_diagnosis_ids'    => 'required|array',
             'board_diagnosis_ids.*'  => 'exists:diagnoses,diagnosis_id',
+            'patient_file'           => 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:5000',
+            'description'            => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -656,6 +658,24 @@ class PatientHistoryController extends Controller
 
             // Update workflow status
             $this->applyStatusUpdate($history, 'requested', $request->board_comments, $user);
+
+            if ($request->hasFile('patient_file')) {
+                $file = $request->file('patient_file');
+                $extension = $file->getClientOriginalExtension();
+                $newFileName = 'patient_file_' . date('His_dmY') . '_' . uniqid() . '.' . $extension;
+    
+                $file->move(public_path('uploads/patientFiles/'), $newFileName);
+    
+                \App\Models\PatientFile::create([
+                    // Fixed: Use $history->patient_id instead of undefined $patient
+                    'patient_id'  => $history->patient_id, 
+                    'file_name'   => $file->getClientOriginalName(),
+                    'file_path'   => 'uploads/patientFiles/' . $newFileName,
+                    'file_type'   => $extension,
+                    'description' => $request->description,
+                    'uploaded_by' => $user->id,
+                ]);
+            }
 
             DB::commit();
 
