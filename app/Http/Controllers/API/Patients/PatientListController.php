@@ -261,7 +261,7 @@ class PatientListController extends Controller
                     'files',
                     'geographicalLocation',
                     'latestHistory' => function ($h) {
-                        $h->with(['diagnoses', 'reason', 'patient']);
+                        $h->with(['diagnoses','boardDiagnoses', 'reason','boardReason', 'patient']);
                     }
                 ]);
             }
