@@ -49,9 +49,8 @@ class PatientHistoryConversationController extends Controller
             ->get();
 
         return response()->json([
-            'status' => true,
             'data' => $conversations,
-            'message' => 'Conversations retrieved successfully'
+            'statusCode' => 200
         ], 200);
     }
 
@@ -89,7 +88,6 @@ class PatientHistoryConversationController extends Controller
 
             $resolvedReceiverId = null;
 
-            // Resolve who gets the message
             switch ($request->receiver) {
                 case 'dg':
                 case 'mkurugenzi':
@@ -107,33 +105,32 @@ class PatientHistoryConversationController extends Controller
                 throw new \Exception("Could not resolve a User ID for: " . $request->receiver);
             }
 
-            $data = [
+            $conversation = PatientHistoryConversation::create([
                 'patient_history_id' => $request->patient_history_id,
                 'sender_id'          => $user->id,
                 'receiver_id'        => $resolvedReceiverId,
                 'parent_id'          => $request->parent_id,
                 'message'            => $request->message,
-            ];
-
-            // Create the record
-            $conversation = PatientHistoryConversation::create($data);
+            ]);
 
             DB::commit();
 
-            // Return the clean, minimal response matching your 'show' method
+            // All message details now wrapped in the 'data' key
             return response()->json([
-                "patient_history_id" => (int) $conversation->patient_history_id,
-                "conversation_id"    => $conversation->conversation_id,
-                "user_id"            => $user->id,
-                "sender_full_name"   => $user->full_name, // Using your User model accessor
-                "message"            => $conversation->message,
-                "status"             => true,
-                "message_text"       => "Message sent to " . ucfirst($request->receiver)
+                "statusCode" => 201,
+                "message_text" => "Message sent to " . ucfirst($request->receiver),
+                "data" => [
+                    "patient_history_id" => (int) $conversation->patient_history_id,
+                    "conversation_id"    => $conversation->conversation_id,
+                    "user_id"            => $user->id,
+                    "sender_full_name"   => $user->full_name,
+                    "message"            => $conversation->message,
+                ]
             ], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['statusCode' => 500, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -146,9 +143,9 @@ class PatientHistoryConversationController extends Controller
         $user = auth()->user();
 
         // 1. Authorization check
-        if (!$user->can('View Patient History')) {
-            return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
-        }
+        // if (!$user->can('View Patient History')) {
+        //     return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
+        // }
 
         // 2. Fetch the conversation with sender and children (replies)
         $conversation = PatientHistoryConversation::where('conversation_id', $conversation_id)
