@@ -49,47 +49,95 @@ class PatientHistoryConversationController extends Controller
     //         'statusCode' => 200
     //     ], 200);
     // }
+    // public function index(Request $request)
+    // {
+    //     $user = auth()->user();
+    //     // $patientHistoryId = $request->query('patient_history_id');
+    //     $patientHistoryId = $request->input('patient_history_id');
+
+    //     // Fetch conversations where the user is involved
+    //     $conversations = PatientHistoryConversation::with([
+    //             'sender:id,first_name,last_name', 
+    //             'receiver:id,first_name,last_name'
+    //         ])
+    //         ->where('patient_history_id', $patientHistoryId)
+    //         ->whereNull('parent_id') // Only top-level messages
+    //         ->where(function($query) use ($user) {
+    //             // A person sees a root message if:
+    //             // 1. They sent it.
+    //             // 2. It was sent specifically to them.
+    //             $query->where('sender_id', $user->id)
+    //                 ->orWhere('receiver_id', $user->id);
+    //         })
+    //         ->latest()
+    //         ->get();
+
+    //     return response()->json([
+    //         'data' => $conversations->map(function($convo) {
+    //             return [
+    //                 "conversation_id" => $convo->conversation_id,
+    //                 "sender_name"     => $convo->sender->full_name,
+    //                 "receiver_name"   => $convo->receiver->full_name ?? 'N/A',
+    //                 "last_message"    => $convo->message,
+    //                 "date"            => $convo->created_at->diffForHumans(),
+    //                 // Add this line to see the replies in the index!
+    //                 "replies"         => $convo->children->map(function($reply) {
+    //                     return [
+    //                         "sender" => $reply->sender->full_name,
+    //                         "message" => $reply->message
+    //                     ];
+    //                 })
+    //             ];
+    //         }),
+    //         'statusCode' => 200
+    //     ], 200);
+    // }
+
     public function index(Request $request)
     {
         $user = auth()->user();
-        // $patientHistoryId = $request->query('patient_history_id');
         $patientHistoryId = $request->input('patient_history_id');
 
         // Fetch conversations where the user is involved
         $conversations = PatientHistoryConversation::with([
                 'sender:id,first_name,last_name', 
-                'receiver:id,first_name,last_name'
+                'receiver:id,first_name,last_name',
+                'children.sender:id,first_name,last_name' 
             ])
             ->where('patient_history_id', $patientHistoryId)
-            ->whereNull('parent_id') // Only top-level messages
+            ->whereNull('parent_id') 
             ->where(function($query) use ($user) {
-                // A person sees a root message if:
-                // 1. They sent it.
-                // 2. It was sent specifically to them.
                 $query->where('sender_id', $user->id)
                     ->orWhere('receiver_id', $user->id);
             })
             ->latest()
             ->get();
 
+        // Map each conversation to your specific structure
+        $mappedConversations = $conversations->map(function ($convo) use ($patientHistoryId) {
+            return [
+                "patient_history_id" => (int) $patientHistoryId,
+                "conversation_id"    => $convo->conversation_id,
+                "user_id"            => $convo->sender->id,
+                "sender_full_name"   => $convo->sender->full_name,
+                "message"            => $convo->message,
+                "date"               => $convo->created_at->diffForHumans(),
+                "replies"            => $convo->children->map(function ($reply) {
+                    return [
+                        "conversation_id"    => $reply->conversation_id,
+                        "user_id"            => $reply->sender->id,
+                        "receiver_full_name" => $reply->sender->full_name, 
+                        "message"            => $reply->message,
+                        "date"               => $reply->created_at->diffForHumans(),
+                    ];
+                })
+            ];
+        });
+
+        // Return the response wrapped in 'data'
         return response()->json([
-            'data' => $conversations->map(function($convo) {
-                return [
-                    "conversation_id" => $convo->conversation_id,
-                    "sender_name"     => $convo->sender->full_name,
-                    "receiver_name"   => $convo->receiver->full_name ?? 'N/A',
-                    "last_message"    => $convo->message,
-                    "date"            => $convo->created_at->diffForHumans(),
-                    // Add this line to see the replies in the index!
-                    "replies"         => $convo->children->map(function($reply) {
-                        return [
-                            "sender" => $reply->sender->full_name,
-                            "message" => $reply->message
-                        ];
-                    })
-                ];
-            }),
-            'statusCode' => 200
+            "statusCode" => 200,
+            "data"       => $mappedConversations
         ], 200);
     }
 
