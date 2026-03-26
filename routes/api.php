@@ -203,7 +203,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Patient History Conversations
     Route::prefix('patient-history-conversations')->group(function () {
-        Route::get('/{patient_history_id}/conversation/{conversation_id}',
+        Route::get('/{patientHistoryId}/individual-chat',
             [App\Http\Controllers\API\Patients\PatientHistoryConversationController::class, 'show']
         );
         Route::get('/', [App\Http\Controllers\API\Patients\PatientHistoryConversationController::class, 'index']);

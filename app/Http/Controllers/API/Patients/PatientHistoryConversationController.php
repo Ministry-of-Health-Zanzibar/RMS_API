@@ -261,42 +261,90 @@ class PatientHistoryConversationController extends Controller
     //         })
     //     ], 200);
     // }
-    public function show(Request $request, $patientHistoryId, $conversation_id)
+    // public function show(Request $request, $patientHistoryId, $conversation_id)
+    // {
+    //     $user = auth()->user();
+
+    //     $conversation = PatientHistoryConversation::where('conversation_id', $conversation_id)
+    //         ->where('patient_history_id', $patientHistoryId)
+    //         ->with([
+    //             'sender:id,first_name,last_name',
+    //             'children' => function($query) {
+    //                 $query->with('sender:id,first_name,last_name')->oldest();
+    //             }
+    //         ])
+    //         ->first();
+
+    //     if (!$conversation) {
+    //         return response()->json(['status' => false, 'message' => "Not found"], 404);
+    //     }
+
+    //     // SECURITY CHECK: Only the sender or receiver of the ROOT message can see the thread
+    //     if ($user->id !== $conversation->sender_id && $user->id !== $conversation->receiver_id) {
+    //         return response()->json(['status' => false, 'message' => "Unauthorized to view this thread"], 403);
+    //     }
+
+    //     return response()->json([
+    //         "patient_history_id" => (int) $patientHistoryId,
+    //         "conversation_id"    => $conversation->conversation_id,
+    //         "sender_full_name"   => $conversation->sender->full_name,
+    //         "message"            => $conversation->message,
+    //         "replies"            => $conversation->children->map(function ($reply) {
+    //             return [
+    //                 "conversation_id"    => $reply->conversation_id,
+    //                 "user_id"            => $reply->sender_id,
+    //                 "sender_full_name"   => $reply->sender->full_name,
+    //                 "message"            => $reply->message,
+    //             ];
+    //         })
+    //     ], 200);
+    // }
+
+    public function show(Request $request, $patientHistoryId)
     {
         $user = auth()->user();
 
-        $conversation = PatientHistoryConversation::where('conversation_id', $conversation_id)
-            ->where('patient_history_id', $patientHistoryId)
+        // 1. Find the conversation where the logged-in user is the receiver 
+        // and it is a "Root" message (parent_id is null)
+        $conversation = PatientHistoryConversation::where('patient_history_id', $patientHistoryId)
+            ->where('receiver_id', $user->id) // Current user is the one who received it
+            ->whereNull('parent_id')         // It's the head of the thread
             ->with([
                 'sender:id,first_name,last_name',
                 'children' => function($query) {
                     $query->with('sender:id,first_name,last_name')->oldest();
                 }
             ])
+            ->latest() // Get the most recent one if multiple exist
             ->first();
 
         if (!$conversation) {
-            return response()->json(['status' => false, 'message' => "Not found"], 404);
+            return response()->json([
+                'statusCode' => 404, 
+                'message' => "No private conversation found for you regarding this patient history."
+            ], 404);
         }
 
-        // SECURITY CHECK: Only the sender or receiver of the ROOT message can see the thread
-        if ($user->id !== $conversation->sender_id && $user->id !== $conversation->receiver_id) {
-            return response()->json(['status' => false, 'message' => "Unauthorized to view this thread"], 403);
-        }
-
+        // 2. Construct the response
         return response()->json([
-            "patient_history_id" => (int) $patientHistoryId,
-            "conversation_id"    => $conversation->conversation_id,
-            "sender_full_name"   => $conversation->sender->full_name,
-            "message"            => $conversation->message,
-            "replies"            => $conversation->children->map(function ($reply) {
-                return [
-                    "conversation_id"    => $reply->conversation_id,
-                    "user_id"            => $reply->sender_id,
-                    "sender_full_name"   => $reply->sender->full_name,
-                    "message"            => $reply->message,
-                ];
-            })
+            "statusCode"         => 200,
+            "data" => [
+                "patient_history_id" => (int) $patientHistoryId,
+                "conversation_id"    => $conversation->conversation_id,
+                "user_id"            => $conversation->sender->id, // The person who started it
+                "sender_full_name"   => $conversation->sender->full_name,
+                "message"            => $conversation->message,
+                "date"               => $conversation->created_at->diffForHumans(),
+                "replies"            => $conversation->children->map(function ($reply) {
+                    return [
+                        "conversation_id"    => $reply->conversation_id,
+                        "user_id"            => $reply->sender_id,
+                        "sender_full_name"   => $reply->sender->full_name,
+                        "message"            => $reply->message,
+                        "date"               => $reply->created_at->diffForHumans(),
+                    ];
+                })
+            ]
         ], 200);
     }
 
