@@ -321,12 +321,12 @@ class PatientHistoryConversationController extends Controller
                 
                 // Logic: If I am the original sender, send to the original receiver.
                 // If I am the original receiver, send back to the original sender.
-                $resolvedReceiverId = ($parent->sender_id === $user->id) 
-                    ? $parent->receiver_id 
+                $resolvedReceiverId = ($parent->sender_id === $user->id)
+                    ? $parent->receiver_id
                     : $parent->sender_id;
                     
                 $receiverName = "Reply";
-            } 
+            }
             // CASE 2: This is a NEW MESSAGE (Initiating)
             else {
                 $patientHistory = PatientHistory::findOrFail($request->patient_history_id);
@@ -469,53 +469,106 @@ class PatientHistoryConversationController extends Controller
     //     ], 200);
     // }
 
+    // public function show(Request $request, $patientHistoryId)
+    // {
+    //     $user = auth()->user();
+
+    //     // 1. Find the conversation where the logged-in user is the receiver 
+    //     // and it is a "Root" message (parent_id is null)
+    //     $conversation = PatientHistoryConversation::where('patient_history_id', $patientHistoryId)
+    //         ->where('receiver_id', $user->id) // Current user is the one who received it
+    //         ->whereNull('parent_id')         // It's the head of the thread
+    //         ->with([
+    //             'sender:id,first_name,last_name',
+    //             'children' => function($query) {
+    //                 $query->with('sender:id,first_name,last_name')->oldest();
+    //             }
+    //         ])
+    //         ->latest() // Get the most recent one if multiple exist
+    //         ->get();
+
+    //     if (!$conversation) {
+    //         return response()->json([
+    //             'statusCode' => 404, 
+    //             'message' => "No private conversation found for you regarding this patient history."
+    //         ], 404);
+    //     }
+
+    //     // 2. Construct the response
+    //     return response()->json([
+    //         "statusCode"         => 200,
+    //         "data" => [
+    //             "patient_history_id" => (int) $patientHistoryId,
+    //             "conversation_id"    => $conversation->conversation_id,
+    //             "user_id"            => $conversation->sender->id, // The person who started it
+    //             "sender_full_name"   => $conversation->sender->full_name,
+    //             "message"            => $conversation->message,
+    //             "date"               => $conversation->created_at->diffForHumans(),
+    //             "replies"            => $conversation->children->map(function ($reply) {
+    //                 return [
+    //                     "conversation_id"    => $reply->conversation_id,
+    //                     "user_id"            => $reply->sender_id,
+    //                     "sender_full_name"   => $reply->sender->full_name,
+    //                     "message"            => $reply->message,
+    //                     "date"               => $reply->created_at->diffForHumans(),
+    //                 ];
+    //             })
+    //         ]
+    //     ], 200);
+    // }
+
     public function show(Request $request, $patientHistoryId)
-    {
-        $user = auth()->user();
+{
+    $user = auth()->user();
 
-        // 1. Find the conversation where the logged-in user is the receiver 
-        // and it is a "Root" message (parent_id is null)
-        $conversation = PatientHistoryConversation::where('patient_history_id', $patientHistoryId)
-            ->where('receiver_id', $user->id) // Current user is the one who received it
-            ->whereNull('parent_id')         // It's the head of the thread
-            ->with([
-                'sender:id,first_name,last_name',
-                'children' => function($query) {
-                    $query->with('sender:id,first_name,last_name')->oldest();
-                }
-            ])
-            ->latest() // Get the most recent one if multiple exist
-            ->first();
+    // 1. Get the collection of conversations
+    $conversations = PatientHistoryConversation::where('patient_history_id', $patientHistoryId)
+        ->where('receiver_id', $user->id) 
+        ->whereNull('parent_id')         
+        ->with([
+            'sender:id,first_name,last_name',
+            'children' => function($query) {
+                $query->with('sender:id,first_name,last_name')->oldest();
+            }
+        ])
+        ->latest() 
+        ->get(); // This returns a Collection
 
-        if (!$conversation) {
-            return response()->json([
-                'statusCode' => 404, 
-                'message' => "No private conversation found for you regarding this patient history."
-            ], 404);
-        }
-
-        // 2. Construct the response
+    // 2. Check if the collection is empty using the isEmpty() method
+    if ($conversations->isEmpty()) {
         return response()->json([
-            "statusCode"         => 200,
-            "data" => [
-                "patient_history_id" => (int) $patientHistoryId,
-                "conversation_id"    => $conversation->conversation_id,
-                "user_id"            => $conversation->sender->id, // The person who started it
-                "sender_full_name"   => $conversation->sender->full_name,
-                "message"            => $conversation->message,
-                "date"               => $conversation->created_at->diffForHumans(),
-                "replies"            => $conversation->children->map(function ($reply) {
-                    return [
-                        "conversation_id"    => $reply->conversation_id,
-                        "user_id"            => $reply->sender_id,
-                        "sender_full_name"   => $reply->sender->full_name,
-                        "message"            => $reply->message,
-                        "date"               => $reply->created_at->diffForHumans(),
-                    ];
-                })
-            ]
-        ], 200);
+            'statusCode' => 404, 
+            'message' => "No conversations found."
+        ], 404);
     }
+
+    // 3. Map the collection. 
+    // Notice we don't call $conversations->conversation_id anymore.
+    $data = $conversations->map(function ($convo) use ($patientHistoryId) {
+        return [
+            "patient_history_id" => (int) $patientHistoryId,
+            "conversation_id"    => $convo->conversation_id, // Accessing the individual item
+            "user_id"            => $convo->sender->id,
+            "sender_full_name"   => $convo->sender->full_name,
+            "message"            => $convo->message,
+            "date"               => $convo->created_at->diffForHumans(),
+            "replies"            => $convo->children->map(function ($reply) {
+                return [
+                    "conversation_id"    => $reply->conversation_id,
+                    "user_id"            => $reply->sender_id,
+                    "sender_full_name"   => $reply->sender->full_name,
+                    "message"            => $reply->message,
+                    "date"               => $reply->created_at->diffForHumans(),
+                ];
+            })
+        ];
+    });
+
+    return response()->json([
+        "statusCode" => 200,
+        "data"       => $data
+    ], 200);
+}
 
     /**
      * Update conversation message.
