@@ -144,6 +144,82 @@ class PatientHistoryConversationController extends Controller
     /**
      * Store a new conversation message.
      */
+    // public function store(Request $request)
+    // {
+    //     $user = auth()->user();
+
+    //     $validator = Validator::make($request->all(), [
+    //         'patient_history_id' => 'required|exists:patient_histories,patient_histories_id',
+    //         'message'            => 'required|string',
+    //         'receiver'           => 'required|in:mkurugenzi,board,hospital,dg',
+    //         'parent_id'          => 'nullable|exists:patient_history_conversations,conversation_id',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json(['status' => false, 'errors' => $validator->errors()], 422);
+    //     }
+
+    //     try {
+    //         DB::beginTransaction();
+
+    //         $patientHistory = PatientHistory::findOrFail($request->patient_history_id);
+    //         $patient = $patientHistory->patient; 
+            
+    //         $patientListRelation = DB::table('patient_list_patient')
+    //             ->where('patient_id', $patient->patient_id)
+    //             ->first();
+                
+    //         $patientList = $patientListRelation 
+    //             ? DB::table('patient_lists')->where('patient_list_id', $patientListRelation->patient_list_id)->first()
+    //             : null;
+
+    //         $resolvedReceiverId = null;
+
+    //         switch ($request->receiver) {
+    //             case 'dg':
+    //             case 'mkurugenzi':
+    //                 $resolvedReceiverId = $patientHistory->dg_id ?? $patientHistory->mkurugenzi_tiba_id;
+    //                 break;
+    //             case 'board':
+    //                 $resolvedReceiverId = $patientList ? $patientList->created_by : null;
+    //                 break;
+    //             case 'hospital':
+    //                 $resolvedReceiverId = $patient->created_by;
+    //                 break;
+    //         }
+
+    //         if (!$resolvedReceiverId) {
+    //             throw new \Exception("Could not resolve a User ID for: " . $request->receiver);
+    //         }
+
+    //         $conversation = PatientHistoryConversation::create([
+    //             'patient_history_id' => $request->patient_history_id,
+    //             'sender_id'          => $user->id,
+    //             'receiver_id'        => $resolvedReceiverId,
+    //             'parent_id'          => $request->parent_id,
+    //             'message'            => $request->message,
+    //         ]);
+
+    //         DB::commit();
+
+    //         // All message details now wrapped in the 'data' key
+    //         return response()->json([
+    //             "statusCode" => 201,
+    //             "message_text" => "Message sent to " . ucfirst($request->receiver),
+    //             "data" => [
+    //                 "patient_history_id" => (int) $conversation->patient_history_id,
+    //                 "conversation_id"    => $conversation->conversation_id,
+    //                 "user_id"            => $user->id,
+    //                 "sender_full_name"   => $user->full_name,
+    //                 "message"            => $conversation->message,
+    //             ]
+    //         ], 201);
+
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         return response()->json(['statusCode' => 500, 'message' => $e->getMessage()], 500);
+    //     }
+    // }
     public function store(Request $request)
     {
         $user = auth()->user();
@@ -151,7 +227,7 @@ class PatientHistoryConversationController extends Controller
         $validator = Validator::make($request->all(), [
             'patient_history_id' => 'required|exists:patient_histories,patient_histories_id',
             'message'            => 'required|string',
-            'receiver'           => 'required|in:mkurugenzi,board,hospital,dg',
+            'receiver'           => 'required_without:parent_id|in:mkurugenzi,board,hospital,dg',
             'parent_id'          => 'nullable|exists:patient_history_conversations,conversation_id',
         ]);
 
@@ -162,34 +238,31 @@ class PatientHistoryConversationController extends Controller
         try {
             DB::beginTransaction();
 
-            $patientHistory = PatientHistory::findOrFail($request->patient_history_id);
-            $patient = $patientHistory->patient; 
-            
-            $patientListRelation = DB::table('patient_list_patient')
-                ->where('patient_id', $patient->patient_id)
-                ->first();
-                
-            $patientList = $patientListRelation 
-                ? DB::table('patient_lists')->where('patient_list_id', $patientListRelation->patient_list_id)->first()
-                : null;
-
             $resolvedReceiverId = null;
 
-            switch ($request->receiver) {
-                case 'dg':
-                case 'mkurugenzi':
-                    $resolvedReceiverId = $patientHistory->dg_id ?? $patientHistory->mkurugenzi_tiba_id;
-                    break;
-                case 'board':
-                    $resolvedReceiverId = $patientList ? $patientList->created_by : null;
-                    break;
-                case 'hospital':
-                    $resolvedReceiverId = $patient->created_by;
-                    break;
+            // NEW LOGIC: If it's a reply, send it back to the original sender
+            if ($request->filled('parent_id')) {
+                $parent = PatientHistoryConversation::findOrFail($request->parent_id);
+                // If I am replying, the receiver is the person who sent the parent message
+                // OR if I sent the parent, the receiver is the original receiver.
+                $resolvedReceiverId = ($parent->sender_id === $user->id) 
+                    ? $parent->receiver_id 
+                    : $parent->sender_id;
+            } else {
+                // ORIGINAL LOGIC: For new conversations, resolve by Role
+                $patientHistory = PatientHistory::findOrFail($request->patient_history_id);
+                $patient = $patientHistory->patient; 
+                
+                // ... (Your existing switch logic to find $resolvedReceiverId) ...
+                switch ($request->receiver) {
+                    case 'dg': $resolvedReceiverId = $patientHistory->dg_id; break;
+                    case 'mkurugenzi': $resolvedReceiverId = $patientHistory->mkurugenzi_tiba_id; break;
+                    // etc...
+                }
             }
 
             if (!$resolvedReceiverId) {
-                throw new \Exception("Could not resolve a User ID for: " . $request->receiver);
+                throw new \Exception("Could not resolve a User ID for this message.");
             }
 
             $conversation = PatientHistoryConversation::create([
@@ -202,10 +275,9 @@ class PatientHistoryConversationController extends Controller
 
             DB::commit();
 
-            // All message details now wrapped in the 'data' key
             return response()->json([
                 "statusCode" => 201,
-                "message_text" => "Message sent to " . ucfirst($request->receiver),
+                "message_text" => $request->parent_id ? "Reply sent" : "New message started",
                 "data" => [
                     "patient_history_id" => (int) $conversation->patient_history_id,
                     "conversation_id"    => $conversation->conversation_id,
