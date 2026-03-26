@@ -30,10 +30,10 @@ class PatientHistoryConversationController extends Controller
      */
     public function index(Request $request)
     {
-        $user = auth()->user();
-        if (!$user->can('View Patient History')) {
-            return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
-        }
+        // $user = auth()->user();
+        // if (!$user->can('View Patient History')) {
+        //     return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
+        // }
 
         $patientHistoryId = $request->query('patient_history_id');
 
