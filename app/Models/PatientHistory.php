@@ -161,6 +161,13 @@ class PatientHistory extends Model
         );
     }
 
+    /**
+     * Conversations in this patient history
+     */
+    public function conversations()
+    {
+        return $this->hasMany(PatientHistoryConversation::class, 'patient_history_id', 'patient_histories_id');
+    }
 
     /**
      * Activity log options

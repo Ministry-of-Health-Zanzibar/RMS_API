@@ -201,6 +201,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/allowed-to-assign/patients', [PatientHistoryController::class, 'getPatientToBeAssignedToMedicalBoard']);
     });
 
+    // Patient History Conversations
+    Route::prefix('patient-history-conversations')->group(function () {
+        Route::get('/', [App\Http\Controllers\API\Patients\PatientHistoryConversationController::class, 'index']);
+        Route::post('/', [App\Http\Controllers\API\Patients\PatientHistoryConversationController::class, 'store']);
+        Route::get('/{patientHistoryConversation}', [App\Http\Controllers\API\Patients\PatientHistoryConversationController::class, 'show']);
+        Route::post('/{patientHistoryConversation}', [App\Http\Controllers\API\Patients\PatientHistoryConversationController::class, 'update']);
+        Route::delete('/{patientHistoryConversation}', [App\Http\Controllers\API\Patients\PatientHistoryConversationController::class, 'destroy']);
+    });
+
     Route::get('/analytics/referral-trend', [App\Http\Controllers\API\Charts\AnalyticsController::class, 'referralTrend']);
     Route::post('/users/{userId}/assign-hospital', [App\Http\Controllers\API\User\UsersCotroller::class, 'assignHospital']);
 
