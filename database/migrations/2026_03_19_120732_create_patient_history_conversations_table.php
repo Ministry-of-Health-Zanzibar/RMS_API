@@ -15,8 +15,6 @@ return new class extends Migration
             $table->unsignedBigInteger('receiver_id')->nullable();
             $table->unsignedBigInteger('parent_id')->nullable(); 
             $table->text('message');
-            $table->string('case_status_at_time')->nullable();
-            $table->string('attachment_file')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

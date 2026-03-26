@@ -64,6 +64,15 @@ class User extends Authenticatable
         return $this->belongsToMany(Hospital::class,'hospital_user','user_id','hospital_id')->withPivot(['role', 'assigned_by'])->withTimestamps();
     }
 
+
+    // In User.php
+    public function getFullNameAttribute()
+    {
+        return "{$this->first_name} {$this->middle_name} {$this->last_name}";
+    }
+
+    // Add this so the name is always included in API responses
+    protected $appends = ['full_name'];
     /**
      * The attributes that should be cast.
      *

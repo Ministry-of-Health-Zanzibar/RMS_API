@@ -113,6 +113,10 @@ class PatientHistory extends Model
         return $this->belongsTo(Patient::class, 'patient_id', 'patient_id');
     }
 
+    // public function patient() {
+    //     return $this->belongsTo(Patient::class, 'patient_id');
+    // }
+
     public function reason()
     {
         return $this->belongsTo(Reason::class, 'reason_id', 'reason_id');
