@@ -28,28 +28,67 @@ class PatientHistoryConversationController extends Controller
      * Display conversations for a specific patient history.
      * Query param: patient_history_id (required)
      */
+    // public function index(Request $request)
+    // {
+
+    //     $patientHistoryId = $request->query('patient_history_id');
+
+    //     // Fetching threaded conversations
+    //     $conversations = PatientHistoryConversation::with([
+    //             'sender:id,first_name,middle_name,last_name', 
+    //             'receiver:id,first_name,middle_name,last_name',
+    //             'children.sender:id,first_name,middle_name,last_name'
+    //         ])
+    //         ->where('patient_history_id', $patientHistoryId)
+    //         ->whereNull('parent_id') // Start with the "Root" messages
+    //         ->latest()
+    //         ->get();
+
+    //     return response()->json([
+    //         'data' => $conversations,
+    //         'statusCode' => 200
+    //     ], 200);
+    // }
     public function index(Request $request)
     {
-        // $user = auth()->user();
-        // if (!$user->can('View Patient History')) {
-        //     return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
-        // }
+        $user = auth()->user();
+        // $patientHistoryId = $request->query('patient_history_id');
+        $patientHistoryId = $request->input('patient_history_id');
 
-        $patientHistoryId = $request->query('patient_history_id');
-
-        // Fetching threaded conversations
+        // Fetch conversations where the user is involved
         $conversations = PatientHistoryConversation::with([
-                'sender:id,first_name,middle_name,last_name', 
-                'receiver:id,first_name,middle_name,last_name',
-                'children.sender:id,first_name,middle_name,last_name'
+                'sender:id,first_name,last_name', 
+                'receiver:id,first_name,last_name'
             ])
             ->where('patient_history_id', $patientHistoryId)
-            ->whereNull('parent_id') // Start with the "Root" messages
+            ->whereNull('parent_id') // Only top-level messages
+            ->where(function($query) use ($user) {
+                // A person sees a root message if:
+                // 1. They sent it.
+                // 2. It was sent specifically to them.
+                $query->where('sender_id', $user->id)
+                    ->orWhere('receiver_id', $user->id);
+            })
             ->latest()
             ->get();
 
         return response()->json([
-            'data' => $conversations,
+            'data' => $conversations->map(function($convo) {
+                return [
+                    "conversation_id" => $convo->conversation_id,
+                    "sender_name"     => $convo->sender->full_name,
+                    "receiver_name"   => $convo->receiver->full_name ?? 'N/A',
+                    "last_message"    => $convo->message,
+                    "date"            => $convo->created_at->diffForHumans(),
+                    // Add this line to see the replies in the index!
+                    "replies"         => $convo->children->map(function($reply) {
+                        return [
+                            "sender" => $reply->sender->full_name,
+                            "message" => $reply->message
+                        ];
+                    })
+                ];
+            }),
             'statusCode' => 200
         ], 200);
     }
@@ -138,22 +177,52 @@ class PatientHistoryConversationController extends Controller
      * Display specific conversation message.
      */
     // The order MUST match the Route: {patientHistoryConversation} then {conversation_id}
+    // public function show(Request $request, $patientHistoryId, $conversation_id)
+    // {
+    //     $user = auth()->user();
+
+    //     // 2. Fetch the conversation with sender and children (replies)
+    //     $conversation = PatientHistoryConversation::where('conversation_id', $conversation_id)
+    //         ->where('patient_history_id', $patientHistoryId)
+    //         ->with([
+    //             'sender:id,first_name,middle_name,last_name',
+    //             'children' => function($query) {
+    //                 $query->with('sender:id,first_name,middle_name,last_name')->oldest();
+    //             }
+    //         ])
+    //         ->first();
+
+    //     if (!$conversation) {
+    //         return response()->json(['status' => false, 'message' => "Not found"], 404);
+    //     }
+
+    //     // 3. Construct the payload with User IDs (id) included
+    //     return response()->json([
+    //         "patient_history_id" => (int) $patientHistoryId,
+    //         "conversation_id"    => $conversation->conversation_id,
+    //         "user_id"            => $conversation->sender->id, // ID from users table
+    //         "sender_full_name"   => $conversation->sender->full_name,
+    //         "message"            => $conversation->message,
+    //         "replies"            => $conversation->children->map(function ($reply) {
+    //             return [
+    //                 "conversation_id"    => $reply->conversation_id,
+    //                 "user_id"            => $reply->sender->id, // ID from users table for the reply
+    //                 "receiver_full_name" => $reply->sender->full_name,
+    //                 "message"            => $reply->message,
+    //             ];
+    //         })
+    //     ], 200);
+    // }
     public function show(Request $request, $patientHistoryId, $conversation_id)
     {
         $user = auth()->user();
 
-        // 1. Authorization check
-        // if (!$user->can('View Patient History')) {
-        //     return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
-        // }
-
-        // 2. Fetch the conversation with sender and children (replies)
         $conversation = PatientHistoryConversation::where('conversation_id', $conversation_id)
             ->where('patient_history_id', $patientHistoryId)
             ->with([
-                'sender:id,first_name,middle_name,last_name',
+                'sender:id,first_name,last_name',
                 'children' => function($query) {
-                    $query->with('sender:id,first_name,middle_name,last_name')->oldest();
+                    $query->with('sender:id,first_name,last_name')->oldest();
                 }
             ])
             ->first();
@@ -162,18 +231,21 @@ class PatientHistoryConversationController extends Controller
             return response()->json(['status' => false, 'message' => "Not found"], 404);
         }
 
-        // 3. Construct the payload with User IDs (id) included
+        // SECURITY CHECK: Only the sender or receiver of the ROOT message can see the thread
+        if ($user->id !== $conversation->sender_id && $user->id !== $conversation->receiver_id) {
+            return response()->json(['status' => false, 'message' => "Unauthorized to view this thread"], 403);
+        }
+
         return response()->json([
             "patient_history_id" => (int) $patientHistoryId,
             "conversation_id"    => $conversation->conversation_id,
-            "user_id"            => $conversation->sender->id, // ID from users table
             "sender_full_name"   => $conversation->sender->full_name,
             "message"            => $conversation->message,
             "replies"            => $conversation->children->map(function ($reply) {
                 return [
                     "conversation_id"    => $reply->conversation_id,
-                    "user_id"            => $reply->sender->id, // ID from users table for the reply
-                    "receiver_full_name" => $reply->sender->full_name,
+                    "user_id"            => $reply->sender_id,
+                    "sender_full_name"   => $reply->sender->full_name,
                     "message"            => $reply->message,
                 ];
             })
