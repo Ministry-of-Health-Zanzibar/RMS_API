@@ -198,6 +198,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/{id}/medical-board/update', [PatientHistoryController::class, 'updateByMedicalBoardWithoutReferralCreation']);
         Route::get('/{id}/medical-board', [PatientHistoryController::class, 'getMedicalBoardUpdate']);
         Route::put('/{id}/mkurugenzi-tiba', [PatientHistoryController::class, 'updateByMkurugenzi']);
+        Route::get('/{id}/mkurugenzi-comments', [PatientHistoryController::class, 'getMkurugenziComments']);
         Route::get('/allowed-to-assign/patients', [PatientHistoryController::class, 'getPatientToBeAssignedToMedicalBoard']);
     });
 

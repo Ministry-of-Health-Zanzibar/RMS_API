@@ -865,6 +865,113 @@ class PatientHistoryController extends Controller
         }
     }
 
+    // public function updateByMkurugenzi(Request $request, $id)
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Unauthorized action for your role.',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     // Load history + patient + referrals that are "Requested"
+    //     $history = PatientHistory::with([
+    //         'patient',
+    //         'referrals' => function ($q) {
+    //             $q->where('status', 'Requested');
+    //         }
+    //     ])->find($id);
+
+    //     // history not found
+    //     if (!$history) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Patient history not found.',
+    //             'statusCode' => 404
+    //         ], 404);
+    //     }
+
+    //     // Validation
+    //     $validator = Validator::make($request->all(), [
+    //         'mkurugenzi_tiba_comments' => 'required|string',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'errors' => $validator->errors(),
+    //             'statusCode' => 422
+    //         ], 422);
+    //     }
+
+    //     try {
+
+    //         // -----------------------------------------
+    //         // 1️ Save Mkurugenzi Tiba comments
+    //         // -----------------------------------------
+    //         $history->mkurugenzi_tiba_comments = $request->mkurugenzi_tiba_comments;
+    //         $history->mkurugenzi_tiba_id = $user->id;
+    //         $history->save();
+
+
+    //         // -----------------------------------------
+    //         // 2️ Find the Requested referral
+    //         // -----------------------------------------
+    //         $referral = $history->referrals->first();
+
+    //         if (!$referral) {
+    //             return response()->json([
+    //                 'status' => false,
+    //                 'message' => 'No referral with status "Requested" found for this history.',
+    //                 'statusCode' => 404
+    //             ], 404);
+    //         }
+
+    //         // -----------------------------------------
+    //         // 3️ Update referral status
+    //         // -----------------------------------------
+    //         $referral->status = 'Pending';
+    //         $referral->save();
+
+
+    //         // -----------------------------------------
+    //         // 4 Apply overall history status update
+    //         // -----------------------------------------
+    //         $this->applyStatusUpdate(
+    //             $history,
+    //             'approved',
+    //             $request->mkurugenzi_tiba_comments,
+    //             $user
+    //         );
+
+    //         // -----------------------------------------
+    //         // 5 Return full response
+    //         // -----------------------------------------
+    //         return response()->json([
+    //             'status' => true,
+    //             'data' => [
+    //                 'history'  => $history->load('patient', 'diagnoses', 'reason'),
+    //                 'referral' => $referral->load('diagnoses', 'reason'),
+    //             ],
+    //             'message' => 'Referral approved updated successfully',
+    //             'statusCode' => 200
+    //         ]);
+
+    //     } catch (\Exception $e) {
+
+    //         Log::error('Medical Board update failed: ' . $e->getMessage());
+
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Update failed',
+    //             'error' => $e->getMessage(),
+    //             'statusCode' => 500
+    //         ], 500);
+    //     }
+    // }
     public function updateByMkurugenzi(Request $request, $id)
     {
         $user = auth()->user();
@@ -908,60 +1015,46 @@ class PatientHistoryController extends Controller
         }
 
         try {
+            // --- NEW AUTOMATION DETECTOR ---
+            // Check if comments are empty BEFORE we assign the new ones
+            $isFirstTime = empty($history->mkurugenzi_tiba_comments);
 
-            // -----------------------------------------
-            // 1️ Save Mkurugenzi Tiba comments
-            // -----------------------------------------
+            // 1 Save Mkurugenzi Tiba comments
             $history->mkurugenzi_tiba_comments = $request->mkurugenzi_tiba_comments;
             $history->mkurugenzi_tiba_id = $user->id;
             $history->save();
 
-
-            // -----------------------------------------
-            // 2️ Find the Requested referral
-            // -----------------------------------------
+            // 2 Find the Requested referral
             $referral = $history->referrals->first();
 
-            if (!$referral) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'No referral with status "Requested" found for this history.',
-                    'statusCode' => 404
-                ], 404);
+            // --- UPDATED LOGIC ---
+            // Only update the referral status if this is the FIRST time adding comments
+            if ($isFirstTime && $referral) {
+                // 3 Update referral status
+                $referral->status = 'Pending';
+                $referral->save();
+
+                // 4 Apply overall history status update
+                $this->applyStatusUpdate(
+                    $history,
+                    'approved',
+                    $request->mkurugenzi_tiba_comments,
+                    $user
+                );
             }
 
-            // -----------------------------------------
-            // 3️ Update referral status
-            // -----------------------------------------
-            $referral->status = 'Pending';
-            $referral->save();
-
-
-            // -----------------------------------------
-            // 4 Apply overall history status update
-            // -----------------------------------------
-            $this->applyStatusUpdate(
-                $history,
-                'approved',
-                $request->mkurugenzi_tiba_comments,
-                $user
-            );
-
-            // -----------------------------------------
             // 5 Return full response
-            // -----------------------------------------
             return response()->json([
                 'status' => true,
                 'data' => [
                     'history'  => $history->load('patient', 'diagnoses', 'reason'),
-                    'referral' => $referral->load('diagnoses', 'reason'),
+                    'referral' => $referral ? $referral->load('diagnoses', 'reason') : null,
                 ],
                 'message' => 'Referral approved updated successfully',
                 'statusCode' => 200
             ]);
 
         } catch (\Exception $e) {
-
             Log::error('Medical Board update failed: ' . $e->getMessage());
 
             return response()->json([
@@ -973,6 +1066,61 @@ class PatientHistoryController extends Controller
         }
     }
 
+    public function getMkurugenziComments($id)
+    {
+        $user = auth()->user();
+
+        if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized action for your role.',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // Find the history and only select the columns we need for performance
+        $history = PatientHistory::select('patient_histories_id', 'mkurugenzi_tiba_comments', 'mkurugenzi_tiba_id', 'updated_at')
+            ->with('mkurugenzi:id,first_name,last_name') // Assuming you have a 'mkurugenzi' relationship on the model
+            ->find($id);
+
+        if (!$history) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Patient history not found.',
+                'statusCode' => 404
+            ], 404);
+        }
+
+        // Verify if the logged-in user is the one who actually wrote the comment
+        if ($history->mkurugenzi_tiba_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You did not comment on this patient history.',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // Check if comments actually exist yet
+        if (!$history->mkurugenzi_tiba_comments) {
+            return response()->json([
+                'success' => true,
+                'data' => null,
+                'message' => 'No comments have been provided by Mkurugenzi Tiba yet.',
+                'statusCode' => 200
+            ], 200);
+        }
+
+        return response()->json([
+            'success' => true,
+            'statusCode' => 200,
+            'data' => [
+                'patient_history_id' => $history->patient_histories_id,
+                'mkurugenzi_tiba_comments' => $history->mkurugenzi_tiba_comments,
+                'commented_on'               => $history->updated_at->format('d M Y H:i'),
+                'human_date'         => $history->updated_at->diffForHumans(),
+            ]
+        ], 200);
+    }
 
     /**
      * @OA\Delete(

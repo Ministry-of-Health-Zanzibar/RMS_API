@@ -33,9 +33,9 @@ class PatientHistory extends Model
         'board_reason_id',
         'history_file',
         'status',
-        'Director_tiba_comments',
+        'mkurugenzi_tiba_comments',
         'dg_comments',
-        'Director_tiba_id',
+        'mkurugenzi_tiba_id',
         'dg_id',
     ];
 
@@ -113,10 +113,6 @@ class PatientHistory extends Model
         return $this->belongsTo(Patient::class, 'patient_id', 'patient_id');
     }
 
-    // public function patient() {
-    //     return $this->belongsTo(Patient::class, 'patient_id');
-    // }
-
     public function reason()
     {
         return $this->belongsTo(Reason::class, 'reason_id', 'reason_id');
@@ -171,6 +167,14 @@ class PatientHistory extends Model
     public function conversations()
     {
         return $this->hasMany(PatientHistoryConversation::class, 'patient_history_id', 'patient_histories_id');
+    }
+
+    /**
+     * Shortcut for your comment retrieval
+     */
+    public function mkurugenzi()
+    {
+        return $this->belongsTo(User::class, 'Director_tiba_id');
     }
 
     /**
