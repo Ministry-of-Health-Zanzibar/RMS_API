@@ -641,22 +641,53 @@ class UsersCotroller extends Controller
         }
     }
 
+    // public function getBoardMembers()
+    // {
+    //     $staffs = User::withTrashed()
+    //         ->whereHas('roles', function ($query) {
+    //             $query->where('name', 'ROLE MEDICAL BOARD MEMBER');
+    //         })
+    //         ->get([
+    //             'id as user_id',
+    //             // Concatenate names as full_name
+    //             \DB::raw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) AS full_name")
+    //         ]);
+
+    //     // Return a JSON response
+    //     return response()->json([
+    //         'data' => $staffs,
+    //         'message' => 'Board members retrieved successfully',
+    //         'statusCode' => 200
+    //     ]);
+    // }
+
     public function getBoardMembers()
     {
         $staffs = User::withTrashed()
             ->whereHas('roles', function ($query) {
                 $query->where('name', 'ROLE MEDICAL BOARD MEMBER');
             })
-            ->get([
-                'id as user_id',
-                // CONCAT_WS skips NULLs and only adds one space between valid strings
-                \DB::raw("CONCAT_WS(' ', first_name, middle_name, last_name) AS full_name")
+            // Fetch the raw columns first
+            ->get(['id', 'first_name', 'middle_name', 'last_name']);
+
+        // Use map to create the full_name string in PHP
+        $mappedStaffs = $staffs->map(function ($user) {
+            // filter() removes null/empty values, then join() puts a single space between them
+            $nameParts = array_filter([
+                $user->first_name,
+                $user->middle_name,
+                $user->last_name
             ]);
 
-        // Return a JSON response
+            return [
+                'user_id'   => $user->id,
+                'full_name' => implode(' ', $nameParts)
+            ];
+        });
+
         return response()->json([
-            'data' => $staffs,
-            'message' => 'Board members retrieved successfully',
+            'data'       => $mappedStaffs,
+            'message'    => 'Board members retrieved successfully',
             'statusCode' => 200
         ]);
     }
