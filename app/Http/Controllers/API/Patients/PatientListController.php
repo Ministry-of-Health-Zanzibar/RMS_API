@@ -216,8 +216,6 @@ class PatientListController extends Controller
         ], 200);
     }
 
-
-
     /**
      * Restore a soft-deleted patient list.
      */
@@ -279,6 +277,5 @@ class PatientListController extends Controller
             'statusCode' => 200,
         ], 200);
     }
-
 
 }

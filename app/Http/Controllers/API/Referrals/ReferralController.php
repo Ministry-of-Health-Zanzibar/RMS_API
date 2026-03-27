@@ -141,7 +141,6 @@ class ReferralController extends Controller
         ], 200);
     }
 
-
     public function getReferralwithBills()
     {
         $user = auth()->user();
@@ -182,7 +181,6 @@ class ReferralController extends Controller
             ], 200);
         }
     }
-
 
     /**
      * Store a newly created resource in storage.
@@ -323,34 +321,6 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        // $referral = Referral::with([
-        //     'patient' => function ($query) {
-        //         $query->with([
-        //             'geographicalLocation',
-        //             'files',
-        //             'patientList.boardMembers',
-        //             'patientHistories' => function ($q) {
-        //                 $q->with([
-        //                     'diagnoses',        // doctor diagnoses
-        //                     'boardDiagnoses',   // board diagnoses
-        //                     'reason',           // doctor reason
-        //                     'boardReason',      // board reason
-        //                 ]);
-        //             },
-        //         ]);
-        //     },
-        //     'hospital',
-        //     'hospitalLetters',
-        //     'referralLetters',
-        //     'parent',
-        //     'children',
-        //     'bills',
-        //     'confirmedBy',
-        //     'creator',
-        //     'diagnoses',
-        // ])
-        // ->where('referral_id', $id)
-        // ->first();
         $referral = Referral::with([
             'patient' => function ($query) {
                 $query->with([
@@ -716,7 +686,6 @@ class ReferralController extends Controller
 
     }
 
-
     /**
      * Unblock
      */
@@ -771,7 +740,6 @@ class ReferralController extends Controller
         ], 200);
     }
 
-
     public function getReferralsWithBills($referral_id)
     {
         $user = auth()->user();
@@ -799,7 +767,6 @@ class ReferralController extends Controller
         $referrals->bills = $referrals->bills ?? [];
         return response()->json($referrals);
     }
-
 
     public function getReferralById(int $referral_id)
     {

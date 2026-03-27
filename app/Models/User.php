@@ -58,12 +58,10 @@ class User extends Authenticatable
     }
 
     // App\Models\User.php
-
     public function hospitals()
     {
         return $this->belongsToMany(Hospital::class,'hospital_user','user_id','hospital_id')->withPivot(['role', 'assigned_by'])->withTimestamps();
     }
-
 
     // In User.php
     public function getFullNameAttribute()

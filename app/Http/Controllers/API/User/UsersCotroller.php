@@ -649,8 +649,8 @@ class UsersCotroller extends Controller
             })
             ->get([
                 'id as user_id',
-                // Concatenate names as full_name
-                \DB::raw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) AS full_name")
+                // CONCAT_WS skips NULLs and only adds one space between valid strings
+                \DB::raw("CONCAT_WS(' ', first_name, middle_name, last_name) AS full_name")
             ]);
 
         // Return a JSON response

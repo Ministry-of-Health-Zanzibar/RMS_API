@@ -377,7 +377,6 @@ class PatientHistoryController extends Controller
         ]);
     }
 
-
     /**
      * @OA\Post(
      *     path="/api/patient-histories/update/{id}",
