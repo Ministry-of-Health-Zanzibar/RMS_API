@@ -93,53 +93,99 @@ class PatientHistoryConversationController extends Controller
     //     ], 200);
     // }
 
+    // public function index(Request $request)
+    // {
+    //     $user = auth()->user();
+    //     $patientHistoryId = $request->input('patient_history_id');
+
+    //     // Fetch conversations where the user is involved
+    //     $conversations = PatientHistoryConversation::with([
+    //             'sender:id,first_name,last_name', 
+    //             'receiver:id,first_name,last_name',
+    //             'children.sender:id,first_name,last_name' 
+    //         ])
+    //         ->where('patient_history_id', $patientHistoryId)
+    //         ->whereNull('parent_id') 
+    //         ->where(function($query) use ($user) {
+    //             $query->where('sender_id', $user->id)
+    //                 ->orWhere('receiver_id', $user->id);
+    //         })
+    //         ->latest()
+    //         ->get();
+
+    //     // Map each conversation to your specific structure
+    //     $mappedConversations = $conversations->map(function ($convo) use ($patientHistoryId) {
+    //         return [
+    //             "patient_history_id" => (int) $patientHistoryId,
+    //             "conversation_id"    => $convo->conversation_id,
+    //             "user_id"            => $convo->sender->id,
+    //             "sender_full_name"   => $convo->sender->full_name,
+    //             "message"            => $convo->message,
+    //             "date"               => $convo->created_at->diffForHumans(),
+    //             "replies"            => $convo->children->map(function ($reply) {
+    //                 return [
+    //                     "conversation_id"    => $reply->conversation_id,
+    //                     "user_id"            => $reply->sender->id,
+    //                     "receiver_full_name" => $reply->sender->full_name, 
+    //                     "message"            => $reply->message,
+    //                     "date"               => $reply->created_at->diffForHumans(),
+    //                 ];
+    //             })
+    //         ];
+    //     });
+
+    //     // Return the response wrapped in 'data'
+    //     return response()->json([
+    //         "statusCode" => 200,
+    //         "data"       => $mappedConversations
+    //     ], 200);
+    // }
     public function index(Request $request)
-    {
-        $user = auth()->user();
-        $patientHistoryId = $request->input('patient_history_id');
+{
+    $user = auth()->user();
+    $patientHistoryId = $request->input('patient_history_id');
 
-        // Fetch conversations where the user is involved
-        $conversations = PatientHistoryConversation::with([
-                'sender:id,first_name,last_name', 
-                'receiver:id,first_name,last_name',
-                'children.sender:id,first_name,last_name' 
-            ])
-            ->where('patient_history_id', $patientHistoryId)
-            ->whereNull('parent_id') 
-            ->where(function($query) use ($user) {
-                $query->where('sender_id', $user->id)
-                    ->orWhere('receiver_id', $user->id);
+    // Fetch all threads where the logged-in user is either the sender OR the receiver
+    $conversations = PatientHistoryConversation::with([
+            'sender:id,first_name,last_name', 
+            'children.sender:id,first_name,last_name' 
+        ])
+        ->where('patient_history_id', $patientHistoryId)
+        ->whereNull('parent_id') // Get root messages only
+        ->where(function($query) use ($user) {
+            // Automatically detect involvement based on Auth ID
+            $query->where('sender_id', $user->id)
+                  ->orWhere('receiver_id', $user->id);
+        })
+        ->latest()
+        ->get();
+
+    // Map the collection to your required structure
+    $data = $conversations->map(function ($convo) use ($patientHistoryId) {
+        return [
+            "patient_history_id" => (int) $patientHistoryId,
+            "conversation_id"    => $convo->conversation_id,
+            "user_id"            => $convo->sender->id,
+            "sender_full_name"   => $convo->sender->full_name,
+            "message"            => $convo->message,
+            "date"               => $convo->created_at->diffForHumans(),
+            "replies"            => $convo->children->map(function ($reply) {
+                return [
+                    "conversation_id"    => $reply->conversation_id,
+                    "user_id"            => $reply->sender_id,
+                    "sender_full_name"   => $reply->sender->full_name,
+                    "message"            => $reply->message,
+                    "date"               => $reply->created_at->diffForHumans(),
+                ];
             })
-            ->latest()
-            ->get();
+        ];
+    });
 
-        // Map each conversation to your specific structure
-        $mappedConversations = $conversations->map(function ($convo) use ($patientHistoryId) {
-            return [
-                "patient_history_id" => (int) $patientHistoryId,
-                "conversation_id"    => $convo->conversation_id,
-                "user_id"            => $convo->sender->id,
-                "sender_full_name"   => $convo->sender->full_name,
-                "message"            => $convo->message,
-                "date"               => $convo->created_at->diffForHumans(),
-                "replies"            => $convo->children->map(function ($reply) {
-                    return [
-                        "conversation_id"    => $reply->conversation_id,
-                        "user_id"            => $reply->sender->id,
-                        "receiver_full_name" => $reply->sender->full_name, 
-                        "message"            => $reply->message,
-                        "date"               => $reply->created_at->diffForHumans(),
-                    ];
-                })
-            ];
-        });
-
-        // Return the response wrapped in 'data'
-        return response()->json([
-            "statusCode" => 200,
-            "data"       => $mappedConversations
-        ], 200);
-    }
+    return response()->json([
+        "statusCode" => 200,
+        "data"       => $data
+    ], 200);
+}   
 
     /**
      * Store a new conversation message.
