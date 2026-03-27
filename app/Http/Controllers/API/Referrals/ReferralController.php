@@ -323,6 +323,34 @@ class ReferralController extends Controller
             ], 403);
         }
 
+        // $referral = Referral::with([
+        //     'patient' => function ($query) {
+        //         $query->with([
+        //             'geographicalLocation',
+        //             'files',
+        //             'patientList.boardMembers',
+        //             'patientHistories' => function ($q) {
+        //                 $q->with([
+        //                     'diagnoses',        // doctor diagnoses
+        //                     'boardDiagnoses',   // board diagnoses
+        //                     'reason',           // doctor reason
+        //                     'boardReason',      // board reason
+        //                 ]);
+        //             },
+        //         ]);
+        //     },
+        //     'hospital',
+        //     'hospitalLetters',
+        //     'referralLetters',
+        //     'parent',
+        //     'children',
+        //     'bills',
+        //     'confirmedBy',
+        //     'creator',
+        //     'diagnoses',
+        // ])
+        // ->where('referral_id', $id)
+        // ->first();
         $referral = Referral::with([
             'patient' => function ($query) {
                 $query->with([
@@ -330,7 +358,8 @@ class ReferralController extends Controller
                     'files',
                     'patientList.boardMembers',
                     'patientHistories' => function ($q) {
-                        $q->with([
+                        // Order by ID descending to make the newest record first
+                        $q->orderBy('patient_histories_id', 'desc')->with([
                             'diagnoses',        // doctor diagnoses
                             'boardDiagnoses',   // board diagnoses
                             'reason',           // doctor reason
@@ -394,7 +423,6 @@ class ReferralController extends Controller
             'statusCode' => 200,
         ], 200);
     }
-
 
     public function getHospitalLettersByReferralId($id)
     {
@@ -471,8 +499,6 @@ class ReferralController extends Controller
             'statusCode' => 200
         ]);
     }
-
-
 
     public function getReferralsByHospitalId(int $hospitalId, int $billFileId)
     {
