@@ -641,26 +641,6 @@ class UsersCotroller extends Controller
         }
     }
 
-    // public function getBoardMembers()
-    // {
-    //     $staffs = User::withTrashed()
-    //         ->whereHas('roles', function ($query) {
-    //             $query->where('name', 'ROLE MEDICAL BOARD MEMBER');
-    //         })
-    //         ->get([
-    //             'id as user_id',
-    //             // Concatenate names as full_name
-    //             \DB::raw("CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name) AS full_name")
-    //         ]);
-
-    //     // Return a JSON response
-    //     return response()->json([
-    //         'data' => $staffs,
-    //         'message' => 'Board members retrieved successfully',
-    //         'statusCode' => 200
-    //     ]);
-    // }
-
     public function getBoardMembers()
     {
         $staffs = User::withTrashed()
@@ -691,7 +671,6 @@ class UsersCotroller extends Controller
             'statusCode' => 200
         ]);
     }
-
 
     /**
      * @OA\Post(

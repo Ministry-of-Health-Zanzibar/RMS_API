@@ -237,7 +237,7 @@ class ReportController extends Controller
             $totalReferralsByMadrasInstituteOfOrthopaedicsAndTraumatology = DB::table('referrals')
                 ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
                 ->whereNull('referrals.deleted_at')
-                ->where('hospitals.hospital_name', '=', 'Madras Institute of Orthopaedics and Traumatology (MIOT)	')
+                ->where('hospitals.hospital_name', '=', 'Madras Institute of Orthopaedics and Traumatology (MIOT)')
                 ->count();
 
             return response([
