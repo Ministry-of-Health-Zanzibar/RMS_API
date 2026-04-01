@@ -60,7 +60,10 @@ class ReportController extends Controller
             ->count();
 
         // 4. Total Hospitals
-        $totalHospitals = \App\Models\Hospital::count();
+        // $totalHospitals = \App\Models\Hospital::count();
+        $totalHospitals = \App\Models\Hospital::whereHas('referralType', function ($query) {
+            $query->whereIn('referral_type_code', ['REFTYPE1', 'REFTYPE2']);
+        })->count();
 
         return response([
             'data' => [
@@ -181,81 +184,6 @@ class ReportController extends Controller
     /**
      * Report by hospital
      */
-    // public function referralReportByHospital()
-    // {
-    //     $user = auth()->user();
-    //     if (! $user->can('View Referral Dashboard')) {
-    //         return response([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403,
-    //         ], 403);
-    //     }
-
-    //     try {
-    //         $totalReferralsByLumumba = DB::table('referrals')
-    //             ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
-    //             ->whereNull('referrals.deleted_at')
-    //             ->where('hospitals.hospital_name', '=', 'LUMUMBA')
-    //             ->count();
-
-    //         $totalReferralsByMuhimbiliOrthopaedicInstitute = DB::table('referrals')
-    //             ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
-    //             ->whereNull('referrals.deleted_at')
-    //             ->where('hospitals.hospital_name', '=', 'Muhimbili Orthopaedic Institute (MOI)')
-    //             ->count();
-
-    //         $totalReferralsByJakayaKikweteCardiacInstitute = DB::table('referrals')
-    //             ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
-    //             ->whereNull('referrals.deleted_at')
-    //             ->where('hospitals.hospital_name', '=', 'Jakaya Kikwete Cardiac Institute (JKCI)')
-    //             ->count();
-
-    //         $totalReferralsBySIMS = DB::table('referrals')
-    //             ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
-    //             ->whereNull('referrals.deleted_at')
-    //             ->where('hospitals.hospital_name', '=', 'SIMS')
-    //             ->count();
-
-    //         $totalReferralsByMuhimbiliNationalHospital = DB::table('referrals')
-    //             ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
-    //             ->whereNull('referrals.deleted_at')
-    //             ->where('hospitals.hospital_name', '=', 'Muhimbili National Hospital (MNH)')
-    //             ->count();
-
-    //         $totalReferralsByOceanRoadCancerInstitute = DB::table('referrals')
-    //             ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
-    //             ->whereNull('referrals.deleted_at')
-    //             ->where('hospitals.hospital_name', '=', 'Ocean Road Cancer Institute (ORCI)')
-    //             ->count();
-
-    //         $totalReferralsByKilimanjaroChristianMedicalCentre = DB::table('referrals')
-    //             ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
-    //             ->whereNull('referrals.deleted_at')
-    //             ->where('hospitals.hospital_name', '=', 'Kilimanjaro Christian Medical Centre (KCMC)')
-    //             ->count();
-
-    //         $totalReferralsByMadrasInstituteOfOrthopaedicsAndTraumatology = DB::table('referrals')
-    //             ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
-    //             ->whereNull('referrals.deleted_at')
-    //             ->where('hospitals.hospital_name', '=', 'Madras Institute of Orthopaedics and Traumatology (MIOT)')
-    //             ->count();
-
-    //         return response([
-    //             'totalReferralsByLumumba' => $totalReferralsByLumumba,
-    //             'totalReferralsByMuhimbiliOrthopaedicInstitute' => $totalReferralsByMuhimbiliOrthopaedicInstitute,
-    //             'totalReferralsByJakayaKikweteCardiacInstitute' => $totalReferralsByJakayaKikweteCardiacInstitute,
-    //             'totalReferralsBySIMS' => $totalReferralsBySIMS,
-    //             'totalReferralsByMuhimbiliNationalHospital' => $totalReferralsByMuhimbiliNationalHospital,
-    //             'totalReferralsByOceanRoadCancerInstitute' => $totalReferralsByOceanRoadCancerInstitute,
-    //             'totalReferralsByKilimanjaroChristianMedicalCentre' => $totalReferralsByKilimanjaroChristianMedicalCentre,
-    //             'totalReferralsByMadrasInstituteOfOrthopaedicsAndTraumatology' => $totalReferralsByMadrasInstituteOfOrthopaedicsAndTraumatology,
-    //         ]);
-    //     } catch (\Throwable $e) {
-    //         return response()
-    //             ->json(['message' => $e->getMessage(), 'statusCode' => 401]);
-    //     }
-    // }
-
     public function referralReportByHospital()
     {
         $user = auth()->user();
