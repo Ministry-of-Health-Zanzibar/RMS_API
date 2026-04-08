@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
+use App\Mail\ConversationNotification;
+use Illuminate\Support\Facades\Mail;
+use App\Models\User; // Ensure you have the User model imported
+
 /**
  * @OA\Tag(
  *     name="Patient History Conversations",
@@ -153,6 +157,17 @@ class PatientHistoryConversationController extends Controller
                 'parent_id'          => $request->parent_id,
                 'message'            => $request->message,
             ]);
+
+            $recipient = User::find($resolvedReceiverId);
+
+            if ($recipient && $recipient->email) {
+                $senderDisplayName = trim($user->first_name . ' ' . $user->middle_name . ' ' . $user->last_name);
+                
+                // Tunapitisha $conversation, $senderDisplayName, na $recipient object
+                Mail::to($recipient->email)->queue(
+                    new ConversationNotification($conversation, $senderDisplayName, $recipient)
+                );
+            }
 
             DB::commit();
 
