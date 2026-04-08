@@ -67,28 +67,102 @@ class ReferralController extends Controller
      *     )
      * )
      */
+    // public function index()
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->can('View Referral')) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     // 1. Start the query
+    //     $query = Referral::with(['patient.patientHistories', 'reason', 'hospital', 'diagnoses'])
+    //         ->where('status', '<>', 'Requested');
+
+    //     // 2. 🛡️ Role-based restriction:
+    //     // If the user is NOT a Director General, hide 'Pending' status referrals.
+    //     if (!$user->hasRole(['ROLE DIRECTOR GENERAL','ROLE ADMIN'])) {
+    //         $query->where('status', '<>', 'Pending');
+    //     }
+
+    //     $referrals = $query->get()
+    //         ->groupBy('referral_number')
+    //         ->map(function ($group) {
+    //             $first = $group->first();
+
+    //             return [
+    //                 'referral_number' => $first->referral_number,
+    //                 'patient'         => $first->patient,
+    //                 'patientHistories'=> $first->patientHistories,
+    //                 'diagnoses'       => $first->diagnoses,
+    //                 'reason'          => $first->reason,
+    //                 'status'          => $group->pluck('status')->unique()->implode(', '),
+    //                 'hospitals' => $group
+    //                     ->pluck('hospital')
+    //                     ->unique('hospital_id')
+    //                     ->values(),
+    //                 'referrals' => $group->map(function ($ref) {
+    //                     return [
+    //                         'referral_id'        => $ref->referral_id,
+    //                         'parent_referral_id' => $ref->parent_referral_id,
+    //                         'hospital_id'        => $ref->hospital_id,
+    //                         'reason_id'          => $ref->reason_id,
+    //                         'status'             => $ref->status,
+    //                         'confirmed_by'       => $ref->confirmed_by,
+    //                         'created_by'         => $ref->created_by,
+    //                         'created_at'         => $ref->created_at,
+    //                         'updated_at'         => $ref->updated_at,
+    //                         'deleted_at'         => $ref->deleted_at,
+    //                         'hospital'           => $ref->hospital,
+    //                     ];
+    //                 })->values(),
+    //             ];
+    //         })
+    //         // Sorting logic remains the same (Pending will only appear for DG anyway)
+    //         ->sort(function ($a, $b) {
+    //             $aHasPending = collect($a['referrals'])->contains('status', 'Pending');
+    //             $bHasPending = collect($b['referrals'])->contains('status', 'Pending');
+
+    //             if ($aHasPending != $bHasPending) {
+    //                 return $aHasPending ? -1 : 1;
+    //             }
+
+    //             $aLatest = collect($a['referrals'])->max(fn($ref) => strtotime($ref['created_at']));
+    //             $bLatest = collect($b['referrals'])->max(fn($ref) => strtotime($ref['created_at']));
+
+    //             return ($aLatest > $bLatest) ? -1 : 1;
+    //         })
+    //         ->values();
+
+    //     return response([
+    //         'data' => $referrals,
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
+
     public function index()
     {
         $user = auth()->user();
 
         if (!$user->can('View Referral')) {
-            return response([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
+            return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
-        // 1. Start the query
-        $query = Referral::with(['patient', 'reason', 'hospital'])
+        // 1. Build Query with eager loading
+        $query = Referral::with(['patient.patientHistories', 'reason', 'hospital', 'diagnoses'])
             ->where('status', '<>', 'Requested');
 
-        // 2. 🛡️ Role-based restriction:
-        // If the user is NOT a Director General, hide 'Pending' status referrals.
-        if (!$user->hasRole(['ROLE DIRECTOR GENERAL','ROLE ADMIN'])) {
+        // 2. Apply Role-based restriction
+        if (!$user->hasRole(['ROLE DIRECTOR GENERAL', 'ROLE ADMIN'])) {
             $query->where('status', '<>', 'Pending');
         }
 
-        $referrals = $query->get()
+        // 3. Get results and group
+        // Note: If data is huge, consider ->paginate() instead of ->get()
+        $referrals = $query->latest()->get() 
             ->groupBy('referral_number')
             ->map(function ($group) {
                 $first = $group->first();
@@ -96,42 +170,32 @@ class ReferralController extends Controller
                 return [
                     'referral_number' => $first->referral_number,
                     'patient'         => $first->patient,
+                    'patientHistories'=> $first->patientHistories,
+                    'diagnoses'       => $first->diagnoses,
                     'reason'          => $first->reason,
-                    'status'          => $group->pluck('status')->unique()->implode(', '),
-                    'hospitals' => $group
-                        ->pluck('hospital')
-                        ->unique('hospital_id')
-                        ->values(),
-                    'referrals' => $group->map(function ($ref) {
+                    // Using map for clean status string
+                    'status'          => $group->pluck('status')->unique()->sort()->implode(', '),
+                    'hospitals'       => $group->pluck('hospital')->unique('hospital_id')->values(),
+                    'referrals'       => $group->map(function ($ref) {
                         return [
-                            'referral_id'        => $ref->referral_id,
-                            'parent_referral_id' => $ref->parent_referral_id,
-                            'hospital_id'        => $ref->hospital_id,
-                            'reason_id'          => $ref->reason_id,
-                            'status'             => $ref->status,
-                            'confirmed_by'       => $ref->confirmed_by,
-                            'created_by'         => $ref->created_by,
-                            'created_at'         => $ref->created_at,
-                            'updated_at'         => $ref->updated_at,
-                            'deleted_at'         => $ref->deleted_at,
-                            'hospital'           => $ref->hospital,
+                            'referral_id' => $ref->referral_id,
+                            'status'      => $ref->status,
+                            'hospital'    => $ref->hospital,
+                            'created_at'  => $ref->created_at,
+                            // ... add other fields if strictly necessary
                         ];
                     })->values(),
+                    // Meta-data for easier sorting
+                    'has_pending'     => $group->contains('status', 'Pending'),
+                    'latest_activity' => $group->max('created_at'),
                 ];
             })
-            // Sorting logic remains the same (Pending will only appear for DG anyway)
+            // 4. Sort: Pending first, then by date
             ->sort(function ($a, $b) {
-                $aHasPending = collect($a['referrals'])->contains('status', 'Pending');
-                $bHasPending = collect($b['referrals'])->contains('status', 'Pending');
-
-                if ($aHasPending != $bHasPending) {
-                    return $aHasPending ? -1 : 1;
+                if ($a['has_pending'] !== $b['has_pending']) {
+                    return $b['has_pending'] <=> $a['has_pending'];
                 }
-
-                $aLatest = collect($a['referrals'])->max(fn($ref) => strtotime($ref['created_at']));
-                $bLatest = collect($b['referrals'])->max(fn($ref) => strtotime($ref['created_at']));
-
-                return ($aLatest > $bLatest) ? -1 : 1;
+                return $b['latest_activity'] <=> $a['latest_activity'];
             })
             ->values();
 
