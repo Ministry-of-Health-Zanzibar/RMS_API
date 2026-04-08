@@ -170,7 +170,6 @@ class ReferralController extends Controller
                 return [
                     'referral_number' => $first->referral_number,
                     'patient'         => $first->patient,
-                    'patientHistories'=> $first->patientHistories,
                     'diagnoses'       => $first->diagnoses,
                     'reason'          => $first->reason,
                     // Using map for clean status string
