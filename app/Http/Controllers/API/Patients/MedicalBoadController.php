@@ -56,30 +56,55 @@ class MedicalBoadController extends Controller
      *     )
      * )
      */
+    // public function index()
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->can('View Patient List')) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $lists = PatientList::with(['creator', 'patients.geographicalLocation', 'boardMembers'])
+    //         ->withTrashed()
+    //         ->get();
+
+    //     return response()->json([
+    //         'data' => $lists,
+    //         'statusCode' => 200
+    //     ]);
+    // }
     public function index()
-    {
-        $user = auth()->user();
+{
+    $user = auth()->user();
+    $dataEntryEmails = ['medicalboard@mohz.go.tz', 'hospital@mohz.go.tz', 'mkurugenzi@mohz.go.tz', 'dguser@mohz.go.tz'];
 
-        if (!$user->can('View Patient List')) {
-            return response()->json([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
-        }
-
-        $lists = PatientList::with(['creator', 'patients.geographicalLocation', 'boardMembers'])
-            // ->when(!$user->hasRole('ROLE ADMIN'), function ($q) use ($user) {
-            //     // 👇 Example filter for non-admins
-            //     $q->where('created_by', $user->id);
-            // })
-            ->withTrashed()
-            ->get();
-
-        return response()->json([
-            'data' => $lists,
-            'statusCode' => 200
-        ]);
+    if (!$user->can('View Patient List')) {
+        return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
     }
+
+    $isDataEntryUser = in_array($user->email, $dataEntryEmails);
+
+    $query = PatientList::with(['creator', 'patients.geographicalLocation', 'boardMembers'])
+        ->withTrashed();
+
+    // --- LOGIC YA KUTENGANISHA ---
+    if ($isDataEntryUser) {
+        $query->whereHas('creator', function($q) use ($dataEntryEmails) {
+            $q->whereIn('email', $dataEntryEmails);
+        });
+    } else {
+        $query->whereHas('creator', function($q) use ($dataEntryEmails) {
+            $q->whereNotIn('email', $dataEntryEmails);
+        });
+    }
+
+    $lists = $query->get();
+
+    return response()->json(['data' => $lists, 'statusCode' => 200]);
+}
 
     /**
      * @OA\Post(

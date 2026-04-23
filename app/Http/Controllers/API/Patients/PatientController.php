@@ -126,69 +126,138 @@ class PatientController extends Controller
     }
 
 
+    // public function patientsHistories()
+    // {
+    //     $user = auth()->user();
+
+    //     // 1. Permission Check
+    //     if (!$user->canAny(['View Patient', 'View History'])) {
+    //         return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+    //     }
+
+    //     // 2. Role Check for Mkurugenzi Tiba
+    //     $isMkurugenzi = $user->hasRole('ROLE MKURUGENZI TIBA');
+
+    //     // Subquery string to get the latest status for each patient
+    //     $latestStatusSubquery = "(SELECT status FROM patient_histories
+    //                             WHERE patient_histories.patient_id = patients.patient_id
+    //                             ORDER BY patient_histories_id DESC LIMIT 1)";
+
+    //     $query = Patient::query()
+    //         ->with(['latestHistory', 'creator'])
+    //         ->join('users', 'users.id', '=', 'patients.created_by')
+    //         ->leftJoin('hospital_user', 'hospital_user.user_id', '=', 'users.id')
+    //         ->leftJoin('hospitals', 'hospitals.hospital_id', '=', 'hospital_user.hospital_id')
+    //         ->whereHas('patientHistories');
+
+    //     // ... [Note: Keep any existing role-based where clauses or filters here] ...
+
+    //     $patients = $query
+    //         ->select(
+    //             'patients.*',
+    //             'hospitals.hospital_name as hospital',
+    //             'hospital_user.role as hospital_role',
+    //             DB::raw("$latestStatusSubquery as latest_status_text")
+    //         )
+    //         ->groupBy(
+    //             'patients.patient_id',
+    //             'hospitals.hospital_name',
+    //             'hospital_user.role'
+    //         )
+    //         /* 3. Apply Dynamic Priority Sort
+    //         Logic: 'pending' is always #1.
+    //         If Mkurugenzi, 'requested' moves to #2.
+    //         */
+    //         ->orderByRaw("
+    //             CASE
+    //                 WHEN $latestStatusSubquery = 'pending' THEN 1
+    //                 WHEN $latestStatusSubquery = 'requested' THEN " . ($isMkurugenzi ? '2' : '4') . "
+    //                 WHEN $latestStatusSubquery = 'reviewed' THEN " . ($isMkurugenzi ? '3' : '2') . "
+    //                 WHEN $latestStatusSubquery = 'assigned' THEN " . ($isMkurugenzi ? '4' : '3') . "
+    //                 WHEN $latestStatusSubquery = 'approved' THEN 5
+    //                 WHEN $latestStatusSubquery = 'confirmed' THEN 6
+    //                 WHEN $latestStatusSubquery = 'rejected' THEN 7
+    //                 ELSE 8
+    //             END ASC
+    //         ")
+    //         // Secondary Sort: Most recently created patients first within the same status group
+    //         ->orderBy('patients.patient_id', 'desc')
+    //         ->get();
+
+    //     return response([
+    //         'data' => $patients,
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
     public function patientsHistories()
-    {
-        $user = auth()->user();
+{
+    $user = auth()->user();
+    
+    // Orodha ya emails za data entry
+    $dataEntryEmails = [
+        'medicalboard@mohz.go.tz', 
+        'hospital@mohz.go.tz', 
+        'mkurugenzi@mohz.go.tz', 
+        'dguser@mohz.go.tz'
+    ];
 
-        // 1. Permission Check
-        if (!$user->canAny(['View Patient', 'View History'])) {
-            return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
-        }
-
-        // 2. Role Check for Mkurugenzi Tiba
-        $isMkurugenzi = $user->hasRole('ROLE MKURUGENZI TIBA');
-
-        // Subquery string to get the latest status for each patient
-        $latestStatusSubquery = "(SELECT status FROM patient_histories
-                                WHERE patient_histories.patient_id = patients.patient_id
-                                ORDER BY patient_histories_id DESC LIMIT 1)";
-
-        $query = Patient::query()
-            ->with(['latestHistory', 'creator'])
-            ->join('users', 'users.id', '=', 'patients.created_by')
-            ->leftJoin('hospital_user', 'hospital_user.user_id', '=', 'users.id')
-            ->leftJoin('hospitals', 'hospitals.hospital_id', '=', 'hospital_user.hospital_id')
-            ->whereHas('patientHistories');
-
-        // ... [Note: Keep any existing role-based where clauses or filters here] ...
-
-        $patients = $query
-            ->select(
-                'patients.*',
-                'hospitals.hospital_name as hospital',
-                'hospital_user.role as hospital_role',
-                DB::raw("$latestStatusSubquery as latest_status_text")
-            )
-            ->groupBy(
-                'patients.patient_id',
-                'hospitals.hospital_name',
-                'hospital_user.role'
-            )
-            /* 3. Apply Dynamic Priority Sort
-            Logic: 'pending' is always #1.
-            If Mkurugenzi, 'requested' moves to #2.
-            */
-            ->orderByRaw("
-                CASE
-                    WHEN $latestStatusSubquery = 'pending' THEN 1
-                    WHEN $latestStatusSubquery = 'requested' THEN " . ($isMkurugenzi ? '2' : '4') . "
-                    WHEN $latestStatusSubquery = 'reviewed' THEN " . ($isMkurugenzi ? '3' : '2') . "
-                    WHEN $latestStatusSubquery = 'assigned' THEN " . ($isMkurugenzi ? '4' : '3') . "
-                    WHEN $latestStatusSubquery = 'approved' THEN 5
-                    WHEN $latestStatusSubquery = 'confirmed' THEN 6
-                    WHEN $latestStatusSubquery = 'rejected' THEN 7
-                    ELSE 8
-                END ASC
-            ")
-            // Secondary Sort: Most recently created patients first within the same status group
-            ->orderBy('patients.patient_id', 'desc')
-            ->get();
-
-        return response([
-            'data' => $patients,
-            'statusCode' => 200,
-        ], 200);
+    if (!$user->canAny(['View Patient', 'View History'])) {
+        return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
     }
+
+    $isMkurugenzi = $user->hasRole('ROLE MKURUGENZI TIBA');
+    $isDataEntryUser = in_array($user->email, $dataEntryEmails);
+
+    $latestStatusSubquery = "(SELECT status FROM patient_histories
+                            WHERE patient_histories.patient_id = patients.patient_id
+                            ORDER BY patient_histories_id DESC LIMIT 1)";
+
+    $query = Patient::query()
+        ->with(['latestHistory', 'creator'])
+        ->join('users', 'users.id', '=', 'patients.created_by')
+        ->leftJoin('hospital_user', 'hospital_user.user_id', '=', 'users.id')
+        ->leftJoin('hospitals', 'hospitals.hospital_id', '=', 'hospital_user.hospital_id')
+        ->whereHas('patientHistories');
+
+    // --- LOGIC MPYA YA KUTENGANISHA DATA ---
+    if ($isDataEntryUser) {
+        // Data Entry Users wanaona tu data zilizoundwa na wenzao
+        $query->whereIn('users.email', $dataEntryEmails);
+    } else {
+        // Real Users hawaoni data za Data Entry Users
+        $query->whereNotIn('users.email', $dataEntryEmails);
+    }
+
+    $patients = $query
+        ->select(
+            'patients.*',
+            'hospitals.hospital_name as hospital',
+            'hospital_user.role as hospital_role',
+            DB::raw("$latestStatusSubquery as latest_status_text")
+        )
+        ->groupBy(
+            'patients.patient_id',
+            'hospitals.hospital_name',
+            'hospital_user.role'
+        )
+        ->orderByRaw("
+            CASE
+                WHEN $latestStatusSubquery = 'pending' THEN 1
+                WHEN $latestStatusSubquery = 'requested' THEN " . ($isMkurugenzi ? '2' : '4') . "
+                WHEN $latestStatusSubquery = 'reviewed' THEN " . ($isMkurugenzi ? '3' : '2') . "
+                WHEN $latestStatusSubquery = 'assigned' THEN " . ($isMkurugenzi ? '4' : '3') . "
+                WHEN $latestStatusSubquery = 'approved' THEN 5
+                WHEN $latestStatusSubquery = 'confirmed' THEN 6
+                WHEN $latestStatusSubquery = 'rejected' THEN 7
+                ELSE 8
+            END ASC
+        ")
+        ->orderBy('patients.patient_id', 'desc')
+        ->get();
+
+    return response(['data' => $patients, 'statusCode' => 200], 200);
+}
+
 
     /**
      * Store a newly created resource in storage.
