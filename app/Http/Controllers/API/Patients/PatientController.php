@@ -653,9 +653,11 @@ class PatientController extends Controller
         return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
     }
 
-    // Endelea na logic iliyobaki kama ilivyokuwa...
-    if (!$this->isPatientEligible($request->matibabu_card)) {
-        return response()->json(['message' => 'Patient has an active referral process.', 'statusCode' => 403], 200);
+    if(!$isDataEntry){
+        // Endelea na logic iliyobaki kama ilivyokuwa...
+        if (!$this->isPatientEligible($request->matibabu_card)) {
+            return response()->json(['message' => 'Patient has an active referral process.', 'statusCode' => 403], 200);
+        }
     }
 
     DB::beginTransaction();

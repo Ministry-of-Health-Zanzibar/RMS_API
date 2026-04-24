@@ -64,28 +64,57 @@ class GeographicalLocationsController extends Controller
     *     )
     * )
     */
+    // public function index()
+    // {
+    //     if(auth()->user()->can('View Location'))
+    //     {
+    //         $geographicalLocations = DB::table('geographical_locations')
+    //             ->join('users', 'users.id', '=', 'geographical_locations.created_by')
+    //             ->select('geographical_locations.*','users.first_name','users.middle_name','users.last_name','users.id')
+    //             ->get();
+
+    //         $respose =[
+    //             'data' => $geographicalLocations,
+    //             'statusCode'=> 200
+    //         ];
+
+    //         return response()->json(
+    //             $respose
+    //         );
+    //     }else{
+    //         return response()->json([
+    //             'message' => 'Unauthorized',
+    //             'statusCode'=> 401
+    //         ]);
+    //     }
+    // }
     public function index()
     {
         if(auth()->user()->can('View Location'))
         {
             $geographicalLocations = DB::table('geographical_locations')
                 ->join('users', 'users.id', '=', 'geographical_locations.created_by')
-                ->select('geographical_locations.*','users.first_name','users.middle_name','users.last_name','users.id')
-                // ->whereNull('geographical_locations.deleted_at')
+                ->select(
+                    'geographical_locations.*',
+                    'users.first_name',
+                    'users.middle_name',
+                    'users.last_name',
+                    'users.id'
+                )
+                // Tunachuja ili kupata zile ambazo label yake ina neno 'SHEHIA'
+                ->where('geographical_locations.label', 'LIKE', '%SHEHIA%')
                 ->get();
 
-            $respose =[
+            $response = [
                 'data' => $geographicalLocations,
-                'statusCode'=> 200
+                'statusCode' => 200
             ];
 
-            return response()->json(
-                $respose
-            );
-        }else{
+            return response()->json($response);
+        } else {
             return response()->json([
                 'message' => 'Unauthorized',
-                'statusCode'=> 401
+                'statusCode' => 401
             ]);
         }
     }
