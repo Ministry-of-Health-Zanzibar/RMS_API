@@ -720,18 +720,35 @@ class PatientController extends Controller
 
         DB::commit();
 
-        // NOTIFICATIONS
-        try {
-            $directors = \App\Models\User::role('ROLE MKURUGENZI TIBA')
-            ->where('email', '!=', 'mkurugenzi@mohz.go.tz')
-            ->get();
+        if(!$isDataEntry){
+            // NOTIFICATIONS
+            // try {
+            //     $directors = \App\Models\User::role('ROLE MKURUGENZI TIBA')
+            //     ->where('email', '!=', 'mkurugenzi@mohz.go.tz')
+            //     ->get();
 
-            \Notification::route('mail', 'msafirimarijani@yahoo.com')
-                        ->notify(new \App\Notifications\NewPatientRecordNotification($patient, $patientHistory));
+            //     \Notification::route('mail', 'msafirimarijani@yahoo.com')
+            //                 ->notify(new \App\Notifications\NewPatientRecordNotification($patient, $patientHistory));
 
-            \Notification::send($directors, new \App\Notifications\NewPatientRecordNotification($patient, $patientHistory));
-        } catch (\Exception $e) {
-            \Log::error("Notification failed: " . $e->getMessage());
+            //     \Notification::send($directors, new \App\Notifications\NewPatientRecordNotification($patient, $patientHistory));
+            // } catch (\Exception $e) {
+            //     \Log::error("Notification failed: " . $e->getMessage());
+            // }
+
+            try {
+                $directors = \App\Models\User::role('ROLE MKURUGENZI TIBA')
+                ->where('email', '!=', 'mkurugenzi@mohz.go.tz')
+                ->get();
+
+                // Use the Notification facade's route method for the external email
+                Notification::route('mail', 'msafirimarijani@yahoo.com')
+                            ->notify(new NewPatientRecordNotification($patient, $patientHistory));
+
+                // Notify the internal directors
+                Notification::send($directors, new NewPatientRecordNotification($patient, $patientHistory));
+            } catch (\Exception $e) {
+                \Log::error("Notification failed: " . $e->getMessage());
+            }
         }
 
         return response([
