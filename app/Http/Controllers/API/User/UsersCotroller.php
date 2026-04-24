@@ -641,6 +641,40 @@ class UsersCotroller extends Controller
         }
     }
 
+    public function unBlockUser(string $id)
+    {
+        // Hakikisha mwenye uwezo wa ku-unblock ni Admin au mwenye permission husika
+        if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Update User')) {
+            try {
+                // Tunatumia onlyTrashed() kupata wale tu walio-blocked
+                $user = User::onlyTrashed()->find($id);
+
+                if ($user != null) {
+                    $user->restore(); // Hii inafuta tarehe kwenye deleted_at
+
+                    return response()->json([
+                        'message' => 'User Account Unblocked Successfully',
+                        'statusCode' => '201'
+                    ]);
+                }
+
+                return response()->json([
+                    'message' => 'User not found in blocked list',
+                    'statusCode' => '404'
+                ], 404);
+
+            } catch (Exception $e) {
+                return response()->json([
+                    'message' => 'Internal Server Error',
+                    'error' => $e->getMessage(),
+                    'statusCode' => '500'
+                ], 500);
+            }
+        } else {
+            return response()->json(['message' => 'Unauthorized', 'statusCode' => 401], 401);
+        }
+    }
+
     public function getBoardMembers()
     {
         $staffs = User::withTrashed()

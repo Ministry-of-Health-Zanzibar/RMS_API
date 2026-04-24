@@ -52,6 +52,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('countries', App\Http\Controllers\API\Setup\CountriesController::class);
 
     Route::get('userAccounts/board-members', [App\Http\Controllers\API\User\UsersCotroller::class,'getBoardMembers']);
+    Route::get('unBlockUser/{userId}', [App\Http\Controllers\API\User\UsersCotroller::class,'unBlockUser']);
     Route::resource('userAccounts', App\Http\Controllers\API\User\UsersCotroller::class);
     Route::resource('roles', App\Http\Controllers\API\User\RolesCotroller::class);
     Route::resource('permissions', App\Http\Controllers\API\User\PermissionsCotroller::class);
