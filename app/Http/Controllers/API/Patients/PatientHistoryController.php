@@ -85,55 +85,124 @@ class PatientHistoryController extends Controller
         ]);
     }
 
+    // public function getPatientToBeAssignedToMedicalBoard(Request $request)
+    // {
+    //     $user = auth()->user();
+
+    //     // Permission check
+    //     if (!$user->canAny(['View Patient', 'View History'])) {
+    //         return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
+    //     }
+
+    //     $patientListId = $request->input('patient_list_id');
+
+    //     $patients = Patient::query()
+    //         // 1. MUST have a latest history with status 'reviewed'
+    //         ->whereHas('latestHistory', function ($q) {
+    //             $q->where('status', 'reviewed');
+    //         })
+    //         // 2. Filter logic for lists
+    //         ->when($patientListId, function ($q) use ($patientListId) {
+    //             // If we provide a list ID, exclude patients already IN THAT SPECIFIC list
+    //             $q->whereDoesntHave('patientList', function ($query) use ($patientListId) {
+    //                 $query->where('patient_list_id', $patientListId);
+    //             });
+    //         })
+    //         /* NOTE: I removed the ->when(!$patientListId) block because
+    //         it was likely hiding all your patients who are already assigned somewhere.
+    //         */
+    //         ->with(['latestHistory' => function ($q) {
+    //             $q->where('status', 'reviewed')->with(['diagnoses', 'reason']);
+    //         }])
+    //         ->latest()
+    //         ->get();
+
+    //     $result = $patients->map(function ($patient) {
+    //         return [
+    //             'patient_id' => $patient->patient_id,
+    //             'name' => $patient->name,
+    //             'phone' => $patient->phone,
+    //             'latest_history_id' => $patient->latestHistory->patient_histories_id ?? null,
+    //             'latest_history_status' => $patient->latestHistory->status ?? null,
+    //         ];
+    //     });
+
+    //     return response()->json([
+    //         'status' => true,
+    //         'data' => $result->values(),
+    //         'message' => 'Patients retrieved successfully',
+    //         'statusCode' => 200
+    //     ]);
+    // }
+
     public function getPatientToBeAssignedToMedicalBoard(Request $request)
-    {
-        $user = auth()->user();
+{
+    $user = auth()->user();
 
-        // Permission check
-        if (!$user->canAny(['View Patient', 'View History'])) {
-            return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
-        }
+    // Permission check
+    if (!$user->canAny(['View Patient', 'View History'])) {
+        return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
+    }
 
-        $patientListId = $request->input('patient_list_id');
+    // Orodha ya emails za data entry
+    $dataEntryEmails = [
+        'medicalboard@mohz.go.tz', 
+        'hospital@mohz.go.tz', 
+        'mkurugenzi@mohz.go.tz', 
+        'dguser@mohz.go.tz'
+    ];
 
-        $patients = Patient::query()
-            // 1. MUST have a latest history with status 'reviewed'
-            ->whereHas('latestHistory', function ($q) {
-                $q->where('status', 'reviewed');
-            })
-            // 2. Filter logic for lists
-            ->when($patientListId, function ($q) use ($patientListId) {
-                // If we provide a list ID, exclude patients already IN THAT SPECIFIC list
-                $q->whereDoesntHave('patientList', function ($query) use ($patientListId) {
-                    $query->where('patient_list_id', $patientListId);
-                });
-            })
-            /* NOTE: I removed the ->when(!$patientListId) block because
-            it was likely hiding all your patients who are already assigned somewhere.
-            */
-            ->with(['latestHistory' => function ($q) {
-                $q->where('status', 'reviewed')->with(['diagnoses', 'reason']);
-            }])
-            ->latest()
-            ->get();
+    $isDataEntryUser = in_array($user->email, $dataEntryEmails);
+    $patientListId = $request->input('patient_list_id');
 
-        $result = $patients->map(function ($patient) {
-            return [
-                'patient_id' => $patient->patient_id,
-                'name' => $patient->name,
-                'phone' => $patient->phone,
-                'latest_history_id' => $patient->latestHistory->patient_histories_id ?? null,
-                'latest_history_status' => $patient->latestHistory->status ?? null,
-            ];
+    $query = Patient::query()
+        // 1. MUST have a latest history with status 'reviewed'
+        ->whereHas('latestHistory', function ($q) {
+            $q->where('status', 'reviewed');
+        })
+        // 2. Filter logic kwa ajili ya lists
+        ->when($patientListId, function ($q) use ($patientListId) {
+            $q->whereDoesntHave('patientList', function ($query) use ($patientListId) {
+                $query->where('patient_list_id', $patientListId);
+            });
         });
 
-        return response()->json([
-            'status' => true,
-            'data' => $result->values(),
-            'message' => 'Patients retrieved successfully',
-            'statusCode' => 200
-        ]);
+    // --- LOGIC YA KUTENGANISHA DATA (Kama ulivyoomba) ---
+    if ($isDataEntryUser) {
+        // Data Entry anaona tu wagonjwa walioingizwa na timu ya Data Entry
+        $query->whereHas('creator', function ($q) use ($dataEntryEmails) {
+            $q->whereIn('email', $dataEntryEmails);
+        });
+    } else {
+        // Real Users hawaoni data za Data Entry
+        $query->whereHas('creator', function ($q) use ($dataEntryEmails) {
+            $q->whereNotIn('email', $dataEntryEmails);
+        });
     }
+
+    $patients = $query->with(['latestHistory' => function ($q) {
+            $q->where('status', 'reviewed')->with(['diagnoses', 'reason']);
+        }])
+        ->latest()
+        ->get();
+
+    $result = $patients->map(function ($patient) {
+        return [
+            'patient_id' => $patient->patient_id,
+            'name' => $patient->name,
+            'phone' => $patient->phone,
+            'latest_history_id' => $patient->latestHistory->patient_histories_id ?? null,
+            'latest_history_status' => $patient->latestHistory->status ?? null,
+        ];
+    });
+
+    return response()->json([
+        'status' => true,
+        'data' => $result->values(),
+        'message' => 'Patients retrieved successfully',
+        'statusCode' => 200
+    ]);
+}
 
 
     /**
