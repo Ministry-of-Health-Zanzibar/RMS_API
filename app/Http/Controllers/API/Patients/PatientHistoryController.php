@@ -937,7 +937,8 @@ class PatientHistoryController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
+        // if (!$user->hasRole('ROLE MKURUGENZI TIBA','ROLE SUPERVISOR')) {
+        if (!$user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized action for your role.',
@@ -1031,7 +1032,8 @@ class PatientHistoryController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
+        // if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
+        if (!$user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized action for your role.',
