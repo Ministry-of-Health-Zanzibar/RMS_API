@@ -28,7 +28,7 @@ class AppServiceProvider extends ServiceProvider
                 if (!$isValid) return false;
 
                 // 2. Define your idle timeout (in minutes)
-                $idleTimeout = 30;
+                $idleTimeout = 60;
 
                 // 3. Compare current time with last usage
                 // If never used before, use the creation time
