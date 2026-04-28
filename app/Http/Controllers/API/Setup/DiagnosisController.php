@@ -101,6 +101,25 @@ class DiagnosisController extends Controller
         ], 200);
     }
 
+    public function searchDiagnosis(Request $request)
+    {
+        $query = $request->get('q');
+
+        $diagnoses = Diagnosis::withTrashed()
+            ->select('diagnosis_id', 'diagnosis_name', 'diagnosis_code')
+            ->when($query, function ($q) use ($query) {
+                $q->where('diagnosis_name', 'like', "%{$query}%")
+                ->orWhere('diagnosis_code', 'like', "%{$query}%");
+            })
+            ->orderBy('diagnosis_name', 'asc')
+            ->limit(50) // VERY IMPORTANT
+            ->get();
+
+        return response()->json([
+            'data' => $diagnoses
+        ]);
+    }
+
     /**
      * @OA\Post(
      *     path="/api/diagnoses",
