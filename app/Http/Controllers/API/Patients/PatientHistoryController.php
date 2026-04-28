@@ -136,73 +136,73 @@ class PatientHistoryController extends Controller
     // }
 
     public function getPatientToBeAssignedToMedicalBoard(Request $request)
-{
-    $user = auth()->user();
+    {
+        $user = auth()->user();
 
-    // Permission check
-    if (!$user->canAny(['View Patient', 'View History'])) {
-        return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
-    }
+        // Permission check
+        if (!$user->canAny(['View Patient', 'View History'])) {
+            return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
+        }
 
-    // Orodha ya emails za data entry
-    $dataEntryEmails = [
-        'medicalboard@mohz.go.tz', 
-        'hospital@mohz.go.tz', 
-        'mkurugenzi@mohz.go.tz', 
-        'dguser@mohz.go.tz'
-    ];
-
-    $isDataEntryUser = in_array($user->email, $dataEntryEmails);
-    $patientListId = $request->input('patient_list_id');
-
-    $query = Patient::query()
-        // 1. MUST have a latest history with status 'reviewed'
-        ->whereHas('latestHistory', function ($q) {
-            $q->where('status', 'reviewed');
-        })
-        // 2. Filter logic kwa ajili ya lists
-        ->when($patientListId, function ($q) use ($patientListId) {
-            $q->whereDoesntHave('patientList', function ($query) use ($patientListId) {
-                $query->where('patient_list_id', $patientListId);
-            });
-        });
-
-    // --- LOGIC YA KUTENGANISHA DATA (Kama ulivyoomba) ---
-    if ($isDataEntryUser) {
-        // Data Entry anaona tu wagonjwa walioingizwa na timu ya Data Entry
-        $query->whereHas('creator', function ($q) use ($dataEntryEmails) {
-            $q->whereIn('email', $dataEntryEmails);
-        });
-    } else {
-        // Real Users hawaoni data za Data Entry
-        $query->whereHas('creator', function ($q) use ($dataEntryEmails) {
-            $q->whereNotIn('email', $dataEntryEmails);
-        });
-    }
-
-    $patients = $query->with(['latestHistory' => function ($q) {
-            $q->where('status', 'reviewed')->with(['diagnoses', 'reason']);
-        }])
-        ->latest()
-        ->get();
-
-    $result = $patients->map(function ($patient) {
-        return [
-            'patient_id' => $patient->patient_id,
-            'name' => $patient->name,
-            'phone' => $patient->phone,
-            'latest_history_id' => $patient->latestHistory->patient_histories_id ?? null,
-            'latest_history_status' => $patient->latestHistory->status ?? null,
+        // Orodha ya emails za data entry
+        $dataEntryEmails = [
+            'medicalboard@mohz.go.tz', 
+            'hospital@mohz.go.tz', 
+            'mkurugenzi@mohz.go.tz', 
+            'dguser@mohz.go.tz'
         ];
-    });
 
-    return response()->json([
-        'status' => true,
-        'data' => $result->values(),
-        'message' => 'Patients retrieved successfully',
-        'statusCode' => 200
-    ]);
-}
+        $isDataEntryUser = in_array($user->email, $dataEntryEmails);
+        $patientListId = $request->input('patient_list_id');
+
+        $query = Patient::query()
+            // 1. MUST have a latest history with status 'reviewed'
+            ->whereHas('latestHistory', function ($q) {
+                $q->where('status', 'reviewed');
+            })
+            // 2. Filter logic kwa ajili ya lists
+            ->when($patientListId, function ($q) use ($patientListId) {
+                $q->whereDoesntHave('patientList', function ($query) use ($patientListId) {
+                    $query->where('patient_list_id', $patientListId);
+                });
+            });
+
+        // --- LOGIC YA KUTENGANISHA DATA (Kama ulivyoomba) ---
+        if ($isDataEntryUser) {
+            // Data Entry anaona tu wagonjwa walioingizwa na timu ya Data Entry
+            $query->whereHas('creator', function ($q) use ($dataEntryEmails) {
+                $q->whereIn('email', $dataEntryEmails);
+            });
+        } else {
+            // Real Users hawaoni data za Data Entry
+            $query->whereHas('creator', function ($q) use ($dataEntryEmails) {
+                $q->whereNotIn('email', $dataEntryEmails);
+            });
+        }
+
+        $patients = $query->with(['latestHistory' => function ($q) {
+                $q->where('status', 'reviewed')->with(['diagnoses', 'reason']);
+            }])
+            ->latest()
+            ->get();
+
+        $result = $patients->map(function ($patient) {
+            return [
+                'patient_id' => $patient->patient_id,
+                'name' => $patient->name,
+                'phone' => $patient->phone,
+                'latest_history_id' => $patient->latestHistory->patient_histories_id ?? null,
+                'latest_history_status' => $patient->latestHistory->status ?? null,
+            ];
+        });
+
+        return response()->json([
+            'status' => true,
+            'data' => $result->values(),
+            'message' => 'Patients retrieved successfully',
+            'statusCode' => 200
+        ]);
+    }
 
 
     /**
@@ -395,7 +395,57 @@ class PatientHistoryController extends Controller
      *     @OA\Response(response=403, description="Forbidden")
      * )
      */
-    public function show($id)
+    // public function show($id)
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->canAny(['View Patient History', 'View History'])) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $history = PatientHistory::with([
+    //         'patient.geographicalLocation',
+    //         'diagnoses',
+    //         'boardDiagnoses',
+    //         'reason',
+    //         'boardReason',
+    //         'patient.creator' => function ($query) {
+    //             $query->with(['hospitals' => function ($q) {
+    //                 $q->select('hospitals.hospital_id', 'hospitals.hospital_name');
+    //             }]);
+    //         },
+    //     ])->find($id);
+
+    //     if (!$history) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Patient history not found',
+    //             'statusCode' => 404
+    //         ], 404);
+    //     }
+
+    //     if ($history->patient && $history->patient->creator) {
+    //         $creator = $history->patient->creator;
+    //         $firstHospital = $creator->hospitals->first();
+
+    //         $history->hospital = $firstHospital ? $firstHospital->hospital_name : null;
+    //         $history->hospital_role = $firstHospital ? $firstHospital->pivot->role : null;
+    //     } else {
+    //         $history->hospital = null;
+    //         $history->hospital_role = null;
+    //     }
+
+    //     return response()->json([
+    //         'status' => true,
+    //         'data' => $history,
+    //         'message' => 'Patient history retrieved successfully',
+    //         'statusCode' => 200
+    //     ]);
+    // }
+    public function show(int $id)
     {
         $user = auth()->user();
 
@@ -407,17 +457,33 @@ class PatientHistoryController extends Controller
         }
 
         $history = PatientHistory::with([
-            'patient.geographicalLocation',
+            'patient' => function ($query) {
+                $query->with([
+                    'geographicalLocation',
+                    'files',
+                    'patientList.boardMembers',
+                    'patientHistories' => function ($q) {
+                        $q->orderBy('patient_histories_id', 'desc')->with([
+                            'diagnoses',
+                            'boardDiagnoses',
+                            'reason',
+                            'boardReason',
+                        ]);
+                    },
+                    'creator' => function ($q) {
+                        $q->with(['hospitals' => function ($h) {
+                            $h->select('hospitals.hospital_id', 'hospitals.hospital_name');
+                        }]);
+                    },
+                ]);
+            },
             'diagnoses',
             'boardDiagnoses',
             'reason',
             'boardReason',
-            'patient.creator' => function ($query) {
-                $query->with(['hospitals' => function ($q) {
-                    $q->select('hospitals.hospital_id', 'hospitals.hospital_name');
-                }]);
-            },
-        ])->find($id);
+        ])
+        ->where('patient_histories_id', $id)
+        ->first();
 
         if (!$history) {
             return response()->json([
@@ -427,6 +493,7 @@ class PatientHistoryController extends Controller
             ], 404);
         }
 
+        // --- HOSPITAL LOGIC ---
         if ($history->patient && $history->patient->creator) {
             $creator = $history->patient->creator;
             $firstHospital = $creator->hospitals->first();
@@ -436,6 +503,33 @@ class PatientHistoryController extends Controller
         } else {
             $history->hospital = null;
             $history->hospital_role = null;
+        }
+
+        // --- AGE CALCULATION LOGIC ---
+        $patient = $history->patient;
+
+        if ($patient && $patient->date_of_birth) {
+            if (is_numeric($patient->date_of_birth)) {
+                $patient->age_details = [
+                    'years'  => 0, 'months' => 0, 'days' => 0,
+                    'string' => "Invalid Date Data"
+                ];
+            } else {
+                try {
+                    $dob = \Carbon\Carbon::parse($patient->date_of_birth);
+                    $now = \Carbon\Carbon::now();
+                    $diff = $dob->diff($now);
+
+                    $patient->age_details = [
+                        'years'  => $diff->y,
+                        'months' => $diff->m,
+                        'days'   => $diff->d,
+                        'string' => "{$diff->y}y {$diff->m}m {$diff->d}d"
+                    ];
+                } catch (\Exception $e) {
+                    $patient->age_details = ['string' => "Unknown"];
+                }
+            }
         }
 
         return response()->json([
