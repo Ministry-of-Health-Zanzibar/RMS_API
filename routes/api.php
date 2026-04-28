@@ -176,9 +176,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Diagnoses
     Route::prefix('diagnoses')->group(function () {
+        Route::get('/search', [DiagnosisController::class, 'searchDiagnosis']);
         Route::get('/', [DiagnosisController::class, 'index']);
         Route::post('/', [DiagnosisController::class, 'store']);
-        Route::get('/search', [DiagnosisController::class, 'searchDiagnosis']);
         Route::get('{uuid}', [DiagnosisController::class, 'show']);
         Route::put('{uuid}', [DiagnosisController::class, 'update']);
         Route::delete('{uuid}', [DiagnosisController::class, 'destroy']);
