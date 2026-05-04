@@ -57,25 +57,6 @@ class DiagnosisController extends Controller
      *     )
      * )
      */
-    // public function index()
-    // {
-    //     $user = auth()->user();
-    //     if (!$user->can('View Diagnoses')) {
-    //         return response([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     $diagnoses = Diagnosis::withTrashed()->latest()->get();
-
-    //     return response()->json([
-    //         'message' => 'Diagnoses retrieved successfully',
-    //         'data' => $diagnoses,
-    //         'statusCode' => 200,
-    //     ], 200);
-    // }
-
     public function index()
     {
         $user = auth()->user();
@@ -101,24 +82,6 @@ class DiagnosisController extends Controller
         ], 200);
     }
 
-    // public function searchDiagnosis(Request $request)
-    // {
-    //     $query = $request->get('q');
-
-    //     $diagnoses = Diagnosis::withTrashed()
-    //         ->select('diagnosis_id', 'diagnosis_name', 'diagnosis_code')
-    //         ->when($query, function ($q) use ($query) {
-    //             $q->where('diagnosis_name', 'like', "%{$query}%")
-    //             ->orWhere('diagnosis_code', 'like', "%{$query}%");
-    //         })
-    //         ->orderBy('diagnosis_name', 'asc')
-    //         ->limit(50) // VERY IMPORTANT
-    //         ->get();
-
-    //     return response()->json([
-    //         'data' => $diagnoses
-    //     ]);
-    // }
     public function searchDiagnosis(Request $request)
     {
         $query = $request->get('q');

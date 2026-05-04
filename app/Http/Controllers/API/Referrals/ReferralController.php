@@ -127,71 +127,69 @@ class ReferralController extends Controller
     //         'statusCode' => 200,
     //     ], 200);
     // }
+
     public function index()
-{
-    $user = auth()->user();
-    $dataEntryEmails = ['medicalboard@mohz.go.tz', 'hospital@mohz.go.tz', 'mkurugenzi@mohz.go.tz', 'dguser@mohz.go.tz'];
+    {
+        $user = auth()->user();
+        $dataEntryEmails = ['medicalboard@mohz.go.tz', 'hospital@mohz.go.tz', 'mkurugenzi@mohz.go.tz', 'dguser@mohz.go.tz'];
 
-    if (!$user->can('View Referral')) {
-        return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+        if (!$user->can('View Referral')) {
+            return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+        }
+
+        $isDataEntryUser = in_array($user->email, $dataEntryEmails);
+
+        $query = Referral::with(['patient.patientHistories', 'reason', 'hospital', 'diagnoses'])
+            ->where('status', '<>', 'Requested');
+
+        // --- LOGIC YA KUTENGANISHA ---
+        if ($isDataEntryUser) {
+            $query->whereHas('patient.creator', function($q) use ($dataEntryEmails) {
+                $q->whereIn('email', $dataEntryEmails);
+            });
+        } else {
+            $query->whereHas('patient.creator', function($q) use ($dataEntryEmails) {
+                $q->whereNotIn('email', $dataEntryEmails);
+            });
+        }
+
+        if (!$user->hasRole(['ROLE DIRECTOR GENERAL', 'ROLE ADMIN'])) {
+            $query->where('status', '<>', 'Pending');
+        }
+
+        $referrals = $query->latest()->get() 
+            ->groupBy('referral_number')
+            ->map(function ($group) {
+                $first = $group->first();
+                return [
+                    'referral_number' => $first->referral_number,
+                    'patient'         => $first->patient,
+                    'diagnoses'       => $first->diagnoses,
+                    'reason'          => $first->reason,
+                    'status'          => $group->pluck('status')->unique()->sort()->implode(', '),
+                    'hospitals'       => $group->pluck('hospital')->unique('hospital_id')->values(),
+                    'referrals'       => $group->map(function ($ref) {
+                        return [
+                            'referral_id' => $ref->referral_id,
+                            'status'      => $ref->status,
+                            'hospital'    => $ref->hospital,
+                            'created_at'  => $ref->created_at,
+                        ];
+                    })->values(),
+                    'has_pending'     => $group->contains('status', 'Pending'),
+                    'latest_activity' => $group->max('created_at'),
+                ];
+            })
+            ->sort(function ($a, $b) {
+                if ($a['has_pending'] !== $b['has_pending']) {
+                    return $b['has_pending'] <=> $a['has_pending'];
+                }
+                return $b['latest_activity'] <=> $a['latest_activity'];
+            })
+            ->values();
+
+        return response(['data' => $referrals, 'statusCode' => 200], 200);
     }
-
-    $isDataEntryUser = in_array($user->email, $dataEntryEmails);
-
-    $query = Referral::with(['patient.patientHistories', 'reason', 'hospital', 'diagnoses'])
-        ->where('status', '<>', 'Requested');
-
-    // --- LOGIC YA KUTENGANISHA ---
-    if ($isDataEntryUser) {
-        $query->whereHas('patient.creator', function($q) use ($dataEntryEmails) {
-            $q->whereIn('email', $dataEntryEmails);
-        });
-    } else {
-        $query->whereHas('patient.creator', function($q) use ($dataEntryEmails) {
-            $q->whereNotIn('email', $dataEntryEmails);
-        });
-    }
-
-    if (!$user->hasRole(['ROLE DIRECTOR GENERAL', 'ROLE ADMIN'])) {
-        $query->where('status', '<>', 'Pending');
-    }
-
-    $referrals = $query->latest()->get() 
-        ->groupBy('referral_number')
-        ->map(function ($group) {
-            $first = $group->first();
-            return [
-                'referral_number' => $first->referral_number,
-                'patient'         => $first->patient,
-                'diagnoses'       => $first->diagnoses,
-                'reason'          => $first->reason,
-                'status'          => $group->pluck('status')->unique()->sort()->implode(', '),
-                'hospitals'       => $group->pluck('hospital')->unique('hospital_id')->values(),
-                'referrals'       => $group->map(function ($ref) {
-                    return [
-                        'referral_id' => $ref->referral_id,
-                        'status'      => $ref->status,
-                        'hospital'    => $ref->hospital,
-                        'created_at'  => $ref->created_at,
-                    ];
-                })->values(),
-                'has_pending'     => $group->contains('status', 'Pending'),
-                'latest_activity' => $group->max('created_at'),
-            ];
-        })
-        ->sort(function ($a, $b) {
-            if ($a['has_pending'] !== $b['has_pending']) {
-                return $b['has_pending'] <=> $a['has_pending'];
-            }
-            return $b['latest_activity'] <=> $a['latest_activity'];
-        })
-        ->values();
-
-    return response(['data' => $referrals, 'statusCode' => 200], 200);
-}
-
-
-
 
     public function getReferralwithBills()
     {

@@ -754,17 +754,125 @@ class PatientHistoryController extends Controller
      *     )
      * )
      */
+    // public function updateByMedicalBoardWithReferralCreation(Request $request, $id)
+    // {
+    //     $user = auth()->user();
+    //     $history = PatientHistory::findOrFail($id);
+
+    //     // Only medical board member allowed
+    //     if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $validator = Validator::make($request->all(), [
+    //         'board_comments'         => 'required|string',
+    //         'board_reason_id'        => 'required|exists:reasons,reason_id',
+    //         'board_diagnosis_ids'    => 'required|array',
+    //         'board_diagnosis_ids.*'  => 'exists:diagnoses,diagnosis_id',
+    //         'patient_file'           => 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:5000',
+    //         'description'            => 'nullable|string',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'errors' => $validator->errors(),
+    //             'statusCode' => 422
+    //         ], 422);
+    //     }
+
+    //     try {
+    //         DB::beginTransaction();
+
+    //         // Update board fields
+    //         $history->update([
+    //             'board_comments'  => $request->board_comments,
+    //             'board_reason_id' => $request->board_reason_id,
+    //         ]);
+
+    //         // Attach or update board diagnoses safely
+    //         if ($request->filled('board_diagnosis_ids')) {
+    //             $boardDiagnoses = collect($request->board_diagnosis_ids)->mapWithKeys(function ($id) {
+    //                 return [$id => ['added_by' => 'medical_board']];
+    //             })->toArray();
+
+    //             $history->boardDiagnoses()->syncWithoutDetaching($boardDiagnoses);
+    //         }
+
+    //         // Create referral
+    //         $today = now()->format('Y-m-d');
+    //         $count = Referral::whereDate('created_at', $today)->count() + 1;
+    //         $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+
+    //         $referral = Referral::create([
+    //             'patient_id'      => $history->patient_id,
+    //             'reason_id'       => $request->board_reason_id,
+    //             'status'          => 'Requested',
+    //             'referral_number' => $referralNumber,
+    //             'created_by'      => $user->id,
+    //         ]);
+
+    //         // Attach diagnoses to referral
+    //         $referral->diagnoses()->sync($request->board_diagnosis_ids);
+
+    //         // Update workflow status
+    //         $this->applyStatusUpdate($history, 'requested', $request->board_comments, $user);
+
+    //         if ($request->hasFile('patient_file')) {
+    //             $file = $request->file('patient_file');
+    //             $extension = $file->getClientOriginalExtension();
+    //             $newFileName = 'patient_file_' . date('His_dmY') . '_' . uniqid() . '.' . $extension;
+    
+    //             $file->move(public_path('uploads/patientFiles/'), $newFileName);
+    
+    //             \App\Models\PatientFile::create([
+    //                 // Fixed: Use $history->patient_id instead of undefined $patient
+    //                 'patient_id'  => $history->patient_id, 
+    //                 'file_name'   => $file->getClientOriginalName(),
+    //                 'file_path'   => 'uploads/patientFiles/' . $newFileName,
+    //                 'file_type'   => $extension,
+    //                 'description' => $request->description,
+    //                 'uploaded_by' => $user->id,
+    //             ]);
+    //         }
+
+    //         DB::commit();
+
+    //         return response()->json([
+    //             'status'  => true,
+    //             'data'    => $history->load([
+    //                 'patient',
+    //                 'diagnoses',
+    //                 'reason'
+    //             ]),
+    //             'message' => 'Patient history updated and referral created successfully',
+    //             'statusCode' => 200
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+
+    //         Log::error('Medical Board update failed: ' . $e->getMessage());
+
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Update failed',
+    //             'error' => $e->getMessage(),
+    //             'statusCode' => 500
+    //         ], 500);
+    //     }
+    // }
+
     public function updateByMedicalBoardWithReferralCreation(Request $request, $id)
     {
         $user = auth()->user();
         $history = PatientHistory::findOrFail($id);
 
-        // Only medical board member allowed
         if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
-            return response()->json([
-                'message' => 'Forbidden',
-                'statusCode' => 403
-            ], 403);
+            return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
         $validator = Validator::make($request->all(), [
@@ -774,62 +882,61 @@ class PatientHistoryController extends Controller
             'board_diagnosis_ids.*'  => 'exists:diagnoses,diagnosis_id',
             'patient_file'           => 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:5000',
             'description'            => 'nullable|string',
+            // NEW: Flag to determine if a referral record is actually needed
+            'create_referral_record' => 'required|boolean', 
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'errors' => $validator->errors(),
-                'statusCode' => 422
-            ], 422);
+            return response()->json(['status' => false, 'errors' => $validator->errors(), 'statusCode' => 422], 422);
         }
 
         try {
             DB::beginTransaction();
 
-            // Update board fields
+            // 1. Always Update Board findings (Uchunguzi/Maamuzi)
             $history->update([
                 'board_comments'  => $request->board_comments,
                 'board_reason_id' => $request->board_reason_id,
             ]);
 
-            // Attach or update board diagnoses safely
+            // 2. Sync diagnoses to the history (added_by medical_board)
             if ($request->filled('board_diagnosis_ids')) {
-                $boardDiagnoses = collect($request->board_diagnosis_ids)->mapWithKeys(function ($id) {
-                    return [$id => ['added_by' => 'medical_board']];
+                $boardDiagnoses = collect($request->board_diagnosis_ids)->mapWithKeys(function ($diagId) {
+                    return [$diagId => ['added_by' => 'medical_board']];
                 })->toArray();
-
                 $history->boardDiagnoses()->syncWithoutDetaching($boardDiagnoses);
             }
 
-            // Create referral
-            $today = now()->format('Y-m-d');
-            $count = Referral::whereDate('created_at', $today)->count() + 1;
-            $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+            // 3. Conditional Referral Creation
+            // Only creates the record if the board determines an external referral is necessary
+            if ($request->create_referral_record) {
+                $today = now()->format('Y-m-d');
+                $count = Referral::whereDate('created_at', $today)->count() + 1;
+                $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
 
-            $referral = Referral::create([
-                'patient_id'      => $history->patient_id,
-                'reason_id'       => $request->board_reason_id,
-                'status'          => 'Requested',
-                'referral_number' => $referralNumber,
-                'created_by'      => $user->id,
-            ]);
+                $referral = Referral::create([
+                    'patient_id'      => $history->patient_id,
+                    'reason_id'       => $request->board_reason_id,
+                    'status'          => 'Requested',
+                    'referral_number' => $referralNumber,
+                    'created_by'      => $user->id,
+                ]);
 
-            // Attach diagnoses to referral
-            $referral->diagnoses()->sync($request->board_diagnosis_ids);
+                $referral->diagnoses()->sync($request->board_diagnosis_ids);
+            }
 
-            // Update workflow status
+            // 4. Standard Workflow Progress
+            // Move status to 'requested' so the DG can see the Maamuzi in their list
             $this->applyStatusUpdate($history, 'requested', $request->board_comments, $user);
 
+            // 5. Handle File Uploads
             if ($request->hasFile('patient_file')) {
                 $file = $request->file('patient_file');
                 $extension = $file->getClientOriginalExtension();
                 $newFileName = 'patient_file_' . date('His_dmY') . '_' . uniqid() . '.' . $extension;
-    
                 $file->move(public_path('uploads/patientFiles/'), $newFileName);
-    
+
                 \App\Models\PatientFile::create([
-                    // Fixed: Use $history->patient_id instead of undefined $patient
                     'patient_id'  => $history->patient_id, 
                     'file_name'   => $file->getClientOriginalName(),
                     'file_path'   => 'uploads/patientFiles/' . $newFileName,
@@ -843,26 +950,17 @@ class PatientHistoryController extends Controller
 
             return response()->json([
                 'status'  => true,
-                'data'    => $history->load([
-                    'patient',
-                    'diagnoses',
-                    'reason'
-                ]),
-                'message' => 'Patient history updated and referral created successfully',
+                'data'    => $history->load(['patient', 'diagnoses', 'reason']),
+                'message' => $request->create_referral_record 
+                            ? 'Referral created and sent to DG for approval' 
+                            : 'Medical evaluation (Maamuzi) sent to DG for approval',
                 'statusCode' => 200
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-
             Log::error('Medical Board update failed: ' . $e->getMessage());
-
-            return response()->json([
-                'status' => false,
-                'message' => 'Update failed',
-                'error' => $e->getMessage(),
-                'statusCode' => 500
-            ], 500);
+            return response()->json(['status' => false, 'message' => 'Update failed', 'error' => $e->getMessage(), 'statusCode' => 500], 500);
         }
     }
 
