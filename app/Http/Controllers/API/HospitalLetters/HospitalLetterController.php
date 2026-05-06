@@ -148,7 +148,8 @@ class HospitalLetterController extends Controller
         $validator = Validator::make($request->all(), $rules);
 
         // Conditional validation
-        $validator->sometimes('followup_date', 'required|date', function ($input) {
+        // $validator->sometimes('followup_date', 'required|date', function ($input) {
+        $validator->sometimes('followup_date', 'nullable|date', function ($input) {
             return in_array($input->outcome, ['Follow-up', 'Finished', 'Death', 'Transferred']);
         });
 
@@ -272,7 +273,7 @@ class HospitalLetterController extends Controller
         return response()->json([
             'message'    => 'Follow-up created successfully',
             'data'       => $letter,
-            'statusCode' => 201
+            'statusCode' => 200
         ]);
     }
 

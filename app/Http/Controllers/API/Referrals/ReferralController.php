@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\Referrals;
 
 use App\Models\Insurance;
+use App\Models\PatientHistory;
 use App\Models\Referral;
 use App\Models\Bill;
 use App\Models\Payment;
@@ -157,6 +158,30 @@ class ReferralController extends Controller
             $query->where('status', '<>', 'Pending');
         }
 
+        // 
+        $noReferralHistories = PatientHistory::with(['patient', 'diagnoses', 'reason'])
+            ->whereDoesntHave('referrals') // no referral created
+            ->where('status', 'requested') // or 'approved' depending on your flow
+            ->latest()
+            ->get();
+        
+        $virtualReferrals = $noReferralHistories->map(function ($history) {
+            return [
+                'referral_number' => 'N/A-' . $history->id, // fake but unique
+                'patient'         => $history->patient,
+                'diagnoses'       => $history->diagnoses,
+                'reason'          => $history->reason,
+                'status'          => 'Recommendation',
+                'hospitals'       => collect([]), // no hospitals
+                'referrals'       => [], // no referral records
+                'has_pending'     => true, // so DG sees it on top
+                'latest_activity' => $history->updated_at,
+                'is_recommendation_only' => true, // 🔥 IMPORTANT FLAG
+                'history_id'      => $history->id // for DG actions
+            ];
+        });
+        // 
+
         $referrals = $query->latest()->get() 
             ->groupBy('referral_number')
             ->map(function ($group) {
@@ -187,8 +212,19 @@ class ReferralController extends Controller
                 return $b['latest_activity'] <=> $a['latest_activity'];
             })
             ->values();
+        //
+        $finalData = $referrals->concat($virtualReferrals)
+        ->sort(function ($a, $b) {
+            if ($a['has_pending'] !== $b['has_pending']) {
+                return $b['has_pending'] <=> $a['has_pending'];
+            }
+            return $b['latest_activity'] <=> $a['latest_activity'];
+        })
+        ->values();
+        //
 
-        return response(['data' => $referrals, 'statusCode' => 200], 200);
+        // return response(['data' => $referrals, 'statusCode' => 200], 200);
+        return response(['data' => $finalData, 'statusCode' => 200], 200);
     }
 
     public function getReferralwithBills()

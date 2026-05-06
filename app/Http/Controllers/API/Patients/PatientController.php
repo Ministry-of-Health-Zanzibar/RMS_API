@@ -999,146 +999,146 @@ class PatientController extends Controller
     //     }
     // }
     public function updatePatientAndHistory(Request $request, $patient_id)
-{
-    $user = auth()->user();
+    {
+        $user = auth()->user();
 
-    if (!$user->can('Update Patient')) {
-        return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
-    }
+        if (!$user->can('Update Patient')) {
+            return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+        }
 
-    // --- LOGIC MPYA YA VALIDATION (Kama ilivyo kwenye Store) ---
-    $isDataEntry = ($user->email === 'hospital@mohz.go.tz');
-    $requirement = $isDataEntry ? 'nullable' : 'required';
+        // --- LOGIC MPYA YA VALIDATION (Kama ilivyo kwenye Store) ---
+        $isDataEntry = ($user->email === 'hospital@mohz.go.tz');
+        $requirement = $isDataEntry ? 'nullable' : 'required';
 
-    $request->merge([
-        'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
-    ]);
-
-    // Validation - Inatumia $requirement kwa fields husika
-    $validator = Validator::make($request->all(), [
-        'name'              => [$requirement, 'string', 'max:255'],
-        'matibabu_card'     => [$requirement, 'string', 'max:50'],
-        'zan_id'            => ['nullable', 'string', 'max:50'],
-        'date_of_birth'     => [$requirement, 'string'],
-        'gender'            => [$requirement, 'string'],
-        'phone'             => ['nullable', 'string', 'max:20'],
-        'location_id'       => ['nullable', 'exists:geographical_locations,location_id'],
-        'job'               => ['nullable', 'string'],
-        'position'          => ['nullable', 'string'],
-
-        'file_number'       => ['nullable', 'string'],
-        'referring_date'    => ['nullable', 'string'],
-        'reason_id'         => ['required', 'numeric', 'exists:reasons,reason_id'],
-        'case_type'         => ['required', 'in:Emergency,Routine'],
-        'history_file'      => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
-        'diagnosis_ids'     => ['nullable', 'array'],
-        'diagnosis_ids.*'   => ['exists:diagnoses,diagnosis_id'],
-        'history_of_presenting_illness' => ['nullable', 'string'],
-        'physical_findings'             => ['nullable', 'string'],
-        'investigations'                => ['nullable', 'string'],
-        'management_done'               => ['nullable', 'string'],
-
-        'has_insurance'           => ['required', 'boolean'],
-        'insurance_provider_name' => ['nullable', 'string'],
-        'card_number'             => ['nullable', 'string'],
-        'valid_until'             => ['nullable', 'string'],
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
-    }
-
-    DB::beginTransaction();
-    try {
-        // 1. Tafuta mgonjwa
-        $patient = \App\Models\Patient::findOrFail($patient_id);
-        
-        // 2. Update taarifa za mgonjwa
-        $patient->update([
-            'name'          => $request->name,
-            'matibabu_card' => $request->matibabu_card,
-            'zan_id'        => $request->zan_id,
-            'date_of_birth' => $request->date_of_birth,
-            'gender'        => $request->gender,
-            'phone'         => $request->phone,
-            'location_id'   => $request->location_id,
-            'job'           => $request->job,
-            'position'      => $request->position,
+        $request->merge([
+            'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
         ]);
 
-        // 3. Tafuta historia ya hivi karibuni (Latest History)
-        $patientHistory = \App\Models\PatientHistory::where('patient_id', $patient_id)
-            ->latest('patient_histories_id')
-            ->first();
+        // Validation - Inatumia $requirement kwa fields husika
+        $validator = Validator::make($request->all(), [
+            'name'              => [$requirement, 'string', 'max:255'],
+            'matibabu_card'     => [$requirement, 'string', 'max:50'],
+            'zan_id'            => ['nullable', 'string', 'max:50'],
+            'date_of_birth'     => [$requirement, 'string'],
+            'gender'            => [$requirement, 'string'],
+            'phone'             => ['nullable', 'string', 'max:20'],
+            'location_id'       => ['nullable', 'exists:geographical_locations,location_id'],
+            'job'               => ['nullable', 'string'],
+            'position'          => ['nullable', 'string'],
 
-        if (!$patientHistory) {
-            return response(['message' => 'No medical history found for this patient to update.', 'statusCode' => 404], 404);
-        }
+            'file_number'       => ['nullable', 'string'],
+            'referring_date'    => ['nullable', 'string'],
+            'reason_id'         => ['required', 'numeric', 'exists:reasons,reason_id'],
+            'case_type'         => ['required', 'in:Emergency,Routine'],
+            'history_file'      => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'diagnosis_ids'     => ['nullable', 'array'],
+            'diagnosis_ids.*'   => ['exists:diagnoses,diagnosis_id'],
+            'history_of_presenting_illness' => ['nullable', 'string'],
+            'physical_findings'             => ['nullable', 'string'],
+            'investigations'                => ['nullable', 'string'],
+            'management_done'               => ['nullable', 'string'],
 
-        // 4. Update historia
-        $patientHistory->update([
-            'file_number'                   => $request->file_number,
-            'referring_date'                => $request->referring_date,
-            'reason_id'                     => $request->reason_id,
-            'case_type'                     => $request->case_type,
-            'history_of_presenting_illness' => $request->history_of_presenting_illness,
-            'physical_findings'             => $request->physical_findings,
-            'investigations'                => $request->investigations,
-            'management_done'               => $request->management_done,
+            'has_insurance'           => ['required', 'boolean'],
+            'insurance_provider_name' => ['nullable', 'string'],
+            'card_number'             => ['nullable', 'string'],
+            'valid_until'             => ['nullable', 'string'],
         ]);
 
-        // 5. Update Diagnoses
-        if ($request->filled('diagnosis_ids')) {
-            $diagnosisData = collect($request->diagnosis_ids)->mapWithKeys(function ($id) {
-                return [$id => ['added_by' => 'doctor']];
-            })->toArray();
-            $patientHistory->diagnoses()->sync($diagnosisData);
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
         }
 
-        // 6. Update au Create Insurance
-        if ($request->boolean('has_insurance')) {
-            \App\Models\Insurance::updateOrCreate(
-                ['patient_id' => $patient->patient_id],
-                [
-                    'insurance_provider_name' => $request->insurance_provider_name,
-                    'card_number'             => $request->card_number,
-                    'valid_until'             => $request->valid_until,
-                ]
-            );
-        }
+        DB::beginTransaction();
+        try {
+            // 1. Tafuta mgonjwa
+            $patient = \App\Models\Patient::findOrFail($patient_id);
+            
+            // 2. Update taarifa za mgonjwa
+            $patient->update([
+                'name'          => $request->name,
+                'matibabu_card' => $request->matibabu_card,
+                'zan_id'        => $request->zan_id,
+                'date_of_birth' => $request->date_of_birth,
+                'gender'        => $request->gender,
+                'phone'         => $request->phone,
+                'location_id'   => $request->location_id,
+                'job'           => $request->job,
+                'position'      => $request->position,
+            ]);
 
-        // 7. Handle File Upload (Replace old file if exists)
-        if ($request->hasFile('history_file')) {
-            if ($patientHistory->history_file && file_exists(public_path($patientHistory->history_file))) {
-                @unlink(public_path($patientHistory->history_file));
+            // 3. Tafuta historia ya hivi karibuni (Latest History)
+            $patientHistory = \App\Models\PatientHistory::where('patient_id', $patient_id)
+                ->latest('patient_histories_id')
+                ->first();
+
+            if (!$patientHistory) {
+                return response(['message' => 'No medical history found for this patient to update.', 'statusCode' => 404], 404);
             }
-            $file = $request->file('history_file');
-            $fileName = 'history_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('uploads/historyFiles'), $fileName);
-            $patientHistory->update(['history_file' => 'uploads/historyFiles/' . $fileName]);
+
+            // 4. Update historia
+            $patientHistory->update([
+                'file_number'                   => $request->file_number,
+                'referring_date'                => $request->referring_date,
+                'reason_id'                     => $request->reason_id,
+                'case_type'                     => $request->case_type,
+                'history_of_presenting_illness' => $request->history_of_presenting_illness,
+                'physical_findings'             => $request->physical_findings,
+                'investigations'                => $request->investigations,
+                'management_done'               => $request->management_done,
+            ]);
+
+            // 5. Update Diagnoses
+            if ($request->filled('diagnosis_ids')) {
+                $diagnosisData = collect($request->diagnosis_ids)->mapWithKeys(function ($id) {
+                    return [$id => ['added_by' => 'doctor']];
+                })->toArray();
+                $patientHistory->diagnoses()->sync($diagnosisData);
+            }
+
+            // 6. Update au Create Insurance
+            if ($request->boolean('has_insurance')) {
+                \App\Models\Insurance::updateOrCreate(
+                    ['patient_id' => $patient->patient_id],
+                    [
+                        'insurance_provider_name' => $request->insurance_provider_name,
+                        'card_number'             => $request->card_number,
+                        'valid_until'             => $request->valid_until,
+                    ]
+                );
+            }
+
+            // 7. Handle File Upload (Replace old file if exists)
+            if ($request->hasFile('history_file')) {
+                if ($patientHistory->history_file && file_exists(public_path($patientHistory->history_file))) {
+                    @unlink(public_path($patientHistory->history_file));
+                }
+                $file = $request->file('history_file');
+                $fileName = 'history_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('uploads/historyFiles'), $fileName);
+                $patientHistory->update(['history_file' => 'uploads/historyFiles/' . $fileName]);
+            }
+
+            DB::commit();
+
+            return response([
+                'data' => [
+                    'patient' => $patient->load('geographicalLocation'),
+                    'history' => $patientHistory->load(['diagnoses', 'reason'])
+                ],
+                'message' => 'Patient and medical history updated successfully',
+                'statusCode' => 200,
+            ], 200);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            \Log::error("Update Patient Error: " . $e->getMessage());
+            return response([
+                'message' => 'Failed to update record', 
+                'error' => $e->getMessage(), 
+                'statusCode' => 500
+            ], 500);
         }
-
-        DB::commit();
-
-        return response([
-            'data' => [
-                'patient' => $patient->load('geographicalLocation'),
-                'history' => $patientHistory->load(['diagnoses', 'reason'])
-            ],
-            'message' => 'Patient and medical history updated successfully',
-            'statusCode' => 200,
-        ], 200);
-
-    } catch (\Throwable $e) {
-        DB::rollBack();
-        \Log::error("Update Patient Error: " . $e->getMessage());
-        return response([
-            'message' => 'Failed to update record', 
-            'error' => $e->getMessage(), 
-            'statusCode' => 500
-        ], 500);
     }
-}
 
     public function showForUpdate($patient_id)
     {
