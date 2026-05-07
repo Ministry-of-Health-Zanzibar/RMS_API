@@ -526,6 +526,37 @@ class ReferralController extends Controller
 
         // 4. Build merged response
         $patient   = $referrals->first()->patient;
+        if ($patient && $patient->date_of_birth) {
+            if (is_numeric($patient->date_of_birth)) {
+                $patient->age_details = [
+                    'years'  => 0,
+                    'months' => 0,
+                    'days'   => 0,
+                    'string' => "Invalid Date Data"
+                ];
+            } else {
+                try {
+                    $dob = \Carbon\Carbon::parse($patient->date_of_birth);
+                    $now = \Carbon\Carbon::now();
+                    $diff = $dob->diff($now);
+        
+                    $patient->age_details = [
+                        'years'  => $diff->y,
+                        'months' => $diff->m,
+                        'days'   => $diff->d,
+                        'string' => "{$diff->y}y {$diff->m}m {$diff->d}d"
+                    ];
+                } catch (\Exception $e) {
+                    $patient->age_details = [
+                        'years'  => 0,
+                        'months' => 0,
+                        'days'   => 0,
+                        'string' => "Unknown"
+                    ];
+                }
+            }
+        }
+        
         $reason    = $referrals->first()->reason;
         $hospitals = $referrals->pluck('hospital')->unique('hospital_id')->values();
         $letters   = $referrals->pluck('hospitalLetters')->flatten(1)->values();

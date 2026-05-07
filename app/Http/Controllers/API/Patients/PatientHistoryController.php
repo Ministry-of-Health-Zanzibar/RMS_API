@@ -1183,12 +1183,28 @@ class PatientHistoryController extends Controller
 
             // --- UPDATED LOGIC ---
             // Only update the referral status if this is the FIRST time adding comments
-            if ($isFirstTime && $referral) {
-                // 3 Update referral status
-                $referral->status = 'Pending';
-                $referral->save();
+            // if ($isFirstTime && $referral) {
+            //     // 3 Update referral status
+            //     $referral->status = 'Pending';
+            //     $referral->save();
 
-                // 4 Apply overall history status update
+            //     // 4 Apply overall history status update
+            //     $this->applyStatusUpdate(
+            //         $history,
+            //         'approved',
+            //         $request->mkurugenzi_tiba_comments,
+            //         $user
+            //     );
+            // }
+            if ($isFirstTime) {
+
+                if ($referral) {
+                    // ✅ NORMAL FLOW (with referral)
+                    $referral->status = 'Pending';
+                    $referral->save();
+                }
+            
+                // ✅ ALWAYS move history forward (BOTH cases)
                 $this->applyStatusUpdate(
                     $history,
                     'approved',
