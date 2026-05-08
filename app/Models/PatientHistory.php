@@ -101,10 +101,6 @@ class PatientHistory extends Model
         return (int) round(($stage / $maxStage) * 100) . '%';
     }
 
-
-
-
-
     /**
      * Belongs to Patient
      */
@@ -175,6 +171,11 @@ class PatientHistory extends Model
     public function mkurugenzi()
     {
         return $this->belongsTo(User::class, 'Director_tiba_id');
+    }
+
+    public function boardedOutLetters()
+    {
+        return $this->hasMany(BoardedOutLetter::class, 'patient_histories_id');
     }
 
     /**

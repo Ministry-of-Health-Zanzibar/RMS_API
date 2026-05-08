@@ -129,10 +129,174 @@ class ReferralController extends Controller
     //     ], 200);
     // }
 
+    // public function index()
+    // {
+    //     $user = auth()->user();
+    //     $dataEntryEmails = ['medicalboard@mohz.go.tz', 'hospital@mohz.go.tz', 'mkurugenzi@mohz.go.tz', 'dguser@mohz.go.tz'];
+
+    //     if (!$user->can('View Referral')) {
+    //         return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+    //     }
+
+    //     $isDataEntryUser = in_array($user->email, $dataEntryEmails);
+
+    //     $query = Referral::with(['patient', 'reason', 'hospital', 'diagnoses'])
+    //         ->where('status', '<>', 'Requested');
+
+    //     // --- LOGIC YA KUTENGANISHA ---
+    //     if ($isDataEntryUser) {
+    //         $query->whereHas('patient.creator', function ($q) use ($dataEntryEmails) {
+    //             $q->whereIn('email', $dataEntryEmails);
+    //         });
+    //     } else {
+    //         $query->whereHas('patient.creator', function ($q) use ($dataEntryEmails) {
+    //             $q->whereNotIn('email', $dataEntryEmails);
+    //         });
+    //     }
+
+    //     if (!$user->hasRole(['ROLE DIRECTOR GENERAL', 'ROLE ADMIN'])) {
+    //         $query->where('status', '<>', 'Pending');
+    //     }
+
+    //     // -----------------------------
+    //     // VIRTUAL REFERRALS (UNCHANGED)
+    //     // -----------------------------
+    //     $noReferralHistories = PatientHistory::with(['patient', 'diagnoses', 'reason'])
+    //     ->whereDoesntHave('referrals')
+    //     ->whereIn('status', ['requested', 'approved'])
+    //     ->whereHas('patient.creator', function ($q) use ($dataEntryEmails, $isDataEntryUser) {
+    //         if ($isDataEntryUser) {
+    //             $q->whereIn('email', $dataEntryEmails);
+    //         } else {
+    //             $q->whereNotIn('email', $dataEntryEmails);
+    //         }
+    //     })
+    //     ->latest()
+    //     ->get();
+        
+    //     $boardedOutHistories = PatientHistory::with(['patient', 'diagnoses', 'reason'])
+    //     ->whereHas('boardedOutLetters')
+    //     ->whereHas('patient.creator', function ($q) use ($dataEntryEmails, $isDataEntryUser) {
+    //         if ($isDataEntryUser) {
+    //             $q->whereIn('email', $dataEntryEmails);
+    //         } else {
+    //             $q->whereNotIn('email', $dataEntryEmails);
+    //         }
+    //     })
+    //     ->latest()
+    //     ->get();
+
+    //     $boardedOutVirtuals = $boardedOutHistories->map(function ($history) {
+
+    //         $boardedOut = $history->boardedOutLetters->last(); // latest letter
+        
+    //         return [
+    //             'referral_number' => 'BO-' . $history->patient_histories_id,
+    //             'patient'         => $history->patient,
+    //             'diagnoses'       => $history->diagnoses,
+    //             'reason'          => $history->reason,
+    //             'status'          => 'BoardedOut', // 🔥 KEY
+    //             'hospitals'       => collect([]),
+    //             'referrals'       => [],
+    //             'has_pending'     => false,
+    //             'latest_activity' => $boardedOut?->created_at ?? $history->updated_at,
+    //             'is_boarded_out'  => true,
+    //             'history_id'      => $history->patient_histories_id,
+        
+    //             // optional extra data
+    //             'boarded_out' => [
+    //                 'receiver' => $boardedOut?->receiver,
+    //                 'reference_number' => $boardedOut?->reference_number,
+    //                 'reference_date' => $boardedOut?->reference_date,
+    //                 'recommendations' => $boardedOut?->recommendations,
+    //             ]
+    //         ];
+    //     });
+
+    //     $virtualReferrals = $noReferralHistories->map(function ($history) {
+    //         return [
+    //             'referral_number' => 'N/A-' . $history->patient_histories_id,
+    //             'patient'         => $history->patient,
+    //             'diagnoses'       => $history->diagnoses,
+    //             'reason'          => $history->reason,
+    //             'status'          => 'Pending',
+    //             'hospitals'       => collect([]),
+    //             'referrals'       => [],
+    //             'has_pending'     => true,
+    //             'latest_activity' => $history->updated_at,
+    //             'is_recommendation_only' => true,
+    //             'history_id'      => $history->patient_histories_id
+    //         ];
+    //     });
+
+    //     // -----------------------------
+    //     // REAL REFERRALS
+    //     // -----------------------------
+    //     $referrals = $query->latest()->get()
+    //         ->groupBy('referral_number')
+    //         ->map(function ($group) {
+
+    //             $first = $group->first();
+
+    //             // 🔥 SAFE FIX: get latest history directly (no relation dependency)
+    //             $historyId = PatientHistory::where('patient_id', $first->patient_id ?? null)
+    //                 ->latest('created_at')
+    //                 ->value('patient_histories_id');
+
+    //             return [
+    //                 'referral_number' => $first->referral_number,
+    //                 'patient'         => $first->patient,
+    //                 'diagnoses'       => $first->diagnoses,
+    //                 'reason'          => $first->reason,
+    //                 'status'          => $group->pluck('status')->unique()->sort()->implode(', '),
+    //                 'hospitals'       => $group->pluck('hospital')->unique('hospital_id')->values(),
+    //                 'referrals'       => $group->map(function ($ref) {
+    //                     return [
+    //                         'referral_id' => $ref->referral_id,
+    //                         'status'      => $ref->status,
+    //                         'hospital'    => $ref->hospital,
+    //                         'created_at'  => $ref->created_at,
+    //                     ];
+    //                 })->values(),
+    //                 'has_pending'     => $group->contains('status', 'Pending'),
+    //                 'latest_activity' => $group->max('created_at'),
+    //                 'history_id'      => $historyId,
+    //             ];
+    //         })
+    //         ->sort(function ($a, $b) {
+    //             if ($a['has_pending'] !== $b['has_pending']) {
+    //                 return $b['has_pending'] <=> $a['has_pending'];
+    //             }
+    //             return $b['latest_activity'] <=> $a['latest_activity'];
+    //         })
+    //         ->values();
+
+    //     // -----------------------------
+    //     // FINAL MERGE
+    //     // -----------------------------
+    //     $finalData = $referrals
+    //         ->concat($virtualReferrals)
+    //         ->concat($boardedOutVirtuals)
+    //         ->sort(function ($a, $b) {
+    //             if ($a['has_pending'] !== $b['has_pending']) {
+    //                 return $b['has_pending'] <=> $a['has_pending'];
+    //             }
+    //             return $b['latest_activity'] <=> $a['latest_activity'];
+    //         })
+    //         ->values();
+
+    //     return response(['data' => $finalData, 'statusCode' => 200], 200);
+    // }
     public function index()
     {
         $user = auth()->user();
-        $dataEntryEmails = ['medicalboard@mohz.go.tz', 'hospital@mohz.go.tz', 'mkurugenzi@mohz.go.tz', 'dguser@mohz.go.tz'];
+
+        $dataEntryEmails = [
+            'medicalboard@mohz.go.tz',
+            'hospital@mohz.go.tz',
+            'mkurugenzi@mohz.go.tz',
+            'dguser@mohz.go.tz'
+        ];
 
         if (!$user->can('View Referral')) {
             return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
@@ -140,16 +304,18 @@ class ReferralController extends Controller
 
         $isDataEntryUser = in_array($user->email, $dataEntryEmails);
 
-        $query = Referral::with(['patient.patientHistories', 'reason', 'hospital', 'diagnoses'])
+        // -----------------------------
+        // REAL REFERRALS
+        // -----------------------------
+        $query = Referral::with(['patient', 'reason', 'hospital', 'diagnoses'])
             ->where('status', '<>', 'Requested');
 
-        // --- LOGIC YA KUTENGANISHA ---
         if ($isDataEntryUser) {
-            $query->whereHas('patient.creator', function($q) use ($dataEntryEmails) {
+            $query->whereHas('patient.creator', function ($q) use ($dataEntryEmails) {
                 $q->whereIn('email', $dataEntryEmails);
             });
         } else {
-            $query->whereHas('patient.creator', function($q) use ($dataEntryEmails) {
+            $query->whereHas('patient.creator', function ($q) use ($dataEntryEmails) {
                 $q->whereNotIn('email', $dataEntryEmails);
             });
         }
@@ -158,34 +324,16 @@ class ReferralController extends Controller
             $query->where('status', '<>', 'Pending');
         }
 
-        // 
-        $noReferralHistories = PatientHistory::with(['patient', 'diagnoses', 'reason'])
-            ->whereDoesntHave('referrals') // no referral created
-            ->where('status', 'requested') // or 'approved' depending on your flow
-            ->latest()
-            ->get();
-        
-        $virtualReferrals = $noReferralHistories->map(function ($history) {
-            return [
-                'referral_number' => 'N/A-' . $history->id, // fake but unique
-                'patient'         => $history->patient,
-                'diagnoses'       => $history->diagnoses,
-                'reason'          => $history->reason,
-                'status'          => 'Recommendation',
-                'hospitals'       => collect([]), // no hospitals
-                'referrals'       => [], // no referral records
-                'has_pending'     => true, // so DG sees it on top
-                'latest_activity' => $history->updated_at,
-                'is_recommendation_only' => true, // 🔥 IMPORTANT FLAG
-                'history_id'      => $history->id // for DG actions
-            ];
-        });
-        // 
-
-        $referrals = $query->latest()->get() 
+        $referrals = $query->latest()->get()
             ->groupBy('referral_number')
             ->map(function ($group) {
+
                 $first = $group->first();
+
+                $historyId = PatientHistory::where('patient_id', $first->patient_id ?? null)
+                    ->latest('created_at')
+                    ->value('patient_histories_id');
+
                 return [
                     'referral_number' => $first->referral_number,
                     'patient'         => $first->patient,
@@ -203,28 +351,147 @@ class ReferralController extends Controller
                     })->values(),
                     'has_pending'     => $group->contains('status', 'Pending'),
                     'latest_activity' => $group->max('created_at'),
+                    'history_id'      => $historyId,
                 ];
             })
+            ->values();
+
+        // -----------------------------
+        // VIRTUAL (REQUESTED + APPROVED)
+        // -----------------------------
+        $noReferralHistories = PatientHistory::with(['patient', 'diagnoses', 'reason'])
+            ->whereDoesntHave('referrals')
+            ->whereDoesntHave('boardedOutLetters') // prevent duplicates
+            ->whereIn('status', ['requested', 'approved'])
+            ->whereHas('patient.creator', function ($q) use ($dataEntryEmails, $isDataEntryUser) {
+                if ($isDataEntryUser) {
+                    $q->whereIn('email', $dataEntryEmails);
+                } else {
+                    $q->whereNotIn('email', $dataEntryEmails);
+                }
+            })
+            ->latest()
+            ->get();
+
+        $virtualReferrals = $noReferralHistories->map(function ($history) {
+
+            return [
+                'referral_number' => 'N/A-' . $history->patient_histories_id,
+
+                'patient'   => $history->patient,
+                'diagnoses' => $history->diagnoses,
+                'reason'    => $history->reason,
+
+                'history' => $this->formatHistory($history),
+
+                'status' => 'Pending',
+
+                'hospitals' => [null],
+
+                'referrals' => [
+                    [
+                        'referral_id' => null,
+                        'status'      => 'Pending',
+                        'hospital'    => null,
+                        'created_at'  => $history->created_at,
+                    ]
+                ],
+
+                'has_pending'     => true,
+                'latest_activity' => $history->updated_at,
+
+                'is_recommendation_only' => true,
+                'history_id' => $history->patient_histories_id,
+            ];
+        });
+
+        // -----------------------------
+        // BOARDED OUT
+        // -----------------------------
+        $boardedOutHistories = PatientHistory::with(['patient', 'diagnoses', 'reason', 'boardedOutLetters'])
+            ->whereHas('boardedOutLetters')
+            ->whereHas('patient.creator', function ($q) use ($dataEntryEmails, $isDataEntryUser) {
+                if ($isDataEntryUser) {
+                    $q->whereIn('email', $dataEntryEmails);
+                } else {
+                    $q->whereNotIn('email', $dataEntryEmails);
+                }
+            })
+            ->latest()
+            ->get();
+
+        $boardedOutVirtuals = $boardedOutHistories->map(function ($history) {
+
+            $boardedOut = $history->boardedOutLetters->last();
+
+            return [
+                'referral_number' => 'BO-' . $history->patient_histories_id,
+
+                'patient'   => $history->patient,
+                'diagnoses' => $history->diagnoses,
+                'reason'    => $history->reason,
+
+                'history' => $this->formatHistory($history),
+
+                'status' => 'BoardedOut',
+
+                'hospitals' => [null],
+
+                'referrals' => [
+                    [
+                        'referral_id' => null,
+                        'status'      => 'BoardedOut',
+                        'hospital'    => null,
+                        'created_at'  => $boardedOut?->created_at,
+                    ]
+                ],
+
+                'has_pending'     => false,
+                'latest_activity' => $boardedOut?->created_at ?? $history->updated_at,
+
+                'is_boarded_out' => true,
+                'history_id' => $history->patient_histories_id,
+
+                'boarded_out' => [
+                    'receiver' => $boardedOut?->receiver,
+                    'reference_number' => $boardedOut?->reference_number,
+                    'reference_date' => $boardedOut?->reference_date,
+                    'recommendations' => $boardedOut?->recommendations,
+                ]
+            ];
+        });
+
+        // -----------------------------
+        // FINAL MERGE + SORT
+        // -----------------------------
+        $finalData = collect()
+            ->concat($referrals)
+            ->concat($virtualReferrals)
+            ->concat($boardedOutVirtuals)
             ->sort(function ($a, $b) {
                 if ($a['has_pending'] !== $b['has_pending']) {
                     return $b['has_pending'] <=> $a['has_pending'];
                 }
-                return $b['latest_activity'] <=> $a['latest_activity'];
+                return strtotime($b['latest_activity']) <=> strtotime($a['latest_activity']);
             })
             ->values();
-        //
-        $finalData = $referrals->concat($virtualReferrals)
-        ->sort(function ($a, $b) {
-            if ($a['has_pending'] !== $b['has_pending']) {
-                return $b['has_pending'] <=> $a['has_pending'];
-            }
-            return $b['latest_activity'] <=> $a['latest_activity'];
-        })
-        ->values();
-        //
 
-        // return response(['data' => $referrals, 'statusCode' => 200], 200);
-        return response(['data' => $finalData, 'statusCode' => 200], 200);
+        return response([
+            'data' => $finalData,
+            'statusCode' => 200
+        ], 200);
+    }
+
+    private function formatHistory($history)
+    {
+        if (!$history) return null;
+
+        return [
+            'patient_histories_id' => $history->patient_histories_id,
+            'case_type' => $history->case_type ?? 'N/A',
+            'board_comments' => $history->board_comments ?? 'N/A',
+            'status' => $history->status ?? 'unknown',
+        ];
     }
 
     public function getReferralwithBills()
@@ -407,6 +674,9 @@ class ReferralController extends Controller
             ], 403);
         }
 
+        // =========================
+        // 1. TRY NORMAL REFERRAL
+        // =========================
         $referral = Referral::with([
             'patient' => function ($query) {
                 $query->with([
@@ -414,12 +684,11 @@ class ReferralController extends Controller
                     'files',
                     'patientList.boardMembers',
                     'patientHistories' => function ($q) {
-                        // Order by ID descending to make the newest record first
                         $q->orderBy('patient_histories_id', 'desc')->with([
-                            'diagnoses',        // doctor diagnoses
-                            'boardDiagnoses',   // board diagnoses
-                            'reason',           // doctor reason
-                            'boardReason',      // board reason
+                            'diagnoses',
+                            'boardDiagnoses',
+                            'reason',
+                            'boardReason',
                         ]);
                     },
                 ]);
@@ -437,19 +706,79 @@ class ReferralController extends Controller
         ->where('referral_id', $id)
         ->first();
 
+        // =========================
+        // 2. IF NOT FOUND → TRY HISTORY
+        // =========================
         if (!$referral) {
-            return response()->json([
-                'message' => 'Referral not found',
-                'statusCode' => 404,
-            ], 404);
+
+            $history = PatientHistory::with([
+                'patient' => function ($query) {
+                    $query->with([
+                        'geographicalLocation',
+                        'files',
+                        'patientList.boardMembers',
+                        'patientHistories' => function ($q) {
+                            $q->orderBy('patient_histories_id', 'desc')->with([
+                                'diagnoses',
+                                'boardDiagnoses',
+                                'reason',
+                                'boardReason',
+                                'boardedOutLetters'
+                            ]);
+                        },
+                    ]);
+                },
+                'diagnoses',
+                'boardDiagnoses',
+                'reason',
+                'boardReason',
+                'boardedOutLetters'
+            ])
+            ->where('patient_histories_id', $id)
+            ->first();
+
+            if (!$history) {
+                return response()->json([
+                    'message' => 'Referral not found',
+                    'statusCode' => 404,
+                ], 404);
+            }
+
+            // =========================
+            // 🔥 CONVERT HISTORY → REFERRAL FORMAT
+            // =========================
+            $referral = new \stdClass();
+            $hasBoardedOut = $history->boardedOutLetters()->exists();
+            $referral->is_boarded_out = $hasBoardedOut;
+            $referral->boarded_out_letter = $history->boardedOutLetters()->latest()->first();
+
+            $referral->referral_id = null;
+            $referral->referral_number = 'N/A-' . $history->patient_histories_id;
+            $referral->status = $hasBoardedOut ? 'BoardedOut' : 'Pending';
+            $referral->hospital = null;
+            $referral->hospitalLetters = [];
+            $referral->referralLetters = [];
+            $referral->parent = null;
+            $referral->children = [];
+            $referral->bills = [];
+            $referral->confirmedBy = null;
+            $referral->creator = null;
+            $referral->diagnoses = $history->diagnoses;
+
+            // attach patient (IMPORTANT)
+            $referral->patient = $history->patient;
+
+            // flag for frontend (optional but useful)
+            $referral->is_recommendation_only = true;
+            $referral->history_id = $history->patient_histories_id;
         }
 
-        // --- AGE CALCULATION LOGIC ---
-        // Extract the patient from the referral
-        $patient = $referral->patient;
+        // =========================
+        // 3. AGE CALCULATION
+        // =========================
+        $patient = $referral->patient ?? null;
 
         if ($patient && $patient->date_of_birth) {
-            // Check if the value is just a number (like '8')
             if (is_numeric($patient->date_of_birth)) {
                 $patient->age_details = [
                     'years'  => 0, 'months' => 0, 'days' => 0,
@@ -468,7 +797,6 @@ class ReferralController extends Controller
                         'string' => "{$diff->y}y {$diff->m}m {$diff->d}d"
                     ];
                 } catch (\Exception $e) {
-                    // Handle cases where data is "broken" but not numeric
                     $patient->age_details = ['string' => "Unknown"];
                 }
             }
@@ -556,7 +884,7 @@ class ReferralController extends Controller
                 }
             }
         }
-        
+
         $reason    = $referrals->first()->reason;
         $hospitals = $referrals->pluck('hospital')->unique('hospital_id')->values();
         $letters   = $referrals->pluck('hospitalLetters')->flatten(1)->values();
