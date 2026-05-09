@@ -779,27 +779,27 @@ class ReferralController extends Controller
         $patient = $referral->patient ?? null;
 
         if ($patient && $patient->date_of_birth) {
-            if (is_numeric($patient->date_of_birth)) {
-                $patient->age_details = [
-                    'years'  => 0, 'months' => 0, 'days' => 0,
-                    'string' => "Invalid Date Data"
-                ];
-            } else {
-                try {
-                    $dob = \Carbon\Carbon::parse($patient->date_of_birth);
-                    $now = \Carbon\Carbon::now();
-                    $diff = $dob->diff($now);
+            // if (is_numeric($patient->date_of_birth)) {
+            //     $patient->age_details = [
+            //         'years'  => 0, 'months' => 0, 'days' => 0,
+            //         'string' => "Invalid Date Data"
+            //     ];
+            // } else {
+            try {
+                $dob = \Carbon\Carbon::parse($patient->date_of_birth);
+                $now = \Carbon\Carbon::now();
+                $diff = $dob->diff($now);
 
-                    $patient->age_details = [
-                        'years'  => $diff->y,
-                        'months' => $diff->m,
-                        'days'   => $diff->d,
-                        'string' => "{$diff->y}y {$diff->m}m {$diff->d}d"
-                    ];
-                } catch (\Exception $e) {
-                    $patient->age_details = ['string' => "Unknown"];
-                }
+                $patient->age_details = [
+                    'years'  => $diff->y,
+                    'months' => $diff->m,
+                    'days'   => $diff->d,
+                    'string' => "{$diff->y}y {$diff->m}m {$diff->d}d"
+                ];
+            } catch (\Exception $e) {
+                $patient->age_details = ['string' => "Unknown"];
             }
+            // }
         }
 
         return response()->json([

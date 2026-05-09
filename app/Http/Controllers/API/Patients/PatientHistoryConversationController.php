@@ -198,15 +198,15 @@ class PatientHistoryConversationController extends Controller
 
         // 1. Get the collection of conversations
         $conversations = PatientHistoryConversation::where('patient_history_id', $patientHistoryId)
-            ->where('receiver_id', $user->id) 
-            ->whereNull('parent_id')         
+            ->where('receiver_id', $user->id)
+            ->whereNull('parent_id')
             ->with([
                 'sender:id,first_name,last_name',
                 'children' => function($query) {
                     $query->with('sender:id,first_name,last_name')->oldest();
                 }
             ])
-            ->latest() 
+            ->latest()
             ->get(); // This returns a Collection
 
         // 2. Check if the collection is empty using the isEmpty() method
