@@ -26,6 +26,27 @@
                                 </tr>
                                 <tr style="height: 10px;"><td></td></tr>
                                 <tr>
+                                    <td style="padding: 15px; background-color: #f9f9f9; border-radius: 4px;">
+                                        <strong>Patient Information:</strong><br><br>
+
+                                        <strong>Name:</strong>
+                                        {{ $conversation->patientHistory->patient->name ?? 'N/A' }}<br>
+
+                                        <strong>Matibabu Card:</strong>
+                                        {{ $conversation->patientHistory->patient->matibabu_card ?? 'N/A' }}<br>
+
+                                        <strong>Gender:</strong>
+                                        {{ $conversation->patientHistory->patient->gender ?? 'N/A' }}<br>
+
+                                        <strong>Phone:</strong>
+                                        {{ $conversation->patientHistory->patient->phone ?? 'N/A' }}<br>
+
+                                        <strong>File No:</strong>
+                                        {{ $conversation->patientHistory->file_number ?? 'N/A' }}
+                                    </td>
+                                </tr>
+                                <tr style="height: 10px;"><td></td></tr>
+                                <tr>
                                     <td style="padding: 15px; background-color: #f0f7ff; border-radius: 4px; font-style: italic; color: #1e3a8a;">
                                         <strong>Message:</strong><br>
                                         "{{ $conversation->message }}"

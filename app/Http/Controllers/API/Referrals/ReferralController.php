@@ -442,21 +442,21 @@ class ReferralController extends Controller
                         'referral_id' => null,
                         'status'      => 'BoardedOut',
                         'hospital'    => null,
-                        'created_at'  => $boardedOut?->created_at,
+                        'created_at'  => $boardedOut ? $boardedOut->created_at : null,
                     ]
                 ],
 
                 'has_pending'     => false,
-                'latest_activity' => $boardedOut?->created_at ?? $history->updated_at,
+                'latest_activity' => optional($boardedOut)->created_at ?? $history->updated_at,
 
                 'is_boarded_out' => true,
                 'history_id' => $history->patient_histories_id,
 
                 'boarded_out' => [
-                    'receiver' => $boardedOut?->receiver,
-                    'reference_number' => $boardedOut?->reference_number,
-                    'reference_date' => $boardedOut?->reference_date,
-                    'recommendations' => $boardedOut?->recommendations,
+                    'receiver' => optional($boardedOut)->receiver,
+                    'reference_number' => optional($boardedOut)->reference_number,
+                    'reference_date' => optional($boardedOut)->reference_date,
+                    'recommendations' => optional($boardedOut)->recommendations,
                 ]
             ];
         });

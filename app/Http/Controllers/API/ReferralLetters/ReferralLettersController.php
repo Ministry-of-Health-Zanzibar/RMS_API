@@ -223,7 +223,7 @@ class ReferralLettersController extends Controller
         }
 
         $data = $request->validate([
-            'referral_id' => ['nullable', 'numeric'], // 🔥 now optional
+            'referral_id' => ['nullable', 'required_if:status,Confirmed,Cancelled', 'numeric'],
             'patient_histories_id' => ['required_if:status,BoardedOut', 'exists:patient_histories,patient_histories_id'],
 
             'hospital_id' => ['required_if:status,Confirmed', 'numeric'],
@@ -283,7 +283,16 @@ class ReferralLettersController extends Controller
             */
 
             // 1️⃣ Find referral
-            $referral = Referral::findOrFail($data['referral_id']);
+            $referralId = $data['referral_id'] ?? null;
+
+            if (!$referralId) {
+                return response([
+                    'message' => 'Referral ID missing',
+                    'statusCode' => 422
+                ], 422);
+            }
+
+            $referral = Referral::findOrFail($referralId);
 
             // 2️⃣ Update referral
             if ($data['status'] === 'Confirmed') {

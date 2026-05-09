@@ -14,11 +14,14 @@ class ConversationNotification extends Mailable
 
     public $conversation;
     public $senderName;
-    public $recipient; // Tumeongeza hii hapa
+    public $recipient;
 
     public function __construct(PatientHistoryConversation $conversation, $senderName, User $recipient)
     {
-        $this->conversation = $conversation;
+        $this->conversation = $conversation->load([
+            'patientHistory.patient' // 👈 IMPORTANT
+        ]);
+
         $this->senderName = $senderName;
         $this->recipient = $recipient;
     }
