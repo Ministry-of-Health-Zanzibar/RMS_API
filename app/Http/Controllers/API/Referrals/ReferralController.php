@@ -330,9 +330,9 @@ class ReferralController extends Controller
 
                 $first = $group->first();
 
-                $historyId = PatientHistory::where('patient_id', $first->patient_id ?? null)
-                    ->latest('created_at')
-                    ->value('patient_histories_id');
+                $history = PatientHistory::where('patient_id', $first->patient_id ?? null)
+                ->latest('created_at')
+                ->first();
 
                 return [
                     'referral_number' => $first->referral_number,
@@ -351,7 +351,10 @@ class ReferralController extends Controller
                     })->values(),
                     'has_pending'     => $group->contains('status', 'Pending'),
                     'latest_activity' => $group->max('created_at'),
-                    'history_id'      => $historyId,
+                    'history_id' => $history?->patient_histories_id,
+                    'history'    => $history
+                        ? $this->formatHistory($history)
+                        : null,
                 ];
             })
             ->values();
@@ -420,46 +423,53 @@ class ReferralController extends Controller
             ->latest()
             ->get();
 
-        $boardedOutVirtuals = $boardedOutHistories->map(function ($history) {
+            $boardedOutVirtuals = $boardedOutHistories->map(function ($history) {
 
-            $boardedOut = $history->boardedOutLetters->last();
-
-            return [
-                'referral_number' => 'BO-' . $history->patient_histories_id,
-
-                'patient'   => $history->patient,
-                'diagnoses' => $history->diagnoses,
-                'reason'    => $history->reason,
-
-                'history' => $this->formatHistory($history),
-
-                'status' => 'BoardedOut',
-
-                'hospitals' => [null],
-
-                'referrals' => [
-                    [
-                        'referral_id' => null,
-                        'status'      => 'BoardedOut',
-                        'hospital'    => null,
-                        'created_at'  => $boardedOut ? $boardedOut->created_at : null,
+                $boardedOut = $history->boardedOutLetters->last();
+            
+                $isBoardedOut = !is_null($boardedOut);
+            
+                return [
+                    'referral_number' => $isBoardedOut
+                        ? 'BO-' . $history->patient_histories_id
+                        : 'NBO-' . $history->patient_histories_id,
+            
+                    'patient'   => $history->patient,
+                    'diagnoses' => $history->diagnoses,
+                    'reason'    => $history->reason,
+            
+                    'history' => $this->formatHistory($history),
+            
+                    'status' => $isBoardedOut ? 'BoardedOut' : 'Pending',
+            
+                    'hospitals' => [null],
+            
+                    'referrals' => [
+                        [
+                            'referral_id' => null,
+                            'status'      => $isBoardedOut ? 'BoardedOut' : 'Pending',
+                            'hospital'    => null,
+                            'created_at'  => $boardedOut?->created_at ?? $history->created_at,
+                        ]
+                    ],
+            
+                    'has_pending' => !$isBoardedOut,
+            
+                    'latest_activity' => $boardedOut?->created_at
+                        ?? $history->updated_at,
+            
+                    'is_boarded_out' => $isBoardedOut,
+            
+                    'history_id' => $history->patient_histories_id,
+            
+                    'boarded_out' => [
+                        'receiver' => $boardedOut?->receiver,
+                        'reference_number' => $boardedOut?->reference_number,
+                        'reference_date' => $boardedOut?->reference_date,
+                        'recommendations' => $boardedOut?->recommendations,
                     ]
-                ],
-
-                'has_pending'     => false,
-                'latest_activity' => optional($boardedOut)->created_at ?? $history->updated_at,
-
-                'is_boarded_out' => true,
-                'history_id' => $history->patient_histories_id,
-
-                'boarded_out' => [
-                    'receiver' => optional($boardedOut)->receiver,
-                    'reference_number' => optional($boardedOut)->reference_number,
-                    'reference_date' => optional($boardedOut)->reference_date,
-                    'recommendations' => optional($boardedOut)->recommendations,
-                ]
-            ];
-        });
+                ];
+            });
 
         // -----------------------------
         // FINAL MERGE + SORT

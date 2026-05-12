@@ -33,9 +33,6 @@ class ReportController extends Controller
 
     // DASHBOARD ========================================================================//
 
-    /**
-     * Get total counts for Medical Boards, Patients, and Referrals.
-     */
     public function getOverallCounts()
     {
         $user = auth()->user();
@@ -78,9 +75,6 @@ class ReportController extends Controller
 
     // DASHBOARD ========================================================================//
 
-    /**
-     * Report by reason
-     */
     public function referralsReportByReason()
     {
         $user = auth()->user();
@@ -134,9 +128,11 @@ class ReportController extends Controller
                 ->json(['message' => $e->getMessage(), 'statusCode' => 401]);
         }
     }
+
     // DASHBOARD ========================================================================//
 
     // DASHBOARD ========================================================================//
+
     public function referralsReportByGendr()
     {
         $user = auth()->user();
@@ -177,13 +173,11 @@ class ReportController extends Controller
             ], 500);
         }
     }
-    // DASHBOARD ========================================================================//
 
     // DASHBOARD ========================================================================//
 
-    /**
-     * Report by hospital
-     */
+    // DASHBOARD ========================================================================//
+
     public function referralReportByHospital()
     {
         $user = auth()->user();
@@ -258,64 +252,6 @@ class ReportController extends Controller
 
     // PRINTABLE REPORT ========================================================================//
 
-    /**
-     * @OA\Get(
-     *     path="/reports/showEverythingByReferralId/{referral_id}",
-     *     tags={"Reports"},
-     *     summary="Get full referral details by referral ID",
-     *     description="Returns full referral information including patient details, histories, diagnoses, hospital data, letters, bills, and relationships. Requires View Referral permission.",
-     *     operationId="showEverythingByReferralId",
-     *     security={{"bearerAuth":{}}},
-     *
-     *     @OA\Parameter(
-     *         name="referral_id",
-     *         in="path",
-     *         required=true,
-     *         description="Referral ID",
-     *         @OA\Schema(
-     *             type="integer",
-     *             example=123
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Referral found",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(
-     *                 property="statusCode",
-     *                 type="integer",
-     *                 example=200
-     *             ),
-     *             @OA\Property(
-     *                 property="data",
-     *                 ref="#/components/schemas/Referral"
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=403,
-     *         description="Forbidden",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="message", type="string", example="Forbidden"),
-     *             @OA\Property(property="statusCode", type="integer", example=403)
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=404,
-     *         description="Referral not found",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="message", type="string", example="Referral not found"),
-     *             @OA\Property(property="statusCode", type="integer", example=404)
-     *         )
-     *     )
-     * )
-     */
     public function showEverythingByReferralId(int $id)
     {
         $user = auth()->user();
@@ -439,7 +375,6 @@ class ReportController extends Controller
 
     }
 
-    // getBillsBetweenDates
     public function getBillsBetweenDates(Request $request)
     {
         $user = auth()->user();
@@ -729,6 +664,129 @@ class ReportController extends Controller
             ->first();
 
         return response()->json($report);
+    }
+
+    public function systemOverviewReport()
+    {
+        $user = auth()->user();
+
+        if (! $user->can('View Referral Dashboard')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403,
+            ], 403);
+        }
+
+        try {
+
+            /**
+             * =========================
+             * 1. BASIC COUNTS
+             * =========================
+             */
+            $totalPatients = DB::table('patients')->count();
+
+            $totalReferrals = DB::table('referrals')
+                ->whereNull('deleted_at')
+                ->count();
+
+            /**
+             * =========================
+             * 2. REFERRAL STATUS BREAKDOWN
+             * =========================
+             */
+            $statusCounts = DB::table('referrals')
+                ->selectRaw("
+                    COUNT(CASE WHEN status = 'Pending' THEN 1 END) as pending,
+                    COUNT(CASE WHEN status = 'Reviewed' THEN 1 END) as reviewed,
+                    COUNT(CASE WHEN status = 'Assigned' THEN 1 END) as assigned,
+                    COUNT(CASE WHEN status = 'Requested' THEN 1 END) as requested,
+                    COUNT(CASE WHEN status = 'Approved' THEN 1 END) as approved,
+                    COUNT(CASE WHEN status = 'Confirmed' THEN 1 END) as confirmed,
+                    COUNT(CASE WHEN status = 'BoardedOut' THEN 1 END) as boarded_out,
+                    COUNT(CASE WHEN status IN ('Cancelled','Rejected') THEN 1 END) as cancelled_rejected
+                ")
+                ->whereNull('deleted_at')
+                ->first();
+
+            /**
+             * =========================
+             * 3. GENDER BREAKDOWN (REFERRALS)
+             * =========================
+             */
+            $gender = DB::table('referrals')
+                ->join('patients', 'patients.patient_id', '=', 'referrals.patient_id')
+                ->whereNotNull('referrals.patient_id')
+                ->whereNull('referrals.deleted_at')
+                ->selectRaw("
+                    SUM(CASE WHEN LOWER(patients.gender) IN ('male','m') THEN 1 ELSE 0 END) as male_referrals,
+                    SUM(CASE WHEN LOWER(patients.gender) IN ('female','f') THEN 1 ELSE 0 END) as female_referrals
+                ")
+                ->first();
+
+            /**
+             * =========================
+             * 4. FOLLOWUPS COUNT
+             * =========================
+             */
+            $followups = DB::table('followups')
+                ->distinct('referral_id')
+                ->count('referral_id');
+
+            /**
+             * =========================
+             * 5. REFERRALS BY HOSPITAL (NEW)
+             * =========================
+             */
+            $referralsByHospital = DB::table('referrals')
+                ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
+                ->whereNull('referrals.deleted_at')
+                ->selectRaw('hospitals.hospital_name, COUNT(referrals.referral_id) as total')
+                ->groupBy('hospitals.hospital_name')
+                ->orderByDesc('total')
+                ->get();
+
+            /**
+             * =========================
+             * RESPONSE
+             * =========================
+             */
+            return response()->json([
+                'data' => [
+                    'total_patients' => $totalPatients,
+                    'total_referrals' => $totalReferrals,
+
+                    'referrals_by_status' => [
+                        'pending' => (int) $statusCounts->pending,
+                        'reviewed' => (int) $statusCounts->reviewed,
+                        'assigned' => (int) $statusCounts->assigned,
+                        'requested' => (int) $statusCounts->requested,
+                        'approved' => (int) $statusCounts->approved,
+                        'confirmed' => (int) $statusCounts->confirmed,
+                        'boarded_out' => (int) $statusCounts->boarded_out,
+                        'cancelled_rejected' => (int) $statusCounts->cancelled_rejected,
+                    ],
+
+                    'referrals_by_gender' => [
+                        'male' => (int) $gender->male_referrals,
+                        'female' => (int) $gender->female_referrals,
+                    ],
+
+                    'referrals_with_followups' => $followups,
+
+                    // ✅ ADDED HERE
+                    'referrals_by_hospital' => $referralsByHospital,
+                ],
+                'statusCode' => 200,
+            ], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Report generation failed',
+                'error' => $e->getMessage(),
+                'statusCode' => 500,
+            ], 500);
+        }
     }
 
     // PRINTABLE REPORT ========================================================================//
