@@ -673,7 +673,151 @@ class ReferralController extends Controller
      *     )
      * )
      */
-    public function show(int $id)
+    // public function show(int $id)
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->can('View Referral')) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     // =========================
+    //     // 1. TRY NORMAL REFERRAL
+    //     // =========================
+    //     $referral = Referral::with([
+    //         'patient' => function ($query) {
+    //             $query->with([
+    //                 'geographicalLocation',
+    //                 'files',
+    //                 'patientList.boardMembers',
+    //                 'patientHistories' => function ($q) {
+    //                     $q->orderBy('patient_histories_id', 'desc')->with([
+    //                         'diagnoses',
+    //                         'boardDiagnoses',
+    //                         'reason',
+    //                         'boardReason',
+    //                     ]);
+    //                 },
+    //             ]);
+    //         },
+    //         'hospital',
+    //         'hospitalLetters',
+    //         'referralLetters',
+    //         'parent',
+    //         'children',
+    //         'bills',
+    //         'confirmedBy',
+    //         'creator',
+    //         'diagnoses',
+    //     ])
+    //     ->where('referral_id', $id)
+    //     ->first();
+
+    //     // =========================
+    //     // 2. IF NOT FOUND → TRY HISTORY
+    //     // =========================
+    //     if (!$referral) {
+
+    //         $history = PatientHistory::with([
+    //             'patient' => function ($query) {
+    //                 $query->with([
+    //                     'geographicalLocation',
+    //                     'files',
+    //                     'patientList.boardMembers',
+    //                     'patientHistories' => function ($q) {
+    //                         $q->orderBy('patient_histories_id', 'desc')->with([
+    //                             'diagnoses',
+    //                             'boardDiagnoses',
+    //                             'reason',
+    //                             'boardReason',
+    //                             'boardedOutLetters'
+    //                         ]);
+    //                     },
+    //                 ]);
+    //             },
+    //             'diagnoses',
+    //             'boardDiagnoses',
+    //             'reason',
+    //             'boardReason',
+    //             'boardedOutLetters'
+    //         ])
+    //         ->where('patient_histories_id', $id)
+    //         ->first();
+
+    //         if (!$history) {
+    //             return response()->json([
+    //                 'message' => 'Referral not found',
+    //                 'statusCode' => 404,
+    //             ], 404);
+    //         }
+
+    //         // =========================
+    //         // 🔥 CONVERT HISTORY → REFERRAL FORMAT
+    //         // =========================
+    //         $referral = new \stdClass();
+    //         $hasBoardedOut = $history->boardedOutLetters()->exists();
+    //         $referral->is_boarded_out = $hasBoardedOut;
+    //         $referral->boarded_out_letter = $history->boardedOutLetters()->latest()->first();
+
+    //         $referral->referral_id = null;
+    //         $referral->referral_number = 'N/A-' . $history->patient_histories_id;
+    //         $referral->status = $hasBoardedOut ? 'BoardedOut' : 'Pending';
+    //         $referral->hospital = null;
+    //         $referral->hospitalLetters = [];
+    //         $referral->referralLetters = [];
+    //         $referral->parent = null;
+    //         $referral->children = [];
+    //         $referral->bills = [];
+    //         $referral->confirmedBy = null;
+    //         $referral->creator = null;
+    //         $referral->diagnoses = $history->diagnoses;
+
+    //         // attach patient (IMPORTANT)
+    //         $referral->patient = $history->patient;
+
+    //         // flag for frontend (optional but useful)
+    //         $referral->is_recommendation_only = true;
+    //         $referral->history_id = $history->patient_histories_id;
+    //     }
+
+    //     // =========================
+    //     // 3. AGE CALCULATION
+    //     // =========================
+    //     $patient = $referral->patient ?? null;
+
+    //     if ($patient && $patient->date_of_birth) {
+    //         if (is_numeric($patient->date_of_birth)) {
+    //             $patient->age_details = [
+    //                 'years'  => 0, 'months' => 0, 'days' => 0,
+    //                 'string' => "Invalid Date Data"
+    //             ];
+    //         } else {
+    //             try {
+    //                 $dob = \Carbon\Carbon::parse($patient->date_of_birth);
+    //                 $now = \Carbon\Carbon::now();
+    //                 $diff = $dob->diff($now);
+
+    //                 $patient->age_details = [
+    //                     'years'  => $diff->y,
+    //                     'months' => $diff->m,
+    //                     'days'   => $diff->d,
+    //                     'string' => "{$diff->y}y {$diff->m}m {$diff->d}d"
+    //                 ];
+    //             } catch (\Exception $e) {
+    //                 $patient->age_details = ['string' => "Unknown"];
+    //             }
+    //         }
+    //     }
+
+    //     return response()->json([
+    //         'data' => $referral,
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
+    public function show(Request $request, int $id)
     {
         $user = auth()->user();
 
@@ -684,10 +828,14 @@ class ReferralController extends Controller
             ], 403);
         }
 
-        // =========================
-        // 1. TRY NORMAL REFERRAL
-        // =========================
-        $referral = Referral::with([
+        $type = $request->query('type', 'referral');
+
+        /**
+         * ===================================
+         * LOAD RELATIONSHIPS
+         * ===================================
+         */
+        $relations = [
             'patient' => function ($query) {
                 $query->with([
                     'geographicalLocation',
@@ -699,6 +847,7 @@ class ReferralController extends Controller
                             'boardDiagnoses',
                             'reason',
                             'boardReason',
+                            'boardedOutLetters'
                         ]);
                     },
                 ]);
@@ -712,14 +861,33 @@ class ReferralController extends Controller
             'confirmedBy',
             'creator',
             'diagnoses',
-        ])
-        ->where('referral_id', $id)
-        ->first();
+        ];
 
-        // =========================
-        // 2. IF NOT FOUND → TRY HISTORY
-        // =========================
-        if (!$referral) {
+        /**
+         * ===================================
+         * REFERRAL MODE
+         * ===================================
+         */
+        if ($type === 'referral') {
+
+            $referral = Referral::with($relations)
+                ->where('referral_id', $id)
+                ->first();
+
+            if (!$referral) {
+                return response()->json([
+                    'message' => 'Referral not found',
+                    'statusCode' => 404,
+                ], 404);
+            }
+        }
+
+        /**
+         * ===================================
+         * HISTORY MODE
+         * ===================================
+         */
+        else if ($type === 'history') {
 
             $history = PatientHistory::with([
                 'patient' => function ($query) {
@@ -749,22 +917,22 @@ class ReferralController extends Controller
 
             if (!$history) {
                 return response()->json([
-                    'message' => 'Referral not found',
+                    'message' => 'History not found',
                     'statusCode' => 404,
                 ], 404);
             }
 
-            // =========================
-            // 🔥 CONVERT HISTORY → REFERRAL FORMAT
-            // =========================
-            $referral = new \stdClass();
             $hasBoardedOut = $history->boardedOutLetters()->exists();
+
+            $referral = new \stdClass();
+
             $referral->is_boarded_out = $hasBoardedOut;
             $referral->boarded_out_letter = $history->boardedOutLetters()->latest()->first();
 
             $referral->referral_id = null;
             $referral->referral_number = 'N/A-' . $history->patient_histories_id;
             $referral->status = $hasBoardedOut ? 'BoardedOut' : 'Pending';
+
             $referral->hospital = null;
             $referral->hospitalLetters = [];
             $referral->referralLetters = [];
@@ -773,32 +941,45 @@ class ReferralController extends Controller
             $referral->bills = [];
             $referral->confirmedBy = null;
             $referral->creator = null;
-            $referral->diagnoses = $history->diagnoses;
 
-            // attach patient (IMPORTANT)
+            $referral->diagnoses = $history->diagnoses;
             $referral->patient = $history->patient;
 
-            // flag for frontend (optional but useful)
             $referral->is_recommendation_only = true;
             $referral->history_id = $history->patient_histories_id;
         }
 
-        // =========================
-        // 3. AGE CALCULATION
-        // =========================
+        else {
+            return response()->json([
+                'message' => 'Invalid type',
+                'statusCode' => 422,
+            ], 422);
+        }
+
+        /**
+         * ===================================
+         * AGE CALCULATION
+         * ===================================
+         */
         $patient = $referral->patient ?? null;
 
         if ($patient && $patient->date_of_birth) {
-            if (is_numeric($patient->date_of_birth)) {
-                $patient->age_details = [
-                    'years'  => 0, 'months' => 0, 'days' => 0,
-                    'string' => "Invalid Date Data"
-                ];
-            } else {
-                try {
+
+            try {
+
+                if (is_numeric($patient->date_of_birth)) {
+
+                    $patient->age_details = [
+                        'years' => 0,
+                        'months' => 0,
+                        'days' => 0,
+                        'string' => 'Invalid Date Data'
+                    ];
+
+                } else {
+
                     $dob = \Carbon\Carbon::parse($patient->date_of_birth);
-                    $now = \Carbon\Carbon::now();
-                    $diff = $dob->diff($now);
+                    $diff = $dob->diff(now());
 
                     $patient->age_details = [
                         'years'  => $diff->y,
@@ -806,16 +987,20 @@ class ReferralController extends Controller
                         'days'   => $diff->d,
                         'string' => "{$diff->y}y {$diff->m}m {$diff->d}d"
                     ];
-                } catch (\Exception $e) {
-                    $patient->age_details = ['string' => "Unknown"];
                 }
+
+            } catch (\Exception $e) {
+
+                $patient->age_details = [
+                    'string' => 'Unknown'
+                ];
             }
         }
 
         return response()->json([
             'data' => $referral,
             'statusCode' => 200,
-        ], 200);
+        ]);
     }
 
     public function getHospitalLettersByReferralId($id)
