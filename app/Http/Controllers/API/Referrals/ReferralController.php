@@ -557,22 +557,60 @@ class ReferralController extends Controller
             $query->where('status', '<>', 'Pending');
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | PRELOAD HISTORIES
+        |--------------------------------------------------------------------------
+        */
+        // $patientIds = Referral::pluck('patient_id')->unique()->toArray();
+        $patientIds = $query->pluck('patient_id')->unique()->toArray();
+
+        $latestHistories = PatientHistory::with('boardedOutLetters')
+            ->whereIn('patient_id', $patientIds)
+            ->latest('created_at')
+            ->get()
+            ->groupBy('patient_id')
+            ->map(function ($items) {
+                return $items->first();
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | PRELOAD BOARDED OUT LETTERS
+        |--------------------------------------------------------------------------
+        */
+        $boardedOutLetters = BoardedOutLetter::with('patientHistory')
+            ->whereHas('patientHistory', function ($q) use ($patientIds) {
+                $q->whereIn('patient_id', $patientIds);
+            })
+            ->latest()
+            ->get()
+            ->groupBy(function ($item) {
+                return $item->patientHistory?->patient_id;
+            })
+            ->map(function ($items) {
+                return $items->first();
+            });
+
         $referrals = $query->latest()->get()
             ->groupBy('referral_number')
             ->map(function ($group) {
 
                 $first = $group->first();
 
-                $history = PatientHistory::where('patient_id', $first->patient_id ?? null)
-                    ->latest('created_at')
-                    ->first();
+                // $history = PatientHistory::where('patient_id', $first->patient_id ?? null)
+                //     ->latest('created_at')
+                //     ->first();
 
-                // return [
-                $boardedOut = BoardedOutLetter::whereHas('patientHistory', function ($q) use ($first) {
-                    $q->where('patient_id', $first->patient_id);
-                })
-                ->latest()
-                ->first();
+                // // return [
+                // $boardedOut = BoardedOutLetter::whereHas('patientHistory', function ($q) use ($first) {
+                //     $q->where('patient_id', $first->patient_id);
+                // })
+                // ->latest()
+                // ->first();
+                $history = $latestHistories[$first->patient_id] ?? null;
+
+                $boardedOut = $boardedOutLetters[$first->patient_id] ?? null;
                 
                 $isBoardedOut = $group->contains(function ($ref) {
                     return $ref->status === 'BoardedOut';
@@ -819,7 +857,8 @@ class ReferralController extends Controller
                 return strtotime($b['latest_activity'])
                     <=> strtotime($a['latest_activity']);
             })
-            ->values();
+            ->values()
+            ->forPage($request->page ?? 1, 50);
 
         return response([
             'data' => $finalData,
