@@ -249,26 +249,87 @@ class ReferralLettersController extends Controller
             | ✅ CASE 1: BoardedOut (NO referral required)
             |--------------------------------------------------------------------------
             */
+            // if ($data['status'] === 'BoardedOut') {
+
+            //     $patientHistory = PatientHistory::findOrFail($data['patient_histories_id']);
+
+            //     // update history
+            //     $patientHistory->update([
+            //         'status' => 'confirmed',
+            //         'dg_id' => $user->id,
+            //     ]);
+
+            //     $boardedOut = BoardedOutLetter::create([
+            //         'patient_histories_id' => $data['patient_histories_id'],
+            //         'receiver' => $data['receiver'],
+            //         'reference_number' => $data['reference_number'],
+            //         'reference_date' => $data['reference_date'],
+            //         'recommendations' => $data['recommendations'], // 🔥 no need json_encode (Laravel handles JSON)
+            //     ]);
+
+            //     DB::commit();
+
+            //     return response([
+            //         'data' => $boardedOut,
+            //         'message' => 'Boarded Out decision recorded successfully.',
+            //         'statusCode' => 201,
+            //     ], 201);
+            // }
             if ($data['status'] === 'BoardedOut') {
 
-                $patientHistory = PatientHistory::findOrFail($data['patient_histories_id']);
-
-                // update history
+                $patientHistory = PatientHistory::findOrFail(
+                    $data['patient_histories_id']
+                );
+            
+                /*
+                |--------------------------------------------------------------------------
+                | CHECK EXISTING REFERRAL
+                |--------------------------------------------------------------------------
+                */
+                $existingReferral = Referral::where('patient_id', $patientHistory->patient_id)
+                    ->whereNotIn('status', ['Cancelled'])
+                    ->latest()
+                    ->first();
+            
+                /*
+                |--------------------------------------------------------------------------
+                | UPDATE HISTORY
+                |--------------------------------------------------------------------------
+                */
                 $patientHistory->update([
                     'status' => 'confirmed',
                     'dg_id' => $user->id,
                 ]);
-
+            
+                /*
+                |--------------------------------------------------------------------------
+                | CREATE BOARDED OUT LETTER
+                |--------------------------------------------------------------------------
+                */
                 $boardedOut = BoardedOutLetter::create([
                     'patient_histories_id' => $data['patient_histories_id'],
                     'receiver' => $data['receiver'],
                     'reference_number' => $data['reference_number'],
                     'reference_date' => $data['reference_date'],
-                    'recommendations' => $data['recommendations'], // 🔥 no need json_encode (Laravel handles JSON)
+                    'recommendations' => $data['recommendations'],
                 ]);
-
+            
+                /*
+                |--------------------------------------------------------------------------
+                | IF REFERRAL EXISTS -> UPDATE IT
+                |--------------------------------------------------------------------------
+                */
+                if ($existingReferral) {
+            
+                    $existingReferral->update([
+                        'status' => 'BoardedOut',
+                        // 'status' => 'Confirmed',
+                        'confirmed_by' => $user->id,
+                    ]);
+                }
+            
                 DB::commit();
-
+            
                 return response([
                     'data' => $boardedOut,
                     'message' => 'Boarded Out decision recorded successfully.',
