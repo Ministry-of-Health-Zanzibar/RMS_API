@@ -131,86 +131,6 @@ class ReferralLettersController extends Controller
      *     )
      * )
      */
-    // public function store(Request $request)
-    // {
-    //     $user = auth()->user();
-
-    //     if (!$user->can('Create ReferralLetter')) {
-    //         return response([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     $data = $request->validate([
-    //         'referral_id' => ['required', 'numeric'],
-    //         'hospital_id' => ['required_if:status,Confirmed', 'numeric'],
-    //         'letter_text' => ['required', 'string'],
-    //         'status' => ['required', 'in:Confirmed,Cancelled'],
-    //         'start_date' => ['nullable', 'string'],
-    //         'end_date' => ['nullable', 'string'],
-    //     ]);
-
-    //     DB::beginTransaction();
-
-    //     try {
-    //         // 1️⃣ Find referral
-    //         $referral = Referral::findOrFail($data['referral_id']);
-
-    //         // 2️⃣ Update referral
-    //         if ($data['status'] === 'Confirmed') {
-    //             $referral->update([
-    //                 'hospital_id' => $data['hospital_id'],
-    //                 'status' => 'Confirmed',
-    //                 'confirmed_by' => $user->id,
-    //             ]);
-    //         } else {
-    //             $referral->update([
-    //                 'status' => 'Cancelled',
-    //                 'confirmed_by' => $user->id,
-    //             ]);
-    //         }
-
-    //         // 3️⃣ Update patient history (DG decision) ✅ CORRECT
-    //         $patientHistory = PatientHistory::where('patient_id', $referral->patient_id)
-    //             ->where('status', 'approved') // only DG-ready history
-    //             ->latest('created_at')
-    //             ->firstOrFail();
-
-    //         $patientHistory->update([
-    //             'status' => $data['status'] === 'Confirmed' ? 'confirmed' : 'rejected',
-    //             'dg_comments' => $data['letter_text'],
-    //             'dg_id' => $user->id,
-    //         ]);
-
-    //         // 4️⃣ Create referral letter
-    //         $referralLetter = ReferralLetter::create([
-    //             'referral_id' => $referral->referral_id,
-    //             'letter_text' => $data['letter_text'],
-    //             'start_date' => $data['start_date'] ?? null,
-    //             'end_date' => $data['end_date'] ?? null,
-    //             'created_by' => $user->id,
-    //         ]);
-
-    //         DB::commit();
-
-    //         return response([
-    //             'data' => $referralLetter,
-    //             'message' => 'DG decision recorded successfully.',
-    //             'statusCode' => 201,
-    //         ], 201);
-
-    //     } catch (\Throwable $e) {
-    //         DB::rollBack();
-
-    //         return response([
-    //             'message' => 'Internal server error',
-    //             'error' => $e->getMessage(),
-    //             'statusCode' => 500,
-    //         ], 500);
-    //     }
-    // }
-
     public function store(Request $request)
     {
         $user = auth()->user();
@@ -222,59 +142,80 @@ class ReferralLettersController extends Controller
             ], 403);
         }
 
+        // $data = $request->validate([
+        //     'referral_id' => ['nullable', 'required_if:status,Confirmed,Cancelled', 'numeric'],
+        //     'patient_histories_id' => ['required_if:status,BoardedOut', 'exists:patient_histories,patient_histories_id'],
+
+        //     'hospital_id' => ['required_if:status,Confirmed', 'numeric'],
+        //     'letter_text' => ['nullable', 'string'], // BoardedOut may not need it
+        //     'status' => ['required', 'in:Confirmed,Cancelled,BoardedOut'],
+
+        //     'start_date' => ['nullable', 'string'],
+        //     'end_date' => ['nullable', 'string'],
+
+        //     // 🔥 BoardedOut fields
+        //     'receiver' => ['required_if:status,BoardedOut', 'string'],
+        //     'reference_number' => ['required_if:status,BoardedOut', 'string'],
+        //     'reference_date' => ['required_if:status,BoardedOut', 'date'],
+        //     'recommendations' => ['required_if:status,BoardedOut', 'array'],
+        // ]);
         $data = $request->validate([
-            'referral_id' => ['nullable', 'required_if:status,Confirmed,Cancelled', 'numeric'],
-            'patient_histories_id' => ['required_if:status,BoardedOut', 'exists:patient_histories,patient_histories_id'],
 
-            'hospital_id' => ['required_if:status,Confirmed', 'numeric'],
-            'letter_text' => ['nullable', 'string'], // BoardedOut may not need it
-            'status' => ['required', 'in:Confirmed,Cancelled,BoardedOut'],
-
+            'referral_id' => [
+                'nullable',
+                'required_if:status,Confirmed,Cancelled,Confirmed and BoardedOut',
+                'numeric'
+            ],
+        
+            'patient_histories_id' => [
+                'required_if:status,BoardedOut,Confirmed and BoardedOut',
+                'exists:patient_histories,patient_histories_id'
+            ],
+        
+            'hospital_id' => [
+                'required_if:status,Confirmed,Confirmed and BoardedOut',
+                'numeric'
+            ],
+        
+            'letter_text' => [
+                'nullable',
+                'string'
+            ],
+        
+            'status' => [
+                'required',
+                'in:Confirmed,Cancelled,BoardedOut,Confirmed and BoardedOut'
+            ],
+        
             'start_date' => ['nullable', 'string'],
             'end_date' => ['nullable', 'string'],
-
+        
             // 🔥 BoardedOut fields
-            'receiver' => ['required_if:status,BoardedOut', 'string'],
-            'reference_number' => ['required_if:status,BoardedOut', 'string'],
-            'reference_date' => ['required_if:status,BoardedOut', 'date'],
-            'recommendations' => ['required_if:status,BoardedOut', 'array'],
+            'receiver' => [
+                'required_if:status,BoardedOut,Confirmed and BoardedOut',
+                'string'
+            ],
+        
+            'reference_number' => [
+                'required_if:status,BoardedOut,Confirmed and BoardedOut',
+                'string'
+            ],
+        
+            'reference_date' => [
+                'required_if:status,BoardedOut,Confirmed and BoardedOut',
+                'date'
+            ],
+        
+            'recommendations' => [
+                'required_if:status,BoardedOut,Confirmed and BoardedOut',
+                'array'
+            ],
         ]);
 
         DB::beginTransaction();
 
         try {
 
-            /*
-            |--------------------------------------------------------------------------
-            | ✅ CASE 1: BoardedOut (NO referral required)
-            |--------------------------------------------------------------------------
-            */
-            // if ($data['status'] === 'BoardedOut') {
-
-            //     $patientHistory = PatientHistory::findOrFail($data['patient_histories_id']);
-
-            //     // update history
-            //     $patientHistory->update([
-            //         'status' => 'confirmed',
-            //         'dg_id' => $user->id,
-            //     ]);
-
-            //     $boardedOut = BoardedOutLetter::create([
-            //         'patient_histories_id' => $data['patient_histories_id'],
-            //         'receiver' => $data['receiver'],
-            //         'reference_number' => $data['reference_number'],
-            //         'reference_date' => $data['reference_date'],
-            //         'recommendations' => $data['recommendations'], // 🔥 no need json_encode (Laravel handles JSON)
-            //     ]);
-
-            //     DB::commit();
-
-            //     return response([
-            //         'data' => $boardedOut,
-            //         'message' => 'Boarded Out decision recorded successfully.',
-            //         'statusCode' => 201,
-            //     ], 201);
-            // }
             if ($data['status'] === 'BoardedOut') {
 
                 $patientHistory = PatientHistory::findOrFail(
@@ -323,7 +264,6 @@ class ReferralLettersController extends Controller
             
                     $existingReferral->update([
                         'status' => 'BoardedOut',
-                        // 'status' => 'Confirmed',
                         'confirmed_by' => $user->id,
                     ]);
                 }
@@ -337,12 +277,6 @@ class ReferralLettersController extends Controller
                 ], 201);
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | ✅ CASE 2: Normal Referral Flow
-            |--------------------------------------------------------------------------
-            */
-
             // 1️⃣ Find referral
             $referralId = $data['referral_id'] ?? null;
 
@@ -354,6 +288,88 @@ class ReferralLettersController extends Controller
             }
 
             $referral = Referral::findOrFail($referralId);
+            if ($data['status'] === 'Confirmed and BoardedOut') {
+
+                $patientHistory = PatientHistory::findOrFail(
+                    $data['patient_histories_id']
+                );
+            
+                /*
+                |--------------------------------------------------------------------------
+                | CHECK EXISTING REFERRAL
+                |--------------------------------------------------------------------------
+                */
+                $existingReferral = Referral::where('patient_id', $patientHistory->patient_id)
+                    ->whereNotIn('status', ['Cancelled'])
+                    ->latest()
+                    ->first();
+            
+                /*
+                |--------------------------------------------------------------------------
+                | UPDATE HISTORY
+                |--------------------------------------------------------------------------
+                */
+                $patientHistory->update([
+                    'status' => 'confirmed',
+                    'dg_id' => $user->id,
+                ]);
+            
+                /*
+                |--------------------------------------------------------------------------
+                | CREATE BOARDED OUT LETTER
+                |--------------------------------------------------------------------------
+                */
+                $boardedOut = BoardedOutLetter::create([
+                    'patient_histories_id' => $data['patient_histories_id'],
+                    'receiver' => $data['receiver'],
+                    'reference_number' => $data['reference_number'],
+                    'reference_date' => $data['reference_date'],
+                    'recommendations' => $data['recommendations'],
+                ]);
+            
+                /*
+                |--------------------------------------------------------------------------
+                | IF REFERRAL EXISTS -> UPDATE IT
+                |--------------------------------------------------------------------------
+                */
+                if ($existingReferral) {
+            
+                    $existingReferral->update([
+                        'hospital_id' => $data['hospital_id'],
+                        'status' => 'BoardedOut',
+                        'confirmed_by' => $user->id,
+                    ]);
+
+                    // 3️⃣ Update patient history
+                    // $patientHistory = PatientHistory::where('patient_id', $referral->patient_id)
+                    // ->where('status', 'approved')
+                    // ->latest('created_at')
+                    // ->firstOrFail();
+
+                    // $patientHistory->update([
+                    //     'status' => 'confirmed',
+                    //     'dg_comments' => $data['letter_text'],
+                    //     'dg_id' => $user->id,
+                    // ]);
+
+                    // 4️⃣ Create referral letter
+                    $referralLetter = ReferralLetter::create([
+                        'referral_id' => $referral->referral_id,
+                        'letter_text' => $data['letter_text'],
+                        'start_date' => $data['start_date'] ?? null,
+                        'end_date' => $data['end_date'] ?? null,
+                        'created_by' => $user->id,
+                    ]);
+                }
+            
+                DB::commit();
+            
+                return response([
+                    'data' => $boardedOut,
+                    'message' => 'Boarded Out decision recorded successfully.',
+                    'statusCode' => 201,
+                ], 201);
+            }
 
             // 2️⃣ Update referral
             if ($data['status'] === 'Confirmed') {

@@ -1185,19 +1185,27 @@ class ReferralController extends Controller
             $referral->boarded_out_letter = $history->boardedOutLetters()->latest()->first();
 
             $referral->referral_id = null;
-            // $referral->referral_number = 'N/A-' . $history->patient_histories_id;
             // new
             $hasReferral = $history->referrals()->exists();
 
-            $latestReferralNumber = $history->referrals()
+            $latestReferral = $history->referrals()
                 ->latest()
-                ->first()
-                ?->referral_number;
+                ->first();
+
+            $hasReferral = !is_null($latestReferral);
+
+            $latestReferralNumber = $latestReferral?->referral_number;
 
             if ($hasReferral) {
 
                 // CASE A: real referral always wins
-                $referral->referral_number = $latestReferralNumber ?? 'REF-' . $history->patient_histories_id;
+                $referral->referral_number = $latestReferralNumber;
+                $referral->referral_id = $latestReferral?->referral_id;
+                $referral->referral_letters = $latestReferral?->referralLetters;
+                $referral->hospital_id = $latestReferral?->hospital_id;
+
+                $referral->confirmedBy = $latestReferral?->confirmed_by;
+                $referral->creator = $latestReferral?->creator;
 
             } else {
 
@@ -1211,7 +1219,6 @@ class ReferralController extends Controller
 
             $referral->hospital = null;
             $referral->hospitalLetters = [];
-            $referral->referralLetters = [];
             $referral->parent = null;
             $referral->children = [];
             $referral->bills = [];
