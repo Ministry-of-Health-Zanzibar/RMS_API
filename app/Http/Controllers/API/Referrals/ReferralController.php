@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API\Referrals;
 use App\Models\Insurance;
 use App\Models\PatientHistory;
 use App\Models\BoardedOutLetter;
+use App\Models\Hospital;
 use App\Models\Referral;
 use App\Models\Bill;
 use App\Models\Payment;
@@ -412,7 +413,7 @@ class ReferralController extends Controller
             'statusCode' => 200
         ], 200);
     }
-    //=========================== Current works fine ===================================
+    //=========================== Previos works fine ===================================
     // public function index()
     // {
     //     $user = auth()->user();
@@ -1194,15 +1195,14 @@ class ReferralController extends Controller
 
             $hasReferral = !is_null($latestReferral);
 
-            $latestReferralNumber = $latestReferral?->referral_number;
-
             if ($hasReferral) {
 
                 // CASE A: real referral always wins
-                $referral->referral_number = $latestReferralNumber;
+                $referral->referral_number = $latestReferral?->referral_number;
                 $referral->referral_id = $latestReferral?->referral_id;
                 $referral->referral_letters = $latestReferral?->referralLetters;
                 $referral->hospital_id = $latestReferral?->hospital_id;
+                $referral->hospital = $latestReferral?->hospital;
 
                 $referral->confirmedBy = $latestReferral?->confirmed_by;
                 $referral->creator = $latestReferral?->creator;
@@ -1217,13 +1217,10 @@ class ReferralController extends Controller
             // end new
             $referral->status = $hasBoardedOut ? 'BoardedOut' : 'Pending';
 
-            $referral->hospital = null;
             $referral->hospitalLetters = [];
             $referral->parent = null;
             $referral->children = [];
             $referral->bills = [];
-            $referral->confirmedBy = null;
-            $referral->creator = null;
 
             $referral->diagnoses = $history->diagnoses;
             $referral->patient = $history->patient;
