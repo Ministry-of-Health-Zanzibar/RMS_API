@@ -78,6 +78,65 @@ class BillFileController extends Controller
         ]);
     }
 
+    public function getBillsByHospitals()
+    {
+        $user = auth()->user();
+        if (!$user->can('View BillFile')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // 1. Fetch the data with the hospital relationship
+        $billFiles = BillFile::with('hospital')->get();
+
+        // 2. Group by hospital_id and transform the data
+        $groupedData = $billFiles->groupBy('hospital_id')->map(function ($group) {
+            // Get hospital info from the first record in this group
+            $hospital = $group->first()->hospital;
+
+            return [
+                'hospital_id' => $hospital->hospital_id ?? null,
+                'hospital_name' => $hospital->hospital_name ?? 'Unknown',
+                // Sum up the bill_file_amount for everyone in this group
+                'total_bill_amount' => $group->sum(function ($item) {
+                    return (float) $item->bill_file_amount;
+                })
+            ];
+        })->values(); // Reset keys to 0, 1, 2... for a clean JSON array
+
+        return response()->json([
+            'data' => $groupedData,
+            'statusCode' => 200
+        ]);
+    }
+
+    public function showByHospital($hospital_id)
+    {
+        $user = auth()->user();
+        if (!$user->can('View BillFile')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // Fetch only the bills that match the passed hospital_id
+        $billFiles = BillFile::with([
+            'hospital',
+            'created_by'
+        ])
+        ->where('hospital_id', $hospital_id) // Filter by the requested hospital
+        ->latest()
+        ->get();
+
+        return response()->json([
+            'data' => $billFiles,
+            'statusCode' => 200
+        ]);
+    }
+    
     /**
      * Store a newly created resource in storage.
      */
