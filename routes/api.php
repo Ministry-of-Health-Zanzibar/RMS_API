@@ -151,8 +151,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('followups', FollowupController::class);
 
     // Bill Files
-    Route::resource('bill-files', BillFileController::class);
     Route::get('bill-files/summary-by-hospital', [BillFileController::class, 'getBillsByHospitals']);// new
+    Route::resource('bill-files', BillFileController::class);
     Route::get('bill-files/hospital/{hospital_id}', [BillFileController::class, 'showByHospital']);// new
     Route::post('bill-files/update/{bill_file_id}', [BillFileController::class,'updateBillFile']);
     Route::get('bill-files/bill-files-for-payment/payment', [BillFileController::class,'getBillFilesForPayment']);
