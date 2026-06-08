@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\BillFiles;
 
 use App\Http\Controllers\Controller;
 use App\Models\BillFile;
+use App\Models\Hospital;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -88,23 +89,26 @@ class BillFileController extends Controller
             ], 403);
         }
 
-        // 1. Fetch the data with the hospital relationship
-        $billFiles = BillFile::with('hospital')->get();
+        // 1. Fetch hospitals that do NOT have an 'INTERNAL' referral type
+        $hospitals = Hospital::with('billFiles')
+            ->whereHas('referralType', function ($query) {
+                // Filters out 'INTERNAL'. Adjust 'INTERNAL' if your code/name differs in the database.
+                $query->where('referral_type_code', '!=', 'REFTYPE3'); 
+            })
+            ->get();
 
-        // 2. Group by hospital_id and transform the data
-        $groupedData = $billFiles->groupBy('hospital_id')->map(function ($group) {
-            // Get hospital info from the first record in this group
-            $hospital = $group->first()->hospital;
+        // 2. Map through the filtered hospitals to calculate totals
+        $groupedData = $hospitals->map(function ($hospital) {
+            $totalAmount = $hospital->billFiles->sum(function ($bill) {
+                return (float) $bill->bill_file_amount;
+            });
 
             return [
-                'hospital_id' => $hospital->hospital_id ?? null,
+                'hospital_id' => $hospital->hospital_id,
                 'hospital_name' => $hospital->hospital_name ?? 'Unknown',
-                // Sum up the bill_file_amount for everyone in this group
-                'total_bill_amount' => $group->sum(function ($item) {
-                    return (float) $item->bill_file_amount;
-                })
+                'total_bill_amount' => number_format($totalAmount, 2, '.', '')
             ];
-        })->values(); // Reset keys to 0, 1, 2... for a clean JSON array
+        });
 
         return response()->json([
             'data' => $groupedData,
@@ -136,7 +140,7 @@ class BillFileController extends Controller
             'statusCode' => 200
         ]);
     }
-    
+
     /**
      * Store a newly created resource in storage.
      */
