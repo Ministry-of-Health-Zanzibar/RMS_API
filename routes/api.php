@@ -219,6 +219,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     Route::get('/analytics/referral-trend', [App\Http\Controllers\API\Charts\AnalyticsController::class, 'referralTrend']);
+    Route::get('/other-diagnoses-list', [App\Http\Controllers\API\Charts\AnalyticsController::class, 'otherDiagnosesList']);
     Route::post('/users/{userId}/assign-hospital', [App\Http\Controllers\API\User\UsersCotroller::class, 'assignHospital']);
 
     Route::get('patients/autocomplete-matibabu-card', [PatientController::class, 'autocompleteMatibabuCards']);

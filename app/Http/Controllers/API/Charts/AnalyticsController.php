@@ -162,154 +162,124 @@ class AnalyticsController extends Controller
 
 
     public function referralTrend(Request $request)
-{
-    $user = auth()->user();
-    if (!$user->can('View Referral Dashboard')) {
-        return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
-    }
-
-    $year = now()->year;
-
-    // Force full year range
-    $startDate = $request->input('start_date', "$year-01-01");
-    $endDate   = $request->input('end_date', "$year-12-31");
-
-    // Generate fixed 12 months axis
-    $months = collect(range(1, 12))->map(function ($m) use ($year) {
-        return Carbon::create($year, $m, 1)->format('Y-m');
-    });
-
-    $trend = DB::table('referrals')
-        ->join('diagnosis_referral', 'referrals.referral_id', '=', 'diagnosis_referral.referral_id')
-        ->join('diagnoses', 'diagnosis_referral.diagnosis_id', '=', 'diagnoses.diagnosis_id')
-        ->join('hospitals', 'referrals.hospital_id', '=', 'hospitals.hospital_id')
-        ->join('referral_types', 'hospitals.referral_type_id', '=', 'referral_types.referral_type_id')
-        ->select(
-            DB::raw("TO_CHAR(referrals.created_at, 'YYYY-MM') as date"),
-            'diagnoses.diagnosis_name',
-            DB::raw('COUNT(referrals.referral_id) as total')
-        )
-        ->whereYear('referrals.created_at', $year)
-        ->whereNotIn('referrals.status', ['Pending', 'Cancelled', 'Requested'])
-        ->whereNull('referrals.deleted_at')
-        ->groupBy('date', 'diagnoses.diagnosis_name')
-        ->get();
-
-    $groupedByDiagnosis = $trend->groupBy('diagnosis_name');
-
-    $showAll = $request->boolean('show_all', false);
-
-    if ($showAll) {
-        $topDiagnosisNames = $trend->pluck('diagnosis_name')->unique();
-    } else {
-        $topDiagnosisNames = $trend->groupBy('diagnosis_name')
-            ->map(fn($g) => $g->sum('total'))
-            ->sortDesc()
-            ->take(10)
-            ->keys();
-    }
-
-    $formatted = [];
-    $othersData = array_fill_keys($months->toArray(), 0);
-
-    foreach ($groupedByDiagnosis as $name => $records) {
-
-        if ($topDiagnosisNames->contains($name)) {
-
-            $formatted[$name] = $months->map(function ($month) use ($records) {
-                $match = $records->firstWhere('date', $month);
-
-                return [
-                    'date' => $month,
-                    'total' => $match ? (int)$match->total : 0
-                ];
-            });
-
-        } else {
-
-            foreach ($records as $record) {
-                $othersData[$record->date] = ($othersData[$record->date] ?? 0) + (int)$record->total;
-            }
+    {
+        $user = auth()->user();
+        if (!$user->can('View Referral Dashboard')) {
+            return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
-    }
 
-    if (array_sum($othersData) > 0) {
+        $year = now()->year;
 
-        $formatted['Others'] = $months->map(function ($month) use ($groupedByDiagnosis, $topDiagnosisNames) {
+        // Force full year range
+        $startDate = $request->input('start_date', "$year-01-01");
+        $endDate   = $request->input('end_date', "$year-12-31");
 
-            $dayBreakdown = [];
-            $dayTotal = 0;
+        // Generate fixed 12 months axis
+        $months = collect(range(1, 12))->map(function ($m) use ($year) {
+            return Carbon::create($year, $m, 1)->format('Y-m');
+        });
 
-            foreach ($groupedByDiagnosis as $name => $records) {
-                if (!$topDiagnosisNames->contains($name)) {
+        $trend = DB::table('referrals')
+            ->join('diagnosis_referral', 'referrals.referral_id', '=', 'diagnosis_referral.referral_id')
+            ->join('diagnoses', 'diagnosis_referral.diagnosis_id', '=', 'diagnoses.diagnosis_id')
+            ->join('hospitals', 'referrals.hospital_id', '=', 'hospitals.hospital_id')
+            ->join('referral_types', 'hospitals.referral_type_id', '=', 'referral_types.referral_type_id')
+            ->select(
+                DB::raw("TO_CHAR(referrals.created_at, 'YYYY-MM') as date"),
+                'diagnoses.diagnosis_name',
+                DB::raw('COUNT(referrals.referral_id) as total')
+            )
+            ->whereYear('referrals.created_at', $year)
+            ->whereNotIn('referrals.status', ['Pending', 'Cancelled', 'Requested'])
+            ->whereNull('referrals.deleted_at')
+            ->groupBy('date', 'diagnoses.diagnosis_name')
+            ->get();
 
+        $groupedByDiagnosis = $trend->groupBy('diagnosis_name');
+
+        $showAll = $request->boolean('show_all', false);
+
+        if ($showAll) {
+            $topDiagnosisNames = $trend->pluck('diagnosis_name')->unique();
+        } else {
+            $topDiagnosisNames = $trend->groupBy('diagnosis_name')
+                ->map(fn($g) => $g->sum('total'))
+                ->sortDesc()
+                ->take(10)
+                ->keys();
+        }
+
+        $formatted = [];
+        $othersData = array_fill_keys($months->toArray(), 0);
+
+        foreach ($groupedByDiagnosis as $name => $records) {
+
+            if ($topDiagnosisNames->contains($name)) {
+
+                $formatted[$name] = $months->map(function ($month) use ($records) {
                     $match = $records->firstWhere('date', $month);
 
-                    if ($match && $match->total > 0) {
-                        $dayTotal += (int)$match->total;
-                        $dayBreakdown[] = [
-                            'name' => $name,
-                            'count' => (int)$match->total
-                        ];
-                    }
+                    return [
+                        'date' => $month,
+                        'total' => $match ? (int)$match->total : 0
+                    ];
+                });
+
+            } else {
+
+                foreach ($records as $record) {
+                    $othersData[$record->date] = ($othersData[$record->date] ?? 0) + (int)$record->total;
                 }
             }
+        }
 
-            return [
-                'date' => $month,
-                'total' => $dayTotal,
-                'breakdown' => $dayBreakdown
-            ];
-        });
+        return response()->json([
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'dates' => $months,
+            'data' => (object)$formatted,
+            'statusCode' => 200
+        ]);
     }
 
-    return response()->json([
-        'start_date' => $startDate,
-        'end_date' => $endDate,
-        'dates' => $months,
-        'data' => (object)$formatted,
-        'statusCode' => 200
-    ]);
-}
+    public function otherDiagnosesList(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user->can('View Referral Dashboard')) {
+            return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+        }
 
-public function otherDiagnosesList(Request $request)
-{
-    $user = auth()->user();
-    if (!$user->can('View Referral Dashboard')) {
-        return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+        $year = now()->year;
+
+        $startDate = $request->input('start_date', "$year-01-01");
+        $endDate   = $request->input('end_date', "$year-12-31");
+
+        $allData = DB::table('referrals')
+            ->join('diagnosis_referral', 'referrals.referral_id', '=', 'diagnosis_referral.referral_id')
+            ->join('diagnoses', 'diagnosis_referral.diagnosis_id', '=', 'diagnoses.diagnosis_id')
+            ->join('hospitals', 'referrals.hospital_id', '=', 'hospitals.hospital_id')
+            ->join('referral_types', 'hospitals.referral_type_id', '=', 'referral_types.referral_type_id')
+            ->select(
+                'diagnoses.diagnosis_name',
+                DB::raw('COUNT(referrals.referral_id) as total')
+            )
+            ->whereYear('referrals.created_at', $year)
+            ->whereNotIn('referrals.status', ['Pending', 'Cancelled', 'Requested'])
+            ->whereNull('referrals.deleted_at')
+            ->groupBy('diagnoses.diagnosis_name')
+            ->orderBy('total', 'desc')
+            ->get();
+
+        $others = $allData->slice(10);
+
+        return response()->json([
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'total_others_count' => $others->count(),
+            'total_referrals_in_others' => $others->sum('total'),
+            'data' => $others->values(),
+            'statusCode' => 200
+        ]);
     }
-
-    $year = now()->year;
-
-    $startDate = $request->input('start_date', "$year-01-01");
-    $endDate   = $request->input('end_date', "$year-12-31");
-
-    $allData = DB::table('referrals')
-        ->join('diagnosis_referral', 'referrals.referral_id', '=', 'diagnosis_referral.referral_id')
-        ->join('diagnoses', 'diagnosis_referral.diagnosis_id', '=', 'diagnoses.diagnosis_id')
-        ->join('hospitals', 'referrals.hospital_id', '=', 'hospitals.hospital_id')
-        ->join('referral_types', 'hospitals.referral_type_id', '=', 'referral_types.referral_type_id')
-        ->select(
-            'diagnoses.diagnosis_name',
-            DB::raw('COUNT(referrals.referral_id) as total')
-        )
-        ->whereYear('referrals.created_at', $year)
-        ->whereNotIn('referrals.status', ['Pending', 'Cancelled', 'Requested'])
-        ->whereNull('referrals.deleted_at')
-        ->groupBy('diagnoses.diagnosis_name')
-        ->orderBy('total', 'desc')
-        ->get();
-
-    $others = $allData->slice(10);
-
-    return response()->json([
-        'start_date' => $startDate,
-        'end_date' => $endDate,
-        'total_others_count' => $others->count(),
-        'total_referrals_in_others' => $others->sum('total'),
-        'data' => $others->values(),
-        'statusCode' => 200
-    ]);
-}
 
 }
