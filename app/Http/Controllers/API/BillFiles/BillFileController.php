@@ -647,7 +647,7 @@ class BillFileController extends Controller
 
         $billFiles = DB::table('bill_files as bf')
             ->join('hospitals as h', 'bf.hospital_id', '=', 'h.hospital_id')
-            ->join('bills as b', 'bf.bill_file_id', '=', 'b.bill_file_id')
+            ->leftJoin('bills as b', 'bf.bill_file_id', '=', 'b.bill_file_id')
             ->leftJoin('bill_payments as bp', 'b.bill_id', '=', 'bp.bill_id')
             ->select(
                 'h.hospital_name',
