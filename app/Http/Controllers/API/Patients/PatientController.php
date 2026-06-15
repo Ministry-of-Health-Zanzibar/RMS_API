@@ -125,73 +125,91 @@ class PatientController extends Controller
     //     ], 200);
     // }
     public function index()
-{
-    $user = auth()->user();
+    {
+        $user = auth()->user();
 
-    if (!$user->can('View Patient')) {
+        if (!$user->can('View Patient')) {
+            return response([
+                'message' => 'Forbidden',
+                'statusCode' => 403
+            ], 403);
+        }
+
+        // Orodha ya emails za Data Entry
+        $dataEntryEmails = [
+            'medicalboard@mohz.go.tz',
+            'hospital@mohz.go.tz',
+            'mkurugenzi@mohz.go.tz',
+            'dguser@mohz.go.tz'
+        ];
+
+        $isDataEntryUser = in_array($user->email, $dataEntryEmails);
+
+        // Mahusiano (Relations)
+        $relations = [
+            'patientList',
+            'files',
+            'insurances',
+            'geographicalLocation',
+            'referrals.reason',
+            'referrals.hospital',
+            'referrals.creator',
+            'creator' => function ($query) {
+                $query->with(['hospitals' => function ($q) {
+                    $q->select('hospitals.hospital_id', 'hospitals.hospital_name');
+                }]);
+            },
+        ];
+
+        $query = Patient::with($relations);
+
+        /**
+         * 1. KAMA NI ADMIN: Anaona kila kitu (hata zilizofutwa)
+         */
+        if ($user->hasAnyRole(['ROLE ADMIN'])) {
+            $query->withTrashed();
+        }
+        /**
+         * 2. KAMA NI DATA ENTRY: Anaona data za timu nzima ya Data Entry
+         */
+        elseif ($isDataEntryUser) {
+            $query->whereHas('creator', function ($q) use ($dataEntryEmails) {
+                $q->whereIn('email', $dataEntryEmails);
+            });
+        }
+        /**
+         * 3. KAMA NI HOSPITAL USER WA KAWAIDA: Anaona zake tu
+         */
+        elseif ($user->hasAnyRole(['ROLE HOSPITAL USER'])) {
+            $query->where('created_by', $user->id);
+        }
+
+        // Panga kwa tarehe (Mgonjwa mpya juu)
+        $patients = $query->latest('created_at')->get();
+
+        // Pagination
+        $perPage = request()->get('per_page', 10);
+        $patients = $query
+            ->latest('created_at')
+            ->paginate($perPage);
+
+        // return response([
+        //     'data' => $patients,
+        //     'statusCode' => 200,
+        // ], 200);
         return response([
-            'message' => 'Forbidden',
-            'statusCode' => 403
-        ], 403);
+            'data' => $patients->items(),
+            'pagination' => [
+                'current_page' => $patients->currentPage(),
+                'last_page' => $patients->lastPage(),
+                'per_page' => $patients->perPage(),
+                'total' => $patients->total(),
+                'from' => $patients->firstItem(),
+                'to' => $patients->lastItem(),
+            ],
+            'statusCode' => 200,
+        ], 200);
     }
-
-    // Orodha ya emails za Data Entry
-    $dataEntryEmails = [
-        'medicalboard@mohz.go.tz', 
-        'hospital@mohz.go.tz', 
-        'mkurugenzi@mohz.go.tz', 
-        'dguser@mohz.go.tz'
-    ];
-
-    $isDataEntryUser = in_array($user->email, $dataEntryEmails);
-
-    // Mahusiano (Relations)
-    $relations = [
-        'patientList',
-        'files',
-        'insurances',
-        'geographicalLocation',
-        'referrals.reason',
-        'referrals.hospital',
-        'referrals.creator',
-        'creator' => function ($query) {
-            $query->with(['hospitals' => function ($q) {
-                $q->select('hospitals.hospital_id', 'hospitals.hospital_name');
-            }]);
-        },
-    ];
-
-    $query = Patient::with($relations);
-
-    /**
-     * 1. KAMA NI ADMIN: Anaona kila kitu (hata zilizofutwa)
-     */
-    if ($user->hasAnyRole(['ROLE ADMIN'])) {
-        $query->withTrashed();
-    }
-    /**
-     * 2. KAMA NI DATA ENTRY: Anaona data za timu nzima ya Data Entry
-     */
-    elseif ($isDataEntryUser) {
-        $query->whereHas('creator', function($q) use ($dataEntryEmails) {
-            $q->whereIn('email', $dataEntryEmails);
-        });
-    }
-    /**
-     * 3. KAMA NI HOSPITAL USER WA KAWAIDA: Anaona zake tu
-     */
-    elseif ($user->hasAnyRole(['ROLE HOSPITAL USER'])) {
-        $query->where('created_by', $user->id);
-    }
-
-    // Panga kwa tarehe (Mgonjwa mpya juu)
-    $patients = $query->latest('created_at')->get();
-
-    return response([
-        'data' => $patients,
-        'statusCode' => 200,
-    ], 200);
-}
 
 
     // public function patientsHistories()
@@ -260,12 +278,12 @@ class PatientController extends Controller
     public function patientsHistories()
     {
         $user = auth()->user();
-        
+
         // Orodha ya emails za data entry
         $dataEntryEmails = [
-            'medicalboard@mohz.go.tz', 
-            'hospital@mohz.go.tz', 
-            'mkurugenzi@mohz.go.tz', 
+            'medicalboard@mohz.go.tz',
+            'hospital@mohz.go.tz',
+            'mkurugenzi@mohz.go.tz',
             'dguser@mohz.go.tz'
         ];
 
@@ -488,7 +506,7 @@ class PatientController extends Controller
             if (!$existingInsurance) {
                 \App\Models\Insurance::create([
                     'patient_id'             => $patient->patient_id,
-                    'insurance_provider_name'=> $insuranceProvider,
+                    'insurance_provider_name' => $insuranceProvider,
                     'card_number'            => $cardNumber,
                     'valid_until'            => $validUntil,
                 ]);
@@ -721,7 +739,7 @@ class PatientController extends Controller
             return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
         }
 
-        if(!$isDataEntry){
+        if (!$isDataEntry) {
             // Endelea na logic iliyobaki kama ilivyokuwa...
             if (!$this->isPatientEligible($request->matibabu_card)) {
                 return response()->json(['message' => 'Patient has an active referral process.', 'statusCode' => 403], 200);
@@ -764,7 +782,7 @@ class PatientController extends Controller
             }
 
             // ... (Kodi nyingine zote zinabaki vilevile)
-            $doctorName = trim(($user->first_name ?? '') . ' ' . ($user->middle_name ?? ''). ' ' . ($user->last_name ?? ''));
+            $doctorName = trim(($user->first_name ?? '') . ' ' . ($user->middle_name ?? '') . ' ' . ($user->last_name ?? ''));
 
             $patientHistory = \App\Models\PatientHistory::create([
                 'patient_id'                    => $patient->patient_id,
@@ -807,16 +825,16 @@ class PatientController extends Controller
 
             DB::commit();
 
-            if(!$isDataEntry){
+            if (!$isDataEntry) {
                 // NOTIFICATIONS
                 try {
                     $directors = \App\Models\User::role('ROLE MKURUGENZI TIBA')
-                    ->where('email', '!=', 'mkurugenzi@mohz.go.tz')
-                    ->get();
+                        ->where('email', '!=', 'mkurugenzi@mohz.go.tz')
+                        ->get();
 
                     // Use the Notification facade's route method for the external email
                     Notification::route('mail', 'msafirimarijani@yahoo.com')
-                                ->notify(new NewPatientRecordNotification($patient, $patientHistory));
+                        ->notify(new NewPatientRecordNotification($patient, $patientHistory));
 
                     // Notify the internal directors
                     Notification::send($directors, new NewPatientRecordNotification($patient, $patientHistory));
@@ -830,7 +848,6 @@ class PatientController extends Controller
                 'message' => 'Record processed successfully',
                 'statusCode' => 201,
             ], 201);
-
         } catch (\Throwable $e) {
             DB::rollBack();
             \Log::error("Store Patient Error: " . $e->getMessage());
@@ -842,11 +859,11 @@ class PatientController extends Controller
         }
     }
 
-    
-/**
- * Inasasisha taarifa za mgonjwa na historia yake ya matibabu ya hivi karibuni.
- * Inapokea Request na patient_id pekee.
- */
+
+    /**
+     * Inasasisha taarifa za mgonjwa na historia yake ya matibabu ya hivi karibuni.
+     * Inapokea Request na patient_id pekee.
+     */
     // public function updatePatientAndHistory(Request $request, $patient_id)
     // {
     //     $user = auth()->user();
@@ -1052,7 +1069,7 @@ class PatientController extends Controller
         try {
             // 1. Tafuta mgonjwa
             $patient = \App\Models\Patient::findOrFail($patient_id);
-            
+
             // 2. Update taarifa za mgonjwa
             $patient->update([
                 'name'          => $request->name,
@@ -1128,13 +1145,12 @@ class PatientController extends Controller
                 'message' => 'Patient and medical history updated successfully',
                 'statusCode' => 200,
             ], 200);
-
         } catch (\Throwable $e) {
             DB::rollBack();
             \Log::error("Update Patient Error: " . $e->getMessage());
             return response([
-                'message' => 'Failed to update record', 
-                'error' => $e->getMessage(), 
+                'message' => 'Failed to update record',
+                'error' => $e->getMessage(),
                 'statusCode' => 500
             ], 500);
         }
@@ -1203,7 +1219,7 @@ class PatientController extends Controller
                         'created_at'              => $patient->insurance->created_at,
                     ] : ['has_insurance' => false],
 
-                    'patient_summary_file' => $patient->patientFiles->sortByDesc('id')->map(function($file) {
+                    'patient_summary_file' => $patient->patientFiles->sortByDesc('id')->map(function ($file) {
                         return [
                             'id'          => $file->id,
                             'file_name'   => $file->file_name,
@@ -1214,7 +1230,6 @@ class PatientController extends Controller
                 ],
                 'statusCode' => 200
             ], 200);
-
         } catch (\Exception $e) {
             return response([
                 'message' => 'Error retrieving data',
@@ -1276,14 +1291,14 @@ class PatientController extends Controller
         }
 
         $patient = Patient::with([
-                'patientList',          // patient list info
-                'files',                // all patient files
-                'insurances',
-                'geographicalLocation',
-                'referrals.reason',     // referrals + reason
-                'referrals.hospital',   // referrals + hospital
-                'referrals.creator',    // referral created by user
-            ])->where('patient_id', (int)$id)
+            'patientList',          // patient list info
+            'files',                // all patient files
+            'insurances',
+            'geographicalLocation',
+            'referrals.reason',     // referrals + reason
+            'referrals.hospital',   // referrals + hospital
+            'referrals.creator',    // referral created by user
+        ])->where('patient_id', (int)$id)
             ->get();
 
 
@@ -1291,14 +1306,13 @@ class PatientController extends Controller
             return response([
                 'message' => 'Patient not found',
                 'statusCode' => 404,
-            ],404);
+            ], 404);
         } else {
             return response([
                 'data' => $patient,
                 'statusCode' => 200,
-            ],200);
+            ], 200);
         }
-
     }
 
     /**
@@ -1429,8 +1443,15 @@ class PatientController extends Controller
 
         // Update patient basic info
         $patient->update($request->only([
-            'name', 'matibabu_card', 'zan_id', 'date_of_birth',
-            'gender', 'phone', 'location_id', 'job', 'position'
+            'name',
+            'matibabu_card',
+            'zan_id',
+            'date_of_birth',
+            'gender',
+            'phone',
+            'location_id',
+            'job',
+            'position'
         ]));
 
         // Sync pivot table with new patient lists
@@ -1532,7 +1553,7 @@ class PatientController extends Controller
             return response([
                 'message' => 'Patient not found',
                 'statusCode' => 404,
-            ],404);
+            ], 404);
         }
 
         $patient->delete();
@@ -1541,7 +1562,6 @@ class PatientController extends Controller
             'message' => 'Patient blocked successfully',
             'statusCode' => 200,
         ], 200);
-
     }
 
 
@@ -1632,8 +1652,7 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->can('View Patient'))
-        {
+        if (!$user->can('View Patient')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
@@ -1648,11 +1667,11 @@ class PatientController extends Controller
             'referrals.hospital',
             'referrals.creator',
         ])
-        ->whereDoesntHave('referrals') // patients with no referrals
-        ->orWhereHas('referrals', function ($query) {
-            $query->whereIn('status', ['Cancelled', 'Expired', 'Closed', 'Pending']);
-        })
-        ->get();
+            ->whereDoesntHave('referrals') // patients with no referrals
+            ->orWhereHas('referrals', function ($query) {
+                $query->whereIn('status', ['Cancelled', 'Expired', 'Closed', 'Pending']);
+            })
+            ->get();
 
         return response([
             'data' => $patients,
@@ -1863,7 +1882,7 @@ class PatientController extends Controller
                 'message' => 'New patient Matibabu Card detected',
                 'success' => true,
                 'statusCode' => 204
-            ],200);
+            ], 200);
         }
 
         // Use the helper to determine eligibility based on LATEST records
@@ -1889,5 +1908,4 @@ class PatientController extends Controller
             'statusCode' => 200,
         ], 200);
     }
-
 }
