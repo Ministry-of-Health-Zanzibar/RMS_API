@@ -31,4 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'matibabu' => [
+        'base_url' => env('MATIBABU_BASE_URL'),
+        'username' => env('MATIBABU_USERNAME'),
+        'password' => env('MATIBABU_PASSWORD'),
+    ],
+
 ];
