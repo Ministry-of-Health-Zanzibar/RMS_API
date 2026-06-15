@@ -172,10 +172,20 @@ class PaymentController extends Controller
     //     }
 
     //     // Validate amount_paid does not exceed totalDue
+    //     // if ($validated['amount_paid'] > $totalDue) {
+    //     //     return response()->json([
+    //     //         'message'    => 'The paid amount cannot exceed the total remaining amount for this bill file.',
+    //     //         'statusCode' => 422,
+    //     //     ], 422);
+    //     // }
+    //     // Validate amount_paid does not exceed totalDue
     //     if ($validated['amount_paid'] > $totalDue) {
     //         return response()->json([
-    //             'message'    => 'The paid amount cannot exceed the total remaining amount for this bill file.',
-    //             'statusCode' => 422,
+    //             'message'           => 'The paid amount cannot exceed the total remaining amount for this bill file.',
+    //             'DEBUG_amount_paid' => $validated['amount_paid'],
+    //             'DEBUG_total_due'   => $totalDue,
+    //             'DEBUG_bills_found' => $bills->count(),
+    //             'statusCode'        => 422,
     //         ], 422);
     //     }
 
@@ -236,10 +246,144 @@ class PaymentController extends Controller
     //         'statusCode'       => 200,
     //     ], 200);
     // }
+
+    // public function store(Request $request)
+    // {
+    //     $user = auth()->user();
+    //     if (!$user->can('Create Payment')) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     // Validate input
+    //     $validator = Validator::make($request->all(), [
+    //         'bill_file_id'      => 'required|exists:bill_files,bill_file_id',
+    //         'payer'             => 'required|string|max:255',
+    //         'amount_paid'       => 'required|numeric|min:0',
+    //         'currency'          => 'required|string|max:10',
+    //         'payment_method'    => 'nullable|string|max:255',
+    //         'reference_number'  => 'nullable|string|max:255',
+    //         'voucher_number'    => 'nullable|string|max:255',
+    //         'payment_date'      => 'nullable|date',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'message'    => 'Validation Error',
+    //             'errors'     => $validator->errors(),
+    //             'statusCode' => 422
+    //         ], 422);
+    //     }
+
+    //     $validated = $validator->validated();
+    //     $validated['created_by'] = $user->id;
+    //     $validated['payment_date'] = $validated['payment_date'] ?? now()->toDateString();
+
+    //     // 1. Fetch the actual BillFile to get the global file amount
+    //     $billFile = \App\Models\BillFile::findOrFail($validated['bill_file_id']);
+
+    //     // 2. Fetch pending/partially paid bills for this file
+    //     $bills = \App\Models\Bill::where('bill_file_id', $validated['bill_file_id'])
+    //         ->whereIn('bill_status', ['Pending', 'Partially Paid'])
+    //         ->orderBy('bill_id')
+    //         ->get();
+
+    //     $totalDue = 0;
+
+    //     // 3. Smart Calculation: If we have bills, sum them up. If not, use the file amount.
+    //     if ($bills->count() > 0) {
+    //         foreach ($bills as $bill) {
+    //             // Ensure your Bill model relationship is correctly named here (payments or billPayments)
+    //             $alreadyAllocated = $bill->payments()->sum('allocated_amount');
+    //             $totalDue += ($bill->total_amount - $alreadyAllocated);
+    //         }
+    //     } else {
+    //         // Convert string 'bill_file_amount' to float (removing commas if any exist)
+    //         $fileAmountStr = str_replace(',', '', $billFile->bill_file_amount);
+    //         $fileTotalAmount = (float) $fileAmountStr;
+
+    //         // Check if any advance payments have already been made directly to this file
+    //         $alreadyPaidToForm = \App\Models\Payment::where('bill_file_id', $billFile->bill_file_id)->sum('amount_paid');
+            
+    //         $totalDue = $fileTotalAmount - $alreadyPaidToForm;
+    //     }
+
+    //     // Validate amount_paid does not exceed totalDue
+    //     if ($validated['amount_paid'] > $totalDue) {
+    //         return response()->json([
+    //             'message'           => 'The paid amount cannot exceed the total remaining amount for this bill file.',
+    //             'DEBUG_amount_paid' => $validated['amount_paid'],
+    //             'DEBUG_total_due'   => $totalDue,
+    //             'DEBUG_bills_found' => $bills->count(),
+    //             'statusCode'        => 422,
+    //         ], 422);
+    //     }
+
+    //     // Use transaction for safety
+    //     $result = \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $user, $bills, $billFile) {
+    //         $remainingAmount = $validated['amount_paid'];
+
+    //         // Create Payment - NOW WITH THE BILL FILE ID LINKED!
+    //         $payment = \App\Models\Payment::create([
+    //             'bill_file_id'     => $billFile->bill_file_id, // Safe fallback link
+    //             'payer'            => $validated['payer'],
+    //             'amount_paid'      => $validated['amount_paid'],
+    //             'currency'         => $validated['currency'],
+    //             'payment_method'   => $validated['payment_method'] ?? null,
+    //             'reference_number' => $validated['reference_number'] ?? null,
+    //             'voucher_number'   => $validated['voucher_number'] ?? null,
+    //             'payment_date'     => $validated['payment_date'],
+    //             'created_by'       => $user->id,
+    //         ]);
+
+    //         $billPayments = [];
+
+    //         // If there are no bills, this loop just skips, and the payment sits safely on the ledger
+    //         foreach ($bills as $bill) {
+    //             if ($remainingAmount <= 0) break;
+
+    //             $alreadyAllocated = $bill->payments()->sum('allocated_amount');
+    //             $billRemaining = $bill->total_amount - $alreadyAllocated;
+    //             $allocation = min($remainingAmount, $billRemaining);
+
+    //             $status = ($allocation + $alreadyAllocated) >= $bill->total_amount ? 'Paid' : 'Partially Paid';
+
+    //             // Create bill payment
+    //             $billPayment = \App\Models\BillPayment::create([
+    //                 'bill_id'          => $bill->bill_id,
+    //                 'payment_id'       => $payment->payment_id,
+    //                 'allocated_amount' => $allocation,
+    //                 'allocation_date'  => now()->toDateString(),
+    //                 'status'           => $status,
+    //             ]);
+
+    //             $billPayments[] = $billPayment;
+
+    //             // Update bill status
+    //             $bill->update(['bill_status' => $status]);
+
+    //             $remainingAmount -= $allocation;
+    //         }
+
+    //         return [
+    //             'payment' => $payment,
+    //             'bill_allocations' => $billPayments
+    //         ];
+    //     });
+
+    //     return response()->json([
+    //         'message'          => 'Payment created and allocated successfully.',
+    //         'payment'          => $result['payment'],
+    //         'bill_allocations' => $result['bill_allocations'],
+    //         'statusCode'       => 200,
+    //     ], 200);
+    // }
+
     public function store(Request $request)
     {
         $user = auth()->user();
-
         if (!$user->can('Create Payment')) {
             return response([
                 'message' => 'Forbidden',
@@ -269,65 +413,61 @@ class PaymentController extends Controller
 
         $validated = $validator->validated();
         $validated['created_by'] = $user->id;
-        $validated['payment_date'] = $validated['payment_date'] ?? now();
+        $validated['payment_date'] = $validated['payment_date'] ?? now()->toDateString();
 
-        // Get bills (pending / partially paid)
-        $bills = Bill::where('bill_file_id', $validated['bill_file_id'])
+        // 1. Fetch the actual BillFile to get the global file amount
+        $billFile = \App\Models\BillFile::findOrFail($validated['bill_file_id']);
+
+        // 2. Fetch pending/partially paid bills for this file (if any exist yet)
+        $bills = \App\Models\Bill::where('bill_file_id', $validated['bill_file_id'])
             ->whereIn('bill_status', ['Pending', 'Partially Paid'])
             ->orderBy('bill_id')
             ->get();
 
-        /**
-         * ===========================
-         * NEW FIX: PREPAYMENT SUPPORT
-         * ===========================
-         */
+        // 3. DYNAMIC CEILING CALCULATION (The absolute truth for remaining balance)
+        // Check old itemized payments allocated via bills
+        $itemizedPaid = \Illuminate\Support\Facades\DB::table('bill_payments as bp')
+            ->join('bills as b', 'bp.bill_id', '=', 'b.bill_id')
+            ->where('b.bill_file_id', $billFile->bill_file_id)
+            ->sum('bp.allocated_amount');
 
-        // If NO bills exist → allow prepayment
-        if ($bills->isEmpty()) {
+        // Check new advance payments linked directly to this file (avoiding duplicates)
+        $advancePaid = \Illuminate\Support\Facades\DB::table('payments as p')
+            ->where('p.bill_file_id', $billFile->bill_file_id)
+            ->whereNotExists(function ($query) {
+                $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                      ->from('bill_payments as bp2')
+                      ->whereRaw('bp2.payment_id = p.payment_id');
+            })
+            ->sum('p.amount_paid');
 
-            $payment = Payment::create([
-                'payer'            => $validated['payer'],
-                'amount_paid'      => $validated['amount_paid'],
-                'currency'         => $validated['currency'],
-                'payment_method'   => $validated['payment_method'] ?? null,
-                'reference_number' => $validated['reference_number'] ?? null,
-                'voucher_number'   => $validated['voucher_number'] ?? null,
-                'payment_date'     => $validated['payment_date'],
-                'created_by'       => $user->id,
-            ]);
+        $totalAlreadyPaid = (float)$itemizedPaid + (float)$advancePaid;
 
-            return response()->json([
-                'message'    => 'Prepayment created successfully (no bills available yet).',
-                'payment'    => $payment,
-                'bill_allocations' => [],
-                'statusCode' => 200,
-            ]);
-        }
+        // Convert string 'bill_file_amount' to float (removing commas safely)
+        $fileAmountStr = str_replace(',', '', $billFile->bill_file_amount);
+        $fileTotalAmount = (float) $fileAmountStr;
 
-        // Calculate total remaining for bills
-        $totalDue = 0;
+        // The real total due is always what is left on the whole file
+        $totalDue = $fileTotalAmount - $totalAlreadyPaid;
 
-        foreach ($bills as $bill) {
-            $alreadyAllocated = $bill->payments()->sum('allocated_amount');
-            $totalDue += $bill->total_amount - $alreadyAllocated;
-        }
-
-        // Validate only if bills exist
+        // Validate amount_paid does not exceed the remaining file balance
         if ($validated['amount_paid'] > $totalDue) {
             return response()->json([
-                'message'    => 'The paid amount cannot exceed the total remaining amount for this bill file.',
-                'statusCode' => 422,
+                'message'           => 'The paid amount cannot exceed the total remaining amount for this bill file.',
+                'DEBUG_amount_paid' => $validated['amount_paid'],
+                'DEBUG_total_due'   => $totalDue,
+                'DEBUG_bills_found' => $bills->count(),
+                'statusCode'        => 422,
             ], 422);
         }
 
-        // Transaction block (UNCHANGED LOGIC)
-        $result = DB::transaction(function () use ($validated, $user, $bills) {
-
+        // Use transaction for safety
+        $result = \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $user, $bills, $billFile) {
             $remainingAmount = $validated['amount_paid'];
 
-            // Create Payment
-            $payment = Payment::create([
+            // Create Payment record linked directly to the file
+            $payment = \App\Models\Payment::create([
+                'bill_file_id'     => $billFile->bill_file_id,
                 'payer'            => $validated['payer'],
                 'amount_paid'      => $validated['amount_paid'],
                 'currency'         => $validated['currency'],
@@ -340,30 +480,33 @@ class PaymentController extends Controller
 
             $billPayments = [];
 
+            // Cascade payments down to any bills that currently exist
             foreach ($bills as $bill) {
-
                 if ($remainingAmount <= 0) break;
 
-                $alreadyAllocated = $bill->payments()->sum('allocated_amount');
+                // Explicit database call to bypass any Eloquent relationship naming discrepancies
+                $alreadyAllocated = \Illuminate\Support\Facades\DB::table('bill_payments')
+                    ->where('bill_id', $bill->bill_id)
+                    ->sum('allocated_amount');
+
                 $billRemaining = $bill->total_amount - $alreadyAllocated;
+                if ($billRemaining <= 0) continue;
 
                 $allocation = min($remainingAmount, $billRemaining);
+                $status = ($allocation + $alreadyAllocated) >= $bill->total_amount ? 'Paid' : 'Partially Paid';
 
-                $status = ($allocation + $alreadyAllocated) >= $bill->total_amount
-                    ? 'Paid'
-                    : 'Partially Paid';
-
-                $billPayment = BillPayment::create([
+                // Create bill payment allocation record
+                $billPayment = \App\Models\BillPayment::create([
                     'bill_id'          => $bill->bill_id,
                     'payment_id'       => $payment->payment_id,
                     'allocated_amount' => $allocation,
-                    'allocation_date'  => now(),
+                    'allocation_date'  => now()->toDateString(),
                     'status'           => $status,
                 ]);
 
                 $billPayments[] = $billPayment;
 
-                // Update bill status
+                // Update individual bill status
                 $bill->update(['bill_status' => $status]);
 
                 $remainingAmount -= $allocation;

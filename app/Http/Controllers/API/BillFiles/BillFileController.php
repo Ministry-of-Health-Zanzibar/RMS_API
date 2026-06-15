@@ -558,12 +558,88 @@ class BillFileController extends Controller
         ]);
     }
 
+    // public function getBillFilesByHospitalId(int $hospitalId)
+    // {
+    //     $user = auth()->user();
+    //     if (!$user->can('View BillFile')) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $hospitalId = (int) $hospitalId;
+
+    //     // Fetch hospital info first
+    //     $hospital = DB::table('hospitals')
+    //         ->where('hospital_id', $hospitalId)
+    //         ->first();
+
+    //     $hospitalName = $hospital->hospital_name ?? null;
+
+    //     // Fetch bill_files with bills, only where total bills match bill_file_amount
+    //     $billFiles = DB::table('bill_files as bf')
+    //         ->leftJoin('bills as b', 'bf.bill_file_id', '=', 'b.bill_file_id')
+    //         ->leftJoin('bill_payments as bp', 'b.bill_id', '=', 'bp.bill_id')
+    //         ->select(
+    //             'bf.bill_file_id',
+    //             'bf.bill_file',
+    //             'bf.bill_start',
+    //             'bf.bill_end',
+    //             DB::raw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) as bill_file_amount'),
+    //             DB::raw('COALESCE(SUM(bp.allocated_amount), 0) as paid_amount'),
+    //             DB::raw('(CAST(bf.bill_file_amount AS DECIMAL(15,2)) - COALESCE(SUM(bp.allocated_amount), 0)) as balance'),
+    //             // DB::raw('COALESCE(SUM(b.total_amount), 0) as total_bill_amount'),
+    //             DB::raw("
+    //                 CASE
+    //                     WHEN COALESCE(SUM(bp.allocated_amount), 0) = 0 THEN 'Pending'
+    //                     WHEN COALESCE(SUM(bp.allocated_amount), 0) < CAST(bf.bill_file_amount AS DECIMAL(15,2)) THEN 'Partially Paid'
+    //                     WHEN COALESCE(SUM(bp.allocated_amount), 0) >= CAST(bf.bill_file_amount AS DECIMAL(15,2)) THEN 'Paid'
+    //                 END as status
+    //             ")
+    //         )
+    //         ->where('bf.hospital_id', $hospitalId)
+    //         ->groupBy(
+    //             'bf.bill_file_id',
+    //             'bf.bill_file',
+    //             'bf.bill_file_amount',
+    //             'bf.bill_start',
+    //             'bf.bill_end'
+    //         )
+    //         // ->havingRaw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) = COALESCE(SUM(b.total_amount), 0)')
+    //         ->get();
+
+    //     $billFilesArray = $billFiles->map(function($item) {
+    //         return (array) $item;
+    //     })->toArray();
+
+    //     // Calculate totals for included bill_files
+    //     $totals = [
+    //         'bill_file_amount' => array_sum(array_column($billFilesArray, 'bill_file_amount')),
+    //         'paid_amount' => array_sum(array_column($billFilesArray, 'paid_amount')),
+    //         'balance' => array_sum(array_column($billFilesArray, 'balance')),
+    //         'status' => $billFilesArray ? 'Mixed' : 'No Bills filled in this Bill file'
+    //     ];
+
+    //     // Wrap result
+    //     $result = [
+    //         'hospital_id' => $hospitalId,
+    //         'hospital_name' => $hospitalName,
+    //         'bill_files' => $billFilesArray,
+    //         'totals' => $totals
+    //     ];
+
+    //     return response()->json([
+    //         'data' => $result,
+    //         'statusCode' => 200
+    //     ]);
+    // }
     public function getBillFilesByHospitalId(int $hospitalId)
     {
         $user = auth()->user();
         if (!$user->can('View BillFile')) {
-            return response([
-                'message' => 'Forbidden',
+            return response()->json([
+                'message'    => 'Forbidden',
                 'statusCode' => 403
             ], 403);
         }
@@ -577,64 +653,135 @@ class BillFileController extends Controller
 
         $hospitalName = $hospital->hospital_name ?? null;
 
-        // Fetch bill_files with bills, only where total bills match bill_file_amount
-        $billFiles = DB::table('bill_files as bf')
-            ->leftJoin('bills as b', 'bf.bill_file_id', '=', 'b.bill_file_id')
-            ->leftJoin('bill_payments as bp', 'b.bill_id', '=', 'bp.bill_id')
+        // Fetch raw totals using subqueries (avoids Cartesian product duplication)
+        $rawBillFiles = DB::table('bill_files as bf')
+            ->where('bf.hospital_id', $hospitalId)
             ->select(
                 'bf.bill_file_id',
                 'bf.bill_file',
                 'bf.bill_start',
                 'bf.bill_end',
-                DB::raw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) as bill_file_amount'),
-                DB::raw('COALESCE(SUM(bp.allocated_amount), 0) as paid_amount'),
-                DB::raw('(CAST(bf.bill_file_amount AS DECIMAL(15,2)) - COALESCE(SUM(bp.allocated_amount), 0)) as balance'),
-                // DB::raw('COALESCE(SUM(b.total_amount), 0) as total_bill_amount'),
-                DB::raw("
-                    CASE
-                        WHEN COALESCE(SUM(bp.allocated_amount), 0) = 0 THEN 'Pending'
-                        WHEN COALESCE(SUM(bp.allocated_amount), 0) < CAST(bf.bill_file_amount AS DECIMAL(15,2)) THEN 'Partially Paid'
-                        WHEN COALESCE(SUM(bp.allocated_amount), 0) >= CAST(bf.bill_file_amount AS DECIMAL(15,2)) THEN 'Paid'
-                    END as status
-                ")
+                
+                // Safely format the string to a decimal (PostgreSQL syntax)
+                DB::raw("CAST(REPLACE(bf.bill_file_amount, ',', '') AS DECIMAL(15,2)) as file_amount"),
+
+                // Old/Itemized Payments
+                DB::raw("COALESCE((
+                    SELECT SUM(bp.allocated_amount) 
+                    FROM bill_payments bp 
+                    JOIN bills b ON bp.bill_id = b.bill_id 
+                    WHERE b.bill_file_id = bf.bill_file_id
+                ), 0) as itemized_paid"),
+
+                // New/Advance Payments (Safely ignoring ones that are already itemized)
+                DB::raw("COALESCE((
+                    SELECT SUM(p.amount_paid) 
+                    FROM payments p 
+                    WHERE p.bill_file_id = bf.bill_file_id 
+                    AND NOT EXISTS (SELECT 1 FROM bill_payments bp2 WHERE bp2.payment_id = p.payment_id)
+                ), 0) as advance_paid")
             )
-            ->where('bf.hospital_id', $hospitalId)
-            ->groupBy(
-                'bf.bill_file_id',
-                'bf.bill_file',
-                'bf.bill_file_amount',
-                'bf.bill_start',
-                'bf.bill_end'
-            )
-            // ->havingRaw('CAST(bf.bill_file_amount AS DECIMAL(15,2)) = COALESCE(SUM(b.total_amount), 0)')
+            ->orderBy('bf.created_at', 'desc')
             ->get();
 
-        $billFilesArray = $billFiles->map(function($item) {
-            return (array) $item;
+        // Process the exact math and status dynamically via Laravel Collections
+        $billFilesArray = $rawBillFiles->map(function($item) {
+            $fileAmount = (float) $item->file_amount;
+            
+            // Combine both payment types
+            $paidAmount = (float) $item->itemized_paid + (float) $item->advance_paid;
+            $balance = $fileAmount - $paidAmount;
+
+            // Determine status cleanly
+            $status = 'Pending';
+            if ($paidAmount >= $fileAmount && $fileAmount > 0) {
+                $status = 'Paid';
+            } elseif ($paidAmount > 0) {
+                $status = 'Partially Paid';
+            }
+
+            return [
+                'bill_file_id'     => $item->bill_file_id,
+                'bill_file'        => $item->bill_file,
+                'bill_start'       => $item->bill_start,
+                'bill_end'         => $item->bill_end,
+                'bill_file_amount' => $fileAmount,
+                'paid_amount'      => $paidAmount,
+                'balance'          => $balance,
+                'status'           => $status
+            ];
         })->toArray();
 
-        // Calculate totals for included bill_files
+        // Calculate grand totals for the summary block
         $totals = [
             'bill_file_amount' => array_sum(array_column($billFilesArray, 'bill_file_amount')),
-            'paid_amount' => array_sum(array_column($billFilesArray, 'paid_amount')),
-            'balance' => array_sum(array_column($billFilesArray, 'balance')),
-            'status' => $billFilesArray ? 'Mixed' : 'No Bills filled in this Bill file'
-        ];
-
-        // Wrap result
-        $result = [
-            'hospital_id' => $hospitalId,
-            'hospital_name' => $hospitalName,
-            'bill_files' => $billFilesArray,
-            'totals' => $totals
+            'paid_amount'      => array_sum(array_column($billFilesArray, 'paid_amount')),
+            'balance'          => array_sum(array_column($billFilesArray, 'balance')),
+            'status'           => empty($billFilesArray) ? 'No Files Found' : 'Summary'
         ];
 
         return response()->json([
-            'data' => $result,
+            'data' => [
+                'hospital_id'   => $hospitalId,
+                'hospital_name' => $hospitalName,
+                'bill_files'    => $billFilesArray,
+                'totals'        => $totals
+            ],
             'statusCode' => 200
         ]);
     }
 
+    // public function getBillFilesGroupByHospitals()
+    // {
+    //     $user = auth()->user();
+    //     if (!$user->can('View BillFile')) {
+    //         return response()->json([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403
+    //         ], 403);
+    //     }
+
+    //     $billFiles = DB::table('bill_files as bf')
+    //         ->join('hospitals as h', 'bf.hospital_id', '=', 'h.hospital_id')
+    //         ->leftJoin('bills as b', 'bf.bill_file_id', '=', 'b.bill_file_id')
+    //         ->leftJoin('bill_payments as bp', 'b.bill_id', '=', 'bp.bill_id')
+    //         ->select(
+    //             'h.hospital_name',
+    //             'h.hospital_id',
+    //             DB::raw('SUM(DISTINCT CAST(bf.bill_file_amount AS DECIMAL(15,2))) as total_bill_file_amount'),
+    //             DB::raw('COALESCE(SUM(bp.allocated_amount), 0) as total_allocated_amount'),
+    //             DB::raw('(SUM(DISTINCT CAST(bf.bill_file_amount AS DECIMAL(15,2))) - COALESCE(SUM(bp.allocated_amount), 0)) as total_balance'),
+    //             DB::raw("
+    //                 CASE 
+    //                     WHEN COALESCE(SUM(bp.allocated_amount), 0) = 0 THEN 'Pending'
+    //                     WHEN COALESCE(SUM(bp.allocated_amount), 0) < SUM(DISTINCT CAST(bf.bill_file_amount AS DECIMAL(15,2))) THEN 'Partially Paid'
+    //                     WHEN COALESCE(SUM(bp.allocated_amount), 0) >= SUM(DISTINCT CAST(bf.bill_file_amount AS DECIMAL(15,2))) THEN 'Paid'
+    //                 END as status
+    //             ")
+    //         )
+    //         ->groupBy('h.hospital_name', 'h.hospital_id')
+    //         // ->havingRaw('SUM(CAST(bf.bill_file_amount AS DECIMAL(15,2))) = COALESCE(SUM(b.total_amount), 0)')
+    //         ->get();
+
+    //     $billFilesArray = $billFiles->map(fn($item) => (array) $item)->toArray();
+
+    //     $grandTotals = [
+    //         'hospital_name'           => 'ALL HOSPITALS',
+    //         'hospital_id'             => null,
+    //         'total_bill_file_amount'  => array_sum(array_column($billFilesArray, 'total_bill_file_amount')),
+    //         'total_allocated_amount'  => array_sum(array_column($billFilesArray, 'total_allocated_amount')),
+    //         'total_balance'           => array_sum(array_column($billFilesArray, 'total_balance')),
+    //         'status'                  => 'Summary'
+    //     ];
+
+    //     return response()->json([
+    //         'data'       => [
+    //             'hospitals' => $billFilesArray,
+    //             'totals'    => $grandTotals
+    //         ],
+    //         'statusCode' => 200
+    //     ]);
+    // }
     public function getBillFilesGroupByHospitals()
     {
         $user = auth()->user();
@@ -645,29 +792,62 @@ class BillFileController extends Controller
             ], 403);
         }
 
-        $billFiles = DB::table('bill_files as bf')
-            ->join('hospitals as h', 'bf.hospital_id', '=', 'h.hospital_id')
-            ->leftJoin('bills as b', 'bf.bill_file_id', '=', 'b.bill_file_id')
-            ->leftJoin('bill_payments as bp', 'b.bill_id', '=', 'bp.bill_id')
+        // 1. SUBQUERY: Calculate exact totals per bill_file safely
+        // 1. SUBQUERY: Calculate exact totals per bill_file safely
+        $billFileTotals = DB::table('bill_files as bf')
+            ->select(
+                'bf.hospital_id',
+                // FIX: Use single quotes for PostgreSQL string replacement
+                DB::raw("CAST(REPLACE(bf.bill_file_amount, ',', '') AS DECIMAL(15,2)) as file_amount"),
+                
+                // Old/Itemized Payments: Sum from bill_payments via bills
+                DB::raw('COALESCE((
+                    SELECT SUM(bp.allocated_amount) 
+                    FROM bill_payments bp 
+                    JOIN bills b ON bp.bill_id = b.bill_id 
+                    WHERE b.bill_file_id = bf.bill_file_id
+                ), 0) as itemized_paid'),
+
+                // New/Advance Payments: Sum directly from payments table
+                DB::raw('COALESCE((
+                    SELECT SUM(p.amount_paid) 
+                    FROM payments p 
+                    WHERE p.bill_file_id = bf.bill_file_id 
+                    AND NOT EXISTS (SELECT 1 FROM bill_payments bp2 WHERE bp2.payment_id = p.payment_id)
+                ), 0) as advance_paid')
+            );
+
+        // 2. MAIN QUERY: Group the clean totals by hospital
+        $billFiles = DB::table('hospitals as h')
+            ->joinSub($billFileTotals, 'totals', 'h.hospital_id', '=', 'totals.hospital_id')
             ->select(
                 'h.hospital_name',
                 'h.hospital_id',
-                DB::raw('SUM(DISTINCT CAST(bf.bill_file_amount AS DECIMAL(15,2))) as total_bill_file_amount'),
-                DB::raw('COALESCE(SUM(bp.allocated_amount), 0) as total_allocated_amount'),
-                DB::raw('(SUM(DISTINCT CAST(bf.bill_file_amount AS DECIMAL(15,2))) - COALESCE(SUM(bp.allocated_amount), 0)) as total_balance'),
+                DB::raw('SUM(totals.file_amount) as total_bill_file_amount'),
+                DB::raw('SUM(totals.itemized_paid + totals.advance_paid) as total_allocated_amount'),
+                DB::raw('SUM(totals.file_amount) - SUM(totals.itemized_paid + totals.advance_paid) as total_balance'),
                 DB::raw("
                     CASE 
-                        WHEN COALESCE(SUM(bp.allocated_amount), 0) = 0 THEN 'Pending'
-                        WHEN COALESCE(SUM(bp.allocated_amount), 0) < SUM(DISTINCT CAST(bf.bill_file_amount AS DECIMAL(15,2))) THEN 'Partially Paid'
-                        WHEN COALESCE(SUM(bp.allocated_amount), 0) >= SUM(DISTINCT CAST(bf.bill_file_amount AS DECIMAL(15,2))) THEN 'Paid'
+                        WHEN SUM(totals.itemized_paid + totals.advance_paid) = 0 THEN 'Pending'
+                        WHEN SUM(totals.itemized_paid + totals.advance_paid) < SUM(totals.file_amount) THEN 'Partially Paid'
+                        WHEN SUM(totals.itemized_paid + totals.advance_paid) >= SUM(totals.file_amount) THEN 'Paid'
                     END as status
                 ")
             )
             ->groupBy('h.hospital_name', 'h.hospital_id')
-            // ->havingRaw('SUM(CAST(bf.bill_file_amount AS DECIMAL(15,2))) = COALESCE(SUM(b.total_amount), 0)')
             ->get();
 
-        $billFilesArray = $billFiles->map(fn($item) => (array) $item)->toArray();
+        // Ensure variables are cleanly formatted as floats for the frontend
+        $billFilesArray = $billFiles->map(function ($item) {
+            return [
+                'hospital_name'          => $item->hospital_name,
+                'hospital_id'            => $item->hospital_id,
+                'total_bill_file_amount' => (float) $item->total_bill_file_amount,
+                'total_allocated_amount' => (float) $item->total_allocated_amount,
+                'total_balance'          => (float) $item->total_balance,
+                'status'                 => $item->status,
+            ];
+        })->toArray();
 
         $grandTotals = [
             'hospital_name'           => 'ALL HOSPITALS',
