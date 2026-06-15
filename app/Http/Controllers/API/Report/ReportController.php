@@ -219,31 +219,76 @@ class ReportController extends Controller
         }
     }
 
+    // public function getMonthlyMaleAndFemaleReferralReport()
+    // {
+    //     $user = auth()->user();
+    //     if (!$user->can('View Referral Dashboard')) {
+    //         return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+    //     }
+
+    //     $data = DB::table('referrals')
+    //         ->join('patients', 'referrals.patient_id', '=', 'patients.patient_id')
+    //         // Match the exclusion logic used in your overall counts
+    //         ->whereNotIn('referrals.status', ['Pending', 'Cancelled', 'Requested'])
+    //         ->whereNull('referrals.deleted_at')
+    //         ->select(
+    //             DB::raw("TO_CHAR(referrals.created_at, 'YYYY-MM') as month"),
+    //             // Use LOWER() to ensure 'Male' and 'male' are both counted
+    //             DB::raw("SUM(CASE WHEN LOWER(patients.gender) IN ('male', 'm') THEN 1 ELSE 0 END) as male_referrals"),
+    //             DB::raw("SUM(CASE WHEN LOWER(patients.gender) IN ('female', 'f') THEN 1 ELSE 0 END) as female_referrals"),
+    //             DB::raw('COUNT(referrals.referral_id) as total_referrals')
+    //         )
+    //         ->groupBy(DB::raw("TO_CHAR(referrals.created_at, 'YYYY-MM')"))
+    //         ->orderBy(DB::raw("TO_CHAR(referrals.created_at, 'YYYY-MM')"))
+    //         ->get();
+
+    //     return response()->json([
+    //         'data' => $data,
+    //         'statusCode' => 200,
+    //     ]);
+    // }
     public function getMonthlyMaleAndFemaleReferralReport()
     {
         $user = auth()->user();
+
         if (!$user->can('View Referral Dashboard')) {
             return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
-        $data = DB::table('referrals')
+        $year = date('Y');
+
+        // 1. Get raw DB aggregation
+        $raw = DB::table('referrals')
             ->join('patients', 'referrals.patient_id', '=', 'patients.patient_id')
-            // Match the exclusion logic used in your overall counts
             ->whereNotIn('referrals.status', ['Pending', 'Cancelled', 'Requested'])
             ->whereNull('referrals.deleted_at')
+            ->whereYear('referrals.created_at', $year)
             ->select(
                 DB::raw("TO_CHAR(referrals.created_at, 'YYYY-MM') as month"),
-                // Use LOWER() to ensure 'Male' and 'male' are both counted
                 DB::raw("SUM(CASE WHEN LOWER(patients.gender) IN ('male', 'm') THEN 1 ELSE 0 END) as male_referrals"),
                 DB::raw("SUM(CASE WHEN LOWER(patients.gender) IN ('female', 'f') THEN 1 ELSE 0 END) as female_referrals"),
                 DB::raw('COUNT(referrals.referral_id) as total_referrals')
             )
             ->groupBy(DB::raw("TO_CHAR(referrals.created_at, 'YYYY-MM')"))
             ->orderBy(DB::raw("TO_CHAR(referrals.created_at, 'YYYY-MM')"))
-            ->get();
+            ->get()
+            ->keyBy('month');
+
+        // 2. Build full 12-month structure
+        $months = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $key = $year . '-' . str_pad($m, 2, '0', STR_PAD_LEFT);
+
+            $months[] = [
+                'month' => $key,
+                'male_referrals' => $raw[$key]->male_referrals ?? 0,
+                'female_referrals' => $raw[$key]->female_referrals ?? 0,
+                'total_referrals' => $raw[$key]->total_referrals ?? 0,
+            ];
+        }
 
         return response()->json([
-            'data' => $data,
+            'data' => $months,
             'statusCode' => 200,
         ]);
     }
