@@ -69,11 +69,15 @@ class DiagnosisController extends Controller
 
         // Selecting only the primary key and the specific fields you requested
         // toBase() makes this significantly faster and lighter on memory
+        $perPage = request()->get('per_page', 20);
+
         $diagnoses = Diagnosis::withTrashed()
             ->select('diagnosis_id', 'diagnosis_name', 'diagnosis_code')
             ->orderBy('diagnosis_name', 'asc')
-            ->toBase()
-            ->get();
+            ->paginate($perPage);
+
+        // ->toBase()
+        // ->get();
 
         return response()->json([
             'message' => 'Diagnoses retrieved successfully',
@@ -423,7 +427,6 @@ class DiagnosisController extends Controller
                 'inserted' => $inserted,
                 'statusCode' => 200,
             ], 200);
-
         } catch (\Exception $e) {
             Log::error('Diagnosis import failed: ' . $e->getMessage());
             return response()->json([

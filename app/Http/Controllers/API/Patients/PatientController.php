@@ -314,6 +314,9 @@ class PatientController extends Controller
             $query->whereNotIn('users.email', $dataEntryEmails);
         }
 
+        // org
+        $perPage = request()->get('per_page', 10);
+
         $patients = $query
             ->select(
                 'patients.*',
@@ -339,9 +342,17 @@ class PatientController extends Controller
                 END ASC
             ")
             ->orderBy('patients.patient_id', 'desc')
-            ->get();
+            // ->get();
+            ->paginate($perPage);
 
-        return response(['data' => $patients, 'statusCode' => 200], 200);
+
+        return response(
+            [
+                'data' => $patients,
+                'statusCode' => 200
+            ],
+            200
+        );
     }
 
 
