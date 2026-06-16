@@ -14,6 +14,7 @@ use App\Mail\NewPatientRecordNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Mail;
+use App\Services\MatibabuService;
 
 class PatientController extends Controller
 {
@@ -1889,11 +1890,47 @@ class PatientController extends Controller
         $patient = Patient::where('matibabu_card', $card)->first();
 
         if (!$patient) {
-            return response()->json([
-                'message' => 'New patient Matibabu Card detected',
-                'success' => true,
-                'statusCode' => 204
-            ], 200);
+            try {
+                $imisPatient = app(MatibabuService::class)->enquireInsuree($card);
+
+                // Safe fallback check: Extract payload data if nested under a 'data' array key wrapper
+                $imisData = isset($imisPatient['data']) ? $imisPatient['data'] : $imisPatient;
+
+                // Normalize gender representation from codes to verbose names
+                $genderMap = ['M' => 'Male', 'F' => 'Female'];
+                $genderRaw = strtoupper($imisData['gender'] ?? '');
+
+                // Translate openIMIS format directly to your local ERIS data attributes layout
+                $mappedPatient = [
+                    'patient_id'    => null, // Unregistered locally
+                    'name'          => $imisData['insureeName'] ?? trim(($imisData['firstName'] ?? '') . ' ' . ($imisData['lastName'] ?? '')),
+                    'matibabu_card' => $imisData['chfid'] ?? $card,
+                    'zhsfid'        => $imisData['zhsfid'] ?? null,
+                    'zan_id'        => (($imisData['source_of_id'] ?? '') === 'Z') ? ($imisData['id'] ?? null) : null,
+                    'date_of_birth' => $imisData['dob'] ?? null,
+                    'gender'        => $genderMap[$genderRaw] ?? $imisData['gender'],
+                    'phone'         => !empty($imisData['phone']) ? preg_replace('/\D/', '', $imisData['phone']) : null,
+                    'location_id'   => $imisData['shehia'] ?? null,
+                    'job'           => null,
+                    'position'      => null,
+                ];
+
+                return response()->json([
+                    'message'    => 'Patient found in Matibabu/openIMIS',
+                    'success'    => true,
+                    'statusCode' => 200,
+                    'source'     => 'matibabu',
+                    'data'       => $mappedPatient
+                ]);
+
+            } catch (\Exception $e) {
+                return response()->json([
+                    'message'    => 'Patient not found in ERIS or Matibabu',
+                    'success'    => false,
+                    'statusCode' => 404,
+                    'error'      => $e->getMessage()
+                ], 404);
+            }
         }
 
         // Use the helper to determine eligibility based on LATEST records

@@ -19,7 +19,7 @@ class MatibabuService
         return Cache::remember('matibabu_token', now()->addMinutes(50), function () {
 
             $response = Http::post(
-                $this->baseUrl.'/api/login',
+                $this->baseUrl . '/api/login',
                 [
                     'userName' => config('services.matibabu.username'),
                     'password' => config('services.matibabu.password')
@@ -32,5 +32,24 @@ class MatibabuService
 
             return $response->json()['access_token'];
         });
+    }
+
+    public function enquireInsuree(string $matibabuCard)
+    {
+        $token = $this->getToken();
+
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->get(
+                $this->baseUrl . '/api/insuree/' . $matibabuCard . '/enquire'
+            );
+
+        if (!$response->successful()) {
+            throw new \Exception(
+                'Failed to enquire insuree: ' . $response->body()
+            );
+        }
+
+        return $response->json();
     }
 }
