@@ -1909,7 +1909,7 @@ class PatientController extends Controller
                     'zan_id'        => (($imisData['source_of_id'] ?? '') === 'Z') ? ($imisData['id'] ?? null) : null,
                     'date_of_birth' => $imisData['dob'] ?? null,
                     'gender'        => $genderMap[$genderRaw] ?? $imisData['gender'],
-                    'phone'         => $imisData['phone'] ?? null,
+                    'phone'         => !empty($imisData['phone']) ? preg_replace('/\D/', '', $imisData['phone']) : null,
                     'location_id'   => $imisData['shehia'] ?? null,
                     'job'           => null,
                     'position'      => null,
