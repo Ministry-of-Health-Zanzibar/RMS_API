@@ -77,34 +77,47 @@ class MedicalBoadController extends Controller
     //     ]);
     // }
     public function index()
-{
-    $user = auth()->user();
-    $dataEntryEmails = ['medicalboard@mohz.go.tz', 'hospital@mohz.go.tz', 'mkurugenzi@mohz.go.tz', 'dguser@mohz.go.tz'];
+    {
+        $user = auth()->user();
+        $dataEntryEmails = ['medicalboard@mohz.go.tz', 'hospital@mohz.go.tz', 'mkurugenzi@mohz.go.tz', 'dguser@mohz.go.tz'];
 
-    if (!$user->can('View Patient List')) {
-        return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
+        if (!$user->can('View Patient List')) {
+            return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
+        }
+
+        $isDataEntryUser = in_array($user->email, $dataEntryEmails);
+
+        $query = PatientList::with(['creator', 'patients.geographicalLocation', 'boardMembers'])
+            ->withTrashed();
+
+        // --- LOGIC YA KUTENGANISHA ---
+        if ($isDataEntryUser) {
+            $query->whereHas('creator', function ($q) use ($dataEntryEmails) {
+                $q->whereIn('email', $dataEntryEmails);
+            });
+        } else {
+            $query->whereHas('creator', function ($q) use ($dataEntryEmails) {
+                $q->whereNotIn('email', $dataEntryEmails);
+            });
+        }
+
+
+        // $lists = $query->get();
+
+        // return response()->json(['data' => $lists, 'statusCode' => 200]);
+
+        // paginations
+        $perPage = request()->get('per_page', 10);
+
+        $lists = $query
+            ->latest('created_at')
+            ->paginate($perPage);
+
+        return response()->json([
+            'data' => $lists,
+            'statusCode' => 200
+        ]);
     }
-
-    $isDataEntryUser = in_array($user->email, $dataEntryEmails);
-
-    $query = PatientList::with(['creator', 'patients.geographicalLocation', 'boardMembers'])
-        ->withTrashed();
-
-    // --- LOGIC YA KUTENGANISHA ---
-    if ($isDataEntryUser) {
-        $query->whereHas('creator', function($q) use ($dataEntryEmails) {
-            $q->whereIn('email', $dataEntryEmails);
-        });
-    } else {
-        $query->whereHas('creator', function($q) use ($dataEntryEmails) {
-            $q->whereNotIn('email', $dataEntryEmails);
-        });
-    }
-
-    $lists = $query->get();
-
-    return response()->json(['data' => $lists, 'statusCode' => 200]);
-}
 
     /**
      * @OA\Post(
@@ -512,7 +525,7 @@ class MedicalBoadController extends Controller
             ], 403);
         }
 
-        $list = PatientList::with(['patients.files', 'patients.geographicalLocation','boardMembers'])
+        $list = PatientList::with(['patients.files', 'patients.geographicalLocation', 'boardMembers'])
             ->find($patientListId);
 
         if (!$list) {
@@ -594,7 +607,6 @@ class MedicalBoadController extends Controller
                 ],
                 'statusCode' => 200,
             ], 200);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -661,6 +673,4 @@ class MedicalBoadController extends Controller
 
         return $history;
     }
-
-
 }
