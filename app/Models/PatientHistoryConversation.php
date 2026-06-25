@@ -67,6 +67,19 @@ class PatientHistoryConversation extends Model
         return $this->hasMany(self::class, 'parent_id', 'conversation_id');
     }
 
+    // App\Models\PatientHistoryConversation.php
+
+    public function statuses()
+    {
+        return $this->hasMany(PatientHistoryConversationStatus::class, 'conversation_id', 'conversation_id');
+    }
+
+    // Helper to check if a specific user has read this message
+    public function isReadBy($userId)
+    {
+        return $this->statuses()->where('user_id', $userId)->whereNotNull('read_at')->exists();
+    }
+
     /**
      * Activity log options
      */

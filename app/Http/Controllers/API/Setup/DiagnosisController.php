@@ -67,16 +67,14 @@ class DiagnosisController extends Controller
             ], 403);
         }
 
-        // Selecting only the primary key and the specific fields you requested
-        // toBase() makes this significantly faster and lighter on memory
-        // $perPage = request()->get('per_page', 20);
-
-        $diagnoses = Diagnosis::withTrashed()
-            ->select('diagnosis_id', 'diagnosis_name', 'diagnosis_code')
-            ->orderBy('diagnosis_name', 'asc')
-            // ->paginate($perPage);
-            ->toBase()
-            ->get();
+        $diagnoses = Diagnosis::select(
+            'diagnosis_id',
+            'diagnosis_name',
+            'diagnosis_code'
+        )
+        ->orderBy('diagnosis_name')
+        ->toBase()
+        ->get();
 
         return response()->json([
             'message' => 'Diagnoses retrieved successfully',

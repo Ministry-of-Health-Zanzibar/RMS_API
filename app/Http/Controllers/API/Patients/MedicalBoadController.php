@@ -56,26 +56,6 @@ class MedicalBoadController extends Controller
      *     )
      * )
      */
-    // public function index()
-    // {
-    //     $user = auth()->user();
-
-    //     if (!$user->can('View Patient List')) {
-    //         return response()->json([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     $lists = PatientList::with(['creator', 'patients.geographicalLocation', 'boardMembers'])
-    //         ->withTrashed()
-    //         ->get();
-
-    //     return response()->json([
-    //         'data' => $lists,
-    //         'statusCode' => 200
-    //     ]);
-    // }
     public function index()
     {
         $user = auth()->user();
@@ -101,18 +81,7 @@ class MedicalBoadController extends Controller
             });
         }
 
-
-        // $lists = $query->get();
-
-        // return response()->json(['data' => $lists, 'statusCode' => 200]);
-
-        // paginations
-        $perPage = request()->get('per_page', 10);
-
-        $lists = $query
-            ->latest('created_at')
-            ->paginate($perPage);
-
+        $lists = $query->get();
         return response()->json([
             'data' => $lists,
             'statusCode' => 200
@@ -540,7 +509,6 @@ class MedicalBoadController extends Controller
             'statusCode' => 200
         ]);
     }
-
 
     public function assignPatientsToList(Request $request, int $patientListId)
     {

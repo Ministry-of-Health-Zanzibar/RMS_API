@@ -208,6 +208,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Patient History Conversations
     Route::prefix('patient-history-conversations')->group(function () {
+        Route::get('/unread', [App\Http\Controllers\API\Patients\PatientHistoryConversationController::class, 'unreadNotifications']);
+        Route::post('/mark-read', [App\Http\Controllers\API\Patients\PatientHistoryConversationController::class, 'markAsRead']);
         Route::get('/{patientHistoryId}/individual-chat',
             [App\Http\Controllers\API\Patients\PatientHistoryConversationController::class, 'show']
         );
