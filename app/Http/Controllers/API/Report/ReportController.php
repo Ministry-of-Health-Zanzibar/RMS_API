@@ -836,4 +836,135 @@ class ReportController extends Controller
 
     // PRINTABLE REPORT ========================================================================//
 
+
+    public function workflowStatusReport()
+    {
+        $user = auth()->user();
+
+        if (! $user->can('View Referral Dashboard')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403,
+            ], 403);
+        }
+
+        try {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Medical Board Workflow
+            |--------------------------------------------------------------------------
+            */
+            $medicalBoard = DB::table('patient_histories')
+                ->whereNull('deleted_at')
+                ->selectRaw("
+                    COUNT(*) as total,
+                    COUNT(CASE WHEN status='pending' THEN 1 END) as pending,
+                    COUNT(CASE WHEN status='reviewed' THEN 1 END) as reviewed,
+                    COUNT(CASE WHEN status='assigned' THEN 1 END) as assigned,
+                    COUNT(CASE WHEN status='requested' THEN 1 END) as requested,
+                    COUNT(CASE WHEN status='approved' THEN 1 END) as approved
+                ")
+                ->first();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Referral Workflow
+            |--------------------------------------------------------------------------
+            */
+            $referrals = DB::table('referrals')
+                ->whereNull('deleted_at')
+                ->selectRaw("
+                    COUNT(*) as total,
+                    COUNT(CASE WHEN status='Confirmed' THEN 1 END) as confirmed,
+                    COUNT(CASE WHEN status='Cancelled' THEN 1 END) as cancelled,
+                    COUNT(CASE WHEN status='Closed' THEN 1 END) as closed,
+                    COUNT(CASE WHEN status='Transferred' THEN 1 END) as transferred,
+                    COUNT(CASE WHEN status='Death' THEN 1 END) as death,
+                    COUNT(CASE WHEN status='Expired' THEN 1 END) as expired,
+                    COUNT(CASE WHEN status='BoardedOut' THEN 1 END) as boarded_out
+                ")
+                ->first();
+
+            return response()->json([
+                'data' => [
+
+                    'medical_history' => [
+                        'total' => (int) $medicalBoard->total,
+
+                        'statuses' => [
+                            [
+                                'stage' => 'Pending',
+                                'count' => (int) $medicalBoard->pending,
+                            ],
+                            [
+                                'stage' => 'Reviewed',
+                                'count' => (int) $medicalBoard->reviewed,
+                            ],
+                            [
+                                'stage' => 'Assigned',
+                                'count' => (int) $medicalBoard->assigned,
+                            ],
+                            [
+                                'stage' => 'Requested',
+                                'count' => (int) $medicalBoard->requested,
+                            ],
+                            [
+                                'stage' => 'Approved',
+                                'count' => (int) $medicalBoard->approved,
+                            ],
+                        ]
+                    ],
+
+                    'referrals' => [
+                        'total' => (int) $referrals->total,
+
+                        'statuses' => [
+                            [
+                                'stage' => 'Confirmed',
+                                'count' => (int) $referrals->confirmed,
+                            ],
+                            [
+                                'stage' => 'Cancelled',
+                                'count' => (int) $referrals->cancelled,
+                            ],
+                            [
+                                'stage' => 'Closed',
+                                'count' => (int) $referrals->closed,
+                            ],
+                            [
+                                'stage' => 'Transferred',
+                                'count' => (int) $referrals->transferred,
+                            ],
+                            [
+                                'stage' => 'Death',
+                                'count' => (int) $referrals->death,
+                            ],
+                            [
+                                'stage' => 'Expired',
+                                'count' => (int) $referrals->expired,
+                            ],
+                            [
+                                'stage' => 'Boarded Out',
+                                'count' => (int) $referrals->boarded_out,
+                            ],
+                        ]
+                    ]
+                ],
+
+                'statusCode' => 200
+
+            ]);
+
+        } catch (\Throwable $e) {
+
+            return response()->json([
+                'message' => 'Failed to generate workflow report.',
+                'error' => $e->getMessage(),
+                'statusCode' => 500,
+            ], 500);
+
+        }
+    }
+
 }
