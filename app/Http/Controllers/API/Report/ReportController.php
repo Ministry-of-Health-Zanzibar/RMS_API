@@ -508,6 +508,63 @@ class ReportController extends Controller
         ]);
     }
 
+    // public function searchReferralReport(Request $request)
+    // {
+    //     // Permission check
+    //     $user = auth()->user();
+    //     if (! $user->can('View Report')) {
+    //         return response([
+    //             'message' => 'Forbidden',
+    //             'statusCode' => 403,
+    //         ], 403);
+    //     }
+
+    //     $query = DB::table('referrals')
+    //         ->join('patients', 'patients.patient_id', '=', 'referrals.patient_id')
+    //         ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
+    //         ->join('reasons', 'reasons.reason_id', '=', 'referrals.reason_id')
+    //         ->leftJoin('insurances', 'insurances.patient_id', '=', 'patients.patient_id')
+    //         ->select(
+    //             'referrals.referral_id',
+    //             'referrals.created_at',
+    //             'referrals.status as referral_status',
+    //             'patients.patient_id',
+    //             'patients.name as patient_name',
+    //             'hospitals.hospital_name',
+    //             'hospitals.hospital_address',
+    //             'reasons.referral_reason_name',
+    //             'insurances.insurance_provider_name'
+    //         );
+
+    //     // Filters (Postgres uses ILIKE)
+    //     if ($request->filled('patient_name')) {
+    //         $query->where('patients.name', 'ILIKE', '%'.$request->patient_name.'%');
+    //     }
+
+    //     if ($request->filled('hospital_name')) {
+    //         $query->where('hospitals.hospital_name', 'ILIKE', '%'.$request->hospital_name.'%');
+    //     }
+
+    //     if ($request->filled('hospital_address')) {
+    //         $query->where('hospitals.hospital_address', 'ILIKE', '%'.$request->hospital_address.'%');
+    //     }
+
+    //     if ($request->filled('referral_reason_name')) {
+    //         $query->where('reasons.referral_reason_name', 'ILIKE', '%'.$request->referral_reason_name.'%');
+    //     }
+
+    //     // Date range filter
+    //     if ($request->filled('start_date') && $request->filled('end_date')) {
+    //         $query->whereBetween('referrals.created_at', [$request->start_date, $request->end_date]);
+    //     }
+
+    //     $results = $query->get();
+
+    //     return response([
+    //         'data' => $results,
+    //         'statusCode' => 200,
+    //     ], 200);
+    // }
     public function searchReferralReport(Request $request)
     {
         // Permission check
@@ -524,41 +581,83 @@ class ReportController extends Controller
             ->join('hospitals', 'hospitals.hospital_id', '=', 'referrals.hospital_id')
             ->join('reasons', 'reasons.reason_id', '=', 'referrals.reason_id')
             ->leftJoin('insurances', 'insurances.patient_id', '=', 'patients.patient_id')
+            ->leftJoin('referral_letters', 'referral_letters.referral_id', '=', 'referrals.referral_id')
+
             ->select(
                 'referrals.referral_id',
                 'referrals.created_at',
                 'referrals.status as referral_status',
+
                 'patients.patient_id',
                 'patients.name as patient_name',
+
                 'hospitals.hospital_name',
                 'hospitals.hospital_address',
-                'reasons.referral_reason_name',
-                'insurances.insurance_provider_name'
-            );
 
-        // Filters (Postgres uses ILIKE)
+                'reasons.referral_reason_name',
+
+                'insurances.insurance_provider_name',
+
+                // Referral letter dates
+                'referral_letters.start_date',
+                'referral_letters.end_date'
+            )
+
+            ->selectRaw("
+                (
+                    SELECT STRING_AGG(DISTINCT d.diagnosis_name, ', ')
+                    FROM patient_histories ph
+                    JOIN history_diagnosis hd
+                        ON hd.patient_history_id = ph.patient_histories_id
+                    JOIN diagnoses d
+                        ON d.diagnosis_id = hd.diagnosis_id
+                    WHERE ph.patient_id = patients.patient_id
+                        AND hd.added_by = 'medical_board'
+                ) AS board_diagnoses
+            ");
+
+        // Filters
         if ($request->filled('patient_name')) {
-            $query->where('patients.name', 'ILIKE', '%'.$request->patient_name.'%');
+            $query->where('patients.name', 'ILIKE', '%' . $request->patient_name . '%');
         }
 
         if ($request->filled('hospital_name')) {
-            $query->where('hospitals.hospital_name', 'ILIKE', '%'.$request->hospital_name.'%');
+            $query->where('hospitals.hospital_name', 'ILIKE', '%' . $request->hospital_name . '%');
         }
 
         if ($request->filled('hospital_address')) {
-            $query->where('hospitals.hospital_address', 'ILIKE', '%'.$request->hospital_address.'%');
+            $query->where('hospitals.hospital_address', 'ILIKE', '%' . $request->hospital_address . '%');
         }
 
         if ($request->filled('referral_reason_name')) {
-            $query->where('reasons.referral_reason_name', 'ILIKE', '%'.$request->referral_reason_name.'%');
+            $query->where('reasons.referral_reason_name', 'ILIKE', '%' . $request->referral_reason_name . '%');
         }
 
-        // Date range filter
+        // Filter by referral letter dates (DG referral period)
         if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('referrals.created_at', [$request->start_date, $request->end_date]);
+            $query->whereBetween('referral_letters.start_date', [
+                $request->start_date,
+                $request->end_date
+            ]);
         }
 
         $results = $query->get();
+
+        foreach ($results as $result) {
+
+            $result->board_diagnoses = DB::table('patient_histories as ph')
+                ->join('history_diagnosis as hd', 'hd.patient_history_id', '=', 'ph.patient_histories_id')
+                ->join('diagnoses as d', 'd.diagnosis_id', '=', 'hd.diagnosis_id')
+                ->where('ph.patient_id', $result->patient_id)
+                ->where('hd.added_by', 'medical_board')
+                ->select(
+                    'd.diagnosis_id',
+                    'd.diagnosis_code',
+                    'd.diagnosis_name'
+                )
+                ->distinct()
+                ->get();
+        }
 
         return response([
             'data' => $results,
