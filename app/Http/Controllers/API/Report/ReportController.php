@@ -608,7 +608,7 @@ class ReportController extends Controller
                     SELECT STRING_AGG(DISTINCT d.diagnosis_name, ', ')
                     FROM patient_histories ph
                     JOIN history_diagnosis hd
-                        ON hd.patient_history_id = ph.patient_histories_id
+                        ON hd.patient_histories_id = ph.patient_histories_id
                     JOIN diagnoses d
                         ON d.diagnosis_id = hd.diagnosis_id
                     WHERE ph.patient_id = patients.patient_id
@@ -646,7 +646,7 @@ class ReportController extends Controller
         foreach ($results as $result) {
 
             $result->board_diagnoses = DB::table('patient_histories as ph')
-                ->join('history_diagnosis as hd', 'hd.patient_history_id', '=', 'ph.patient_histories_id')
+                ->join('history_diagnosis as hd', 'hd.patient_histories_id', '=', 'ph.patient_histories_id')
                 ->join('diagnoses as d', 'd.diagnosis_id', '=', 'hd.diagnosis_id')
                 ->where('ph.patient_id', $result->patient_id)
                 ->where('hd.added_by', 'medical_board')
