@@ -77,10 +77,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('referralLetters/comment/referral/{referralId}', [ReferralLettersController::class, 'getReferralCommentByReferralId']);
     Route::patch('referralLetters/unBlock/{referralLettersId}', [ReferralLettersController::class, 'unBlockHospital']);
 
-    // PATIENTS APIs
+// PATIENTS APIs
     Route::resource('patients', PatientController::class);
     Route::post('patients/update/{id}', [PatientController::class, 'updatePatient']);
     Route::post('patients/storePatientAndHistory', [PatientController::class, 'storePatientAndHistory']);
+    Route::post('patients/register-with-auto-approval', [PatientController::class, 'storePatientAndHistoryAutoApproved']);
     Route::post('patients/updatePatientAndHistory/{patient_id}', [PatientController::class, 'updatePatientAndHistory']);
     Route::get('patients/showForUpdate/{patient_id}', [PatientController::class, 'showForUpdate']);
     Route::get('patientsHistories', [PatientController::class, 'patientsHistories']);
