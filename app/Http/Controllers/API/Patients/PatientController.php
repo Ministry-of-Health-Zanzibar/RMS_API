@@ -561,7 +561,7 @@ class PatientController extends Controller
                         ->get();
 
                     // Use the Notification facade's route method for the external email
-                    Notification::route('mail', 'talhiya@gmail.com')
+                    Notification::route('mail', 'talhiyay@gmail.com')
                         ->notify(new NewPatientRecordNotification($patient, $patientHistory));
 
                     // Notify the internal directors
