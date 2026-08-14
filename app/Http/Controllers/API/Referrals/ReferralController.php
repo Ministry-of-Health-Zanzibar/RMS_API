@@ -1385,7 +1385,8 @@ class ReferralController extends Controller
                     },
                 ]);
             },
-            'hospital',
+            'hospital.referralType',
+            'referralFlights',
             'hospitalLetters',
             'referralLetters',
             'parent',

@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Reasons\ReasonController;
 use App\Http\Controllers\API\Payments\PaymentController;
 use App\Http\Controllers\API\Setup\DiagnosisController;
+use App\Http\Controllers\API\Referrals\ReferralFlightController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -229,5 +230,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('patients/autocomplete-matibabu-card', [PatientController::class, 'autocompleteMatibabuCards']);
     // The specific endpoint for Matibabu Card eligibility search
     Route::post('patients/search-eligibility', [PatientController::class, 'searchByMatibabu']);
+
+    Route::prefix('referral-flights')->group(function () {
+
+        Route::post('/', [ReferralFlightController::class,'store']);
+        Route::get('/referral/{referralId}', [ReferralFlightController::class,'showByReferral']);
+        Route::get('/{id}', [ReferralFlightController::class,'show']);
+        Route::put('/{id}', [ReferralFlightController::class,'update']);
+        Route::delete('/{id}', [ReferralFlightController::class,'destroy']);
+    
+    });
 
 });
