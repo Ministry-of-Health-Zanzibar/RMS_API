@@ -127,7 +127,7 @@ class PatientController extends Controller
         /**
          * 3. KAMA NI HOSPITAL USER WA KAWAIDA: Anaona zake tu
          */
-        elseif ($user->hasAnyRole(['ROLE HOSPITAL USER'])) {
+        elseif ($user->hasAnyRole(['ROLE HOSPITAL USER','ROLE MEDICAL BOARD MEMBER'])) {
             $query->where('created_by', $user->id);
         }
 

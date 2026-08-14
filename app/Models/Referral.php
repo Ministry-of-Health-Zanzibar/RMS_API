@@ -100,6 +100,11 @@ class Referral extends Model
         return $this->hasOne(ReferralLetter::class, 'referral_id', 'referral_id');
     }
 
+    public function referralFlights()
+    {
+        return $this->hasMany(ReferralFlight::class,'referral_id','referral_id');
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['*']);
