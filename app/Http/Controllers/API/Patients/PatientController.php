@@ -71,7 +71,7 @@ class PatientController extends Controller
      *     )
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
@@ -108,7 +108,21 @@ class PatientController extends Controller
             },
         ];
 
-        $query = Patient::with($relations);
+        // Table views request only the columns they render. Other consumers keep
+        // the original detailed response, so existing forms and flows are intact.
+        $query = $request->boolean('summary')
+            ? Patient::query()->select([
+                'patient_id',
+                'name',
+                'phone',
+                'location',
+                'position',
+                'job',
+                'deleted_at',
+                'created_by',
+                'created_at',
+            ])
+            : Patient::with($relations);
 
         /**
          * 1. KAMA NI ADMIN: Anaona kila kitu (hata zilizofutwa)
@@ -523,7 +537,9 @@ class PatientController extends Controller
                 'physical_findings'             => $request->physical_findings,
                 'investigations'                => $request->investigations,
                 'management_done'               => $request->management_done,
-                'status'                        => 'pending',
+                // New hospital submissions are immediately available in the
+                // Medical Board assignment list, which selects reviewed histories.
+                'status'                        => 'reviewed',
             ]);
 
             if ($request->filled('diagnosis_ids')) {

@@ -100,8 +100,13 @@ class ReferralController extends Controller
             'reason',
             'hospital',
             'diagnoses',
-            // ✅ IMEONGEZWA: Kupakia Hospital Letters na Followups zake kiotomatiki
-            'hospitalLetters.followups' 
+        ])
+        // The list only needs a boolean. Loading every letter and follow-up made
+        // this response grow dramatically as the database increased.
+        ->withExists([
+            'hospitalLetters as has_followup' => function ($query) {
+                $query->whereHas('followups');
+            }
         ])
         ->where('status', '<>', 'Requested');
 
@@ -188,9 +193,7 @@ class ReferralController extends Controller
 
                 // ✅ LOGIC MPYA: Angalia kama kuna angalau rufaa moja kwenye kikundi hiki yenye follow-up
                 $groupHasFollowUp = $group->contains(function ($ref) {
-                    return $ref->hospitalLetters->contains(function ($letter) {
-                        return $letter->followups->isNotEmpty();
-                    });
+                    return (bool) $ref->has_followup;
                 });
 
                 return [
@@ -211,9 +214,7 @@ class ReferralController extends Controller
 
                     'referrals' => $group->map(function ($ref) {
                         // ✅ Angalia kama rufaa hii mahususi ya hospitali hii ina follow-up
-                        $singleRefHasFollowUp = $ref->hospitalLetters->contains(function ($letter) {
-                            return $letter->followups->isNotEmpty();
-                        });
+                        $singleRefHasFollowUp = (bool) $ref->has_followup;
 
                         return [
                             'referral_id' => $ref->referral_id,
