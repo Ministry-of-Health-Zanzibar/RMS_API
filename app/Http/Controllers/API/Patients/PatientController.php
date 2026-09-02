@@ -537,8 +537,8 @@ class PatientController extends Controller
                 'physical_findings'             => $request->physical_findings,
                 'investigations'                => $request->investigations,
                 'management_done'               => $request->management_done,
-                // New hospital submissions are immediately available in the
-                // Medical Board assignment list, which selects reviewed histories.
+                // Hospital submissions go straight to the Medical Board queue.
+                // That queue only includes patients whose latest history is reviewed.
                 'status'                        => 'reviewed',
             ]);
 
