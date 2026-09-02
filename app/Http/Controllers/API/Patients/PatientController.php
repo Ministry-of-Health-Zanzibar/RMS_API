@@ -523,7 +523,9 @@ class PatientController extends Controller
                 'physical_findings'             => $request->physical_findings,
                 'investigations'                => $request->investigations,
                 'management_done'               => $request->management_done,
-                'status'                        => 'pending',
+                // Hospital submissions go straight to the Medical Board queue.
+                // That queue only includes patients whose latest history is reviewed.
+                'status'                        => 'reviewed',
             ]);
 
             if ($request->filled('diagnosis_ids')) {
