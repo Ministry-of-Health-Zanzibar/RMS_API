@@ -27,13 +27,11 @@ class PatientListController extends Controller
             ], 403);
         }
 
-        $lists = PatientList::withTrashed([
-            'creator',
-            'patients' => function ($q) {
-                $q->with('geographicalLocation');
-            }
-        ])
-        ->get();
+        // The list page only renders PatientList columns. Loading every patient
+        // (and every patient's location) caused a large, unused nested payload.
+        $lists = PatientList::withTrashed()
+            ->latest('created_at')
+            ->get();
 
         return response([
             'data' => $lists,

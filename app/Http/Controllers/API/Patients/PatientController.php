@@ -78,7 +78,7 @@ class PatientController extends Controller
      *     )
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
@@ -115,7 +115,21 @@ class PatientController extends Controller
             },
         ];
 
-        $query = Patient::with($relations);
+        // Table views request only the columns they render. Other consumers keep
+        // the original detailed response, so existing forms and flows are intact.
+        $query = $request->boolean('summary')
+            ? Patient::query()->select([
+                'patient_id',
+                'name',
+                'phone',
+                'location',
+                'position',
+                'job',
+                'deleted_at',
+                'created_by',
+                'created_at',
+            ])
+            : Patient::with($relations);
 
         /**
          * 1. KAMA NI ADMIN: Anaona kila kitu (hata zilizofutwa)
@@ -775,6 +789,189 @@ class PatientController extends Controller
             DB::rollBack();
 
             return Helper::serverError($e, 'Failed to process the patient record.');
+        }
+    }
+
+/**
+     * Register a patient with their history and automatically process the
+     * history workflow up to the "Mkurugenzi Tiba" approval stage (status = 'approved').
+     *
+     * A Referral record is also created (status = 'Requested') so that the next
+     * step (Director General confirmation = 'confirmed') can be completed manually.
+     */
+    public function storePatientAndHistoryAutoApproved(Request $request)
+    {
+        $user = auth()->user();
+
+        // 1. Authorization
+        if (!$user->can('Create Patient')) {
+            return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+        }
+
+        // 2. Normalize boolean from Angular ("true"/"false" → true/false)
+        $request->merge([
+            'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+        ]);
+
+        // 3. Validation - same rules as a normal registration
+        $validator = Validator::make($request->all(), [
+            'name'              => ['required', 'string', 'max:255'],
+            'matibabu_card'     => ['nullable', 'string', 'max:50'],
+            'zan_id'            => ['nullable', 'string', 'max:50'],
+            'date_of_birth'     => ['required', 'string'],
+            'gender'            => ['required', 'string'],
+            'phone'             => ['nullable', 'string', 'max:20'],
+            'location_id'       => ['nullable', 'exists:geographical_locations,location_id'],
+            'job'               => ['nullable', 'string'],
+            'position'          => ['nullable', 'string'],
+
+            'file_number'       => ['nullable', 'string'],
+            'referring_date'    => ['nullable', 'string'],
+            'reason_id'         => ['required', 'numeric', 'exists:reasons,reason_id'],
+            'case_type'         => ['required', 'in:Emergency,Routine'],
+            'history_of_presenting_illness' => ['nullable', 'string'],
+            'physical_findings'             => ['nullable', 'string'],
+            'investigations'                => ['nullable', 'string'],
+            'management_done'               => ['nullable', 'string'],
+            'history_file'      => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'diagnosis_ids'     => ['nullable', 'array'],
+            'diagnosis_ids.*'   => ['exists:diagnoses,diagnosis_id'],
+
+            'has_insurance'           => ['required', 'boolean'],
+            'insurance_provider_name' => ['nullable', 'string'],
+            'card_number'             => ['nullable', 'string'],
+            'valid_until'             => ['nullable', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            // 4. Create the patient
+            $patient = \App\Models\Patient::create([
+                'name'          => $request->name,
+                'matibabu_card' => $request->matibabu_card,
+                'zan_id'        => $request->zan_id,
+                'date_of_birth' => $request->date_of_birth,
+                'gender'        => $request->gender,
+                'phone'         => $request->phone,
+                'location_id'   => $request->location_id,
+                'job'           => $request->job,
+                'position'      => $request->position,
+                'created_by'    => Auth::id(),
+            ]);
+
+            // 5. Build referring doctor name
+            $doctorName = trim(($user->first_name ?? '') . ' ' . ($user->middle_name ?? '') . ' ' . ($user->last_name ?? ''));
+
+            // 6. Create the patient history (status starts at 'pending')
+            $patientHistory = \App\Models\PatientHistory::create([
+                'patient_id'                    => $patient->patient_id,
+                'referring_doctor'              => $doctorName,
+                'file_number'                   => $request->file_number,
+                'referring_date'                => $request->referring_date,
+                'reason_id'                     => $request->reason_id,
+                'case_type'                     => $request->case_type,
+                'history_of_presenting_illness' => $request->history_of_presenting_illness,
+                'physical_findings'             => $request->physical_findings,
+                'investigations'                => $request->investigations,
+                'management_done'               => $request->management_done,
+                'status'                        => 'pending',
+            ]);
+
+            // 7. Attach doctor diagnoses
+            if ($request->filled('diagnosis_ids')) {
+                $diagnosisData = collect($request->diagnosis_ids)->mapWithKeys(function ($id) {
+                    return [$id => ['added_by' => 'doctor']];
+                })->toArray();
+                $patientHistory->diagnoses()->sync($diagnosisData);
+            }
+
+            // 8. Handle history file upload
+            if ($request->hasFile('history_file')) {
+                $file = $request->file('history_file');
+                $fileName = 'history_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('uploads/historyFiles'), $fileName);
+                $patientHistory->update(['history_file' => 'uploads/historyFiles/' . $fileName]);
+            }
+
+            // 9. Handle insurance
+            if ($request->boolean('has_insurance')) {
+                \App\Models\Insurance::updateOrCreate(
+                    ['patient_id' => $patient->patient_id],
+                    [
+                        'insurance_provider_name' => $request->insurance_provider_name,
+                        'card_number'             => $request->card_number,
+                        'valid_until'             => $request->valid_until,
+                    ]
+                );
+            }
+
+            // ------------------------------------------------------------------
+            // 10. AUTO-PROCESS WORKFLOW UP TO MKURUGENZI TIBA APPROVAL
+            //     pending -> reviewed -> assigned -> approved
+            //     The last step (DG confirmation = 'confirmed') is left MANUAL.
+            // ------------------------------------------------------------------
+            $autoComment = 'Auto-approved by the system during registration (Mkurugenzi Tiba stage).';
+
+            // pending -> reviewed
+            $patientHistory->update([
+                'status'                => 'reviewed',
+                'mkurugenzi_tiba_id'    => $user->id,
+                'mkurugenzi_tiba_comments' => 'Reviewed automatically during registration.',
+            ]);
+
+            // reviewed -> assigned
+            $patientHistory->update([
+                'status' => 'assigned',
+            ]);
+
+            // assigned -> approved (Mkurugenzi Tiba approval)
+            $patientHistory->update([
+                'status' => 'approved',
+                'mkurugenzi_tiba_comments' => $autoComment,
+            ]);
+
+            // ------------------------------------------------------------------
+            // 11. CREATE REFERRAL RECORD (status 'Requested') ready for DG manual confirmation
+            // ------------------------------------------------------------------
+            $today = now()->format('Y-m-d');
+            $count = \App\Models\Referral::whereDate('created_at', $today)->count() + 1;
+            $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+
+            $referral = \App\Models\Referral::create([
+                'patient_id'      => $patient->patient_id,
+                'reason_id'       => $request->reason_id,
+                'status'          => 'Requested',
+                'referral_number' => $referralNumber,
+                'created_by'      => $user->id,
+            ]);
+
+            if ($request->filled('diagnosis_ids')) {
+                $referral->diagnoses()->sync($request->diagnosis_ids);
+            }
+
+            DB::commit();
+
+            return response([
+                'data' => [
+                    'patient' => $patient,
+                    'history' => $patientHistory->load('diagnoses', 'reason'),
+                    'referral' => $referral->load('diagnoses', 'reason'),
+                ],
+                'message' => 'Patient registered and history auto-approved up to Mkurugenzi Tiba. Awaiting manual DG confirmation.',
+                'statusCode' => 201,
+            ], 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            \Log::error("Auto Approved Patient Registration Error: " . $e->getMessage());
+            return response([
+                'message' => 'Failed to process request',
+                'error' => $e->getMessage(),
+                'statusCode' => 500,
+            ], 500);
         }
     }
 
