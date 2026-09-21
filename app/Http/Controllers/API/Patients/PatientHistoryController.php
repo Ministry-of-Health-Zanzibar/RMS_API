@@ -3,16 +3,15 @@
 namespace App\Http\Controllers\API\Patients;
 
 use App\Http\Controllers\Controller;
-use App\Models\PatientHistory;
+use App\Http\Helpers\Helper;
 use App\Models\Diagnosis;
+use App\Models\Patient;
+use App\Models\PatientHistory;
 use App\Models\Referral;
+use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Log;
-use App\Models\Patient;
-use DB;
-
 
 /**
  * @OA\Tag(
@@ -26,6 +25,7 @@ use DB;
  *     schema="Patient History",
  *     type="object",
  *     required={"patient_id"},
+ *
  *     @OA\Property(property="patient_histories_id", type="integer", example=1),
  *     @OA\Property(property="patient_id", type="integer", example=1),
  *     @OA\Property(property="referring_doctor", type="string", example="Dr. John Doe"),
@@ -54,24 +54,28 @@ class PatientHistoryController extends Controller
      *     tags={"Patient Histories"},
      *     summary="Get all patient histories",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Response(
      *         response=200,
      *         description="List of patient histories",
+     *
      *         @OA\JsonContent(
      *             type="array",
+     *
      *             @OA\Items(ref="#/components/schemas/Patient History")
      *         )
      *     ),
+     *
      *     @OA\Response(response=403, description="Forbidden")
      * )
      */
     public function index()
     {
         $user = auth()->user();
-        if (!$user->can('View Patient History')) {
+        if (! $user->can('View Patient History')) {
             return response()->json([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -81,7 +85,7 @@ class PatientHistoryController extends Controller
             'status' => true,
             'data' => $histories,
             'message' => 'Patient histories retrieved successfully',
-            'statusCode' => 200
+            'statusCode' => 200,
         ]);
     }
 
@@ -140,16 +144,16 @@ class PatientHistoryController extends Controller
         $user = auth()->user();
 
         // Permission check
-        if (!$user->canAny(['View Patient', 'View History'])) {
+        if (! $user->canAny(['View Patient', 'View History'])) {
             return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
         // Orodha ya emails za data entry
         $dataEntryEmails = [
-            'medicalboard@mohz.go.tz', 
-            'hospital@mohz.go.tz', 
-            'mkurugenzi@mohz.go.tz', 
-            'dguser@mohz.go.tz'
+            'medicalboard@mohz.go.tz',
+            'hospital@mohz.go.tz',
+            'mkurugenzi@mohz.go.tz',
+            'dguser@mohz.go.tz',
         ];
 
         $isDataEntryUser = in_array($user->email, $dataEntryEmails);
@@ -181,8 +185,8 @@ class PatientHistoryController extends Controller
         }
 
         $patients = $query->with(['latestHistory' => function ($q) {
-                $q->where('status', 'reviewed')->with(['diagnoses', 'reason']);
-            }])
+            $q->where('status', 'reviewed')->with(['diagnoses', 'reason']);
+        }])
             ->latest()
             ->get();
 
@@ -200,10 +204,9 @@ class PatientHistoryController extends Controller
             'status' => true,
             'data' => $result->values(),
             'message' => 'Patients retrieved successfully',
-            'statusCode' => 200
+            'statusCode' => 200,
         ]);
     }
-
 
     /**
      * @OA\Post(
@@ -211,11 +214,14 @@ class PatientHistoryController extends Controller
      *     tags={"Patient Histories"},
      *     summary="Create a new patient history",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             type="object",
      *             required={"patient_id"},
+     *
      *             @OA\Property(property="patient_id", type="integer"),
      *             @OA\Property(property="reason_id", type="integer"),
      *             @OA\Property(property="case_type", type="string"),
@@ -230,6 +236,7 @@ class PatientHistoryController extends Controller
      *             @OA\Property(property="history_file", type="string", format="binary")
      *         )
      *     ),
+     *
      *     @OA\Response(response=201, description="Patient history created successfully"),
      *     @OA\Response(response=422, description="Validation failed"),
      *     @OA\Response(response=403, description="Forbidden")
@@ -238,10 +245,10 @@ class PatientHistoryController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->can('Create Patient History')) {
+        if (! $user->can('Create Patient History')) {
             return response()->json([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -264,7 +271,7 @@ class PatientHistoryController extends Controller
             return response()->json([
                 'status' => 'error',
                 'errors' => $validator->errors(),
-                'statusCode' => 422
+                'statusCode' => 422,
             ], 422);
         }
 
@@ -284,7 +291,7 @@ class PatientHistoryController extends Controller
 
             $data['created_by'] = auth()->id();
             $data['referring_doctor'] = trim(
-                ($user->first_name ?? '') . ' ' . ($user->middle_name ?? ''). ' ' . ($user->last_name ?? '')
+                ($user->first_name ?? '').' '.($user->middle_name ?? '').' '.($user->last_name ?? '')
             );
 
             /*
@@ -310,13 +317,13 @@ class PatientHistoryController extends Controller
             if ($latestReferral && in_array($latestReferral->status, $blockedReferralStatuses)) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Cannot create patient history. Last referral status is "'. $latestReferral->status . '".',
-                    'statusCode' => 409
+                    'message' => 'Cannot create patient history. Last referral status is "'.$latestReferral->status.'".',
+                    'statusCode' => 409,
                 ], 409);
             }
 
             // 2️⃣ If NO referral found → check last patient history status
-            if (!$latestReferral) {
+            if (! $latestReferral) {
                 $lastHistory = \App\Models\PatientHistory::where('patient_id', $data['patient_id'])
                     ->latest('created_at')
                     ->first();
@@ -327,8 +334,8 @@ class PatientHistoryController extends Controller
                     return response()->json([
                         'status' => false,
                         'message' => 'Cannot create patient history. Last patient history status is "'
-                                    . $lastHistory->status . '".',
-                        'statusCode' => 409
+                                    .$lastHistory->status.'".',
+                        'statusCode' => 409,
                     ], 409);
                 }
             }
@@ -347,9 +354,9 @@ class PatientHistoryController extends Controller
             // Handle optional file upload
             if ($request->hasFile('history_file')) {
                 $file = $request->file('history_file');
-                $fileName = 'history_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
+                $fileName = 'history_'.date('Ymd_His').'.'.$file->getClientOriginalExtension();
                 $file->move(public_path('uploads/historyFiles/'), $fileName);
-                $data['history_file'] = 'uploads/historyFiles/' . $fileName;
+                $data['history_file'] = 'uploads/historyFiles/'.$fileName;
             }
 
             // Create patient history
@@ -368,20 +375,13 @@ class PatientHistoryController extends Controller
                 'status' => true,
                 'data' => $history->load('patient', 'diagnoses', 'reason'),
                 'message' => 'Patient history created successfully,',
-                'statusCode' => 201
+                'statusCode' => 201,
             ], 201);
 
         } catch (\Exception $e) {
-            Log::error('Patient history creation failed: ' . $e->getMessage());
-            return response()->json([
-                'status' => false,
-                'message' => 'Creation failed',
-                'error' => $e->getMessage(),
-                'statusCode' => 500
-            ], 500);
+            return Helper::serverError($e, 'Patient history creation failed.');
         }
     }
-
 
     /**
      * @OA\Get(
@@ -389,7 +389,9 @@ class PatientHistoryController extends Controller
      *     tags={"Patient Histories"},
      *     summary="Get a patient history by ID",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
      *     @OA\Response(response=200, description="Patient history found"),
      *     @OA\Response(response=404, description="Not found"),
      *     @OA\Response(response=403, description="Forbidden")
@@ -449,10 +451,10 @@ class PatientHistoryController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->canAny(['View Patient History', 'View History'])) {
+        if (! $user->canAny(['View Patient History', 'View History'])) {
             return response()->json([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -482,14 +484,14 @@ class PatientHistoryController extends Controller
             'reason',
             'boardReason',
         ])
-        ->where('patient_histories_id', $id)
-        ->first();
+            ->where('patient_histories_id', $id)
+            ->first();
 
-        if (!$history) {
+        if (! $history) {
             return response()->json([
                 'status' => false,
                 'message' => 'Patient history not found',
-                'statusCode' => 404
+                'statusCode' => 404,
             ], 404);
         }
 
@@ -511,8 +513,8 @@ class PatientHistoryController extends Controller
         if ($patient && $patient->date_of_birth) {
             if (is_numeric($patient->date_of_birth)) {
                 $patient->age_details = [
-                    'years'  => 0, 'months' => 0, 'days' => 0,
-                    'string' => "Invalid Date Data"
+                    'years' => 0, 'months' => 0, 'days' => 0,
+                    'string' => 'Invalid Date Data',
                 ];
             } else {
                 try {
@@ -521,13 +523,13 @@ class PatientHistoryController extends Controller
                     $diff = $dob->diff($now);
 
                     $patient->age_details = [
-                        'years'  => $diff->y,
+                        'years' => $diff->y,
                         'months' => $diff->m,
-                        'days'   => $diff->d,
-                        'string' => "{$diff->y}y {$diff->m}m {$diff->d}d"
+                        'days' => $diff->d,
+                        'string' => "{$diff->y}y {$diff->m}m {$diff->d}d",
                     ];
                 } catch (\Exception $e) {
-                    $patient->age_details = ['string' => "Unknown"];
+                    $patient->age_details = ['string' => 'Unknown'];
                 }
             }
         }
@@ -536,7 +538,7 @@ class PatientHistoryController extends Controller
             'status' => true,
             'data' => $history,
             'message' => 'Patient history retrieved successfully',
-            'statusCode' => 200
+            'statusCode' => 200,
         ]);
     }
 
@@ -546,11 +548,15 @@ class PatientHistoryController extends Controller
      *     tags={"Patient Histories"},
      *     summary="Update patient history",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="reason_id", type="integer"),
      *             @OA\Property(property="referring_doctor", type="string"),
      *             @OA\Property(property="file_number", type="string"),
@@ -564,6 +570,7 @@ class PatientHistoryController extends Controller
      *             @OA\Property(property="history_file", type="string", format="binary")
      *         )
      *     ),
+     *
      *     @OA\Response(response=200, description="Updated successfully"),
      *     @OA\Response(response=422, description="Validation failed"),
      *     @OA\Response(response=403, description="Forbidden")
@@ -573,10 +580,10 @@ class PatientHistoryController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->can('Update Patient History')) {
+        if (! $user->can('Update Patient History')) {
             return response()->json([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -601,7 +608,7 @@ class PatientHistoryController extends Controller
             return response()->json([
                 'status' => 'error',
                 'errors' => $validator->errors(),
-                'statusCode' => 422
+                'statusCode' => 422,
             ], 422);
         }
 
@@ -638,9 +645,9 @@ class PatientHistoryController extends Controller
                 }
 
                 $file = $request->file('history_file');
-                $fileName = 'history_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
+                $fileName = 'history_'.date('Ymd_His').'.'.$file->getClientOriginalExtension();
                 $file->move(public_path('uploads/historyFiles/'), $fileName);
-                $data['history_file'] = 'uploads/historyFiles/' . $fileName;
+                $data['history_file'] = 'uploads/historyFiles/'.$fileName;
             }
 
             // Update patient history
@@ -655,17 +662,11 @@ class PatientHistoryController extends Controller
                 'status' => true,
                 'data' => $history->load('patient', 'diagnoses', 'reason'),
                 'message' => 'Patient history updated successfully',
-                'statusCode' => 200
+                'statusCode' => 200,
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Patient history update failed: ' . $e->getMessage());
-            return response()->json([
-                'status' => false,
-                'message' => 'Update failed',
-                'error' => $e->getMessage(),
-                'statusCode' => 500
-            ], 500);
+            return Helper::serverError($e, 'Patient history update failed.');
         }
     }
 
@@ -677,16 +678,21 @@ class PatientHistoryController extends Controller
      *     summary="Update patient history by Medical Board",
      *     description="Allows a Medical Board member to update patient history status, comments, reason, and diagnoses. Automatically creates a referral if board diagnoses are provided.",
      *     security={{"bearerAuth": {}}},
+     *
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="Patient history ID",
      *         required=true,
+     *
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="status", type="string", enum={"pending","reviewed","Requested","approved","confirmed","rejected"}, example="reviewed", description="Workflow status"),
      *             @OA\Property(property="board_comments", type="string", example="Patient requires additional investigation", description="Comments by medical board"),
      *             @OA\Property(property="board_reason_id", type="integer", example=2, description="Reason ID associated with the board update"),
@@ -694,14 +700,18 @@ class PatientHistoryController extends Controller
      *                 property="board_diagnosis_ids",
      *                 type="array",
      *                 description="List of diagnosis IDs assigned by the medical board",
+     *
      *                 @OA\Items(type="integer", example=5)
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Patient history updated and referral created successfully",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="status", type="boolean", example=true),
      *             @OA\Property(property="data", type="object",
      *                 @OA\Property(property="patient_histories_id", type="integer", example=1),
@@ -710,7 +720,9 @@ class PatientHistoryController extends Controller
      *                 @OA\Property(property="board_comments", type="string", example="Patient requires additional investigation"),
      *                 @OA\Property(property="board_reason_id", type="integer", example=2),
      *                 @OA\Property(property="diagnoses", type="array",
+     *
      *                     @OA\Items(
+     *
      *                         @OA\Property(property="diagnosis_id", type="integer", example=5),
      *                         @OA\Property(property="diagnosis_name", type="string", example="Hypertension")
      *                     )
@@ -725,27 +737,36 @@ class PatientHistoryController extends Controller
      *             @OA\Property(property="statusCode", type="integer", example=200)
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=403,
      *         description="Forbidden - user not a Medical Board member",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="message", type="string", example="Forbidden"),
      *             @OA\Property(property="statusCode", type="integer", example=403)
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=422,
      *         description="Validation error",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="status", type="boolean", example=false),
      *             @OA\Property(property="errors", type="object"),
      *             @OA\Property(property="statusCode", type="integer", example=422)
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=500,
      *         description="Internal server error",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="status", type="boolean", example=false),
      *             @OA\Property(property="message", type="string", example="Update failed"),
      *             @OA\Property(property="error", type="string"),
@@ -754,136 +775,24 @@ class PatientHistoryController extends Controller
      *     )
      * )
      */
-    // public function updateByMedicalBoardWithReferralCreation(Request $request, $id)
-    // {
-    //     $user = auth()->user();
-    //     $history = PatientHistory::findOrFail($id);
-
-    //     // Only medical board member allowed
-    //     if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
-    //         return response()->json([
-    //             'message' => 'Forbidden',
-    //             'statusCode' => 403
-    //         ], 403);
-    //     }
-
-    //     $validator = Validator::make($request->all(), [
-    //         'board_comments'         => 'required|string',
-    //         'board_reason_id'        => 'required|exists:reasons,reason_id',
-    //         'board_diagnosis_ids'    => 'required|array',
-    //         'board_diagnosis_ids.*'  => 'exists:diagnoses,diagnosis_id',
-    //         'patient_file'           => 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:5000',
-    //         'description'            => 'nullable|string',
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         return response()->json([
-    //             'status' => false,
-    //             'errors' => $validator->errors(),
-    //             'statusCode' => 422
-    //         ], 422);
-    //     }
-
-    //     try {
-    //         DB::beginTransaction();
-
-    //         // Update board fields
-    //         $history->update([
-    //             'board_comments'  => $request->board_comments,
-    //             'board_reason_id' => $request->board_reason_id,
-    //         ]);
-
-    //         // Attach or update board diagnoses safely
-    //         if ($request->filled('board_diagnosis_ids')) {
-    //             $boardDiagnoses = collect($request->board_diagnosis_ids)->mapWithKeys(function ($id) {
-    //                 return [$id => ['added_by' => 'medical_board']];
-    //             })->toArray();
-
-    //             $history->boardDiagnoses()->syncWithoutDetaching($boardDiagnoses);
-    //         }
-
-    //         // Create referral
-    //         $today = now()->format('Y-m-d');
-    //         $count = Referral::whereDate('created_at', $today)->count() + 1;
-    //         $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
-
-    //         $referral = Referral::create([
-    //             'patient_id'      => $history->patient_id,
-    //             'reason_id'       => $request->board_reason_id,
-    //             'status'          => 'Requested',
-    //             'referral_number' => $referralNumber,
-    //             'created_by'      => $user->id,
-    //         ]);
-
-    //         // Attach diagnoses to referral
-    //         $referral->diagnoses()->sync($request->board_diagnosis_ids);
-
-    //         // Update workflow status
-    //         $this->applyStatusUpdate($history, 'requested', $request->board_comments, $user);
-
-    //         if ($request->hasFile('patient_file')) {
-    //             $file = $request->file('patient_file');
-    //             $extension = $file->getClientOriginalExtension();
-    //             $newFileName = 'patient_file_' . date('His_dmY') . '_' . uniqid() . '.' . $extension;
-    
-    //             $file->move(public_path('uploads/patientFiles/'), $newFileName);
-    
-    //             \App\Models\PatientFile::create([
-    //                 // Fixed: Use $history->patient_id instead of undefined $patient
-    //                 'patient_id'  => $history->patient_id, 
-    //                 'file_name'   => $file->getClientOriginalName(),
-    //                 'file_path'   => 'uploads/patientFiles/' . $newFileName,
-    //                 'file_type'   => $extension,
-    //                 'description' => $request->description,
-    //                 'uploaded_by' => $user->id,
-    //             ]);
-    //         }
-
-    //         DB::commit();
-
-    //         return response()->json([
-    //             'status'  => true,
-    //             'data'    => $history->load([
-    //                 'patient',
-    //                 'diagnoses',
-    //                 'reason'
-    //             ]),
-    //             'message' => 'Patient history updated and referral created successfully',
-    //             'statusCode' => 200
-    //         ]);
-
-    //     } catch (\Exception $e) {
-    //         DB::rollBack();
-
-    //         Log::error('Medical Board update failed: ' . $e->getMessage());
-
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => 'Update failed',
-    //             'error' => $e->getMessage(),
-    //             'statusCode' => 500
-    //         ], 500);
-    //     }
-    // }
-
     public function updateByMedicalBoardWithReferralCreation(Request $request, $id)
     {
         $user = auth()->user();
         $history = PatientHistory::findOrFail($id);
 
-        if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+        if (! $user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
             return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
         $validator = Validator::make($request->all(), [
-            'board_comments'         => 'required|string',
-            'board_reason_id'        => 'required|exists:reasons,reason_id',
-            'board_diagnosis_ids'    => 'required|array',
-            'board_diagnosis_ids.*'  => 'exists:diagnoses,diagnosis_id',
-            'patient_file'           => 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:5000',
-            'description'            => 'nullable|string',
+            'board_comments' => 'required|string',
+            'board_reason_id' => 'required|exists:reasons,reason_id',
+            'board_diagnosis_ids' => 'required|array',
+            'board_diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
+            'patient_file' => 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:5000',
+            'description' => 'nullable|string',
             // NEW: Flag to determine if a referral record is actually needed
-            'create_referral_record' => 'required|boolean', 
+            'create_referral_record' => 'required|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -895,7 +804,7 @@ class PatientHistoryController extends Controller
 
             // 1. Always Update Board findings (Uchunguzi/Maamuzi)
             $history->update([
-                'board_comments'  => $request->board_comments,
+                'board_comments' => $request->board_comments,
                 'board_reason_id' => $request->board_reason_id,
             ]);
 
@@ -912,14 +821,14 @@ class PatientHistoryController extends Controller
             if ($request->create_referral_record) {
                 $today = now()->format('Y-m-d');
                 $count = Referral::whereDate('created_at', $today)->count() + 1;
-                $referralNumber = 'REF-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+                $referralNumber = 'REF-'.$today.'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
 
                 $referral = Referral::create([
-                    'patient_id'      => $history->patient_id,
-                    'reason_id'       => $request->board_reason_id,
-                    'status'          => 'Requested',
+                    'patient_id' => $history->patient_id,
+                    'reason_id' => $request->board_reason_id,
+                    'status' => 'Requested',
                     'referral_number' => $referralNumber,
-                    'created_by'      => $user->id,
+                    'created_by' => $user->id,
                 ]);
 
                 $referral->diagnoses()->sync($request->board_diagnosis_ids);
@@ -933,14 +842,14 @@ class PatientHistoryController extends Controller
             if ($request->hasFile('patient_file')) {
                 $file = $request->file('patient_file');
                 $extension = $file->getClientOriginalExtension();
-                $newFileName = 'patient_file_' . date('His_dmY') . '_' . uniqid() . '.' . $extension;
+                $newFileName = 'patient_file_'.date('His_dmY').'_'.uniqid().'.'.$extension;
                 $file->move(public_path('uploads/patientFiles/'), $newFileName);
 
                 \App\Models\PatientFile::create([
-                    'patient_id'  => $history->patient_id, 
-                    'file_name'   => $file->getClientOriginalName(),
-                    'file_path'   => 'uploads/patientFiles/' . $newFileName,
-                    'file_type'   => $extension,
+                    'patient_id' => $history->patient_id,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => 'uploads/patientFiles/'.$newFileName,
+                    'file_type' => $extension,
                     'description' => $request->description,
                     'uploaded_by' => $user->id,
                 ]);
@@ -949,18 +858,18 @@ class PatientHistoryController extends Controller
             DB::commit();
 
             return response()->json([
-                'status'  => true,
-                'data'    => $history->load(['patient', 'diagnoses', 'reason']),
-                'message' => $request->create_referral_record 
-                            ? 'Referral created and sent to DG for approval' 
+                'status' => true,
+                'data' => $history->load(['patient', 'diagnoses', 'reason']),
+                'message' => $request->create_referral_record
+                            ? 'Referral created and sent to DG for approval'
                             : 'Medical evaluation (Maamuzi) sent to DG for approval',
-                'statusCode' => 200
+                'statusCode' => 200,
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Medical Board update failed: ' . $e->getMessage());
-            return response()->json(['status' => false, 'message' => 'Update failed', 'error' => $e->getMessage(), 'statusCode' => 500], 500);
+
+            return Helper::serverError($e, 'Medical Board update failed.');
         }
     }
 
@@ -974,12 +883,12 @@ class PatientHistoryController extends Controller
         // }
 
         $validator = Validator::make($request->all(), [
-            'board_comments'         => 'required|string',
-            'board_reason_id'        => 'required|exists:reasons,reason_id',
-            'board_diagnosis_ids'    => 'required|array',
-            'board_diagnosis_ids.*'  => 'exists:diagnoses,diagnosis_id',
-            'patient_file'           => 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:5000',
-            'description'            => 'nullable|string',
+            'board_comments' => 'required|string',
+            'board_reason_id' => 'required|exists:reasons,reason_id',
+            'board_diagnosis_ids' => 'required|array',
+            'board_diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
+            'patient_file' => 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:5000',
+            'description' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -991,7 +900,7 @@ class PatientHistoryController extends Controller
 
             // 1. Update Board fields in History
             $history->update([
-                'board_comments'  => $request->board_comments,
+                'board_comments' => $request->board_comments,
                 'board_reason_id' => $request->board_reason_id,
             ]);
 
@@ -1020,20 +929,20 @@ class PatientHistoryController extends Controller
             if ($request->hasFile('patient_file')) {
                 $file = $request->file('patient_file');
                 $extension = $file->getClientOriginalExtension();
-                $newFileName = 'patient_file_' . date('His_dmY') . '_' . uniqid() . '.' . $extension;
+                $newFileName = 'patient_file_'.date('His_dmY').'_'.uniqid().'.'.$extension;
                 $file->move(public_path('uploads/patientFiles/'), $newFileName);
 
                 // Update existing or create new file record
                 \App\Models\PatientFile::updateOrCreate(
                     [
-                        'patient_id'  => $history->patient_id,
+                        'patient_id' => $history->patient_id,
                         'uploaded_by' => $user->id,
                         'description' => $request->description, // Matches specific update
                     ],
                     [
-                        'file_name'   => $file->getClientOriginalName(),
-                        'file_path'   => 'uploads/patientFiles/' . $newFileName,
-                        'file_type'   => $extension,
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => 'uploads/patientFiles/'.$newFileName,
+                        'file_type' => $extension,
                     ]
                 );
             }
@@ -1041,16 +950,16 @@ class PatientHistoryController extends Controller
             DB::commit();
 
             return response()->json([
-                'success'  => true,
-                'data'    => $history->load(['patient.referrals', 'boardDiagnoses', 'boardReason']),
+                'success' => true,
+                'data' => $history->load(['patient.referrals', 'boardDiagnoses', 'boardReason']),
                 'message' => 'Medical Board update successful (Referral synchronized)',
-                'statusCode' => 200
+                'statusCode' => 200,
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Medical Board update failed: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Update failed', 'error' => $e->getMessage(), 'statusCode' => 500], 500);
+
+            return Helper::serverError($e, 'Medical Board update failed.');
         }
     }
 
@@ -1058,15 +967,15 @@ class PatientHistoryController extends Controller
     {
         try {
             $user = auth()->user();
-            
+
             // 1. Fetch history with specific board-added relations using your table column names
             $history = PatientHistory::with([
                 'patient:patient_id',
-                'boardDiagnoses' => function($query) {
+                'boardDiagnoses' => function ($query) {
                     $query->wherePivot('added_by', 'medical_board')
                         ->select('diagnoses.diagnosis_id', 'diagnoses.diagnosis_name', 'diagnoses.diagnosis_code');
                 },
-                'reason:reason_id,referral_reason_name'
+                'reason:reason_id,referral_reason_name',
             ])->findOrFail($id);
 
             // 2. Fetch the specific file uploaded by this board member
@@ -1077,51 +986,46 @@ class PatientHistoryController extends Controller
 
             // 3. Structure the response for your React/Vite UI
             $boardData = [
-                'patient_histories_id'          => $history->patient_histories_id,
-                'board_comments'      => $history->board_comments,
-                
+                'patient_histories_id' => $history->patient_histories_id,
+                'board_comments' => $history->board_comments,
+
                 // Full Reason Object for the dropdown/select initial value
                 'board_reason' => $history->reason ? [
-                    'reason_id'   => $history->reason->reason_id,
-                    'referral_reason_name' => $history->reason->referral_reason_name
+                    'reason_id' => $history->reason->reason_id,
+                    'referral_reason_name' => $history->reason->referral_reason_name,
                 ] : null,
-                
+
                 // The Raw ID for basic form state
                 // 'board_reason_id'     => $history->board_reason_id,
 
                 // Full Diagnosis Objects (useful for multi-select tags/chips)
-                'board_diagnoses'     => $history->boardDiagnoses->map(function ($diagnosis) {
+                'board_diagnoses' => $history->boardDiagnoses->map(function ($diagnosis) {
                     return [
-                        'diagnosis_id'   => $diagnosis->diagnosis_id,
+                        'diagnosis_id' => $diagnosis->diagnosis_id,
                         'diagnosis_name' => $diagnosis->diagnosis_name,
                         'diagnosis_code' => $diagnosis->diagnosis_code,
                     ];
                 }),
-                
+
                 // Just the IDs (useful for setting the initial state of a checkbox list)
                 // 'board_diagnosis_ids' => $history->boardDiagnoses->pluck('diagnosis_id'),
 
                 // Patient File Information
                 'patient_file' => [
                     'name' => $patientFile ? $patientFile->file_name : null,
-                    'url'  => $patientFile ? asset($patientFile->file_path) : null,
+                    'url' => $patientFile ? asset($patientFile->file_path) : null,
                     'type' => $patientFile ? $patientFile->file_type : null,
                 ],
             ];
 
             return response()->json([
-                'success'     => true,
-                'data'       => $boardData,
-                'statusCode' => 200
+                'success' => true,
+                'data' => $boardData,
+                'statusCode' => 200,
             ]);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data retrieval failed',
-                'error' => $e->getMessage(),
-                'statusCode' => 404
-            ], 404);
+            return Helper::serverError($e, 'Medical Board data retrieval failed.');
         }
     }
 
@@ -1130,11 +1034,11 @@ class PatientHistoryController extends Controller
         $user = auth()->user();
 
         // if (!$user->hasRole('ROLE MKURUGENZI TIBA','ROLE SUPERVISOR')) {
-        if (!$user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR'])) {
+        if (! $user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized action for your role.',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -1143,15 +1047,15 @@ class PatientHistoryController extends Controller
             'patient',
             'referrals' => function ($q) {
                 $q->where('status', 'Requested');
-            }
+            },
         ])->find($id);
 
         // history not found
-        if (!$history) {
+        if (! $history) {
             return response()->json([
                 'status' => false,
                 'message' => 'Patient history not found.',
-                'statusCode' => 404
+                'statusCode' => 404,
             ], 404);
         }
 
@@ -1164,7 +1068,7 @@ class PatientHistoryController extends Controller
             return response()->json([
                 'status' => false,
                 'errors' => $validator->errors(),
-                'statusCode' => 422
+                'statusCode' => 422,
             ], 422);
         }
 
@@ -1202,14 +1106,14 @@ class PatientHistoryController extends Controller
                     // ✅ NORMAL REFERRAL FLOW
                     $referral->status = 'Pending';
                     $referral->save();
-            
+
                     $this->applyStatusUpdate(
                         $history,
                         'approved',
                         $request->mkurugenzi_tiba_comments,
                         $user
                     );
-            
+
                 } else {
                     // ✅ NO REFERRAL FLOW (IMPORTANT)
                     $this->applyStatusUpdate(
@@ -1225,22 +1129,15 @@ class PatientHistoryController extends Controller
             return response()->json([
                 'status' => true,
                 'data' => [
-                    'history'  => $history->load('patient', 'diagnoses', 'reason'),
+                    'history' => $history->load('patient', 'diagnoses', 'reason'),
                     'referral' => $referral ? $referral->load('diagnoses', 'reason') : null,
                 ],
                 'message' => 'Referral approved updated successfully',
-                'statusCode' => 200
+                'statusCode' => 200,
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Medical Board update failed: ' . $e->getMessage());
-
-            return response()->json([
-                'status' => false,
-                'message' => 'Update failed',
-                'error' => $e->getMessage(),
-                'statusCode' => 500
-            ], 500);
+            return Helper::serverError($e, 'Referral approval update failed.');
         }
     }
 
@@ -1249,11 +1146,11 @@ class PatientHistoryController extends Controller
         $user = auth()->user();
 
         // if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
-        if (!$user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR'])) {
+        if (! $user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized action for your role.',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -1262,11 +1159,11 @@ class PatientHistoryController extends Controller
             ->with('mkurugenzi:id,first_name,last_name') // Assuming you have a 'mkurugenzi' relationship on the model
             ->find($id);
 
-        if (!$history) {
+        if (! $history) {
             return response()->json([
                 'success' => false,
                 'message' => 'Patient history not found.',
-                'statusCode' => 404
+                'statusCode' => 404,
             ], 404);
         }
 
@@ -1275,17 +1172,17 @@ class PatientHistoryController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'You did not comment on this patient history.',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
         // Check if comments actually exist yet
-        if (!$history->mkurugenzi_tiba_comments) {
+        if (! $history->mkurugenzi_tiba_comments) {
             return response()->json([
                 'success' => true,
                 'data' => null,
                 'message' => 'No comments have been provided by Mkurugenzi Tiba yet.',
-                'statusCode' => 200
+                'statusCode' => 200,
             ], 200);
         }
 
@@ -1295,9 +1192,9 @@ class PatientHistoryController extends Controller
             'data' => [
                 'patient_history_id' => $history->patient_histories_id,
                 'mkurugenzi_tiba_comments' => $history->mkurugenzi_tiba_comments,
-                'commented_on'               => $history->updated_at->format('d M Y H:i'),
-                'human_date'         => $history->updated_at->diffForHumans(),
-            ]
+                'commented_on' => $history->updated_at->format('d M Y H:i'),
+                'human_date' => $history->updated_at->diffForHumans(),
+            ],
         ], 200);
     }
 
@@ -1307,7 +1204,9 @@ class PatientHistoryController extends Controller
      *     tags={"Patient Histories"},
      *     summary="Delete patient history",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
      *     @OA\Response(response=200, description="Deleted successfully"),
      *     @OA\Response(response=403, description="Forbidden")
      * )
@@ -1315,10 +1214,10 @@ class PatientHistoryController extends Controller
     public function destroy($id)
     {
         $user = auth()->user();
-        if (!$user->can('Delete Patient History')) {
+        if (! $user->can('Delete Patient History')) {
             return response()->json([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -1328,7 +1227,7 @@ class PatientHistoryController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Patient history deleted successfully',
-            'statusCode' => 200
+            'statusCode' => 200,
         ]);
     }
 
@@ -1338,7 +1237,9 @@ class PatientHistoryController extends Controller
      *     tags={"Patient Histories"},
      *     summary="Unblock a patient history",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
      *     @OA\Response(response=200, description="Unblocked successfully"),
      *     @OA\Response(response=403, description="Forbidden")
      * )
@@ -1346,10 +1247,10 @@ class PatientHistoryController extends Controller
     public function unblock($id)
     {
         $user = auth()->user();
-        if (!$user->can('Update Patient History')) {
+        if (! $user->can('Update Patient History')) {
             return response()->json([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -1359,7 +1260,7 @@ class PatientHistoryController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Patient history unblocked successfully',
-            'statusCode' => 200
+            'statusCode' => 200,
         ]);
     }
 
@@ -1370,17 +1271,22 @@ class PatientHistoryController extends Controller
      *     summary="Update patient history status",
      *     description="Allows authorized roles to update the status of a patient history record, add comments, and track reviewers.",
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="Patient history ID",
      *         required=true,
+     *
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="status",
      *                 type="string",
@@ -1394,39 +1300,51 @@ class PatientHistoryController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Status updated successfully",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="success", type="boolean"),
      *             @OA\Property(property="message", type="string"),
      *             @OA\Property(property="data", type="object")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=400,
      *         description="Invalid status transition",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="success", type="boolean"),
      *             @OA\Property(property="message", type="string")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=403,
      *         description="Unauthorized action for your role",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="success", type="boolean"),
      *             @OA\Property(property="message", type="string")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=404,
      *         description="Patient history not found",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="success", type="boolean"),
      *             @OA\Property(property="message", type="string")
      *         )
@@ -1448,7 +1366,7 @@ class PatientHistoryController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -1457,10 +1375,10 @@ class PatientHistoryController extends Controller
         $comment = $validated['comment'] ?? null;
 
         // 2. Transition Check (Uses the isValidTransition logic we updated earlier)
-        if (!$this->isValidTransition($history->status, $newStatus)) {
+        if (! $this->isValidTransition($history->status, $newStatus)) {
             return response()->json([
                 'success' => false,
-                'message' => "Invalid status transition from {$history->status} to {$newStatus}."
+                'message' => "Invalid status transition from {$history->status} to {$newStatus}.",
             ], 400);
         }
 
@@ -1468,7 +1386,7 @@ class PatientHistoryController extends Controller
         switch ($newStatus) {
             case 'reviewed':
                 // if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
-                if (!$user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR'])) {
+                if (! $user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR'])) {
                     return $this->unauthorized();
                 }
                 $history->mkurugenzi_tiba_id = $user->id;
@@ -1476,14 +1394,14 @@ class PatientHistoryController extends Controller
                 break;
 
             case 'assigned':
-                if (!$user->hasAnyRole(['ROLE MEDICAL BOARD MEMBER'])) {
+                if (! $user->hasAnyRole(['ROLE MEDICAL BOARD MEMBER'])) {
                     return $this->unauthorized();
                 }
                 // No specific comments usually required for assignment
                 break;
 
             case 'requested':
-                if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+                if (! $user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
                     return $this->unauthorized();
                 }
                 $history->board_comments = $comment;
@@ -1492,14 +1410,14 @@ class PatientHistoryController extends Controller
             case 'approved':
                 // Logic for Board Member passing the patient
                 // if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
-                if (!$user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR'])) {
+                if (! $user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR'])) {
                     return $this->unauthorized();
                 }
                 $history->board_comments = $comment;
                 break;
 
             case 'confirmed':
-                if (!$user->hasRole('ROLE DIRECTOR GENERAL')) {
+                if (! $user->hasRole('ROLE DIRECTOR GENERAL')) {
                     return $this->unauthorized();
                 }
                 $history->dg_id = $user->id;
@@ -1507,7 +1425,7 @@ class PatientHistoryController extends Controller
                 break;
 
             case 'rejected':
-                if (!$user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR', 'ROLE MEDICAL BOARD MEMBER', 'ROLE DIRECTOR GENERAL'])) {
+                if (! $user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR', 'ROLE MEDICAL BOARD MEMBER', 'ROLE DIRECTOR GENERAL'])) {
                     return $this->unauthorized();
                 }
                 $history->board_comments = $comment;
@@ -1530,13 +1448,13 @@ class PatientHistoryController extends Controller
     private function isValidTransition($current, $next)
     {
         $allowed = [
-            'pending'   => ['reviewed'],
-            'reviewed'  => ['assigned', 'requested'], // Director can assign to board or request info
-            'assigned'  => ['requested', 'approved'], // Board's primary actions
+            'pending' => ['reviewed'],
+            'reviewed' => ['assigned', 'requested'], // Director can assign to board or request info
+            'assigned' => ['requested', 'approved'], // Board's primary actions
             'requested' => ['reviewed', 'approved'],  // Path after info is provided
-            'approved'  => ['confirmed', 'rejected'], // Moves to DG for final say
+            'approved' => ['confirmed', 'rejected'], // Moves to DG for final say
             'confirmed' => [],
-            'rejected'  => [],
+            'rejected' => [],
         ];
 
         return in_array($next, $allowed[$current] ?? []);
@@ -1547,7 +1465,7 @@ class PatientHistoryController extends Controller
         return response()->json([
             'success' => false,
             'message' => 'Unauthorized action for your role.',
-            'statusCode' => 403
+            'statusCode' => 403,
         ], 403);
     }
 
@@ -1556,7 +1474,7 @@ class PatientHistoryController extends Controller
         $user = $user ?? auth()->user();
 
         // Ensure only valid status transitions
-        if (!$this->isValidTransition($history->status, $newStatus)) {
+        if (! $this->isValidTransition($history->status, $newStatus)) {
             throw new \Exception("Invalid status transition from {$history->status} to {$newStatus}.");
         }
 
@@ -1593,5 +1511,4 @@ class PatientHistoryController extends Controller
 
         return $history;
     }
-
 }

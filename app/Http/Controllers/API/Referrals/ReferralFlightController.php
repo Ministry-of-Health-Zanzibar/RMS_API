@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\API\Referrals;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\Helper;
 use App\Models\Referral;
 use App\Models\ReferralFlight;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class ReferralFlightController extends Controller
 {
@@ -83,21 +83,7 @@ class ReferralFlightController extends Controller
         ]);
 
         try {
-
             DB::beginTransaction();
-
-            // Make sure referral exists
-            $referral = Referral::where(
-                'referral_id',
-                $validated['referral_id']
-            )->first();
-
-            if (!$referral) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Referral not found.',
-                ], 404);
-            }
 
             // Add logged-in user
             $validated['created_by'] = Auth::id();
@@ -113,32 +99,26 @@ class ReferralFlightController extends Controller
             ], 201);
 
         } catch (\Throwable $e) {
-
             DB::rollBack();
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to save flight information.',
-                'error' => $e->getMessage(),
-            ], 500);
+            return Helper::serverError($e, 'Failed to save flight information.');
         }
     }
-
 
     /**
      * Get flight information by referral.
      */
-    public function show($referralId)
+    public function showByReferral($referralId)
     {
         $flight = ReferralFlight::where(
             'referral_id',
             $referralId
         )
-        ->with('referral')
-        ->latest('referral_flight_id')
-        ->first();
+            ->with('referral')
+            ->latest('referral_flight_id')
+            ->first();
 
-        if (!$flight) {
+        if (! $flight) {
             return response()->json([
                 'success' => false,
                 'message' => 'Flight information not found.',
@@ -151,6 +131,25 @@ class ReferralFlightController extends Controller
         ]);
     }
 
+    /**
+     * Get a specific flight record.
+     */
+    public function show($id)
+    {
+        $flight = ReferralFlight::with('referral')->find($id);
+
+        if (! $flight) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Flight information not found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $flight,
+        ]);
+    }
 
     /**
      * Update flight information.
@@ -159,7 +158,7 @@ class ReferralFlightController extends Controller
     {
         $flight = ReferralFlight::find($id);
 
-        if (!$flight) {
+        if (! $flight) {
             return response()->json([
                 'success' => false,
                 'message' => 'Flight information not found.',
@@ -234,7 +233,6 @@ class ReferralFlightController extends Controller
         ]);
     }
 
-
     /**
      * Delete flight information.
      */
@@ -242,7 +240,7 @@ class ReferralFlightController extends Controller
     {
         $flight = ReferralFlight::find($id);
 
-        if (!$flight) {
+        if (! $flight) {
             return response()->json([
                 'success' => false,
                 'message' => 'Flight information not found.',

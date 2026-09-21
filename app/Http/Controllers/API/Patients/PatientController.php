@@ -2,19 +2,17 @@
 
 namespace App\Http\Controllers\API\Patients;
 
+use App\Http\Controllers\Controller;
+use App\Http\Helpers\Helper;
+use App\Mail\NewPatientRecordNotification;
 use App\Models\Patient;
 use App\Models\PatientFile;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use function PHPUnit\Framework\isEmpty;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use App\Mail\NewPatientRecordNotification;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Mail;
 use App\Services\MatibabuService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Validator;
 
 class PatientController extends Controller
 {
@@ -31,26 +29,35 @@ class PatientController extends Controller
      *     path="/api/patients",
      *     summary="Get all patients",
      *     tags={"Patients"},
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="data",
      *                 type="array",
+     *
      *                 @OA\Items(
      *                     type="object",
+     *
      *                     @OA\Property(property="patient_id", type="integer", example=1),
      *                     @OA\Property(property="name", type="string"),
      *                     @OA\Property(property="date_of_birth", type="string", format="date-time"),
@@ -75,10 +82,10 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->can('View Patient')) {
+        if (! $user->can('View Patient')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -87,7 +94,7 @@ class PatientController extends Controller
             'medicalboard@mohz.go.tz',
             'hospital@mohz.go.tz',
             'mkurugenzi@mohz.go.tz',
-            'dguser@mohz.go.tz'
+            'dguser@mohz.go.tz',
         ];
 
         $isDataEntryUser = in_array($user->email, $dataEntryEmails);
@@ -141,7 +148,7 @@ class PatientController extends Controller
         /**
          * 3. KAMA NI HOSPITAL USER WA KAWAIDA: Anaona zake tu
          */
-        elseif ($user->hasAnyRole(['ROLE HOSPITAL USER','ROLE MEDICAL BOARD MEMBER'])) {
+        elseif ($user->hasAnyRole(['ROLE HOSPITAL USER', 'ROLE MEDICAL BOARD MEMBER'])) {
             $query->where('created_by', $user->id);
         }
 
@@ -163,19 +170,19 @@ class PatientController extends Controller
             'medicalboard@mohz.go.tz',
             'hospital@mohz.go.tz',
             'mkurugenzi@mohz.go.tz',
-            'dguser@mohz.go.tz'
+            'dguser@mohz.go.tz',
         ];
 
-        if (!$user->canAny(['View Patient', 'View History'])) {
+        if (! $user->canAny(['View Patient', 'View History'])) {
             return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
         $isMkurugenzi = $user->hasRole('ROLE MKURUGENZI TIBA');
         $isDataEntryUser = in_array($user->email, $dataEntryEmails);
 
-        $latestStatusSubquery = "(SELECT status FROM patient_histories
+        $latestStatusSubquery = '(SELECT status FROM patient_histories
                                 WHERE patient_histories.patient_id = patients.patient_id
-                                ORDER BY patient_histories_id DESC LIMIT 1)";
+                                ORDER BY patient_histories_id DESC LIMIT 1)';
 
         $query = Patient::query()
             ->with(['latestHistory', 'creator'])
@@ -210,9 +217,9 @@ class PatientController extends Controller
             ->orderByRaw("
                 CASE
                     WHEN $latestStatusSubquery = 'pending' THEN 1
-                    WHEN $latestStatusSubquery = 'requested' THEN " . ($isMkurugenzi ? '2' : '4') . "
-                    WHEN $latestStatusSubquery = 'reviewed' THEN " . ($isMkurugenzi ? '3' : '2') . "
-                    WHEN $latestStatusSubquery = 'assigned' THEN " . ($isMkurugenzi ? '4' : '3') . "
+                    WHEN $latestStatusSubquery = 'requested' THEN ".($isMkurugenzi ? '2' : '4')."
+                    WHEN $latestStatusSubquery = 'reviewed' THEN ".($isMkurugenzi ? '3' : '2')."
+                    WHEN $latestStatusSubquery = 'assigned' THEN ".($isMkurugenzi ? '4' : '3')."
                     WHEN $latestStatusSubquery = 'approved' THEN 5
                     WHEN $latestStatusSubquery = 'confirmed' THEN 6
                     WHEN $latestStatusSubquery = 'rejected' THEN 7
@@ -225,12 +232,11 @@ class PatientController extends Controller
         return response(
             [
                 'data' => $patients,
-                'statusCode' => 200
+                'statusCode' => 200,
             ],
             200
         );
     }
-
 
     /**
      * Store a newly created resource in storage.
@@ -240,12 +246,16 @@ class PatientController extends Controller
      *     path="/api/patients",
      *     summary="Create patient",
      *     tags={"Patients"},
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
+     *
      *             @OA\Schema(
      *                 required={"name","patient_list_id"},
+     *
      *                 @OA\Property(property="name", type="string"),
      *                 @OA\Property(property="matibabu_card", type="string"),
      *                 @OA\Property(property="zan_id", type="string"),
@@ -273,15 +283,19 @@ class PatientController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=201,
      *         description="Patient created successfully",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string", example="Patient created successfully."),
      *             @OA\Property(property="statusCode", type="integer", example=201)
      *         )
      *     ),
+     *
      *     @OA\Response(response=403, description="Forbidden"),
      *     @OA\Response(response=500, description="Internal Server Error")
      * )
@@ -290,10 +304,10 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->can('Create Patient')) {
+        if (! $user->can('Create Patient')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -303,27 +317,27 @@ class PatientController extends Controller
         ]);
 
         $data = Validator::make($request->all(), [
-            'name'              => ['required', 'string'],
-            'matibabu_card'     => ['nullable', 'string'],
-            'zan_id'            => ['nullable', 'string'],
-            'date_of_birth'     => ['required', 'string'],
-            'gender'            => ['required', 'string'],
-            'phone'             => ['nullable', 'string'],
-            'location_id'       => ['nullable', 'string', 'exists:geographical_locations,location_id'],
-            'job'               => ['nullable', 'string'],
-            'position'          => ['nullable', 'string'],
+            'name' => ['required', 'string'],
+            'matibabu_card' => ['nullable', 'string'],
+            'zan_id' => ['nullable', 'string'],
+            'date_of_birth' => ['required', 'string'],
+            'gender' => ['required', 'string'],
+            'phone' => ['nullable', 'string'],
+            'location_id' => ['nullable', 'string', 'exists:geographical_locations,location_id'],
+            'job' => ['nullable', 'string'],
+            'position' => ['nullable', 'string'],
 
             // Make patient_list_id optional
-            'patient_list_id'   => ['nullable', 'numeric', 'exists:patient_lists,patient_list_id'],
+            'patient_list_id' => ['nullable', 'numeric', 'exists:patient_lists,patient_list_id'],
 
-            'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
-            'description'       => ['nullable', 'string'],
+            'patient_file.*' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
+            'description' => ['nullable', 'string'],
 
             // Optional insurance validation
-            'has_insurance'           => ['required', 'boolean'],
+            'has_insurance' => ['required', 'boolean'],
             'insurance_provider_name' => ['nullable', 'string'],
-            'card_number'             => ['nullable', 'string'],
-            'valid_until'             => ['nullable', 'string'],
+            'card_number' => ['nullable', 'string'],
+            'valid_until' => ['nullable', 'string'],
         ]);
 
         if ($data->fails()) {
@@ -340,10 +354,10 @@ class PatientController extends Controller
         if ($request->filled('patient_list_id')) {
             $patientList = \App\Models\PatientList::find($request->patient_list_id);
 
-            if (!$patientList) {
+            if (! $patientList) {
                 return response()->json([
                     'message' => "Invalid Patient List ID: {$request->patient_list_id}",
-                    'statusCode' => 404
+                    'statusCode' => 404,
                 ], 404);
             }
 
@@ -362,18 +376,18 @@ class PatientController extends Controller
 
         // Create the patient (patient_list_id optional)
         $patient = \App\Models\Patient::create([
-            'name'            => $request['name'],
-            'matibabu_card'   => $request['matibabu_card'],
-            'zan_id'          => $request['zan_id'],
-            'date_of_birth'   => $request['date_of_birth'],
-            'gender'          => $request['gender'],
-            'phone'           => $request['phone'],
-            'location_id'     => $request['location_id'],
-            'job'             => $request['job'],
-            'position'        => $request['position'],
+            'name' => $request['name'],
+            'matibabu_card' => $request['matibabu_card'],
+            'zan_id' => $request['zan_id'],
+            'date_of_birth' => $request['date_of_birth'],
+            'gender' => $request['gender'],
+            'phone' => $request['phone'],
+            'location_id' => $request['location_id'],
+            'job' => $request['job'],
+            'position' => $request['position'],
             // use optional() helper instead of nullsafe operator
             'patient_list_id' => optional($patientList)->patient_list_id,
-            'created_by'      => Auth::id(),
+            'created_by' => Auth::id(),
         ]);
 
         // Attach to list via pivot only if list provided
@@ -384,18 +398,18 @@ class PatientController extends Controller
         // Optional Insurance creation
         if ($request->filled('has_insurance') && $request->boolean('has_insurance') === true) {
             $insuranceProvider = $request->insurance_provider_name ?: null;
-            $cardNumber        = $request->card_number ?: null;
-            $validUntil        = $request->valid_until ?: null;
+            $cardNumber = $request->card_number ?: null;
+            $validUntil = $request->valid_until ?: null;
 
             // Only create if not already existing for that patient
             $existingInsurance = \App\Models\Insurance::where('patient_id', $patient->patient_id)->first();
 
-            if (!$existingInsurance) {
+            if (! $existingInsurance) {
                 \App\Models\Insurance::create([
-                    'patient_id'             => $patient->patient_id,
+                    'patient_id' => $patient->patient_id,
                     'insurance_provider_name' => $insuranceProvider,
-                    'card_number'            => $cardNumber,
-                    'valid_until'            => $validUntil,
+                    'card_number' => $cardNumber,
+                    'valid_until' => $validUntil,
                 ]);
             }
         }
@@ -403,21 +417,21 @@ class PatientController extends Controller
         // File Upload
         if ($request->hasFile('patient_file')) {
             $files = $request->file('patient_file');
-            if (!is_array($files)) {
+            if (! is_array($files)) {
                 $files = [$files];
             }
 
             foreach ($files as $file) {
                 $extension = $file->getClientOriginalExtension();
-                $newFileName = 'patient_file_' . date('h-i-s_a_d-m-Y') . '.' . $extension;
+                $newFileName = 'patient_file_'.date('h-i-s_a_d-m-Y').'.'.$extension;
                 $file->move(public_path('uploads/patientFiles/'), $newFileName);
-                $filePath = 'uploads/patientFiles/' . $newFileName;
+                $filePath = 'uploads/patientFiles/'.$newFileName;
 
                 \App\Models\PatientFile::create([
-                    'patient_id'  => $patient->patient_id,
-                    'file_name'   => $file->getClientOriginalName(),
-                    'file_path'   => $filePath,
-                    'file_type'   => $file->getClientMimeType(),
+                    'patient_id' => $patient->patient_id,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => $filePath,
+                    'file_type' => $file->getClientMimeType(),
                     'description' => $request->input('description') ?? null,
                     'uploaded_by' => Auth::id(),
                 ]);
@@ -439,7 +453,7 @@ class PatientController extends Controller
         $user = auth()->user();
 
         // 1. Authorization
-        if (!$user->can('Create Patient')) {
+        if (! $user->can('Create Patient')) {
             return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
@@ -453,37 +467,37 @@ class PatientController extends Controller
 
         // 3. Robust Validation - Imetumika $requirement kwa fields husika
         $validator = Validator::make($request->all(), [
-            'name'              => [$requirement, 'string', 'max:255'],
-            'matibabu_card'     => [$requirement, 'string', 'max:50'], // Hii itaruhusu nullable kama ni hospital user
-            'zan_id'            => ['nullable', 'string', 'max:50'],
-            'date_of_birth'     => [$requirement, 'string'],
-            'gender'            => [$requirement, 'string'],
-            'phone'             => ['nullable', 'string', 'max:20'],
-            'location_id'       => ['nullable', 'exists:geographical_locations,location_id'],
-            'job'               => ['nullable', 'string'],
-            'position'          => ['nullable', 'string'],
+            'name' => [$requirement, 'string', 'max:255'],
+            'matibabu_card' => [$requirement, 'string', 'max:50'], // Hii itaruhusu nullable kama ni hospital user
+            'zan_id' => ['nullable', 'string', 'max:50'],
+            'date_of_birth' => [$requirement, 'string'],
+            'gender' => [$requirement, 'string'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'location_id' => ['nullable', 'exists:geographical_locations,location_id'],
+            'job' => ['nullable', 'string'],
+            'position' => ['nullable', 'string'],
 
-            'file_number'       => ['nullable', 'string'],
-            'referring_date'    => ['nullable', 'string'],
-            'reason_id'         => ['required', 'numeric', 'exists:reasons,reason_id'],
-            'case_type'         => ['required', 'in:Emergency,Routine'],
-            'history_file'      => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
-            'diagnosis_ids'     => ['nullable', 'array'],
-            'diagnosis_ids.*'   => ['exists:diagnoses,diagnosis_id'],
+            'file_number' => ['nullable', 'string'],
+            'referring_date' => ['nullable', 'string'],
+            'reason_id' => ['required', 'numeric', 'exists:reasons,reason_id'],
+            'case_type' => ['required', 'in:Emergency,Routine'],
+            'history_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'diagnosis_ids' => ['nullable', 'array'],
+            'diagnosis_ids.*' => ['exists:diagnoses,diagnosis_id'],
 
-            'has_insurance'           => ['required', 'boolean'],
+            'has_insurance' => ['required', 'boolean'],
             'insurance_provider_name' => ['nullable', 'string'],
-            'card_number'             => ['nullable', 'string'],
-            'valid_until'             => ['nullable', 'string'],
+            'card_number' => ['nullable', 'string'],
+            'valid_until' => ['nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
             return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
         }
 
-        if (!$isDataEntry) {
+        if (! $isDataEntry) {
             // Endelea na logic iliyobaki kama ilivyokuwa...
-            if (!$this->isPatientEligible($request->matibabu_card)) {
+            if (! $this->isPatientEligible($request->matibabu_card)) {
                 return response()->json(['message' => 'Patient has an active referral process.', 'statusCode' => 403], 200);
             }
         }
@@ -495,51 +509,51 @@ class PatientController extends Controller
                 // 5a. KWA DATA ENTRY: Tengeneza mgonjwa mpya kila wakati (Hata kama kadi inafanana au ni null)
                 $patient = \App\Models\Patient::create([
                     'matibabu_card' => $request->matibabu_card,
-                    'name'          => $request->name,
-                    'zan_id'        => $request->zan_id,
+                    'name' => $request->name,
+                    'zan_id' => $request->zan_id,
                     'date_of_birth' => $request->date_of_birth,
-                    'gender'        => $request->gender,
-                    'phone'         => $request->phone,
-                    'location_id'   => $request->location_id,
-                    'job'           => $request->job,
-                    'position'      => $request->position,
-                    'created_by'    => Auth::id(),
+                    'gender' => $request->gender,
+                    'phone' => $request->phone,
+                    'location_id' => $request->location_id,
+                    'job' => $request->job,
+                    'position' => $request->position,
+                    'created_by' => Auth::id(),
                 ]);
             } else {
                 // 5b. KWA WATUMIAJI WENGINE: Tafuta kadi, kama ipo update, kama haipo tengeneza
                 $patient = \App\Models\Patient::updateOrCreate(
                     ['matibabu_card' => $request->matibabu_card],
                     [
-                        'name'          => $request->name,
-                        'zan_id'        => $request->zan_id,
+                        'name' => $request->name,
+                        'zan_id' => $request->zan_id,
                         'date_of_birth' => $request->date_of_birth,
-                        'gender'        => $request->gender,
-                        'phone'         => $request->phone,
-                        'location_id'   => $request->location_id,
-                        'job'           => $request->job,
-                        'position'      => $request->position,
-                        'created_by'    => Auth::id(),
+                        'gender' => $request->gender,
+                        'phone' => $request->phone,
+                        'location_id' => $request->location_id,
+                        'job' => $request->job,
+                        'position' => $request->position,
+                        'created_by' => Auth::id(),
                     ]
                 );
             }
 
             // ... (Kodi nyingine zote zinabaki vilevile)
-            $doctorName = trim(($user->first_name ?? '') . ' ' . ($user->middle_name ?? '') . ' ' . ($user->last_name ?? ''));
+            $doctorName = trim(($user->first_name ?? '').' '.($user->middle_name ?? '').' '.($user->last_name ?? ''));
 
             $patientHistory = \App\Models\PatientHistory::create([
-                'patient_id'                    => $patient->patient_id,
-                'referring_doctor'              => $doctorName,
-                'file_number'                   => $request->file_number,
-                'referring_date'                => $request->referring_date,
-                'reason_id'                     => $request->reason_id,
-                'case_type'                     => $request->case_type,
+                'patient_id' => $patient->patient_id,
+                'referring_doctor' => $doctorName,
+                'file_number' => $request->file_number,
+                'referring_date' => $request->referring_date,
+                'reason_id' => $request->reason_id,
+                'case_type' => $request->case_type,
                 'history_of_presenting_illness' => $request->history_of_presenting_illness,
-                'physical_findings'             => $request->physical_findings,
-                'investigations'                => $request->investigations,
-                'management_done'               => $request->management_done,
+                'physical_findings' => $request->physical_findings,
+                'investigations' => $request->investigations,
+                'management_done' => $request->management_done,
                 // Hospital submissions go straight to the Medical Board queue.
                 // That queue only includes patients whose latest history is reviewed.
-                'status'                        => 'reviewed',
+                'status' => 'reviewed',
             ]);
 
             if ($request->filled('diagnosis_ids')) {
@@ -554,22 +568,22 @@ class PatientController extends Controller
                     ['patient_id' => $patient->patient_id],
                     [
                         'insurance_provider_name' => $request->insurance_provider_name,
-                        'card_number'             => $request->card_number,
-                        'valid_until'             => $request->valid_until,
+                        'card_number' => $request->card_number,
+                        'valid_until' => $request->valid_until,
                     ]
                 );
             }
 
             if ($request->hasFile('history_file')) {
                 $file = $request->file('history_file');
-                $fileName = 'history_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $fileName = 'history_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension();
                 $file->move(public_path('uploads/historyFiles'), $fileName);
-                $patientHistory->update(['history_file' => 'uploads/historyFiles/' . $fileName]);
+                $patientHistory->update(['history_file' => 'uploads/historyFiles/'.$fileName]);
             }
 
             DB::commit();
 
-            if (!$isDataEntry) {
+            if (! $isDataEntry) {
                 // NOTIFICATIONS
                 try {
                     $directors = \App\Models\User::role('ROLE MKURUGENZI TIBA')
@@ -583,7 +597,7 @@ class PatientController extends Controller
                     // Notify the internal directors
                     Notification::send($directors, new NewPatientRecordNotification($patient, $patientHistory));
                 } catch (\Exception $e) {
-                    \Log::error("Notification failed: " . $e->getMessage());
+                    \Log::error('Notification failed: '.$e->getMessage());
                 }
             }
 
@@ -594,12 +608,187 @@ class PatientController extends Controller
             ], 201);
         } catch (\Throwable $e) {
             DB::rollBack();
-            \Log::error("Store Patient Error: " . $e->getMessage());
+
+            return Helper::serverError($e, 'Failed to process the patient record.');
+        }
+    }
+
+    /**
+     * Register a patient with their history and automatically process the
+     * history workflow up to the "Mkurugenzi Tiba" approval stage (status = 'approved').
+     *
+     * A Referral record is also created (status = 'Requested') so that the next
+     * step (Director General confirmation = 'confirmed') can be completed manually.
+     */
+    public function storePatientAndHistoryAutoApproved(Request $request)
+    {
+        $user = auth()->user();
+
+        // 1. Authorization
+        if (! $user->can('Create Patient')) {
+            return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
+        }
+
+        // 2. Normalize boolean from Angular ("true"/"false" → true/false)
+        $request->merge([
+            'has_insurance' => filter_var($request->has_insurance, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+        ]);
+
+        // 3. Validation - same rules as a normal registration
+        $validator = Validator::make($request->all(), [
+            'name' => ['required', 'string', 'max:255'],
+            'matibabu_card' => ['nullable', 'string', 'max:50'],
+            'zan_id' => ['nullable', 'string', 'max:50'],
+            'date_of_birth' => ['required', 'string'],
+            'gender' => ['required', 'string'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'location_id' => ['nullable', 'exists:geographical_locations,location_id'],
+            'job' => ['nullable', 'string'],
+            'position' => ['nullable', 'string'],
+
+            'file_number' => ['nullable', 'string'],
+            'referring_date' => ['nullable', 'string'],
+            'reason_id' => ['required', 'numeric', 'exists:reasons,reason_id'],
+            'case_type' => ['required', 'in:Emergency,Routine'],
+            'history_of_presenting_illness' => ['nullable', 'string'],
+            'physical_findings' => ['nullable', 'string'],
+            'investigations' => ['nullable', 'string'],
+            'management_done' => ['nullable', 'string'],
+            'history_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'diagnosis_ids' => ['nullable', 'array'],
+            'diagnosis_ids.*' => ['exists:diagnoses,diagnosis_id'],
+
+            'has_insurance' => ['required', 'boolean'],
+            'insurance_provider_name' => ['nullable', 'string'],
+            'card_number' => ['nullable', 'string'],
+            'valid_until' => ['nullable', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'errors' => $validator->errors(), 'statusCode' => 422], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            // 4. Create the patient
+            $patient = \App\Models\Patient::create([
+                'name' => $request->name,
+                'matibabu_card' => $request->matibabu_card,
+                'zan_id' => $request->zan_id,
+                'date_of_birth' => $request->date_of_birth,
+                'gender' => $request->gender,
+                'phone' => $request->phone,
+                'location_id' => $request->location_id,
+                'job' => $request->job,
+                'position' => $request->position,
+                'created_by' => Auth::id(),
+            ]);
+
+            // 5. Build referring doctor name
+            $doctorName = trim(($user->first_name ?? '').' '.($user->middle_name ?? '').' '.($user->last_name ?? ''));
+
+            // 6. Create the patient history (status starts at 'pending')
+            $patientHistory = \App\Models\PatientHistory::create([
+                'patient_id' => $patient->patient_id,
+                'referring_doctor' => $doctorName,
+                'file_number' => $request->file_number,
+                'referring_date' => $request->referring_date,
+                'reason_id' => $request->reason_id,
+                'case_type' => $request->case_type,
+                'history_of_presenting_illness' => $request->history_of_presenting_illness,
+                'physical_findings' => $request->physical_findings,
+                'investigations' => $request->investigations,
+                'management_done' => $request->management_done,
+                'status' => 'pending',
+            ]);
+
+            // 7. Attach doctor diagnoses
+            if ($request->filled('diagnosis_ids')) {
+                $diagnosisData = collect($request->diagnosis_ids)->mapWithKeys(function ($id) {
+                    return [$id => ['added_by' => 'doctor']];
+                })->toArray();
+                $patientHistory->diagnoses()->sync($diagnosisData);
+            }
+
+            // 8. Handle history file upload
+            if ($request->hasFile('history_file')) {
+                $file = $request->file('history_file');
+                $fileName = 'history_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension();
+                $file->move(public_path('uploads/historyFiles'), $fileName);
+                $patientHistory->update(['history_file' => 'uploads/historyFiles/'.$fileName]);
+            }
+
+            // 9. Handle insurance
+            if ($request->boolean('has_insurance')) {
+                \App\Models\Insurance::updateOrCreate(
+                    ['patient_id' => $patient->patient_id],
+                    [
+                        'insurance_provider_name' => $request->insurance_provider_name,
+                        'card_number' => $request->card_number,
+                        'valid_until' => $request->valid_until,
+                    ]
+                );
+            }
+
+            // ------------------------------------------------------------------
+            // 10. AUTO-PROCESS WORKFLOW UP TO MKURUGENZI TIBA APPROVAL
+            //     pending -> reviewed -> assigned -> approved
+            //     The last step (DG confirmation = 'confirmed') is left MANUAL.
+            // ------------------------------------------------------------------
+            $autoComment = 'Auto-approved by the system during registration (Mkurugenzi Tiba stage).';
+
+            // pending -> reviewed
+            $patientHistory->update([
+                'status' => 'reviewed',
+                'mkurugenzi_tiba_id' => $user->id,
+                'mkurugenzi_tiba_comments' => 'Reviewed automatically during registration.',
+            ]);
+
+            // reviewed -> assigned
+            $patientHistory->update([
+                'status' => 'assigned',
+            ]);
+
+            // assigned -> approved (Mkurugenzi Tiba approval)
+            $patientHistory->update([
+                'status' => 'approved',
+                'mkurugenzi_tiba_comments' => $autoComment,
+            ]);
+
+            // ------------------------------------------------------------------
+            // 11. CREATE REFERRAL RECORD (status 'Requested') ready for DG manual confirmation
+            // ------------------------------------------------------------------
+            $today = now()->format('Y-m-d');
+            $count = \App\Models\Referral::whereDate('created_at', $today)->count() + 1;
+            $referralNumber = 'REF-'.$today.'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
+
+            $referral = \App\Models\Referral::create([
+                'patient_id' => $patient->patient_id,
+                'reason_id' => $request->reason_id,
+                'status' => 'Requested',
+                'referral_number' => $referralNumber,
+                'created_by' => $user->id,
+            ]);
+
+            if ($request->filled('diagnosis_ids')) {
+                $referral->diagnoses()->sync($request->diagnosis_ids);
+            }
+
+            DB::commit();
+
             return response([
-                'message' => 'Failed to process request',
-                'error' => $e->getMessage(),
-                'statusCode' => 500,
-            ], 500);
+                'data' => [
+                    'patient' => $patient,
+                    'history' => $patientHistory->load('diagnoses', 'reason'),
+                    'referral' => $referral->load('diagnoses', 'reason'),
+                ],
+                'message' => 'Patient registered and history auto-approved up to Mkurugenzi Tiba. Awaiting manual DG confirmation.',
+                'statusCode' => 201,
+            ], 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return Helper::serverError($e, 'Failed to process the patient record.');
         }
     }
 
@@ -790,7 +979,7 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->can('Update Patient')) {
+        if (! $user->can('Update Patient')) {
             return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
@@ -804,32 +993,32 @@ class PatientController extends Controller
 
         // Validation - Inatumia $requirement kwa fields husika
         $validator = Validator::make($request->all(), [
-            'name'              => [$requirement, 'string', 'max:255'],
-            'matibabu_card'     => [$requirement, 'string', 'max:50'],
-            'zan_id'            => ['nullable', 'string', 'max:50'],
-            'date_of_birth'     => [$requirement, 'string'],
-            'gender'            => [$requirement, 'string'],
-            'phone'             => ['nullable', 'string', 'max:20'],
-            'location_id'       => ['nullable', 'exists:geographical_locations,location_id'],
-            'job'               => ['nullable', 'string'],
-            'position'          => ['nullable', 'string'],
+            'name' => [$requirement, 'string', 'max:255'],
+            'matibabu_card' => [$requirement, 'string', 'max:50'],
+            'zan_id' => ['nullable', 'string', 'max:50'],
+            'date_of_birth' => [$requirement, 'string'],
+            'gender' => [$requirement, 'string'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'location_id' => ['nullable', 'exists:geographical_locations,location_id'],
+            'job' => ['nullable', 'string'],
+            'position' => ['nullable', 'string'],
 
-            'file_number'       => ['nullable', 'string'],
-            'referring_date'    => ['nullable', 'string'],
-            'reason_id'         => ['required', 'numeric', 'exists:reasons,reason_id'],
-            'case_type'         => ['required', 'in:Emergency,Routine'],
-            'history_file'      => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
-            'diagnosis_ids'     => ['nullable', 'array'],
-            'diagnosis_ids.*'   => ['exists:diagnoses,diagnosis_id'],
+            'file_number' => ['nullable', 'string'],
+            'referring_date' => ['nullable', 'string'],
+            'reason_id' => ['required', 'numeric', 'exists:reasons,reason_id'],
+            'case_type' => ['required', 'in:Emergency,Routine'],
+            'history_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'diagnosis_ids' => ['nullable', 'array'],
+            'diagnosis_ids.*' => ['exists:diagnoses,diagnosis_id'],
             'history_of_presenting_illness' => ['nullable', 'string'],
-            'physical_findings'             => ['nullable', 'string'],
-            'investigations'                => ['nullable', 'string'],
-            'management_done'               => ['nullable', 'string'],
+            'physical_findings' => ['nullable', 'string'],
+            'investigations' => ['nullable', 'string'],
+            'management_done' => ['nullable', 'string'],
 
-            'has_insurance'           => ['required', 'boolean'],
+            'has_insurance' => ['required', 'boolean'],
             'insurance_provider_name' => ['nullable', 'string'],
-            'card_number'             => ['nullable', 'string'],
-            'valid_until'             => ['nullable', 'string'],
+            'card_number' => ['nullable', 'string'],
+            'valid_until' => ['nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
@@ -843,15 +1032,15 @@ class PatientController extends Controller
 
             // 2. Update taarifa za mgonjwa
             $patient->update([
-                'name'          => $request->name,
+                'name' => $request->name,
                 'matibabu_card' => $request->matibabu_card,
-                'zan_id'        => $request->zan_id,
+                'zan_id' => $request->zan_id,
                 'date_of_birth' => $request->date_of_birth,
-                'gender'        => $request->gender,
-                'phone'         => $request->phone,
-                'location_id'   => $request->location_id,
-                'job'           => $request->job,
-                'position'      => $request->position,
+                'gender' => $request->gender,
+                'phone' => $request->phone,
+                'location_id' => $request->location_id,
+                'job' => $request->job,
+                'position' => $request->position,
             ]);
 
             // 3. Tafuta historia ya hivi karibuni (Latest History)
@@ -859,20 +1048,20 @@ class PatientController extends Controller
                 ->latest('patient_histories_id')
                 ->first();
 
-            if (!$patientHistory) {
+            if (! $patientHistory) {
                 return response(['message' => 'No medical history found for this patient to update.', 'statusCode' => 404], 404);
             }
 
             // 4. Update historia
             $patientHistory->update([
-                'file_number'                   => $request->file_number,
-                'referring_date'                => $request->referring_date,
-                'reason_id'                     => $request->reason_id,
-                'case_type'                     => $request->case_type,
+                'file_number' => $request->file_number,
+                'referring_date' => $request->referring_date,
+                'reason_id' => $request->reason_id,
+                'case_type' => $request->case_type,
                 'history_of_presenting_illness' => $request->history_of_presenting_illness,
-                'physical_findings'             => $request->physical_findings,
-                'investigations'                => $request->investigations,
-                'management_done'               => $request->management_done,
+                'physical_findings' => $request->physical_findings,
+                'investigations' => $request->investigations,
+                'management_done' => $request->management_done,
             ]);
 
             // 5. Update Diagnoses
@@ -889,8 +1078,8 @@ class PatientController extends Controller
                     ['patient_id' => $patient->patient_id],
                     [
                         'insurance_provider_name' => $request->insurance_provider_name,
-                        'card_number'             => $request->card_number,
-                        'valid_until'             => $request->valid_until,
+                        'card_number' => $request->card_number,
+                        'valid_until' => $request->valid_until,
                     ]
                 );
             }
@@ -901,9 +1090,9 @@ class PatientController extends Controller
                     @unlink(public_path($patientHistory->history_file));
                 }
                 $file = $request->file('history_file');
-                $fileName = 'history_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $fileName = 'history_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension();
                 $file->move(public_path('uploads/historyFiles'), $fileName);
-                $patientHistory->update(['history_file' => 'uploads/historyFiles/' . $fileName]);
+                $patientHistory->update(['history_file' => 'uploads/historyFiles/'.$fileName]);
             }
 
             DB::commit();
@@ -911,19 +1100,15 @@ class PatientController extends Controller
             return response([
                 'data' => [
                     'patient' => $patient->load('geographicalLocation'),
-                    'history' => $patientHistory->load(['diagnoses', 'reason'])
+                    'history' => $patientHistory->load(['diagnoses', 'reason']),
                 ],
                 'message' => 'Patient and medical history updated successfully',
                 'statusCode' => 200,
             ], 200);
         } catch (\Throwable $e) {
             DB::rollBack();
-            \Log::error("Update Patient Error: " . $e->getMessage());
-            return response([
-                'message' => 'Failed to update record',
-                'error' => $e->getMessage(),
-                'statusCode' => 500
-            ], 500);
+
+            return Helper::serverError($e, 'Failed to update the patient record.');
         }
     }
 
@@ -931,7 +1116,7 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->can('View Patient')) {
+        if (! $user->can('View Patient')) {
             return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
@@ -946,7 +1131,7 @@ class PatientController extends Controller
                     $query->latest('patient_histories_id')
                         ->with(['diagnoses', 'reason'])
                         ->limit(1);
-                }
+                },
             ])->findOrFail($patient_id);
 
             // Kuchukua historia ya kwanza (ambayo ni latest kutokana na query hapo juu)
@@ -955,58 +1140,54 @@ class PatientController extends Controller
             return response([
                 'data' => [
                     'patient' => [
-                        'patient_id'       => $patient->patient_id,
-                        'name'             => $patient->name,
-                        'matibabu_card'    => $patient->matibabu_card,
-                        'zan_id'           => $patient->zan_id,
-                        'date_of_birth'    => $patient->date_of_birth,
-                        'gender'           => $patient->gender,
-                        'phone'            => $patient->phone,
-                        'job'              => $patient->job,
-                        'position'         => $patient->position,
+                        'patient_id' => $patient->patient_id,
+                        'name' => $patient->name,
+                        'matibabu_card' => $patient->matibabu_card,
+                        'zan_id' => $patient->zan_id,
+                        'date_of_birth' => $patient->date_of_birth,
+                        'gender' => $patient->gender,
+                        'phone' => $patient->phone,
+                        'job' => $patient->job,
+                        'position' => $patient->position,
                         'location_details' => $patient->geographicalLocation,
                     ],
                     // Ikiwa historia haipo, tunarudisha null badala ya kutoa Error
                     'history' => $history ? [
-                        'history_id'                    => $history->patient_histories_id,
-                        'file_number'                   => $history->file_number,
-                        'referring_date'                => $history->referring_date,
-                        'case_type'                     => $history->case_type,
+                        'history_id' => $history->patient_histories_id,
+                        'file_number' => $history->file_number,
+                        'referring_date' => $history->referring_date,
+                        'case_type' => $history->case_type,
                         'history_of_presenting_illness' => $history->history_of_presenting_illness,
-                        'physical_findings'             => $history->physical_findings,
-                        'investigations'                => $history->investigations,
-                        'management_done'               => $history->management_done,
-                        'history_file'         => $history->history_file ? asset($history->history_file) : null,
-                        'reason_details'                => $history->reason,
-                        'diagnoses'                     => $history->diagnoses,
+                        'physical_findings' => $history->physical_findings,
+                        'investigations' => $history->investigations,
+                        'management_done' => $history->management_done,
+                        'history_file' => $history->history_file ? asset($history->history_file) : null,
+                        'reason_details' => $history->reason,
+                        'diagnoses' => $history->diagnoses,
                     ] : null,
 
                     'insurance' => $patient->insurance ? [
-                        'has_insurance'           => true,
-                        'insurance_id'            => $patient->insurance->insurance_id,
+                        'has_insurance' => true,
+                        'insurance_id' => $patient->insurance->insurance_id,
                         'insurance_provider_name' => $patient->insurance->insurance_provider_name,
-                        'card_number'             => $patient->insurance->card_number,
-                        'valid_until'             => $patient->insurance->valid_until,
-                        'created_at'              => $patient->insurance->created_at,
+                        'card_number' => $patient->insurance->card_number,
+                        'valid_until' => $patient->insurance->valid_until,
+                        'created_at' => $patient->insurance->created_at,
                     ] : ['has_insurance' => false],
 
                     'patient_summary_file' => $patient->patientFiles->sortByDesc('id')->map(function ($file) {
                         return [
-                            'id'          => $file->id,
-                            'file_name'   => $file->file_name,
-                            'file_path'   => asset($file->file_path),
-                            'description' => $file->description
+                            'id' => $file->id,
+                            'file_name' => $file->file_name,
+                            'file_path' => asset($file->file_path),
+                            'description' => $file->description,
                         ];
-                    })->first() // Hapa tunachukua faili la kwanza baada ya kupanga kwa ID (Latest)
+                    })->first(), // Hapa tunachukua faili la kwanza baada ya kupanga kwa ID (Latest)
                 ],
-                'statusCode' => 200
+                'statusCode' => 200,
             ], 200);
         } catch (\Exception $e) {
-            return response([
-                'message' => 'Error retrieving data',
-                'error'   => $e->getMessage(),
-                'statusCode' => 500
-            ], 500);
+            return Helper::serverError($e, 'Error retrieving patient data.');
         }
     }
 
@@ -1018,17 +1199,22 @@ class PatientController extends Controller
      *     path="/api/patients/{patientId}",
      *     summary="Find patient by ID",
      *     tags={"Patients"},
+     *
      *     @OA\Parameter(
      *         name="patientId",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
@@ -1054,10 +1240,10 @@ class PatientController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        if (!$user->can('View Patient')) {
+        if (! $user->can('View Patient')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -1069,11 +1255,10 @@ class PatientController extends Controller
             'referrals.reason',     // referrals + reason
             'referrals.hospital',   // referrals + hospital
             'referrals.creator',    // referral created by user
-        ])->where('patient_id', (int)$id)
+        ])->where('patient_id', (int) $id)
             ->get();
 
-
-        if (!$patient) {
+        if (! $patient) {
             return response([
                 'message' => 'Patient not found',
                 'statusCode' => 404,
@@ -1094,17 +1279,23 @@ class PatientController extends Controller
      *     path="/api/patients/update/{patientId}",
      *     summary="Update patient",
      *     tags={"Patients"},
+     *
      *     @OA\Parameter(
      *         name="patientId",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
+     *
      *             @OA\Schema(
+     *
      *                 @OA\Property(property="name", type="string"),
      *                 @OA\Property(property="matibabu_card", type="string"),
      *                 @OA\Property(property="zan_id", type="string"),
@@ -1129,15 +1320,19 @@ class PatientController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Patient updated successfully",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string", example="Patient updated successfully."),
      *             @OA\Property(property="statusCode", type="integer", example=200)
      *         )
      *     ),
+     *
      *     @OA\Response(response=403, description="Forbidden"),
      *     @OA\Response(response=404, description="Patient not found"),
      *     @OA\Response(response=500, description="Internal Server Error")
@@ -1148,10 +1343,10 @@ class PatientController extends Controller
         $user = auth()->user();
 
         // Authorization
-        if (!$user->can('Update Patient')) {
+        if (! $user->can('Update Patient')) {
             return response()->json([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -1162,22 +1357,22 @@ class PatientController extends Controller
 
         // Validation
         $validator = Validator::make($request->all(), [
-            'name'              => ['required', 'string'],
-            'matibabu_card'     => ['nullable', 'string'],
-            'zan_id'            => ['nullable', 'string'],
-            'date_of_birth'     => ['nullable', 'date'],
-            'gender'            => ['nullable', 'string'],
-            'phone'             => ['nullable', 'string'],
-            'location_id'       => ['nullable', 'string', 'exists:geographical_locations,location_id'],
-            'job'               => ['nullable', 'string'],
-            'position'          => ['nullable', 'string'],
-            'patient_list_id'   => ['numeric', 'exists:patient_lists,patient_list_id'],
-            'patient_file.*'    => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
-            'description'       => ['nullable', 'string'],
-            'has_insurance'           => ['nullable', 'boolean'],
+            'name' => ['required', 'string'],
+            'matibabu_card' => ['nullable', 'string'],
+            'zan_id' => ['nullable', 'string'],
+            'date_of_birth' => ['nullable', 'date'],
+            'gender' => ['nullable', 'string'],
+            'phone' => ['nullable', 'string'],
+            'location_id' => ['nullable', 'string', 'exists:geographical_locations,location_id'],
+            'job' => ['nullable', 'string'],
+            'position' => ['nullable', 'string'],
+            'patient_list_id' => ['numeric', 'exists:patient_lists,patient_list_id'],
+            'patient_file.*' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xlsx'],
+            'description' => ['nullable', 'string'],
+            'has_insurance' => ['nullable', 'boolean'],
             'insurance_provider_name' => ['nullable', 'string'],
-            'card_number'             => ['nullable', 'string'],
-            'valid_until'             => ['nullable', 'date'],
+            'card_number' => ['nullable', 'string'],
+            'valid_until' => ['nullable', 'date'],
         ]);
 
         if ($validator->fails()) {
@@ -1194,10 +1389,10 @@ class PatientController extends Controller
         // Check capacity for each list
         $patientList = \App\Models\PatientList::find($request->patient_list_id);
 
-        if (!$patientList) {
+        if (! $patientList) {
             return response()->json([
                 'message' => "Invalid Patient List ID: {$request->patient_list_id}",
-                'statusCode' => 404
+                'statusCode' => 404,
             ], 404);
         }
 
@@ -1222,7 +1417,7 @@ class PatientController extends Controller
             'phone',
             'location_id',
             'job',
-            'position'
+            'position',
         ]));
 
         // Sync pivot table with new patient lists
@@ -1231,18 +1426,20 @@ class PatientController extends Controller
         // Handle file uploads
         if ($request->hasFile('patient_file')) {
             $files = $request->file('patient_file');
-            if (!is_array($files)) $files = [$files];
+            if (! is_array($files)) {
+                $files = [$files];
+            }
 
             foreach ($files as $file) {
                 $extension = $file->getClientOriginalExtension();
-                $newFileName = 'patient_file_' . date('h-i-s_a_d-m-Y') . '.' . $extension;
+                $newFileName = 'patient_file_'.date('h-i-s_a_d-m-Y').'.'.$extension;
                 $file->move(public_path('uploads/patientFiles/'), $newFileName);
 
                 PatientFile::create([
-                    'patient_id'  => $patient->patient_id,
-                    'file_name'   => $file->getClientOriginalName(),
-                    'file_path'   => 'uploads/patientFiles/' . $newFileName,
-                    'file_type'   => $file->getClientMimeType(),
+                    'patient_id' => $patient->patient_id,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => 'uploads/patientFiles/'.$newFileName,
+                    'file_type' => $file->getClientMimeType(),
                     'description' => $request->input('description'),
                     'uploaded_by' => Auth::id(),
                 ]);
@@ -1256,8 +1453,8 @@ class PatientController extends Controller
                     ['patient_id' => $patient->patient_id],
                     [
                         'insurance_provider_name' => $request->insurance_provider_name ?: null,
-                        'card_number'             => $request->card_number ?: null,
-                        'valid_until'             => $request->valid_until ?: null,
+                        'card_number' => $request->card_number ?: null,
+                        'valid_until' => $request->valid_until ?: null,
                     ]
                 );
             } else {
@@ -1281,27 +1478,36 @@ class PatientController extends Controller
      *     path="/api/patients/{patientId}",
      *     summary="Delete patient",
      *     tags={"Patients"},
+     *
      *     @OA\Parameter(
      *         name="patientId",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *      @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string"),
      *             @OA\Property(property="statusCode", type="integer")
      *         )
@@ -1311,16 +1517,16 @@ class PatientController extends Controller
     public function destroy(int $id)
     {
         $user = auth()->user();
-        if (!$user->can('Delete Patient')) {
+        if (! $user->can('Delete Patient')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
         $patient = Patient::withTrashed()->find($id);
 
-        if (!$patient) {
+        if (! $patient) {
             return response([
                 'message' => 'Patient not found',
                 'statusCode' => 404,
@@ -1335,7 +1541,6 @@ class PatientController extends Controller
         ], 200);
     }
 
-
     /**
      * Unblock
      */
@@ -1344,27 +1549,36 @@ class PatientController extends Controller
      *     path="/api/patients/unblock/{patientId}",
      *     summary="Unblock patient",
      *     tags={"Patients"},
+     *
      *     @OA\Parameter(
      *         name="patientId",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *      @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string"),
      *             @OA\Property(property="statusCode", type="integer")
      *         )
@@ -1376,7 +1590,7 @@ class PatientController extends Controller
 
         $patient = Patient::withTrashed()->find($id);
 
-        if (!$patient) {
+        if (! $patient) {
             return response([
                 'message' => 'Patient not found',
                 'statusCode' => 404,
@@ -1391,15 +1605,13 @@ class PatientController extends Controller
         ], 200);
     }
 
-
-
     public function getAllPatientsWithInsurance(int $patient_id)
     {
         $patient = Patient::with('insurances')
             ->where('patient_id', $patient_id)
             ->first();
 
-        if (!$patient) {
+        if (! $patient) {
             return response()->json([
                 'message' => 'Patient not found',
                 'statusCode' => 404,
@@ -1407,7 +1619,7 @@ class PatientController extends Controller
         }
 
         if ($patient->patient_list_id) {
-            $patient->documentUrl = asset('storage/' . $patient->patient_list_id);
+            $patient->documentUrl = asset('storage/'.$patient->patient_list_id);
         } else {
             $patient->documentUrl = null;
         }
@@ -1423,10 +1635,10 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->can('View Patient')) {
+        if (! $user->can('View Patient')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -1450,24 +1662,28 @@ class PatientController extends Controller
         ], 200);
     }
 
-
     /**
      * @OA\Get(
      *     path="/api/patients/histories/{patientId}",
      *     summary="Get medical histories of a patient by ID",
      *     tags={"Patients"},
+     *
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="Patient ID",
      *         required=true,
+     *
      *         @OA\Schema(type="integer", example=5)
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Patient medical histories retrieved successfully",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
@@ -1482,8 +1698,10 @@ class PatientController extends Controller
      *                 @OA\Property(
      *                     property="medical_histories",
      *                     type="array",
+     *
      *                     @OA\Items(
      *                         type="object",
+     *
      *                         @OA\Property(property="patient_histories_id", type="integer", example=1),
      *                         @OA\Property(property="referring_doctor", type="string", example="Dr. Ali"),
      *                         @OA\Property(property="file_number", type="string", example="FILE123"),
@@ -1500,20 +1718,26 @@ class PatientController extends Controller
      *             @OA\Property(property="statusCode", type="integer", example=200)
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=403,
      *         description="Forbidden",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string", example="Forbidden"),
      *             @OA\Property(property="statusCode", type="integer", example=403)
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=404,
      *         description="Patient not found",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string", example="Patient not found"),
      *             @OA\Property(property="statusCode", type="integer", example=404)
      *         )
@@ -1524,10 +1748,10 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->can('View Patient')) {
+        if (! $user->can('View Patient')) {
             return response()->json([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -1538,8 +1762,7 @@ class PatientController extends Controller
             'patientHistories.reason',
         ])->where('patient_id', $patient_id)->first();
 
-
-        if (!$patient) {
+        if (! $patient) {
             return response()->json([
                 'message' => 'Patient not found',
                 'statusCode' => 404,
@@ -1561,7 +1784,7 @@ class PatientController extends Controller
     private function isValidMatibabuCard($chfid): bool
     {
         // 1. Basic format check
-        if (empty($chfid) || strlen($chfid) !== 12 || !ctype_digit($chfid)) {
+        if (empty($chfid) || strlen($chfid) !== 12 || ! ctype_digit($chfid)) {
             return false;
         }
 
@@ -1578,7 +1801,7 @@ class PatientController extends Controller
         $patient = \App\Models\Patient::where('matibabu_card', $card)->first();
 
         // If patient doesn't exist, they are eligible (it's a new registration)
-        if (!$patient) {
+        if (! $patient) {
             return true;
         }
 
@@ -1624,7 +1847,7 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->can('View Patient')) {
+        if (! $user->can('View Patient')) {
             return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
@@ -1633,11 +1856,11 @@ class PatientController extends Controller
         ]);
 
         // NEW MANUAL CHECKSUM VALIDATION
-        if (!$this->isValidMatibabuCard($request->matibabu_card)) {
+        if (! $this->isValidMatibabuCard($request->matibabu_card)) {
             return response()->json([
                 'message' => 'The Matibabu card number is invalid.',
                 'success' => false,
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 200);
         }
 
@@ -1648,7 +1871,7 @@ class PatientController extends Controller
         $card = $request->matibabu_card;
         $patient = Patient::where('matibabu_card', $card)->first();
 
-        if (!$patient) {
+        if (! $patient) {
             try {
                 $imisPatient = app(MatibabuService::class)->enquireInsuree($card);
 
@@ -1661,33 +1884,34 @@ class PatientController extends Controller
 
                 // Translate openIMIS format directly to your local ERIS data attributes layout
                 $mappedPatient = [
-                    'patient_id'    => null, // Unregistered locally
-                    'name'          => $imisData['insureeName'] ?? trim(($imisData['firstName'] ?? '') . ' ' . ($imisData['lastName'] ?? '')),
+                    'patient_id' => null, // Unregistered locally
+                    'name' => $imisData['insureeName'] ?? trim(($imisData['firstName'] ?? '').' '.($imisData['lastName'] ?? '')),
                     'matibabu_card' => $imisData['chfid'] ?? $card,
-                    'zhsfid'        => $imisData['zhsfid'] ?? null,
-                    'zan_id'        => (($imisData['source_of_id'] ?? '') === 'Z') ? ($imisData['id'] ?? null) : null,
+                    'zhsfid' => $imisData['zhsfid'] ?? null,
+                    'zan_id' => (($imisData['source_of_id'] ?? '') === 'Z') ? ($imisData['id'] ?? null) : null,
                     'date_of_birth' => $imisData['dob'] ?? null,
-                    'gender'        => $genderMap[$genderRaw] ?? $imisData['gender'],
-                    'phone'         => !empty($imisData['phone']) ? preg_replace('/\D/', '', $imisData['phone']) : null,
-                    'location_id'   => $imisData['shehia'] ?? null,
-                    'job'           => null,
-                    'position'      => null,
+                    'gender' => $genderMap[$genderRaw] ?? $imisData['gender'],
+                    'phone' => ! empty($imisData['phone']) ? preg_replace('/\D/', '', $imisData['phone']) : null,
+                    'location_id' => $imisData['shehia'] ?? null,
+                    'job' => null,
+                    'position' => null,
                 ];
 
                 return response()->json([
-                    'message'    => 'Patient found in Matibabu/openIMIS',
-                    'success'    => true,
+                    'message' => 'Patient found in Matibabu/openIMIS',
+                    'success' => true,
                     'statusCode' => 200,
-                    'source'     => 'matibabu',
-                    'data'       => $mappedPatient
+                    'source' => 'matibabu',
+                    'data' => $mappedPatient,
                 ]);
 
             } catch (\Exception $e) {
+                report($e);
+
                 return response()->json([
-                    'message'    => 'Patient not found in ERIS or Matibabu',
-                    'success'    => false,
+                    'message' => 'Patient not found in ERIS or Matibabu',
+                    'success' => false,
                     'statusCode' => 404,
-                    'error'      => $e->getMessage()
                 ], 404);
             }
         }
@@ -1695,7 +1919,7 @@ class PatientController extends Controller
         // Use the helper to determine eligibility based on LATEST records
         $isEligible = $this->isPatientEligible($card);
 
-        if (!$isEligible) {
+        if (! $isEligible) {
             return response()->json([
                 'message' => 'This patient is not eligible (Latest Referral not Closed/Cancelled or History not Rejected).',
                 'success' => false,

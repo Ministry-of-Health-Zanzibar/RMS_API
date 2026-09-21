@@ -2,22 +2,19 @@
 
 namespace App\Http\Controllers\API\User;
 
+use App\Http\Controllers\Controller;
+use App\Http\Helpers\Helper;
+use App\Mail\UserCredentialsMail;
+use App\Models\User;
 use DB;
 use Exception;
-use Validator;
-use App\Models\User;
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Traits\HasRoles;
-use Spatie\Permission\Models\Permission;
-use App\Http\Controllers\API\Setup\GeneralController;
-
-use App\Mail\UserCredentialsMail;
 use Illuminate\Support\Facades\Mail;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Validator;
 
 class UsersCotroller extends Controller
 {
@@ -31,26 +28,35 @@ class UsersCotroller extends Controller
      *     path="/api/userAccounts",
      *     summary="Get a list of userAccountss",
      *     tags={"userAccounts"},
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="data",
      *                 type="array",
+     *
      *                 @OA\Items(
      *                     type="object",
+     *
      *                     @OA\Property(property="id", type="integer", example=2),
      *                     @OA\Property(property="first_name", type="string", example="ROLE NATIONAL"),
      *                     @OA\Property(property="middle_name", type="string", example="web"),
@@ -94,18 +100,14 @@ class UsersCotroller extends Controller
 
                 return response()->json([
                     'data' => $staffs,
-                    'statusCode' => 200
+                    'statusCode' => 200,
                 ]);
 
             } catch (Exception $e) {
-                return response()->json([
-                    'message' => 'Internal Server Error',
-                    'error' => $e->getMessage(),
-                    'statusCode' => 500
-                ]);
+                return Helper::serverError($e);
             }
 
-        } else if (auth()->user()->hasRole('ROLE NATIONAL')) {
+        } elseif (auth()->user()->hasRole('ROLE NATIONAL')) {
 
             try {
                 $staffs = DB::table('users')
@@ -133,18 +135,14 @@ class UsersCotroller extends Controller
 
                 return response()->json([
                     'data' => $staffs,
-                    'statusCode' => 200
+                    'statusCode' => 200,
                 ]);
 
             } catch (Exception $e) {
-                return response()->json([
-                    'message' => 'Internal Server Error',
-                    'error' => $e->getMessage(),
-                    'statusCode' => 500
-                ]);
+                return Helper::serverError($e);
             }
 
-        } else if (auth()->user()->hasRole('ROLE ACCOUNTANT')) {
+        } elseif (auth()->user()->hasRole('ROLE ACCOUNTANT')) {
 
             try {
                 $staffs = DB::table('users')
@@ -172,21 +170,17 @@ class UsersCotroller extends Controller
 
                 return response()->json([
                     'data' => $staffs,
-                    'statusCode' => 200
+                    'statusCode' => 200,
                 ]);
 
             } catch (Exception $e) {
-                return response()->json([
-                    'message' => 'Internal Server Error',
-                    'error' => $e->getMessage(),
-                    'statusCode' => 500
-                ]);
+                return Helper::serverError($e);
             }
 
         } else {
             return response()->json([
                 'message' => 'Unauthenticated',
-                'statusCode' => 401
+                'statusCode' => 401,
             ]);
         }
     }
@@ -196,10 +190,13 @@ class UsersCotroller extends Controller
      *     path="/api/userAccounts",
      *     summary="Store a new userAccounts",
      *     tags={"userAccounts"},
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="first_name", type="string"),
      *             @OA\Property(property="middle_name", type="string"),
      *             @OA\Property(property="last_name", type="string"),
@@ -212,21 +209,28 @@ class UsersCotroller extends Controller
      *             @OA\Property(property="password", type="string")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string"),
      *             @OA\Property(property="statusCode", type="integer")
      *         )
@@ -235,16 +239,31 @@ class UsersCotroller extends Controller
      */
     public function store(Request $request)
     {
-        $user_id = auth()->user()->id;
-        $auto_id = random_int(10000, 99999) . time();
-
         if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Create User')) {
+            $validator = Validator::make($request->all(), [
+                'first_name' => ['required', 'string', 'max:100'],
+                'middle_name' => ['required', 'string', 'max:100'],
+                'last_name' => ['required', 'string', 'max:100'],
+                'address' => ['required', 'string', 'max:255'],
+                'phone_no' => ['required', 'string', 'max:30'],
+                'email' => ['required', 'string', 'email', 'max:255'],
+                'gender' => ['required', 'string', 'max:30'],
+                'date_of_birth' => ['required', 'date'],
+                'role_id' => ['required', 'integer', 'exists:roles,id'],
+            ]);
 
-            $check_value = DB::select("SELECT u.email FROM users u WHERE u.email = ?", [$request->email]);
-            if (sizeof($check_value) == 0) {
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => 'The submitted user data is invalid.',
+                    'errors' => $validator->errors(),
+                    'statusCode' => 422,
+                ], 422);
+            }
+
+            $check_value = DB::select('SELECT u.email FROM users u WHERE u.email = ?', [$request->email]);
+            if (count($check_value) == 0) {
                 try {
-                    // 1️⃣ Generate a random password for the user
-                    $password_plain = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 8);
+                    $password_plain = Str::password(12);
 
                     // 2️⃣ Create the user
                     $user = User::create([
@@ -282,26 +301,21 @@ class UsersCotroller extends Controller
                         'message' => 'User Account Created Successfully and credentials sent via email',
                         'password' => $password_plain,
                         'email' => $request->email,
-                        'statusCode' => 201
+                        'statusCode' => 201,
                     ];
 
                     return response()->json($successResponse);
 
                 } catch (Exception $e) {
-
-                    $errorResponse = [
-                        'message' => 'Internal Server Error',
-                        'error' => $e->getMessage(),
-                        'statusCode' => 500
-                    ];
-                    return response()->json($errorResponse);
+                    return Helper::serverError($e);
                 }
 
             } else {
                 $errorResponse = [
                     'message' => 'Email Already Exists',
-                    'statusCode' => 400
+                    'statusCode' => 400,
                 ];
+
                 return response()->json($errorResponse);
             }
 
@@ -315,32 +329,43 @@ class UsersCotroller extends Controller
      *     path="/api/userAccounts/{id}",
      *     summary="Get a specific userAccounts",
      *     tags={"userAccounts"},
+     *
      *     @OA\Parameter(
      *         name="Id",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="data",
      *                 type="array",
+     *
      *                 @OA\Items(
      *                     type="object",
+     *
      *                     @OA\Property(property="id", type="integer", example=2),
      *                     @OA\Property(property="first_name", type="string", example="ROLE NATIONAL"),
      *                     @OA\Property(property="middle_name", type="string", example="web"),
@@ -374,7 +399,7 @@ class UsersCotroller extends Controller
 
             $response = [
                 'data' => $staffs,
-                'statusCode' => 200
+                'statusCode' => 200,
             ];
         } else {
             return response()
@@ -387,16 +412,21 @@ class UsersCotroller extends Controller
      *     path="/api/userAccounts/{id}",
      *     summary="Update a userAccounts",
      *     tags={"userAccounts"},
+     *
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="first_name", type="string"),
      *             @OA\Property(property="middle_name", type="string"),
      *             @OA\Property(property="last_name", type="string"),
@@ -408,21 +438,28 @@ class UsersCotroller extends Controller
      *             @OA\Property(property="password", type="string")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string"),
      *             @OA\Property(property="statusCode", type="integer")
      *         )
@@ -431,11 +468,27 @@ class UsersCotroller extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $user_id = auth()->user()->id;
         if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Update User')) {
-            try {
+            $validator = Validator::make($request->all(), [
+                'first_name' => ['required', 'string', 'max:100'],
+                'middle_name' => ['required', 'string', 'max:100'],
+                'last_name' => ['required', 'string', 'max:100'],
+                'address' => ['required', 'string', 'max:255'],
+                'phone_no' => ['required', 'string', 'max:30'],
+                'gender' => ['required', 'string', 'max:30'],
+                'date_of_birth' => ['required', 'date'],
+            ]);
 
-                $users = User::find($id);
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => 'The submitted user data is invalid.',
+                    'errors' => $validator->errors(),
+                    'statusCode' => 422,
+                ], 422);
+            }
+
+            try {
+                $users = User::findOrFail($id);
                 $users->first_name = $request->first_name;
                 $users->middle_name = $request->middle_name;
                 $users->last_name = $request->last_name;
@@ -449,18 +502,12 @@ class UsersCotroller extends Controller
 
                 $successResponse = [
                     'message' => 'User Account Updated Successfully',
-                    'statusCode' => 201
+                    'statusCode' => 201,
                 ];
 
                 return response()->json($successResponse);
             } catch (Exception $e) {
-                $errorResponse = [
-                    'message' => 'Internal Server Error',
-                    'error' => $e->getMessage(),
-                    'statusCode' => 500
-                ];
-
-                return response()->json($errorResponse);
+                return Helper::serverError($e);
             }
         } else {
             return response()
@@ -473,27 +520,36 @@ class UsersCotroller extends Controller
      *     path="/api/userAccounts/{id}",
      *     summary="Delete a userAccounts",
      *     tags={"userAccounts"},
+     *
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *      @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string"),
      *             @OA\Property(property="statusCode", type="integer")
      *         )
@@ -511,20 +567,13 @@ class UsersCotroller extends Controller
 
                     $successResponse = [
                         'message' => 'User Account Blocked Successfully',
-                        'statusCode' => '200'
+                        'statusCode' => '200',
                     ];
 
                     return response()->json($successResponse);
                 }
             } catch (Exception $e) {
-
-                $errorResponse = [
-                    'message' => 'Internal Server Error',
-                    'error' => $e->getMessage(),
-                    'statusCode' => '500'
-                ];
-
-                return response()->json($errorResponse);
+                return Helper::serverError($e);
             }
         } else {
             return response()
@@ -545,21 +594,17 @@ class UsersCotroller extends Controller
 
                     return response()->json([
                         'message' => 'User Account Unblocked Successfully',
-                        'statusCode' => '201'
+                        'statusCode' => '201',
                     ]);
                 }
 
                 return response()->json([
                     'message' => 'User not found in blocked list',
-                    'statusCode' => '404'
+                    'statusCode' => '404',
                 ], 404);
 
             } catch (Exception $e) {
-                return response()->json([
-                    'message' => 'Internal Server Error',
-                    'error' => $e->getMessage(),
-                    'statusCode' => '500'
-                ], 500);
+                return Helper::serverError($e);
             }
         } else {
             return response()->json(['message' => 'Unauthorized', 'statusCode' => 401], 401);
@@ -581,19 +626,19 @@ class UsersCotroller extends Controller
             $nameParts = array_filter([
                 $user->first_name,
                 $user->middle_name,
-                $user->last_name
+                $user->last_name,
             ]);
 
             return [
-                'user_id'   => $user->id,
-                'full_name' => implode(' ', $nameParts)
+                'user_id' => $user->id,
+                'full_name' => implode(' ', $nameParts),
             ];
         });
 
         return response()->json([
-            'data'       => $mappedStaffs,
-            'message'    => 'Board members retrieved successfully',
-            'statusCode' => 200
+            'data' => $mappedStaffs,
+            'message' => 'Board members retrieved successfully',
+            'statusCode' => 200,
         ]);
     }
 
@@ -602,17 +647,22 @@ class UsersCotroller extends Controller
      *     path="/api/users/{userId}/assign-hospital",
      *     summary="Assign a hospital to a user",
      *     tags={"userAccounts"},
+     *
      *     @OA\Parameter(
      *         name="userId",
      *         in="path",
      *         required=true,
      *         description="ID of the user to assign hospital",
+     *
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="hospital_id",
      *                 type="integer",
@@ -627,15 +677,20 @@ class UsersCotroller extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Hospital assigned successfully",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string", example="Hospital assigned successfully"),
      *             @OA\Property(property="data", type="array",
+     *
      *                 @OA\Items(
      *                     type="object",
+     *
      *                     @OA\Property(property="hospital_id", type="integer", example=9),
      *                     @OA\Property(property="hospital_name", type="string", example="City Hospital"),
      *                     @OA\Property(property="pivot", type="object",
@@ -649,27 +704,36 @@ class UsersCotroller extends Controller
      *             @OA\Property(property="statusCode", type="integer", example=200)
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=401,
      *         description="Unauthorized",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="message", type="string", example="Unauthorized"),
      *             @OA\Property(property="statusCode", type="integer", example=401)
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=422,
      *         description="Validation Error",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="message", type="string", example="Validation Error"),
      *             @OA\Property(property="errors", type="object"),
      *             @OA\Property(property="statusCode", type="integer", example=422)
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=500,
      *         description="Failed to assign hospital",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="message", type="string", example="Failed to assign hospital"),
      *             @OA\Property(property="error", type="string", example="Error message"),
      *             @OA\Property(property="statusCode", type="integer", example=500)
@@ -679,49 +743,44 @@ class UsersCotroller extends Controller
      */
     public function assignHospital(Request $request, $userId)
     {
-        $user = User::findOrFail($userId);
-
         // Only admins or users with permission can assign hospitals
-        if (!auth()->user()->hasRole('ROLE ADMIN') && !auth()->user()->can('Assign Hospital')) {
+        if (! auth()->user()->hasRole('ROLE ADMIN') && ! auth()->user()->can('Assign Hospital')) {
             return response()->json([
                 'message' => 'Unauthorized',
-                'statusCode' => 401
-            ]);
+                'statusCode' => 401,
+            ], 401);
         }
+
+        $user = User::findOrFail($userId);
 
         $validator = Validator::make($request->all(), [
             'hospital_id' => 'required|exists:hospitals,hospital_id',
-            'role'        => 'nullable|string',
+            'role' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation Error',
                 'errors' => $validator->errors(),
-                'statusCode' => 422
-            ]);
+                'statusCode' => 422,
+            ], 422);
         }
 
         try {
             // Attach hospital without removing existing ones
             $user->hospitals()->attach($request->hospital_id, [
-                'role'        => $request->role ?? 'staff',
+                'role' => $request->role ?? 'staff',
                 'assigned_by' => auth()->id(),
             ]);
 
             return response()->json([
                 'message' => 'Hospital assigned successfully',
                 'data' => $user->hospitals()->get(),
-                'statusCode' => 200
+                'statusCode' => 200,
             ]);
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to assign hospital',
-                'error' => $e->getMessage(),
-                'statusCode' => 500
-            ]);
+        } catch (Exception $e) {
+            return Helper::serverError($e, 'Failed to assign hospital');
         }
     }
-
 }

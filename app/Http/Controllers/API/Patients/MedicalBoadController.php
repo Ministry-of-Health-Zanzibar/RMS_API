@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers\API\Patients;
 
-use App\Models\Patient;
-use App\Models\PatientList;
-use App\Models\PatientHistory;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Storage;
+use App\Http\Helpers\Helper;
+use App\Models\Patient;
+use App\Models\PatientHistory;
+use App\Models\PatientList;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class MedicalBoadController extends Controller
 {
@@ -25,11 +24,14 @@ class MedicalBoadController extends Controller
      *     summary="Get all patient lists",
      *     tags={"Patient Lists"},
      *     security={{"bearerAuth":{}}},
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="statusCode",
      *                 type="integer",
@@ -38,8 +40,10 @@ class MedicalBoadController extends Controller
      *             @OA\Property(
      *                 property="data",
      *                 type="array",
+     *
      *                 @OA\Items(
      *                     type="object",
+     *
      *                     @OA\Property(property="patient_list_id", type="integer"),
      *                     @OA\Property(property="patient_list_title", type="string"),
      *                     @OA\Property(property="board_type", type="string"),
@@ -61,7 +65,7 @@ class MedicalBoadController extends Controller
         $user = auth()->user();
         $dataEntryEmails = ['medicalboard@mohz.go.tz', 'hospital@mohz.go.tz', 'mkurugenzi@mohz.go.tz', 'dguser@mohz.go.tz'];
 
-        if (!$user->can('View Patient List')) {
+        if (! $user->can('View Patient List')) {
             return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
@@ -82,9 +86,10 @@ class MedicalBoadController extends Controller
         }
 
         $lists = $query->get();
+
         return response()->json([
             'data' => $lists,
-            'statusCode' => 200
+            'statusCode' => 200,
         ]);
     }
 
@@ -94,10 +99,13 @@ class MedicalBoadController extends Controller
      *     summary="Create a new patient list",
      *     tags={"Patient Lists"},
      *     security={{"bearerAuth":{}}},
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="patient_list_title", type="string", example="Morning Board"),
      *             @OA\Property(property="board_type", type="string", enum={"Emergency","Routine"}, example="Emergency"),
      *             @OA\Property(property="board_date", type="string", format="date", example="2025-10-13"),
@@ -105,11 +113,14 @@ class MedicalBoadController extends Controller
      *             @OA\Property(property="patient_list_file", type="string", format="binary")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Patient list created successfully",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="statusCode", type="integer", example=200),
      *             @OA\Property(property="message", type="string", example="Patient list created successfully"),
      *             @OA\Property(
@@ -128,6 +139,7 @@ class MedicalBoadController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(response=403, description="Forbidden"),
      *     @OA\Response(response=422, description="Validation error")
      * )
@@ -135,10 +147,10 @@ class MedicalBoadController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->can('Create Patient List')) {
+        if (! $user->can('Create Patient List')) {
             return response()->json([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -163,9 +175,9 @@ class MedicalBoadController extends Controller
         $filePath = null;
         if ($request->hasFile('patient_list_file')) {
             $file = $request->file('patient_list_file');
-            $newFileName = 'patient_list_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
+            $newFileName = 'patient_list_'.date('Ymd_His').'.'.$file->getClientOriginalExtension();
             $file->move(public_path('uploads/patientLists/'), $newFileName);
-            $filePath = 'uploads/patientLists/' . $newFileName;
+            $filePath = 'uploads/patientLists/'.$newFileName;
         }
 
         // Create the patient list
@@ -185,7 +197,7 @@ class MedicalBoadController extends Controller
         return response()->json([
             'data' => $list->load('boardMembers'), // load assigned users
             'message' => 'Medical Board Meeting created successfully',
-            'statusCode' => 200
+            'statusCode' => 200,
         ]);
     }
 
@@ -195,18 +207,23 @@ class MedicalBoadController extends Controller
      *     summary="Get a patient list by ID",
      *     tags={"Patient Lists"},
      *     security={{"bearerAuth":{}}},
+     *
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
      *         description="Patient list ID",
+     *
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Patient list retrieved successfully",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="statusCode", type="integer", example=200),
      *             @OA\Property(property="message", type="string", example="Patient list retrieved successfully"),
      *             @OA\Property(
@@ -225,6 +242,7 @@ class MedicalBoadController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(response=403, description="Forbidden"),
      *     @OA\Response(response=404, description="Patient list not found")
      * )
@@ -232,25 +250,25 @@ class MedicalBoadController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        if (!$user->can('View Patient List')) {
+        if (! $user->can('View Patient List')) {
             return response()->json([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
         $list = PatientList::with(['creator', 'patients', 'boardMembers'])->find($id);
 
-        if (!$list) {
+        if (! $list) {
             return response()->json([
                 'message' => 'Patient list not found',
-                'statusCode' => 404
+                'statusCode' => 404,
             ], 404);
         }
 
         return response()->json([
             'data' => $list,
-            'statusCode' => 200
+            'statusCode' => 200,
         ]);
     }
 
@@ -260,17 +278,22 @@ class MedicalBoadController extends Controller
      *     summary="Update a patient list",
      *     tags={"Patient Lists"},
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="Patient list ID",
      *         required=true,
+     *
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *     @OA\RequestBody(
      *         required=false,
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="patient_list_title", type="string"),
      *             @OA\Property(property="board_type", type="string", enum={"Emergency","Routine"}),
      *             @OA\Property(property="board_date", type="string", format="date"),
@@ -278,6 +301,7 @@ class MedicalBoadController extends Controller
      *             @OA\Property(property="patient_list_file", type="string", format="binary")
      *         )
      *     ),
+     *
      *     @OA\Response(response=200, description="Patient list updated successfully"),
      *     @OA\Response(response=403, description="Forbidden"),
      *     @OA\Response(response=422, description="Validation error")
@@ -286,10 +310,10 @@ class MedicalBoadController extends Controller
     public function updatePatientList(Request $request, $id)
     {
         $user = auth()->user();
-        if (!$user->can('Update Patient List')) {
+        if (! $user->can('Update Patient List')) {
             return response()->json([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -319,9 +343,9 @@ class MedicalBoadController extends Controller
                 unlink(public_path($filePath));
             }
             $file = $request->file('patient_list_file');
-            $newFileName = 'patient_list_' . date('Ymd_His') . '.' . $file->getClientOriginalExtension();
+            $newFileName = 'patient_list_'.date('Ymd_His').'.'.$file->getClientOriginalExtension();
             $file->move(public_path('uploads/patientLists/'), $newFileName);
-            $filePath = 'uploads/patientLists/' . $newFileName;
+            $filePath = 'uploads/patientLists/'.$newFileName;
         }
 
         // Determine updated fields
@@ -352,7 +376,6 @@ class MedicalBoadController extends Controller
                 break;
         }
 
-
         // Update the model
         $list->update([
             'patient_list_file' => $filePath,
@@ -382,7 +405,7 @@ class MedicalBoadController extends Controller
         return response()->json([
             'data' => $list->load(['creator', 'patients', 'boardMembers']),
             'message' => 'Patient list updated successfully with board members',
-            'statusCode' => 200
+            'statusCode' => 200,
         ]);
     }
 
@@ -392,13 +415,16 @@ class MedicalBoadController extends Controller
      *     summary="Soft delete a patient list",
      *     tags={"Patient Lists"},
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="Patient list ID",
      *         required=true,
+     *
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *     @OA\Response(response=200, description="Patient list deleted successfully"),
      *     @OA\Response(response=403, description="Forbidden"),
      *     @OA\Response(response=404, description="Patient list not found")
@@ -407,18 +433,18 @@ class MedicalBoadController extends Controller
     public function destroy($id)
     {
         $user = auth()->user();
-        if (!$user->can('Delete Patient List')) {
+        if (! $user->can('Delete Patient List')) {
             return response()->json([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
         $list = PatientList::find($id);
-        if (!$list) {
+        if (! $list) {
             return response()->json([
                 'message' => 'Patient list not found',
-                'statusCode' => 404
+                'statusCode' => 404,
             ], 404);
         }
 
@@ -426,10 +452,9 @@ class MedicalBoadController extends Controller
 
         return response()->json([
             'message' => 'Patient list deleted successfully',
-            'statusCode' => 200
+            'statusCode' => 200,
         ]);
     }
-
 
     /**
      * @OA\Put(
@@ -437,13 +462,16 @@ class MedicalBoadController extends Controller
      *     summary="Restore a soft-deleted patient list",
      *     tags={"Patient Lists"},
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="Patient list ID",
      *         required=true,
+     *
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *     @OA\Response(response=200, description="Patient list restored successfully"),
      *     @OA\Response(response=404, description="Patient list not found")
      * )
@@ -451,10 +479,10 @@ class MedicalBoadController extends Controller
     public function unBlockParentList($id)
     {
         $list = PatientList::withTrashed()->find($id);
-        if (!$list) {
+        if (! $list) {
             return response()->json([
                 'message' => 'Patient list not found',
-                'statusCode' => 404
+                'statusCode' => 404,
             ], 404);
         }
 
@@ -462,7 +490,7 @@ class MedicalBoadController extends Controller
 
         return response()->json([
             'message' => 'Patient list restored successfully',
-            'statusCode' => 200
+            'statusCode' => 200,
         ]);
     }
 
@@ -472,13 +500,16 @@ class MedicalBoadController extends Controller
      *     summary="Get all patients by patient list ID",
      *     tags={"Patient Lists"},
      *     security={{"sanctum":{}}},
+     *
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         description="Patient list ID",
      *         required=true,
+     *
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *     @OA\Response(response=200, description="List of patients"),
      *     @OA\Response(response=404, description="Patient list not found"),
      *     @OA\Response(response=403, description="Forbidden")
@@ -487,26 +518,26 @@ class MedicalBoadController extends Controller
     public function getAllPatientsByPatientListId(int $patientListId)
     {
         $user = auth()->user();
-        if (!$user->can('View Patient List')) {
+        if (! $user->can('View Patient List')) {
             return response()->json([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
         $list = PatientList::with(['patients.files', 'patients.geographicalLocation', 'boardMembers'])
             ->find($patientListId);
 
-        if (!$list) {
+        if (! $list) {
             return response()->json([
                 'message' => 'Patient list not found',
-                'statusCode' => 404
+                'statusCode' => 404,
             ], 404);
         }
 
         return response()->json([
             'data' => $list,
-            'statusCode' => 200
+            'statusCode' => 200,
         ]);
     }
 
@@ -515,13 +546,13 @@ class MedicalBoadController extends Controller
         $user = auth()->user();
 
         // Check permission
-        if (!$user->can('Create Patient List')) {
+        if (! $user->can('Create Patient List')) {
             return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
         // Validate request
         $validator = Validator::make($request->all(), [
-            'patient_ids'   => ['required', 'array', 'min:1'],
+            'patient_ids' => ['required', 'array', 'min:1'],
             'patient_ids.*' => ['integer', 'exists:patients,patient_id'],
         ]);
 
@@ -530,7 +561,7 @@ class MedicalBoadController extends Controller
         }
 
         $patientList = PatientList::find($patientListId);
-        if (!$patientList) {
+        if (! $patientList) {
             return response()->json(['message' => 'Patient list not found', 'statusCode' => 404], 404);
         }
 
@@ -577,23 +608,21 @@ class MedicalBoadController extends Controller
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'message' => 'Failed to assign patients: ' . $e->getMessage(),
-                'statusCode' => 500
-            ], 500);
+
+            return Helper::serverError($e, 'Failed to assign patients.');
         }
     }
 
     private function isValidTransition($current, $next)
     {
         $allowed = [
-            'pending'   => ['reviewed'],
-            'reviewed'  => ['assigned', 'requested'], // Director can assign to board or request info
-            'assigned'  => ['requested', 'approved'], // Board's primary actions
+            'pending' => ['reviewed'],
+            'reviewed' => ['assigned', 'requested'], // Director can assign to board or request info
+            'assigned' => ['requested', 'approved'], // Board's primary actions
             'requested' => ['reviewed', 'approved'],  // Path after info is provided
-            'approved'  => ['confirmed', 'rejected'], // Moves to DG for final say
+            'approved' => ['confirmed', 'rejected'], // Moves to DG for final say
             'confirmed' => [],
-            'rejected'  => [],
+            'rejected' => [],
         ];
 
         return in_array($next, $allowed[$current] ?? []);
@@ -604,7 +633,7 @@ class MedicalBoadController extends Controller
         $user = $user ?? auth()->user();
 
         // Ensure only valid status transitions
-        if (!$this->isValidTransition($history->status, $newStatus)) {
+        if (! $this->isValidTransition($history->status, $newStatus)) {
             throw new \Exception("Invalid status transition from {$history->status} to {$newStatus}.");
         }
 

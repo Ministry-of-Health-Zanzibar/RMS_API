@@ -3,15 +3,14 @@
 namespace App\Http\Controllers\API\Setup;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\Helper;
 use App\Models\Diagnosis;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use Illuminate\Support\Facades\Auth;
-
 
 /**
  * @OA\Tag(
@@ -25,6 +24,7 @@ use Illuminate\Support\Facades\Auth;
  *     type="object",
  *     title="Diagnosis",
  *     required={"diagnosis_name","diagnosis_code"},
+ *
  *     @OA\Property(property="diagnosis_id", type="integer", example=1),
  *     @OA\Property(property="uuid", type="string", example="c0a80123-45ab-67cd-89ef-1234567890ab"),
  *     @OA\Property(property="diagnosis_name", type="string", example="Diabetes"),
@@ -34,7 +34,6 @@ use Illuminate\Support\Facades\Auth;
  *     @OA\Property(property="deleted_at", type="string", format="date-time", nullable=true)
  * )
  */
-
 class DiagnosisController extends Controller
 {
     public function __construct()
@@ -47,11 +46,14 @@ class DiagnosisController extends Controller
      *     path="/api/diagnoses",
      *     tags={"Diagnosis"},
      *     summary="Get all diagnoses",
+     *
      *     @OA\Response(
      *         response=200,
      *         description="List of diagnoses",
+     *
      *         @OA\JsonContent(
      *             type="array",
+     *
      *             @OA\Items(ref="#/components/schemas/Diagnosis")
      *         )
      *     )
@@ -60,10 +62,10 @@ class DiagnosisController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->can('View Diagnoses')) {
+        if (! $user->can('View Diagnoses')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -72,9 +74,9 @@ class DiagnosisController extends Controller
             'diagnosis_name',
             'diagnosis_code'
         )
-        ->orderBy('diagnosis_name')
-        ->toBase()
-        ->get();
+            ->orderBy('diagnosis_name')
+            ->toBase()
+            ->get();
 
         return response()->json([
             'message' => 'Diagnoses retrieved successfully',
@@ -97,7 +99,7 @@ class DiagnosisController extends Controller
             ->get();
 
         return response()->json([
-            'data' => $diagnoses
+            'data' => $diagnoses,
         ]);
     }
 
@@ -106,10 +108,13 @@ class DiagnosisController extends Controller
      *     path="/api/diagnoses",
      *     tags={"Diagnosis"},
      *     summary="Create a new diagnosis",
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(ref="#/components/schemas/Diagnosis")
      *     ),
+     *
      *     @OA\Response(response=201, description="Diagnosis created successfully"),
      *     @OA\Response(response=422, description="Validation failed")
      * )
@@ -117,10 +122,10 @@ class DiagnosisController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (!$user->can('Create Diagnoses')) {
+        if (! $user->can('Create Diagnoses')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -155,12 +160,15 @@ class DiagnosisController extends Controller
      *     path="/api/diagnoses/{uuid}",
      *     tags={"Diagnosis"},
      *     summary="Get diagnosis by UUID",
+     *
      *     @OA\Parameter(
      *         name="uuid",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *     @OA\Response(response=200, description="Diagnosis found"),
      *     @OA\Response(response=404, description="Diagnosis not found")
      * )
@@ -168,16 +176,16 @@ class DiagnosisController extends Controller
     public function show($uuid)
     {
         $user = auth()->user();
-        if (!$user->can('View Diagnoses')) {
+        if (! $user->can('View Diagnoses')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
         $diagnosis = Diagnosis::where('uuid', $uuid)->first();
 
-        if (!$diagnosis) {
+        if (! $diagnosis) {
             return response()->json([
                 'message' => __('Diagnosis not found'),
                 'statusCode' => 404,
@@ -196,16 +204,21 @@ class DiagnosisController extends Controller
      *     path="/api/diagnoses/{uuid}",
      *     tags={"Diagnosis"},
      *     summary="Update an existing diagnosis",
+     *
      *     @OA\Parameter(
      *         name="uuid",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(ref="#/components/schemas/Diagnosis")
      *     ),
+     *
      *     @OA\Response(response=200, description="Diagnosis updated successfully"),
      *     @OA\Response(response=404, description="Diagnosis not found"),
      *     @OA\Response(response=422, description="Validation failed")
@@ -214,16 +227,16 @@ class DiagnosisController extends Controller
     public function update(Request $request, $uuid)
     {
         $user = auth()->user();
-        if (!$user->can('Update Diagnoses')) {
+        if (! $user->can('Update Diagnoses')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
         $diagnosis = Diagnosis::where('uuid', $uuid)->first();
 
-        if (!$diagnosis) {
+        if (! $diagnosis) {
             return response()->json([
                 'message' => __('Diagnosis not found'),
                 'statusCode' => 404,
@@ -232,7 +245,7 @@ class DiagnosisController extends Controller
 
         $validator = Validator::make($request->all(), [
             'diagnosis_name' => 'required|string|max:255',
-            'diagnosis_code' => 'required|string|max:50|unique:diagnoses,diagnosis_code,' . $diagnosis->diagnosis_id . ',diagnosis_id',
+            'diagnosis_code' => 'required|string|max:50|unique:diagnoses,diagnosis_code,'.$diagnosis->diagnosis_id.',diagnosis_id',
         ]);
 
         if ($validator->fails()) {
@@ -257,12 +270,15 @@ class DiagnosisController extends Controller
      *     path="/api/diagnoses/{uuid}",
      *     tags={"Diagnosis"},
      *     summary="Delete a diagnosis",
+     *
      *     @OA\Parameter(
      *         name="uuid",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *     @OA\Response(response=200, description="Diagnosis deleted successfully"),
      *     @OA\Response(response=404, description="Diagnosis not found")
      * )
@@ -270,16 +286,16 @@ class DiagnosisController extends Controller
     public function destroy($uuid)
     {
         $user = auth()->user();
-        if (!$user->can('Delete Diagnoses')) {
+        if (! $user->can('Delete Diagnoses')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
         $diagnosis = Diagnosis::where('uuid', $uuid)->first();
 
-        if (!$diagnosis) {
+        if (! $diagnosis) {
             return response()->json([
                 'message' => __('Diagnosis not found'),
                 'statusCode' => 404,
@@ -299,12 +315,15 @@ class DiagnosisController extends Controller
      *     path="/api/diagnoses/restore/{uuid}",
      *     tags={"Diagnosis"},
      *     summary="Restore a soft-deleted diagnosis",
+     *
      *     @OA\Parameter(
      *         name="uuid",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *     @OA\Response(response=200, description="Diagnosis restored successfully"),
      *     @OA\Response(response=404, description="Diagnosis not found"),
      *     @OA\Response(response=403, description="Forbidden")
@@ -323,7 +342,7 @@ class DiagnosisController extends Controller
         // Fetch the trashed record
         $diagnosis = Diagnosis::onlyTrashed()->where('uuid', $uuid)->first();
 
-        if (!$diagnosis) {
+        if (! $diagnosis) {
             return response()->json([
                 'message' => __('Diagnosis not found or not deleted'),
                 'statusCode' => 404,
@@ -336,7 +355,7 @@ class DiagnosisController extends Controller
         return response()->json([
             'message' => __('Diagnosis restored successfully'),
             'statusCode' => 200,
-            'data' => $diagnosis
+            'data' => $diagnosis,
         ], 200);
     }
 
@@ -345,12 +364,16 @@ class DiagnosisController extends Controller
      *     path="/api/diagnoses/import",
      *     tags={"Diagnosis"},
      *     summary="Bulk import diagnoses from Excel file",
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
+     *
      *             @OA\Schema(
      *                 required={"file"},
+     *
      *                 @OA\Property(
      *                     property="file",
      *                     type="string",
@@ -360,6 +383,7 @@ class DiagnosisController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(response=200, description="Diagnoses imported successfully"),
      *     @OA\Response(response=400, description="Invalid file")
      * )
@@ -367,16 +391,16 @@ class DiagnosisController extends Controller
     public function importExcel(Request $request)
     {
         $user = auth()->user();
-        if (!$user->can('Create Diagnoses')) {
+        if (! $user->can('Create Diagnoses')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
         // Validate file type
         $validator = Validator::make($request->all(), [
-            'file' => 'required|mimes:xlsx,xls,csv'
+            'file' => 'required|mimes:xlsx,xls,csv',
         ]);
 
         if ($validator->fails()) {
@@ -399,16 +423,22 @@ class DiagnosisController extends Controller
 
             foreach ($data as $index => $row) {
                 // Skip header row
-                if ($index == 1) continue;
+                if ($index == 1) {
+                    continue;
+                }
 
                 $diagnosis_name = isset($row['A']) ? trim($row['A']) : null;
                 $diagnosis_code = isset($row['B']) ? trim($row['B']) : null;
 
                 // Skip empty rows
-                if (!$diagnosis_name || !$diagnosis_code) continue;
+                if (! $diagnosis_name || ! $diagnosis_code) {
+                    continue;
+                }
 
                 // Skip duplicates
-                if (Diagnosis::where('diagnosis_code', $diagnosis_code)->exists()) continue;
+                if (Diagnosis::where('diagnosis_code', $diagnosis_code)->exists()) {
+                    continue;
+                }
 
                 Diagnosis::create([
                     'uuid' => (string) Str::uuid(),
@@ -425,12 +455,7 @@ class DiagnosisController extends Controller
                 'statusCode' => 200,
             ], 200);
         } catch (\Exception $e) {
-            Log::error('Diagnosis import failed: ' . $e->getMessage());
-            return response()->json([
-                'message' => __('Failed to import diagnoses'),
-                'error' => $e->getMessage(),
-                'statusCode' => 500,
-            ], 500);
+            return Helper::serverError($e, __('Failed to import diagnoses'));
         }
     }
 }

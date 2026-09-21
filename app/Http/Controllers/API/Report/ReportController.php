@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\API\Report;
 
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\Helper;
+use App\Models\PatientHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +13,7 @@ use Illuminate\Support\Facades\DB;
  * @OA\Schema(
  *     schema="Referral",
  *     type="object",
+ *
  *     @OA\Property(property="referral_id", type="integer", example=123),
  *     @OA\Property(property="patient", type="object"),
  *     @OA\Property(property="hospital", type="object", nullable=true),
@@ -124,8 +127,7 @@ class ReportController extends Controller
                 'totalReferralsByParsPlanaVitrotomy' => $totalReferralsByParsPlanaVitrotomy,
             ]);
         } catch (\Throwable $e) {
-            return response()
-                ->json(['message' => $e->getMessage(), 'statusCode' => 401]);
+            return Helper::serverError($e, 'Unable to load dashboard totals.');
         }
     }
 
@@ -137,7 +139,7 @@ class ReportController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->can('View Referral Dashboard')) {
+        if (! $user->can('View Referral Dashboard')) {
             return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
@@ -146,7 +148,7 @@ class ReportController extends Controller
                 ->join('patients', 'patients.patient_id', '=', 'referrals.patient_id')
                 ->whereNull('referrals.deleted_at')
                 // Match the PascalCase 'Confirmed' from your migration
-                ->whereNotIn('referrals.status', ['Cancelled', 'Pending','Requested'])
+                ->whereNotIn('referrals.status', ['Cancelled', 'Pending', 'Requested'])
                 ->select(
                     DB::raw('LOWER(patients.gender) as gender'),
                     DB::raw('COUNT(referrals.referral_id) as total')
@@ -167,10 +169,7 @@ class ReportController extends Controller
             ], 200);
 
         } catch (\Throwable $e) {
-            return response()->json([
-                'message' => 'Report Error: ' . $e->getMessage(),
-                'statusCode' => 500, // Use 500 for server/query errors
-            ], 500);
+            return Helper::serverError($e, 'Unable to generate the gender report.');
         }
     }
 
@@ -181,8 +180,8 @@ class ReportController extends Controller
     public function referralReportByHospital()
     {
         $user = auth()->user();
-        
-        if (!$user->can('View Referral Dashboard')) {
+
+        if (! $user->can('View Referral Dashboard')) {
             return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
@@ -199,23 +198,20 @@ class ReportController extends Controller
             // 2. Define the exact keys your frontend expects
             // This ensures "SIMS" stays 0 if not found in the query results
             $response = [
-                "totalReferralsByLumumba" => $reportData->get('LUMUMBA', 0),
-                "totalReferralsByMuhimbiliOrthopaedicInstitute" => $reportData->get('Muhimbili Orthopaedic Institute (MOI)', 0),
-                "totalReferralsByJakayaKikweteCardiacInstitute" => $reportData->get('Jakaya Kikwete Cardiac Institute (JKCI)', 0),
-                "totalReferralsBySIMS" => $reportData->get('SIMS', 0),
-                "totalReferralsByMuhimbiliNationalHospital" => $reportData->get('Muhimbili National Hospital (MNH)', 0),
-                "totalReferralsByOceanRoadCancerInstitute" => $reportData->get('Ocean Road Cancer Institute (ORCI)', 0),
-                "totalReferralsByKilimanjaroChristianMedicalCentre" => $reportData->get('Kilimanjaro Christian Medical Centre (KCMC)', 0),
-                "totalReferralsByMadrasInstituteOfOrthopaedicsAndTraumatology" => $reportData->get('Madras Institute of Orthopaedics and Traumatology (MIOT)', 0),
+                'totalReferralsByLumumba' => $reportData->get('LUMUMBA', 0),
+                'totalReferralsByMuhimbiliOrthopaedicInstitute' => $reportData->get('Muhimbili Orthopaedic Institute (MOI)', 0),
+                'totalReferralsByJakayaKikweteCardiacInstitute' => $reportData->get('Jakaya Kikwete Cardiac Institute (JKCI)', 0),
+                'totalReferralsBySIMS' => $reportData->get('SIMS', 0),
+                'totalReferralsByMuhimbiliNationalHospital' => $reportData->get('Muhimbili National Hospital (MNH)', 0),
+                'totalReferralsByOceanRoadCancerInstitute' => $reportData->get('Ocean Road Cancer Institute (ORCI)', 0),
+                'totalReferralsByKilimanjaroChristianMedicalCentre' => $reportData->get('Kilimanjaro Christian Medical Centre (KCMC)', 0),
+                'totalReferralsByMadrasInstituteOfOrthopaedicsAndTraumatology' => $reportData->get('Madras Institute of Orthopaedics and Traumatology (MIOT)', 0),
             ];
 
             return response($response);
 
         } catch (\Throwable $e) {
-            return response()->json([
-                'message' => 'Report generation failed',
-                'error' => $e->getMessage()
-            ], 500);
+            return Helper::serverError($e, 'Unable to generate the hospital report.');
         }
     }
 
@@ -251,7 +247,7 @@ class ReportController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->can('View Referral Dashboard')) {
+        if (! $user->can('View Referral Dashboard')) {
             return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
@@ -277,7 +273,7 @@ class ReportController extends Controller
         // 2. Build full 12-month structure
         $months = [];
         for ($m = 1; $m <= 12; $m++) {
-            $key = $year . '-' . str_pad($m, 2, '0', STR_PAD_LEFT);
+            $key = $year.'-'.str_pad($m, 2, '0', STR_PAD_LEFT);
 
             $months[] = [
                 'month' => $key,
@@ -301,10 +297,10 @@ class ReportController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->can('View Referral')) {
+        if (! $user->can('View Referral')) {
             return response()->json([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -363,16 +359,16 @@ class ReportController extends Controller
                         $paymentQuery->withPivot([
                             'allocated_amount',
                             'allocation_date',
-                            'status'
+                            'status',
                         ]);
                     },
                 ]);
             },
         ])
-        ->where('referral_id', $id)
-        ->first();
+            ->where('referral_id', $id)
+            ->first();
 
-        if (!$referral) {
+        if (! $referral) {
             return response()->json([
                 'message' => 'Referral not found',
                 'statusCode' => 404,
@@ -618,26 +614,26 @@ class ReportController extends Controller
 
         // Filters
         if ($request->filled('patient_name')) {
-            $query->where('patients.name', 'ILIKE', '%' . $request->patient_name . '%');
+            $query->where('patients.name', 'ILIKE', '%'.$request->patient_name.'%');
         }
 
         if ($request->filled('hospital_name')) {
-            $query->where('hospitals.hospital_name', 'ILIKE', '%' . $request->hospital_name . '%');
+            $query->where('hospitals.hospital_name', 'ILIKE', '%'.$request->hospital_name.'%');
         }
 
         if ($request->filled('hospital_address')) {
-            $query->where('hospitals.hospital_address', 'ILIKE', '%' . $request->hospital_address . '%');
+            $query->where('hospitals.hospital_address', 'ILIKE', '%'.$request->hospital_address.'%');
         }
 
         if ($request->filled('referral_reason_name')) {
-            $query->where('reasons.referral_reason_name', 'ILIKE', '%' . $request->referral_reason_name . '%');
+            $query->where('reasons.referral_reason_name', 'ILIKE', '%'.$request->referral_reason_name.'%');
         }
 
         // Filter by referral letter dates (DG referral period)
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('referral_letters.start_date', [
                 $request->start_date,
-                $request->end_date
+                $request->end_date,
             ]);
         }
 
@@ -925,16 +921,11 @@ class ReportController extends Controller
             ], 200);
 
         } catch (\Throwable $e) {
-            return response()->json([
-                'message' => 'Report generation failed',
-                'error' => $e->getMessage(),
-                'statusCode' => 500,
-            ], 500);
+            return Helper::serverError($e, 'Unable to generate the referral report.');
         }
     }
 
     // PRINTABLE REPORT ========================================================================//
-
 
     public function workflowStatusReport()
     {
@@ -954,17 +945,55 @@ class ReportController extends Controller
             | Medical Board Workflow
             |--------------------------------------------------------------------------
             */
-            $medicalBoard = DB::table('patient_histories')
+            $medicalBoardCounts = DB::table('patient_histories')
                 ->whereNull('deleted_at')
-                ->selectRaw("
-                    COUNT(*) as total,
-                    COUNT(CASE WHEN status='pending' THEN 1 END) as pending,
-                    COUNT(CASE WHEN status='reviewed' THEN 1 END) as reviewed,
-                    COUNT(CASE WHEN status='assigned' THEN 1 END) as assigned,
-                    COUNT(CASE WHEN status='requested' THEN 1 END) as requested,
-                    COUNT(CASE WHEN status='approved' THEN 1 END) as approved
-                ")
-                ->first();
+                ->selectRaw('status, COUNT(*) as total')
+                ->groupBy('status')
+                ->pluck('total', 'status');
+
+            $boardedOutPatientCount = DB::table('boarded_out_letters')
+                ->join(
+                    'patient_histories',
+                    'patient_histories.patient_histories_id',
+                    '=',
+                    'boarded_out_letters.patient_histories_id'
+                )
+                ->whereNotNull('boarded_out_letters.patient_histories_id')
+                ->whereNull('patient_histories.deleted_at')
+                ->distinct()
+                ->count('patient_histories.patient_id');
+
+            $patientStatusTracking = collect(PatientHistory::STATUS_MAP)
+                ->map(function (array $tracking, string $status) use ($medicalBoardCounts, $boardedOutPatientCount) {
+                    $count = (int) ($medicalBoardCounts[$status] ?? 0);
+
+                    // A boarded-out patient history is stored as confirmed, so present
+                    // it as its own terminal outcome instead of counting it twice.
+                    if ($status === 'confirmed') {
+                        $count = max(0, $count - $boardedOutPatientCount);
+                    }
+
+                    return [
+                        'status' => $status,
+                        'stage' => $tracking['stage'],
+                        'label' => $tracking['label'],
+                        'current_holder' => $tracking['current_holder'],
+                        'description' => $tracking['description'],
+                        'progress_percentage' => (int) round(($tracking['stage'] / 6) * 100),
+                        'count' => $count,
+                    ];
+                })
+                ->values();
+
+            $patientStatusTracking->push([
+                'status' => 'boarded_out',
+                'stage' => 6,
+                'label' => 'Boarded Out',
+                'current_holder' => 'Completed',
+                'description' => 'Patient completed the process with a boarded-out decision',
+                'progress_percentage' => 100,
+                'count' => $boardedOutPatientCount,
+            ]);
 
             /*
             |--------------------------------------------------------------------------
@@ -989,30 +1018,8 @@ class ReportController extends Controller
                 'data' => [
 
                     'medical_history' => [
-                        'total' => (int) $medicalBoard->total,
-
-                        'statuses' => [
-                            [
-                                'stage' => 'Pending',
-                                'count' => (int) $medicalBoard->pending,
-                            ],
-                            [
-                                'stage' => 'Reviewed',
-                                'count' => (int) $medicalBoard->reviewed,
-                            ],
-                            [
-                                'stage' => 'Assigned',
-                                'count' => (int) $medicalBoard->assigned,
-                            ],
-                            [
-                                'stage' => 'Requested',
-                                'count' => (int) $medicalBoard->requested,
-                            ],
-                            [
-                                'stage' => 'Approved',
-                                'count' => (int) $medicalBoard->approved,
-                            ],
-                        ]
+                        'total' => (int) $medicalBoardCounts->sum(),
+                        'statuses' => $patientStatusTracking,
                     ],
 
                     'referrals' => [
@@ -1047,23 +1054,16 @@ class ReportController extends Controller
                                 'stage' => 'Boarded Out',
                                 'count' => (int) $referrals->boarded_out,
                             ],
-                        ]
-                    ]
+                        ],
+                    ],
                 ],
 
-                'statusCode' => 200
+                'statusCode' => 200,
 
             ]);
 
         } catch (\Throwable $e) {
-
-            return response()->json([
-                'message' => 'Failed to generate workflow report.',
-                'error' => $e->getMessage(),
-                'statusCode' => 500,
-            ], 500);
-
+            return Helper::serverError($e, 'Failed to generate workflow report.');
         }
     }
-
 }

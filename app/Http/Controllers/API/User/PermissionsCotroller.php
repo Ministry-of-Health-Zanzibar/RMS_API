@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\API\User;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\API\Setup\GeneralController;
+use App\Http\Helpers\Helper;
+use DB;
+use Exception;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
-use Exception;
-use Validator;
-use DB;
 
 class PermissionsCotroller extends Controller
 {
@@ -24,26 +22,35 @@ class PermissionsCotroller extends Controller
      *     path="/api/permissions",
      *     summary="Get a list of permissions",
      *     tags={"permissions"},
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="data",
      *                 type="array",
+     *
      *                 @OA\Items(
      *                     type="object",
+     *
      *                     @OA\Property(property="id", type="integer", example=2),
      *                     @OA\Property(property="name", type="string", example="Create Permissioin"),
      *                     @OA\Property(property="isSelected", type="boolean", example="true")
@@ -62,28 +69,21 @@ class PermissionsCotroller extends Controller
 
                 $permissions = [];
                 foreach ($permission as $item) {
-                    array_push($permissions, array(
+                    array_push($permissions, [
                         'id' => $item->id,
                         'name' => $item->name,
-                        'isSelected' => false
-                    ));
+                        'isSelected' => false,
+                    ]);
                 }
-
 
                 $respose = [
                     'data' => $permissions,
-                    'statusCode' => 200
+                    'statusCode' => 200,
                 ];
 
                 return response()->json($respose);
             } catch (Exception $e) {
-                $errorResponse = [
-                    'message' => 'Internal Server Error',
-                    'error' => $e->getMessage(),
-                    'statusCode' => 500
-                ];
-
-                return response()->json($errorResponse);
+                return Helper::serverError($e);
             }
         } else {
             return response()
@@ -123,7 +123,7 @@ class PermissionsCotroller extends Controller
             ->get();
         $respose = [
             'data' => $model_has_permissions,
-            'statusCode' => 200
+            'statusCode' => 200,
         ];
 
         return response()->json($respose);
