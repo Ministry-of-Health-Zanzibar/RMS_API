@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\API\User;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\API\Setup\GeneralController;
+use App\Http\Helpers\Helper;
 use Auth;
-use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
-use Exception;
-use Validator;
 use DB;
+use Exception;
+use Illuminate\Http\Request;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Validator;
 
 class RolesCotroller extends Controller
 {
@@ -24,26 +25,35 @@ class RolesCotroller extends Controller
      *     path="/api/roles",
      *     summary="Get a list of roles",
      *     tags={"roles"},
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="data",
      *                 type="array",
+     *
      *                 @OA\Items(
      *                     type="object",
+     *
      *                     @OA\Property(property="id", type="integer", example=2),
      *                     @OA\Property(property="name", type="string", example="ROLE NATIONAL"),
      *                     @OA\Property(property="guard_name", type="string", example="web"),
@@ -64,26 +74,20 @@ class RolesCotroller extends Controller
                     ->select('roles.*')
                     ->whereNotIn('name', ['ROLE ADMIN'])
                     ->orderBy('id', 'asc')
-                    ->where("roles.created_by", '=', Auth::id())
+                    ->where('roles.created_by', '=', Auth::id())
                     ->get();
 
                 $respose = [
                     'data' => $roles,
-                    'statusCode' => 200
+                    'statusCode' => 200,
                 ];
 
                 return response()->json($respose);
             } catch (Exception $e) {
 
-                $errorResponse = [
-                    'message' => 'Internal Server Error',
-                    'error' => $e->getMessage(),
-                    'statusCode' => 500
-                ];
-
-                return response()->json($errorResponse);
+                return Helper::serverError($e);
             }
-        } else if (auth()->user()->hasRole('ROLE NATIONAL') || (auth()->user()->can('User Management') && !auth()->user()->hasRole('ROLE ADMIN'))) {
+        } elseif (auth()->user()->hasRole('ROLE NATIONAL') || (auth()->user()->can('User Management') && ! auth()->user()->hasRole('ROLE ADMIN'))) {
             try {
                 $roles = DB::table('roles')
                     ->select('roles.*')
@@ -93,19 +97,13 @@ class RolesCotroller extends Controller
 
                 $respose = [
                     'data' => $roles,
-                    'statusCode' => 200
+                    'statusCode' => 200,
                 ];
 
                 return response()->json($respose);
             } catch (Exception $e) {
 
-                $errorResponse = [
-                    'message' => 'Internal Server Error',
-                    'error' => $e->getMessage(),
-                    'statusCode' => 500
-                ];
-
-                return response()->json($errorResponse);
+                return Helper::serverError($e);
             }
         } else {
             return response()
@@ -126,29 +124,39 @@ class RolesCotroller extends Controller
      *     path="/api/roles",
      *     summary="Store a new role",
      *     tags={"roles"},
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="name", type="string"),
      *             @OA\Property(property="permission_id", type="array", @OA\Items(type="integer"))
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string"),
      *             @OA\Property(property="statusCode", type="integer")
      *         )
@@ -157,42 +165,62 @@ class RolesCotroller extends Controller
      */
     public function store(Request $request)
     {
-        $permission = $request->permission_id;
-        $rolename = $request->name;
+        $data = Validator::make($request->all(), [
+            'name' => ['required', 'string', 'max:255'],
+            'permission_id' => ['required', 'array', 'min:1'],
+            'permission_id.*' => ['required', function (string $attribute, mixed $value, \Closure $fail) {
+                $permissionExists = is_numeric($value)
+                    ? Permission::query()->whereKey((int) $value)->exists()
+                    : Permission::query()->where('name', $value)->exists();
 
-        $check_value = DB::select("SELECT r.name FROM roles r WHERE LOWER(r.name) = LOWER('$rolename')");
+                if (! $permissionExists) {
+                    $fail("The selected {$attribute} is invalid.");
+                }
+            }],
+        ]);
+
+        if ($data->fails()) {
+            return response()->json([
+                'message' => 'The submitted role data is invalid.',
+                'errors' => $data->errors(),
+                'statusCode' => 422,
+            ], 422);
+        }
+
+        $permission = $request->input('permission_id');
+        $rolename = trim($request->string('name')->toString());
+
+        $roleExists = Role::query()
+            ->whereRaw('LOWER(name) = LOWER(?)', [$rolename])
+            ->exists();
 
         if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->hasRole('ROLE ACCOUNTANT') || auth()->user()->can('Create Role')) {
-            if (sizeof($check_value) == 0) {
+            if (! $roleExists) {
                 try {
-                    $role = Role::create([
-                        'name' => $rolename,
-                        'guard_name' => 'web',
-                        'created_by' => Auth::id(),
-                    ]);
+                    DB::transaction(function () use ($rolename, $permission) {
+                        $role = Role::create([
+                            'name' => $rolename,
+                            'guard_name' => 'web',
+                            'created_by' => Auth::id(),
+                        ]);
 
-                    $role->syncPermissions($permission);
+                        $role->syncPermissions($permission);
+                    });
 
                     $successResponse = [
                         'message' => 'Role With Permission Saved Successfuly',
-                        'statusCode' => 201
+                        'statusCode' => 201,
                     ];
 
                     return response()->json($successResponse);
                 } catch (Exception $e) {
-                    $errorResponse = [
-                        'message' => 'Internal Server Error',
-                        'error' => $e->getMessage(),
-                        'statusCode' => 500
-                    ];
-
-                    return response()->json($errorResponse);
+                    return Helper::serverError($e);
                 }
 
             } else {
                 $errorResponse = [
                     'message' => 'Role Name Already Exist',
-                    'statusCode' => 400
+                    'statusCode' => 400,
                 ];
 
                 return response()->json($errorResponse);
@@ -208,32 +236,43 @@ class RolesCotroller extends Controller
      *     path="/api/roles/{id}",
      *     summary="Get a specific role",
      *     tags={"roles"},
+     *
      *     @OA\Parameter(
      *         name="Id",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="roles",
      *                 type="array",
+     *
      *                 @OA\Items(
      *                     type="object",
+     *
      *                     @OA\Property(property="id", type="integer", example=1),
      *                     @OA\Property(property="name", type="string", example="ROLE ADMIN")
      *                 )
@@ -241,8 +280,10 @@ class RolesCotroller extends Controller
      *             @OA\Property(
      *                 property="permission",
      *                 type="array",
+     *
      *                 @OA\Items(
      *                     type="object",
+     *
      *                     @OA\Property(property="id", type="integer", example=1),
      *                     @OA\Property(property="name", type="string", example="View Dashboard"),
      *                     @OA\Property(property="isSelected", type="boolean", example=true)
@@ -270,28 +311,22 @@ class RolesCotroller extends Controller
 
                 $permissions = [];
                 foreach ($rolepermission as $item) {
-                    array_push($permissions, array(
+                    array_push($permissions, [
                         'id' => $item->id,
                         'name' => $item->name,
                         'isSelected' => true,
-                    ));
+                    ]);
                 }
 
                 $successResponse = [
                     'roles' => $role,
                     'permission' => $permissions,
-                    'statusCode' => 201
+                    'statusCode' => 201,
                 ];
 
                 return response()->json($successResponse);
             } catch (Exception $e) {
-                $errorResponse = [
-                    'message' => 'Internal Server Error',
-                    'error' => $e->getMessage(),
-                    'statusCode' => 500
-                ];
-
-                return response()->json($errorResponse);
+                return Helper::serverError($e);
             }
         } else {
             return response()
@@ -312,35 +347,47 @@ class RolesCotroller extends Controller
      *     path="/api/roles/{id}",
      *     summary="Update a role",
      *     tags={"roles"},
+     *
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="name", type="string"),
      *             @OA\Property(property="permission_id", type="array", @OA\Items(type="integer"))
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string"),
      *             @OA\Property(property="statusCode", type="integer")
      *         )
@@ -350,12 +397,25 @@ class RolesCotroller extends Controller
     public function update(Request $request, string $id)
     {
         $data = Validator::make($request->all(), [
-            'permission_id' => 'required',
-            'name' => 'required'
+            'permission_id' => ['required', 'array', 'min:1'],
+            'permission_id.*' => ['required', function (string $attribute, mixed $value, \Closure $fail) {
+                $permissionExists = is_numeric($value)
+                    ? Permission::query()->whereKey((int) $value)->exists()
+                    : Permission::query()->where('name', $value)->exists();
+
+                if (! $permissionExists) {
+                    $fail("The selected {$attribute} is invalid.");
+                }
+            }],
+            'name' => ['required', 'string', 'max:255'],
         ]);
 
         if ($data->fails()) {
-            return response()->json($data->errors());
+            return response()->json([
+                'message' => 'The submitted role data is invalid.',
+                'errors' => $data->errors(),
+                'statusCode' => 422,
+            ], 422);
         }
 
         $permission = $request->permission_id;
@@ -363,25 +423,22 @@ class RolesCotroller extends Controller
 
         if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->hasRole('ROLE ACCOUNTANT') || auth()->user()->can('Update Role')) {
             try {
-                $role = Role::find($id);
-                $role->name = $rolename;
-                $role->update();
+                DB::transaction(function () use ($id, $rolename, $permission) {
+                    $role = Role::findOrFail($id);
+                    $role->name = $rolename;
+                    $role->save();
 
-                $role->syncPermissions($permission);
+                    $role->syncPermissions($permission);
+                });
 
                 $successResponse = [
                     'message' => 'Role With Permission Update Successfuly',
-                    'statusCode' => 200
+                    'statusCode' => 200,
                 ];
 
                 return response()->json($successResponse);
             } catch (Exception $e) {
-                $errorResponse = [
-                    'message' => 'Internal Server Error',
-                    'error' => $e->getMessage(),
-                    'statusCode' => 500
-                ];
-                return response()->json($errorResponse);
+                return Helper::serverError($e);
             }
         } else {
             return response()
@@ -394,27 +451,36 @@ class RolesCotroller extends Controller
      *     path="/api/roles/{id}",
      *     summary="Delete a role",
      *     tags={"roles"},
+     *
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *      @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string"),
      *             @OA\Property(property="statusCode", type="integer")
      *         )
@@ -431,7 +497,7 @@ class RolesCotroller extends Controller
 
                     $successResponse = [
                         'message' => 'Role Deleted Successfuly',
-                        'statusCode' => 200
+                        'statusCode' => 200,
                     ];
 
                     return response()->json($successResponse);
@@ -439,7 +505,7 @@ class RolesCotroller extends Controller
             } catch (Exception $e) {
                 $errorResponse = [
                     'message' => 'Internal Server Error',
-                    'statusCode' => 500
+                    'statusCode' => 500,
                 ];
 
                 return response()->json($errorResponse);
@@ -449,6 +515,4 @@ class RolesCotroller extends Controller
                 ->json(['message' => 'unAuthenticated', 'statusCode' => 401]);
         }
     }
-
-
 }

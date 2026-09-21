@@ -2,16 +2,14 @@
 
 namespace App\Http\Controllers\API\ReferralLetters;
 
-use App\Models\Referral;
-use App\Models\ReferralType;
-use App\Models\BoardedOutLetter;
-use Illuminate\Http\Request;
-use App\Models\ReferralLetter;
-use App\Models\PatientHistory;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Helpers\Helper;
+use App\Models\BoardedOutLetter;
+use App\Models\PatientHistory;
+use App\Models\Referral;
+use App\Models\ReferralLetter;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
 
 class ReferralLettersController extends Controller
 {
@@ -29,26 +27,35 @@ class ReferralLettersController extends Controller
      *     path="/api/referralLetters",
      *     summary="Get all referralLetters",
      *     tags={"referralLetters"},
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="data",
      *                 type="array",
+     *
      *                 @OA\Items(
      *                     type="object",
+     *
      *                     @OA\Property(property="referral_letter_id", type="integer"),
      *                     @OA\Property(property="referral_id", type="integer"),
      *                     @OA\Property(property="referral_letter_code", type="string"),
@@ -64,14 +71,13 @@ class ReferralLettersController extends Controller
      *     )
      * )
      */
-
     public function index()
     {
         $user = auth()->user();
-        if (!$user->can('View ReferralLetter')) {
+        if (! $user->can('View ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -98,10 +104,13 @@ class ReferralLettersController extends Controller
      *     path="/api/referralLetters",
      *     summary="Create referralLetters",
      *     tags={"referralLetters"},
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *            @OA\Property(property="referral_id", type="integer"),
      *            @OA\Property(property="hospital_id", type="integer"),
      *            @OA\Property(property="letter_text", type="string"),
@@ -110,21 +119,28 @@ class ReferralLettersController extends Controller
      *            @OA\Property(property="end_date", type="string", nullable=true),
      *         ),
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string"),
      *             @OA\Property(property="statusCode", type="integer")
      *         )
@@ -135,10 +151,10 @@ class ReferralLettersController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->can('Create ReferralLetter')) {
+        if (! $user->can('Create ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -164,51 +180,51 @@ class ReferralLettersController extends Controller
             'referral_id' => [
                 'nullable',
                 'required_if:status,Confirmed,Cancelled,Confirmed and BoardedOut',
-                'numeric'
+                'numeric',
             ],
-        
+
             'patient_histories_id' => [
                 'required_if:status,BoardedOut,Confirmed and BoardedOut',
-                'exists:patient_histories,patient_histories_id'
+                'exists:patient_histories,patient_histories_id',
             ],
-        
+
             'hospital_id' => [
                 'required_if:status,Confirmed,Confirmed and BoardedOut',
-                'numeric'
+                'numeric',
             ],
-        
+
             'letter_text' => [
                 'nullable',
-                'string'
+                'string',
             ],
-        
+
             'status' => [
                 'required',
-                'in:Confirmed,Cancelled,BoardedOut,Confirmed and BoardedOut'
+                'in:Confirmed,Cancelled,BoardedOut,Confirmed and BoardedOut',
             ],
-        
+
             'start_date' => ['nullable', 'string'],
             'end_date' => ['nullable', 'string'],
-        
+
             // 🔥 BoardedOut fields
             'receiver' => [
                 'required_if:status,BoardedOut,Confirmed and BoardedOut',
-                'string'
+                'string',
             ],
-        
+
             'reference_number' => [
                 'required_if:status,BoardedOut,Confirmed and BoardedOut',
-                'string'
+                'string',
             ],
-        
+
             'reference_date' => [
                 'required_if:status,BoardedOut,Confirmed and BoardedOut',
-                'date'
+                'date',
             ],
-        
+
             'recommendations' => [
                 'required_if:status,BoardedOut,Confirmed and BoardedOut',
-                'array'
+                'array',
             ],
         ]);
 
@@ -221,7 +237,7 @@ class ReferralLettersController extends Controller
                 $patientHistory = PatientHistory::findOrFail(
                     $data['patient_histories_id']
                 );
-            
+
                 /*
                 |--------------------------------------------------------------------------
                 | CHECK EXISTING REFERRAL
@@ -231,7 +247,7 @@ class ReferralLettersController extends Controller
                     ->whereNotIn('status', ['Cancelled'])
                     ->latest()
                     ->first();
-            
+
                 /*
                 |--------------------------------------------------------------------------
                 | UPDATE HISTORY
@@ -241,7 +257,7 @@ class ReferralLettersController extends Controller
                     'status' => 'confirmed',
                     'dg_id' => $user->id,
                 ]);
-            
+
                 /*
                 |--------------------------------------------------------------------------
                 | CREATE BOARDED OUT LETTER
@@ -254,22 +270,22 @@ class ReferralLettersController extends Controller
                     'reference_date' => $data['reference_date'],
                     'recommendations' => $data['recommendations'],
                 ]);
-            
+
                 /*
                 |--------------------------------------------------------------------------
                 | IF REFERRAL EXISTS -> UPDATE IT
                 |--------------------------------------------------------------------------
                 */
                 if ($existingReferral) {
-            
+
                     $existingReferral->update([
                         'status' => 'BoardedOut',
                         'confirmed_by' => $user->id,
                     ]);
                 }
-            
+
                 DB::commit();
-            
+
                 return response([
                     'data' => $boardedOut,
                     'message' => 'Boarded Out decision recorded successfully.',
@@ -280,10 +296,12 @@ class ReferralLettersController extends Controller
             // 1️⃣ Find referral
             $referralId = $data['referral_id'] ?? null;
 
-            if (!$referralId) {
+            if (! $referralId) {
+                DB::rollBack();
+
                 return response([
                     'message' => 'Referral ID missing',
-                    'statusCode' => 422
+                    'statusCode' => 422,
                 ], 422);
             }
 
@@ -293,7 +311,7 @@ class ReferralLettersController extends Controller
                 $patientHistory = PatientHistory::findOrFail(
                     $data['patient_histories_id']
                 );
-            
+
                 /*
                 |--------------------------------------------------------------------------
                 | CHECK EXISTING REFERRAL
@@ -303,7 +321,7 @@ class ReferralLettersController extends Controller
                     ->whereNotIn('status', ['Cancelled'])
                     ->latest()
                     ->first();
-            
+
                 /*
                 |--------------------------------------------------------------------------
                 | UPDATE HISTORY
@@ -313,7 +331,7 @@ class ReferralLettersController extends Controller
                     'status' => 'confirmed',
                     'dg_id' => $user->id,
                 ]);
-            
+
                 /*
                 |--------------------------------------------------------------------------
                 | CREATE BOARDED OUT LETTER
@@ -326,14 +344,14 @@ class ReferralLettersController extends Controller
                     'reference_date' => $data['reference_date'],
                     'recommendations' => $data['recommendations'],
                 ]);
-            
+
                 /*
                 |--------------------------------------------------------------------------
                 | IF REFERRAL EXISTS -> UPDATE IT
                 |--------------------------------------------------------------------------
                 */
                 if ($existingReferral) {
-            
+
                     $existingReferral->update([
                         'hospital_id' => $data['hospital_id'],
                         'status' => 'BoardedOut',
@@ -355,15 +373,15 @@ class ReferralLettersController extends Controller
                     // 4️⃣ Create referral letter
                     $referralLetter = ReferralLetter::create([
                         'referral_id' => $referral->referral_id,
-                        'letter_text' => $data['letter_text'],
+                        'letter_text' => $data['letter_text'] ?? null,
                         'start_date' => $data['start_date'] ?? null,
                         'end_date' => $data['end_date'] ?? null,
                         'created_by' => $user->id,
                     ]);
                 }
-            
+
                 DB::commit();
-            
+
                 return response([
                     'data' => $boardedOut,
                     'message' => 'Boarded Out decision recorded successfully.',
@@ -393,14 +411,14 @@ class ReferralLettersController extends Controller
 
             $patientHistory->update([
                 'status' => 'confirmed',
-                'dg_comments' => $data['letter_text'],
+                'dg_comments' => $data['letter_text'] ?? null,
                 'dg_id' => $user->id,
             ]);
 
             // 4️⃣ Create referral letter
             $referralLetter = ReferralLetter::create([
                 'referral_id' => $referral->referral_id,
-                'letter_text' => $data['letter_text'],
+                'letter_text' => $data['letter_text'] ?? null,
                 'start_date' => $data['start_date'] ?? null,
                 'end_date' => $data['end_date'] ?? null,
                 'created_by' => $user->id,
@@ -417,14 +435,9 @@ class ReferralLettersController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
 
-            return response([
-                'message' => 'Internal server error',
-                'error' => $e->getMessage(),
-                'statusCode' => 500,
-            ], 500);
+            return Helper::serverError($e);
         }
     }
-
 
     /**
      * Display the specified resource.
@@ -434,17 +447,22 @@ class ReferralLettersController extends Controller
      *     path="/api/referralLetters/{referralLetters_id}",
      *     summary="Find referral Letters by ID",
      *     tags={"referralLetters"},
+     *
      *     @OA\Parameter(
      *         name="referralLetters_id",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
@@ -462,20 +480,19 @@ class ReferralLettersController extends Controller
      *     )
      * )
      */
-
     public function show(string $id)
     {
         $user = auth()->user();
-        if (!$user->can('View ReferralLetter')) {
+        if (! $user->can('View ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
         $Referral_letter = ReferralLetter::withTrashed()->find($id);
 
-        if (!$Referral_letter) {
+        if (! $Referral_letter) {
             return response([
                 'message' => 'Referral letter not found',
                 'statusCode' => 404,
@@ -496,32 +513,43 @@ class ReferralLettersController extends Controller
      *     path="/api/referralLetters/{referralLetters_id}",
      *     summary="Update referralLetters",
      *     tags={"referralLetters"},
+     *
      *      @OA\Parameter(
      *         name="referralLetters_id",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *      ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="data",
      *                 type="array",
+     *
      *                 @OA\Items(
      *                     type="object",
+     *
      *                    @OA\Property(property="referral_id", type="integer"),
      *                    @OA\Property(property="hospital_id", type="integer", nullable=true),
      *                    @OA\Property(property="letter_text", type="string"),
@@ -535,14 +563,13 @@ class ReferralLettersController extends Controller
      *     )
      * )
      */
-
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
-        if (!$user->can('Create ReferralLetter')) {
+        if (! $user->can('Create ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
@@ -570,7 +597,7 @@ class ReferralLettersController extends Controller
         ]);
 
         // Optionally update hospital_id in the referral if provided
-        if (!empty($data['hospital_id'])) {
+        if (! empty($data['hospital_id'])) {
             $referral = Referral::find($data['referral_id']);
             if ($referral) {
                 $referral->update([
@@ -594,47 +621,55 @@ class ReferralLettersController extends Controller
      *     path="/api/referralLetters/{referralLetters_id}",
      *     summary="Delete referralLetters",
      *     tags={"referralLetters"},
+     *
      *     @OA\Parameter(
      *         name="referralLetters_id",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *      @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string"),
      *             @OA\Property(property="statusCode", type="integer")
      *         )
      *     )
      * )
      */
-
     public function destroy(string $id)
     {
         $user = auth()->user();
-        if (!$user->can('Delete ReferralLetter')) {
+        if (! $user->can('Delete ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
         $Referral_letter = ReferralLetter::withTrashed()->find($id);
 
-        if (!$Referral_letter) {
+        if (! $Referral_letter) {
             return response([
                 'message' => 'Referral letter not found',
                 'statusCode' => 404,
@@ -657,40 +692,48 @@ class ReferralLettersController extends Controller
      *     path="/api/referralLetters/unBlock/{Referral_letter_id}",
      *     summary="Unblock referralLetters",
      *     tags={"referralLetters"},
+     *
      *     @OA\Parameter(
      *         name="referralLetters_id",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *      @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string"),
      *             @OA\Property(property="statusCode", type="integer")
      *         )
      *     )
      * )
      */
-
     public function unBlockReferralLetter(int $id)
     {
 
         $Referral_letter = ReferralLetter::withTrashed()->find($id);
 
-        if (!$Referral_letter) {
+        if (! $Referral_letter) {
             return response([
                 'message' => 'Referral letter not found',
                 'statusCode' => 404,
@@ -705,40 +748,49 @@ class ReferralLettersController extends Controller
         ], 200);
     }
 
-
-
     // Get comment by referral id
     /**
      * @OA\Get(
      *     path="/api/referralLetters/comment/referral/{referralId}",
      *     summary="Get all referral comment by referral id",
      *     tags={"referralLetters"},
+     *
      *  @OA\Parameter(
      *         name="referralId",
      *         in="path",
      *         required=true,
+     *
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\Header(
      *             header="Cache-Control",
      *             description="Cache control header",
+     *
      *             @OA\Schema(type="string", example="no-cache, private")
      *         ),
+     *
      *         @OA\Header(
      *             header="Content-Type",
      *             description="Content type header",
+     *
      *             @OA\Schema(type="string", example="application/json; charset=UTF-8")
      *         ),
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="data",
      *                 type="array",
+     *
      *                 @OA\Items(
      *                     type="object",
+     *
      *                     @OA\Property(property="referral_letter_id", type="integer"),
      *                     @OA\Property(property="letter_text", type="string"),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
@@ -754,22 +806,21 @@ class ReferralLettersController extends Controller
     public function getReferralCommentByReferralId(int $referralId)
     {
         $user = auth()->user();
-        if (!$user->can('View ReferralLetter')) {
+        if (! $user->can('View ReferralLetter')) {
             return response([
                 'message' => 'Forbidden',
-                'statusCode' => 403
+                'statusCode' => 403,
             ], 403);
         }
 
         $comment = DB::table('referral_letters')
             ->join('referrals', 'referrals.referral_id', '=', 'referral_letters.referral_id')
             ->select(
-                "referral_letters.referral_letter_id",
-                "referral_letters.letter_text",
+                'referral_letters.referral_letter_id',
+                'referral_letters.letter_text',
             )
             ->where('referrals.referral_id', '=', $referralId)
             ->first();
-
 
         if ($comment) {
             return response([

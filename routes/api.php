@@ -1,29 +1,28 @@
 <?php
 
-use App\Http\Controllers\API\Bills\BillController;
-use App\Http\Controllers\API\Bills\MonthlyBillController;
-use App\Http\Controllers\API\Hospitals\HospitalController;
-use App\Http\Controllers\API\Referrals\ReferralController;
-use App\Http\Controllers\API\ReferralType\ReferralTypeController;
-use App\Http\Controllers\API\ReferralLetters\ReferralLettersController;
-use App\Http\Controllers\API\Insurances\InsuranceController;
-use App\Http\Controllers\API\Patients\PatientController;
-use App\Http\Controllers\API\Report\ReportController;
-use App\Http\Controllers\API\Treatments\TreatmentController;
-use App\Http\Controllers\API\Patients\PatientListController;
-use App\Http\Controllers\API\Patients\MedicalBoadController;
-use App\Http\Controllers\API\Patients\PatientHistoryController;
-use App\Http\Controllers\API\HospitalLetters\HospitalLetterController;
-use App\Http\Controllers\API\Followups\FollowupController;
 use App\Http\Controllers\API\BillFiles\BillFileController;
 use App\Http\Controllers\API\BillItems\BillItemController;
 use App\Http\Controllers\API\BillPayments\BillPaymentController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\API\Reasons\ReasonController;
+use App\Http\Controllers\API\Bills\BillController;
+use App\Http\Controllers\API\Followups\FollowupController;
+use App\Http\Controllers\API\HospitalLetters\HospitalLetterController;
+use App\Http\Controllers\API\Hospitals\HospitalController;
+use App\Http\Controllers\API\Insurances\InsuranceController;
+use App\Http\Controllers\API\Patients\MedicalBoadController;
+use App\Http\Controllers\API\Patients\PatientController;
+use App\Http\Controllers\API\Patients\PatientHistoryController;
+use App\Http\Controllers\API\Patients\PatientListController;
 use App\Http\Controllers\API\Payments\PaymentController;
-use App\Http\Controllers\API\Setup\DiagnosisController;
+use App\Http\Controllers\API\Reasons\ReasonController;
+use App\Http\Controllers\API\ReferralLetters\ReferralLettersController;
+use App\Http\Controllers\API\Referrals\ReferralController;
 use App\Http\Controllers\API\Referrals\ReferralFlightController;
+use App\Http\Controllers\API\ReferralType\ReferralTypeController;
+use App\Http\Controllers\API\Report\ReportController;
+use App\Http\Controllers\API\Setup\DiagnosisController;
+use App\Http\Controllers\API\Treatments\TreatmentController;
+use Illuminate\Support\Facades\Route;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -35,7 +34,8 @@ use App\Http\Controllers\API\Referrals\ReferralFlightController;
 |
 */
 
-Route::post('login', [App\Http\Controllers\API\Auth\AuthController::class, 'login']);
+Route::post('login', [App\Http\Controllers\API\Auth\AuthController::class, 'login'])
+    ->middleware('throttle:login');
 
 Route::post('forgot-password', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'forgotPassword'])->middleware('throttle:5,1');
 Route::post('reset-forgot-password', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'forgotPasswordReset'])->middleware('throttle:5,1');
@@ -52,33 +52,29 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('identifications', App\Http\Controllers\API\Setup\IdentificationsController::class);
     Route::resource('countries', App\Http\Controllers\API\Setup\CountriesController::class);
 
-    Route::get('userAccounts/board-members', [App\Http\Controllers\API\User\UsersCotroller::class,'getBoardMembers']);
-    Route::get('unBlockUser/{userId}', [App\Http\Controllers\API\User\UsersCotroller::class,'unBlockUser']);
+    Route::get('userAccounts/board-members', [App\Http\Controllers\API\User\UsersCotroller::class, 'getBoardMembers']);
+    Route::get('unBlockUser/{userId}', [App\Http\Controllers\API\User\UsersCotroller::class, 'unBlockUser']);
     Route::resource('userAccounts', App\Http\Controllers\API\User\UsersCotroller::class);
     Route::resource('roles', App\Http\Controllers\API\User\RolesCotroller::class);
     Route::resource('permissions', App\Http\Controllers\API\User\PermissionsCotroller::class);
 
     // ================================================== RMS RELATED APIs ========================================================= //
-    //HOSPITALS
+    // HOSPITALS
     Route::get('hospitals/reffered-hospitals', [HospitalController::class, 'getReferredHospitals']);
     Route::get('hospitals/internal-referral-hospitals', [HospitalController::class, 'getInternalReferralHospitals']);
     Route::resource('hospitals', HospitalController::class);
     Route::patch('hospitals/unBlock/{hospitalId}', [HospitalController::class, 'unBlockHospital']);
 
-    //REFERRAL TYPE
+    // REFERRAL TYPE
     Route::resource('referralTypes', ReferralTypeController::class);
     Route::patch('referralTypes/unblock/{referralTypeId}', [ReferralTypeController::class, 'unBlockReferralType']);
 
-    //REFERRAL LETTERS
-    Route::resource('referralLetters', ReferralLettersController::class);
-    Route::patch('referralLetters/unBlock/{referralLetters_id}', [ReferralLettersController::class, 'unBlockReferralLetter']);
-
-    //REFERRAL LETTERS
+    // REFERRAL LETTERS
     Route::resource('referralLetters', ReferralLettersController::class);
     Route::get('referralLetters/comment/referral/{referralId}', [ReferralLettersController::class, 'getReferralCommentByReferralId']);
     Route::patch('referralLetters/unBlock/{referralLettersId}', [ReferralLettersController::class, 'unBlockHospital']);
 
-// PATIENTS APIs
+    // PATIENTS APIs
     Route::resource('patients', PatientController::class);
     Route::post('patients/update/{id}', [PatientController::class, 'updatePatient']);
     Route::post('patients/storePatientAndHistory', [PatientController::class, 'storePatientAndHistory']);
@@ -124,13 +120,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::patch('bills/unBlock/{billId}', [BillController::class, 'unBlockBill']);
 
     // REPORT APIs
+    Route::get('reports/top-diagnoses', \App\Http\Controllers\API\Report\TopDiagnosesController::class);
     Route::get('reports/referrals/{patientId}', [ReportController::class, 'referralReport']);
     Route::get('reports/workflowStatusReport', [ReportController::class, 'workflowStatusReport']);
     Route::get('reports/referralsByType', [ReportController::class, 'referralReportByReferralType']);
     Route::get('reports/referralsByReason', [ReportController::class, 'referralsReportByReason']);
     Route::get('reports/referralByHospital', [ReportController::class, 'referralReportByHospital']);
     Route::post('reports/getBillsBetweenDates', [ReportController::class, 'getBillsBetweenDates']);
-    Route::post('reports/searchReferralReport', [ReportController::class, 'searchReferralReport']);
     Route::post('reports/searchReferralReport', [ReportController::class, 'searchReferralReport']);
     Route::get('reports/getMonthlyMaleAndFemaleReferralReport', [ReportController::class, 'getMonthlyMaleAndFemaleReferralReport']);
     // Dasboard Counts
@@ -148,19 +144,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Hospital Letters
     Route::resource('hospital-letters', HospitalLetterController::class);
-    Route::post('hospital-letters/update/{followup_id}', [HospitalLetterController::class,'updateHospitalLetter']);
+    Route::post('hospital-letters/update/{followup_id}', [HospitalLetterController::class, 'updateHospitalLetter']);
 
     // Followups
     Route::resource('followups', FollowupController::class);
 
     // Bill Files
-    Route::get('bill-files/summary-by-hospital', [BillFileController::class, 'getBillsByHospitals']);// new
+    Route::get('bill-files/summary-by-hospital', [BillFileController::class, 'getBillsByHospitals']); // new
     Route::resource('bill-files', BillFileController::class);
-    Route::get('bill-files/hospital/{hospital_id}', [BillFileController::class, 'showByHospital']);// new
-    Route::post('bill-files/update/{bill_file_id}', [BillFileController::class,'updateBillFile']);
-    Route::get('bill-files/bill-files-for-payment/payment', [BillFileController::class,'getBillFilesForPayment']);
-    Route::get('bill-files/hospital-bills/hospitals', [BillFileController::class,'getBillFilesGroupByHospitals']);
-    Route::get('bill-files/hospitals/{hospital_id}', [BillFileController::class,'getBillFilesByHospitalId']);
+    Route::get('bill-files/hospital/{hospital_id}', [BillFileController::class, 'showByHospital']); // new
+    Route::post('bill-files/update/{bill_file_id}', [BillFileController::class, 'updateBillFile']);
+    Route::get('bill-files/bill-files-for-payment/payment', [BillFileController::class, 'getBillFilesForPayment']);
+    Route::get('bill-files/hospital-bills/hospitals', [BillFileController::class, 'getBillFilesGroupByHospitals']);
+    Route::get('bill-files/hospitals/{hospital_id}', [BillFileController::class, 'getBillFilesByHospitalId']);
 
     // Bill Items
     Route::resource('bill-items', BillItemController::class);
@@ -233,12 +229,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::prefix('referral-flights')->group(function () {
 
-        Route::post('/', [ReferralFlightController::class,'store']);
-        Route::get('/referral/{referralId}', [ReferralFlightController::class,'showByReferral']);
-        Route::get('/{id}', [ReferralFlightController::class,'show']);
-        Route::put('/{id}', [ReferralFlightController::class,'update']);
-        Route::delete('/{id}', [ReferralFlightController::class,'destroy']);
-    
+        Route::post('/', [ReferralFlightController::class, 'store']);
+        Route::get('/referral/{referralId}', [ReferralFlightController::class, 'showByReferral']);
+        Route::get('/{id}', [ReferralFlightController::class, 'show']);
+        Route::put('/{id}', [ReferralFlightController::class, 'update']);
+        Route::delete('/{id}', [ReferralFlightController::class, 'destroy']);
+
     });
 
 });
