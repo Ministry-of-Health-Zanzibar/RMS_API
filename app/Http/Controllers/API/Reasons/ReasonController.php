@@ -15,7 +15,9 @@ class ReasonController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View Reason|Create Reason|View Reason|Update Reason|Delete Reason', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
+        // Report users need the read-only list for report filters.
+        $this->middleware('permission:View Reason|View Report', ['only' => ['index']]);
+        $this->middleware('permission:View Reason|Create Reason|Update Reason|Delete Reason', ['only' => ['store', 'show', 'update', 'destroy']]);
     }
 
     /**
@@ -62,7 +64,7 @@ class ReasonController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->can('View Reason')) {
+        if (!$user->can('View Reason') && !$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403

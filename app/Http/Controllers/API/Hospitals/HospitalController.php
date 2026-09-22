@@ -61,7 +61,7 @@ class HospitalController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->can('View Hospital')) {
+        if (!$user->can('View Hospital') && !$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
