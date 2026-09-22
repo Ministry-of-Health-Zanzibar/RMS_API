@@ -12,7 +12,10 @@ class ReferralTypeController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:View ReferralType|Create ReferralType|Update ReferralType|Delete ReferralType', ['only' => ['index', 'store', 'show', 'update', 'destroy']]);
+        // Report users need the read-only list for report filters. The action
+        // checks below still protect all mutations and individual records.
+        $this->middleware('permission:View ReferralType|View Report', ['only' => ['index']]);
+        $this->middleware('permission:View ReferralType|Create ReferralType|Update ReferralType|Delete ReferralType', ['only' => ['store', 'show', 'update', 'destroy']]);
     }
     /**
      * Display a listing of the resource.
@@ -58,7 +61,7 @@ class ReferralTypeController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['ROLE ADMIN', 'ROLE NATIONAL','ROLE STAFF','ROLE DG OFFICER']) || !$user->can('View ReferralType')) {
+        if (!$user->can('View ReferralType') && !$user->can('View Report')) {
             return response([
                 'message' => 'Forbidden',
                 'statusCode' => 403
