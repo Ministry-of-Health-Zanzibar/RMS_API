@@ -1546,6 +1546,12 @@ class ReferralController extends Controller
             $hasReferral = $history->referrals()->exists();
 
             $latestReferral = $history->referrals()
+                ->with([
+                    'hospital.referralType',
+                    'referralLetters',
+                    'confirmedBy',
+                    'creator',
+                ])
                 ->latest()
                 ->first();
 

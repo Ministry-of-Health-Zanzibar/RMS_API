@@ -78,7 +78,7 @@ class HospitalLetterController extends Controller
      *                     type="string",
      *                     format="date",
      *                     nullable=true,
-     *                     description="Next appointment date"
+     *                     description="Next appointment date; required when outcome is Transferred"
      *                 ),
      *                 @OA\Property(
      *                     property="letter_file",
@@ -154,6 +154,10 @@ class HospitalLetterController extends Controller
         });
 
         $validator->sometimes('hospital_id', 'required|exists:hospitals,hospital_id', function ($input) {
+            return $input->outcome === 'Transferred';
+        });
+
+        $validator->sometimes('next_appointment_date', 'required|date', function ($input) {
             return $input->outcome === 'Transferred';
         });
 

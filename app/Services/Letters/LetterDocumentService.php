@@ -73,7 +73,12 @@ class LetterDocumentService
 
     public function defaultLanguageForReferral(?object $referral): string
     {
-        return data_get($referral, 'hospital.referralType.referral_type_code') === 'REFTYPE2'
+        $referralTypeCode = strtoupper(trim((string) data_get(
+            $referral,
+            'hospital.referralType.referral_type_code',
+        )));
+
+        return $referralTypeCode === 'REFTYPE2'
             ? self::LANGUAGE_ENGLISH
             : self::LANGUAGE_SWAHILI;
     }
