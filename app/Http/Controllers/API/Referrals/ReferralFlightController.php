@@ -25,29 +25,29 @@ class ReferralFlightController extends Controller
             ],
 
             'arrival_date' => [
-                'nullable',
+                'required',
                 'date',
             ],
 
             'arrival_time' => [
-                'nullable',
+                'required',
                 'date_format:H:i',
             ],
 
             'arrival_airport' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
             ],
 
             'airline' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
             ],
 
             'flight_number' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
             ],
@@ -167,29 +167,29 @@ class ReferralFlightController extends Controller
 
         $validated = $request->validate([
             'arrival_date' => [
-                'nullable',
+                'required',
                 'date',
             ],
 
             'arrival_time' => [
-                'nullable',
+                'required',
                 'date_format:H:i',
             ],
 
             'arrival_airport' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
             ],
 
             'airline' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
             ],
 
             'flight_number' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
             ],

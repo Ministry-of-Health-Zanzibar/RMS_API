@@ -18,6 +18,10 @@ class LetterDocumentService
     public const LANGUAGE_ENGLISH = 'en';
     public const LANGUAGE_SWAHILI = 'sw';
 
+    public function __construct(private readonly LetterBrandingService $branding)
+    {
+    }
+
     public function findReferralLetter(int $referralId): ?ReferralLetter
     {
         return ReferralLetter::with([
@@ -34,7 +38,7 @@ class LetterDocumentService
     {
         return HospitalLetter::with([
             'referral.patient',
-            'referral.hospital',
+            'referral.hospital.referralType',
         ])->find($letterId);
     }
 
@@ -59,7 +63,17 @@ class LetterDocumentService
 
     public function defaultReferralLanguage(ReferralLetter $letter): string
     {
-        return $letter->referral?->hospital?->referralType?->referral_type_code === 'REFTYPE2'
+        return $this->defaultLanguageForReferral($letter->referral);
+    }
+
+    public function defaultFollowUpLanguage(HospitalLetter $letter): string
+    {
+        return $this->defaultLanguageForReferral($letter->referral);
+    }
+
+    public function defaultLanguageForReferral(?object $referral): string
+    {
+        return data_get($referral, 'hospital.referralType.referral_type_code') === 'REFTYPE2'
             ? self::LANGUAGE_ENGLISH
             : self::LANGUAGE_SWAHILI;
     }
@@ -69,13 +83,15 @@ class LetterDocumentService
         $referral = $letter->referral;
 
         $patientAge = $this->patientAge($referral?->patient?->date_of_birth);
+        $branding = $this->branding->effectiveAssets();
 
         return Pdf::loadView('letters.referral', [
             'letter' => $letter,
             'referral' => $referral,
             'language' => $language,
             'logoData' => $this->assetDataUri('smz.png'),
-            'signatureData' => $this->assetDataUri('sign_dgs.png'),
+            'signatureData' => $branding['signatureData'],
+            'stampData' => $branding['stampData'],
             'flight' => $referral?->referralFlights?->first(),
             'patientAge' => $patientAge,
             'ageLabel' => $this->ageLabel($patientAge, $language),
@@ -101,13 +117,15 @@ class LetterDocumentService
         $referral = $letter->referral;
 
         $patientAge = $this->patientAge($referral?->patient?->date_of_birth);
+        $branding = $this->branding->effectiveAssets();
 
         return Pdf::loadView('letters.follow-up', [
             'letter' => $letter,
             'referral' => $referral,
             'language' => $language,
             'logoData' => $this->assetDataUri('smz.png'),
-            'signatureData' => $this->assetDataUri('sign_dgs.png'),
+            'signatureData' => $branding['signatureData'],
+            'stampData' => $branding['stampData'],
             'patientAge' => $patientAge,
             'ageLabel' => $this->ageLabel($patientAge, $language),
             'email' => 'info@mohz.go.tz',
@@ -128,6 +146,7 @@ class LetterDocumentService
         $history = $letter->patientHistory;
         $patient = $history?->patient;
         $boardDate = $patient?->patientList?->first()?->board_date;
+        $branding = $this->branding->effectiveAssets();
 
         return Pdf::loadView('letters.boarded-out', [
             'letter' => $letter,
@@ -135,7 +154,8 @@ class LetterDocumentService
             'patient' => $patient,
             'language' => $language,
             'logoData' => $this->assetDataUri('smz.png'),
-            'signatureData' => $this->assetDataUri('sign_dgs.png'),
+            'signatureData' => $branding['signatureData'],
+            'stampData' => $branding['stampData'],
             'boardDate' => $this->formatDate($boardDate, 'd/m/Y'),
             'email' => 'info@mohz.go.tz',
             'dgEmail' => 'dg@mohz.go.tz',

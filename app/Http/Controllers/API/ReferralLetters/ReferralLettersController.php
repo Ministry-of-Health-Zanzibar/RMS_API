@@ -308,19 +308,12 @@ class ReferralLettersController extends Controller
             $referral = Referral::findOrFail($referralId);
             if ($data['status'] === 'Confirmed and BoardedOut') {
 
-                $patientHistory = PatientHistory::findOrFail(
-                    $data['patient_histories_id']
-                );
-
-                /*
-                |--------------------------------------------------------------------------
-                | CHECK EXISTING REFERRAL
-                |--------------------------------------------------------------------------
-                */
-                $existingReferral = Referral::where('patient_id', $patientHistory->patient_id)
-                    ->whereNotIn('status', ['Cancelled'])
-                    ->latest()
-                    ->first();
+                $patientHistory = PatientHistory::where(
+                    'patient_histories_id',
+                    $data['patient_histories_id'],
+                )
+                    ->where('patient_id', $referral->patient_id)
+                    ->firstOrFail();
 
                 /*
                 |--------------------------------------------------------------------------
@@ -329,7 +322,14 @@ class ReferralLettersController extends Controller
                 */
                 $patientHistory->update([
                     'status' => 'confirmed',
+                    'dg_comments' => $data['letter_text'] ?? null,
                     'dg_id' => $user->id,
+                ]);
+
+                $referral->update([
+                    'hospital_id' => $data['hospital_id'],
+                    'status' => 'BoardedOut',
+                    'confirmed_by' => $user->id,
                 ]);
 
                 /*
@@ -345,45 +345,21 @@ class ReferralLettersController extends Controller
                     'recommendations' => $data['recommendations'],
                 ]);
 
-                /*
-                |--------------------------------------------------------------------------
-                | IF REFERRAL EXISTS -> UPDATE IT
-                |--------------------------------------------------------------------------
-                */
-                if ($existingReferral) {
-
-                    $existingReferral->update([
-                        'hospital_id' => $data['hospital_id'],
-                        'status' => 'BoardedOut',
-                        'confirmed_by' => $user->id,
-                    ]);
-
-                    // 3️⃣ Update patient history
-                    // $patientHistory = PatientHistory::where('patient_id', $referral->patient_id)
-                    // ->where('status', 'approved')
-                    // ->latest('created_at')
-                    // ->firstOrFail();
-
-                    // $patientHistory->update([
-                    //     'status' => 'confirmed',
-                    //     'dg_comments' => $data['letter_text'],
-                    //     'dg_id' => $user->id,
-                    // ]);
-
-                    // 4️⃣ Create referral letter
-                    $referralLetter = ReferralLetter::create([
-                        'referral_id' => $referral->referral_id,
-                        'letter_text' => $data['letter_text'] ?? null,
-                        'start_date' => $data['start_date'] ?? null,
-                        'end_date' => $data['end_date'] ?? null,
-                        'created_by' => $user->id,
-                    ]);
-                }
+                $referralLetter = ReferralLetter::create([
+                    'referral_id' => $referral->referral_id,
+                    'letter_text' => $data['letter_text'] ?? null,
+                    'start_date' => $data['start_date'] ?? null,
+                    'end_date' => $data['end_date'] ?? null,
+                    'created_by' => $user->id,
+                ]);
 
                 DB::commit();
 
                 return response([
-                    'data' => $boardedOut,
+                    'data' => [
+                        'referral_letter' => $referralLetter,
+                        'boarded_out_letter' => $boardedOut,
+                    ],
                     'message' => 'Boarded Out decision recorded successfully.',
                     'statusCode' => 201,
                 ], 201);

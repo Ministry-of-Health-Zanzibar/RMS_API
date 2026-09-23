@@ -105,7 +105,6 @@ class ReferralController extends Controller
         $query = Referral::with([
             'patient',
             'reason',
-            'hospital',
             'hospital.referralType',
             'diagnoses',
             'referralLetters.printedBy',
@@ -250,6 +249,7 @@ class ReferralController extends Controller
                         return [
                             'referral_id' => $ref->referral_id,
                             'status' => $ref->status,
+                            'hospital_id' => $ref->hospital_id,
                             'hospital' => $ref->hospital,
                             'created_at' => $ref->created_at,
                             // ✅ IMEONGEZWA: Ndani ya list ya rufaa za kila hospitali
@@ -1670,7 +1670,7 @@ class ReferralController extends Controller
             'patient.patientList',
             'patient.files',
             'reason',
-            'hospital',
+            'hospital.referralType',
             'hospitalLetters.followups',
             'hospitalLetters.printedBy'
         ])->where('referral_id', $rootReferralId)

@@ -6,6 +6,7 @@ use App\Http\Controllers\API\BillPayments\BillPaymentController;
 use App\Http\Controllers\API\Bills\BillController;
 use App\Http\Controllers\API\Followups\FollowupController;
 use App\Http\Controllers\API\HospitalLetters\HospitalLetterController;
+use App\Http\Controllers\API\Letters\LetterBrandingController;
 use App\Http\Controllers\API\Letters\LetterDocumentController;
 use App\Http\Controllers\API\Hospitals\HospitalController;
 use App\Http\Controllers\API\Insurances\InsuranceController;
@@ -160,6 +161,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('boarded-out/{patient_history_id}/print', [LetterDocumentController::class, 'markBoardedOutPrinted']);
         Route::get('print-history', [LetterDocumentController::class, 'printHistory']);
     });
+
+    // DG/Super Admin-managed signature and stamp used on generated letters.
+    Route::get('letter-branding', [LetterBrandingController::class, 'show']);
+    Route::post('letter-branding', [LetterBrandingController::class, 'update']);
+    Route::delete('letter-branding', [LetterBrandingController::class, 'reset']);
 
     // Bill Files
     Route::get('bill-files/summary-by-hospital', [BillFileController::class, 'getBillsByHospitals']); // new

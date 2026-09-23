@@ -29,10 +29,9 @@ class LetterDocumentController extends Controller
             return response()->json(['message' => 'Referral letter not found', 'statusCode' => 404], 404);
         }
 
-        $language = $this->documents->normalizeLanguage(
-            $request->query('language'),
-            $this->documents->defaultReferralLanguage($letter),
-        );
+        // Referral type is authoritative: REFTYPE2 is the ABROAD template;
+        // every other referral type must use the Kiswahili template.
+        $language = $this->documents->defaultReferralLanguage($letter);
 
         return $this->pdfResponse(
             $this->documents->renderReferral($letter, $language),
@@ -52,10 +51,7 @@ class LetterDocumentController extends Controller
             return response()->json(['message' => 'Referral letter not found', 'statusCode' => 404], 404);
         }
 
-        $language = $this->documents->normalizeLanguage(
-            $request->input('language'),
-            $this->documents->defaultReferralLanguage($letter),
-        );
+        $language = $this->documents->defaultReferralLanguage($letter);
         $event = $this->documents->recordPrint($letter, 'referral', $language, $request);
 
         return response()->json([
@@ -77,7 +73,7 @@ class LetterDocumentController extends Controller
             return response()->json(['message' => 'Follow-up letter not found', 'statusCode' => 404], 404);
         }
 
-        $language = $this->documents->normalizeLanguage($request->query('language'));
+        $language = $this->documents->defaultFollowUpLanguage($letter);
 
         return $this->pdfResponse(
             $this->documents->renderFollowUp($letter, $language),
@@ -97,7 +93,7 @@ class LetterDocumentController extends Controller
             return response()->json(['message' => 'Follow-up letter not found', 'statusCode' => 404], 404);
         }
 
-        $language = $this->documents->normalizeLanguage($request->input('language'));
+        $language = $this->documents->defaultFollowUpLanguage($letter);
         $event = $this->documents->recordPrint($letter, 'follow_up', $language, $request);
 
         return response()->json([
@@ -119,7 +115,8 @@ class LetterDocumentController extends Controller
             return response()->json(['message' => 'Boarded-out letter not found', 'statusCode' => 404], 404);
         }
 
-        $language = $this->documents->normalizeLanguage($request->query('language'));
+        // Boarded-out letters are internal Ministry correspondence.
+        $language = LetterDocumentService::LANGUAGE_SWAHILI;
 
         return $this->pdfResponse(
             $this->documents->renderBoardedOut($letter, $language),
@@ -139,7 +136,7 @@ class LetterDocumentController extends Controller
             return response()->json(['message' => 'Boarded-out letter not found', 'statusCode' => 404], 404);
         }
 
-        $language = $this->documents->normalizeLanguage($request->input('language'));
+        $language = LetterDocumentService::LANGUAGE_SWAHILI;
         $event = $this->documents->recordPrint($letter, 'boarded_out', $language, $request);
 
         return response()->json([

@@ -4,38 +4,43 @@
     <meta charset="UTF-8">
     <title>Referral letter {{ $reference }}</title>
     <style>
-        @page { size: A4 portrait; margin: 8mm 10mm; }
+        @page { size: A4 portrait; margin: 6mm 9mm; }
         * { box-sizing: border-box; }
-        body { margin: 0; color: #111; background: #fff; font-family: DejaVu Sans, Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; }
-        .letter { width: 100%; padding: 0; }
-        .logo { display: block; width: auto; height: 70px; margin: 0 auto 7px; }
-        .masthead { margin-bottom: 10px; text-align: center; }
-        .masthead-title { margin: 0 0 2px; font-size: 12pt; font-weight: 700; }
-        .masthead-grid { display: table; width: 100%; margin-top: 8px; text-align: left; font-size: 10pt; }
+        body { margin: 0; color: #111; background: #fff; font-family: DejaVu Sans, Arial, sans-serif; font-size: 10pt; line-height: 1.38; }
+        .letter { width: 100%; padding: 0; page-break-inside: avoid; page-break-after: avoid; }
+        .logo-wrap { width: 100%; text-align: center; }
+        .logo { display: block; width: auto; height: 72px; margin: 0 auto 5px; }
+        .masthead { margin-bottom: 5px; text-align: center; }
+        .masthead-title { margin: 0 0 1px; font-size: 11.5pt; font-weight: 700; }
+        .masthead-grid { display: table; width: 100%; margin-top: 4px; text-align: left; font-size: 9.2pt; }
         .masthead-grid > div { display: table-cell; width: 50%; vertical-align: top; }
         .masthead-grid > div:last-child { text-align: right; }
-        p { margin: 0 0 6px; }
-        .rule { margin: 8px 0; border: 0; border-top: 2px solid #111; }
-        .meta { display: table; width: 100%; margin: 8px 0 12px; font-weight: 600; }
+        p { margin: 0 0 4px; }
+        .rule { margin: 5px 0; border: 0; border-top: 1px solid #111; }
+        .meta { display: table; width: 100%; margin: 5px 0 7px; font-size: 9.4pt; font-weight: 600; }
         .meta > div { display: table-cell; width: 50%; }
         .meta > div:last-child { text-align: right; }
-        .recipient { margin-bottom: 15px; }
+        .recipient { margin-bottom: 8px; }
         .uppercase { text-transform: uppercase; font-weight: 700; }
-        .body { line-height: 1.65; }
-        .body p { margin-bottom: 10px; }
-        .patient-list { margin: 0 0 10px 22px; padding: 0; font-weight: 700; }
-        .signature-wrap { height: 70px; display: flex; align-items: center; margin-top: 8px; }
-        .signature { display: block; width: 220px; height: 70px; object-fit: contain; object-position: left center; }
-        .signatory { margin-top: 3px; }
-        .footer { margin-top: 12px; text-align: center; color: #444; font-size: 8.5pt; }
-        .footer .rule { margin: 8px 0 6px; }
+        .body { line-height: 1.42; }
+        .body p { margin-bottom: 5.5px; }
+        .patient-list { margin: 0 0 5px 18px; padding: 0; font-weight: 700; }
+        .signature-wrap { display: table; width: 100%; height: 24mm; margin-top: 3px; page-break-inside: avoid; }
+        .signature-cell, .stamp-cell { display: table-cell; width: 50%; vertical-align: middle; }
+        .stamp-cell { text-align: right; }
+        .signature { display: block; width: 58mm; height: 18mm; object-fit: contain; object-position: left center; }
+        .stamp { display: inline-block; width: 38mm; height: 18mm; object-fit: contain; opacity: .88; }
+        .signatory { margin-top: 1px; }
+        .signatory p { margin-bottom: 1px; }
+        .footer { margin-top: 6px; text-align: center; color: #444; font-size: 8pt; }
+        .footer .rule { margin: 5px 0 4px; }
         .link { color: #111; text-decoration: none; }
-        .subject { margin-bottom: 10px; text-align: center; font-weight: 700; text-transform: uppercase; }
+        .subject { margin-bottom: 6px; text-align: center; font-weight: 700; text-transform: uppercase; }
     </style>
 </head>
 <body>
 <main class="letter">
-    <img class="logo" src="{{ $logoData }}" alt="Government of Zanzibar">
+    <div class="logo-wrap"><img class="logo" src="{{ $logoData }}" alt="Government of Zanzibar"></div>
 
     @if ($language === 'en')
         <div class="masthead">
@@ -77,7 +82,10 @@
             <p style="margin-top: 16px;">Yours faithfully</p>
         </div>
 
-        <div class="signature-wrap"><img class="signature" src="{{ $signatureData }}" alt="Signature"></div>
+        <div class="signature-wrap">
+            <div class="signature-cell"><img class="signature" src="{{ $signatureData }}" alt="Signature"></div>
+            <div class="stamp-cell"><img class="stamp" src="{{ $stampData }}" alt="Official Ministry stamp"></div>
+        </div>
         <div class="signatory">
             <p class="uppercase">DKT. MARYAM SEIF HEMED,</p>
             <p class="uppercase">DIRECTOR GENERAL,</p>
@@ -134,7 +142,10 @@
             <p><strong>Ahsante,</strong></p>
         </div>
 
-        <div class="signature-wrap"><img class="signature" src="{{ $signatureData }}" alt="Sahihi"></div>
+        <div class="signature-wrap">
+            <div class="signature-cell"><img class="signature" src="{{ $signatureData }}" alt="Sahihi"></div>
+            <div class="stamp-cell"><img class="stamp" src="{{ $stampData }}" alt="Muhuri rasmi wa Wizara"></div>
+        </div>
         <div class="signatory">
             <p>DKT. MARYAM SEIF HEMED,</p>
             <p>MKURUGENZI MKUU,</p>
