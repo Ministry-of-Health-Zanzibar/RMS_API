@@ -13,7 +13,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
-        $schedule->command('clean:expired-password-resets')->hourly();
+        $schedule->command('app:clean-expired-password-resets')->hourly();
         // ADD THIS LINE HERE
         $schedule->command('sanctum:prune-expired --hours=24')->daily();
     }

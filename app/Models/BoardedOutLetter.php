@@ -14,11 +14,19 @@ class BoardedOutLetter extends Model
         'reference_number',
         'reference_date',
         'recommendations',
+        'is_printed',
+        'printed_at',
+        'printed_by',
+        'print_count',
+        'last_printed_language',
     ];
 
     protected $casts = [
         'reference_date' => 'date',
         'recommendations' => 'array', // 🔥 auto JSON handling
+        'is_printed' => 'boolean',
+        'printed_at' => 'datetime',
+        'print_count' => 'integer',
     ];
 
     /*
@@ -30,5 +38,16 @@ class BoardedOutLetter extends Model
     public function patientHistory()
     {
         return $this->belongsTo(PatientHistory::class, 'patient_histories_id', 'patient_histories_id');
+    }
+
+    public function printedBy()
+    {
+        return $this->belongsTo(User::class, 'printed_by');
+    }
+
+    public function printEvents()
+    {
+        return $this->hasMany(LetterPrintEvent::class, 'letter_id', 'id')
+            ->where('letter_type', 'boarded_out');
     }
 }

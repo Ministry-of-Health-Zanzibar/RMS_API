@@ -49,11 +49,23 @@ class ReferralLetter extends Model
         'letter_text',
         'start_date',
         'end_date',
-        'created_by'
+        'created_by',
+        'is_printed',
+        'printed_at',
+        'printed_by',
+        'print_count',
+        'last_printed_language',
     ];
 
     protected $dates = [
         'deleted_at',
+        'printed_at',
+    ];
+
+    protected $casts = [
+        'is_printed' => 'boolean',
+        'printed_at' => 'datetime',
+        'print_count' => 'integer',
     ];
 
     public function Referral_letter()
@@ -64,6 +76,17 @@ class ReferralLetter extends Model
     public function referral()
     {
         return $this->belongsTo(Referral::class, 'referral_id', 'referral_id');
+    }
+
+    public function printedBy()
+    {
+        return $this->belongsTo(User::class, 'printed_by');
+    }
+
+    public function printEvents()
+    {
+        return $this->hasMany(LetterPrintEvent::class, 'letter_id', 'referral_letter_id')
+            ->where('letter_type', 'referral');
     }
 
     // Automatically generate referral_letter_code before creating

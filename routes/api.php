@@ -6,6 +6,7 @@ use App\Http\Controllers\API\BillPayments\BillPaymentController;
 use App\Http\Controllers\API\Bills\BillController;
 use App\Http\Controllers\API\Followups\FollowupController;
 use App\Http\Controllers\API\HospitalLetters\HospitalLetterController;
+use App\Http\Controllers\API\Letters\LetterDocumentController;
 use App\Http\Controllers\API\Hospitals\HospitalController;
 use App\Http\Controllers\API\Insurances\InsuranceController;
 use App\Http\Controllers\API\Patients\MedicalBoadController;
@@ -148,6 +149,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Followups
     Route::resource('followups', FollowupController::class);
+
+    // Backend-generated referral and follow-up letters
+    Route::prefix('letter-documents')->group(function () {
+        Route::get('referrals/{referral_id}/pdf', [LetterDocumentController::class, 'referralPdf']);
+        Route::post('referrals/{referral_id}/print', [LetterDocumentController::class, 'markReferralPrinted']);
+        Route::get('follow-ups/{letter_id}/pdf', [LetterDocumentController::class, 'followUpPdf']);
+        Route::post('follow-ups/{letter_id}/print', [LetterDocumentController::class, 'markFollowUpPrinted']);
+        Route::get('boarded-out/{patient_history_id}/pdf', [LetterDocumentController::class, 'boardedOutPdf']);
+        Route::post('boarded-out/{patient_history_id}/print', [LetterDocumentController::class, 'markBoardedOutPrinted']);
+        Route::get('print-history', [LetterDocumentController::class, 'printHistory']);
+    });
 
     // Bill Files
     Route::get('bill-files/summary-by-hospital', [BillFileController::class, 'getBillsByHospitals']); // new

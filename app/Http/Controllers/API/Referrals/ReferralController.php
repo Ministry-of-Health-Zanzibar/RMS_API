@@ -89,6 +89,13 @@ class ReferralController extends Controller
         }
 
         $isDataEntryUser = in_array($user->email, $dataEntryEmails);
+        $canSeeAllReferralSources = $user->hasAnyRole([
+            'ROLE DIRECTOR GENERAL',
+            'ROLE DG',
+            'ROLE ADMIN',
+            'ROLE SUPER ADMIN',
+            'ROLE SUPERADMIN',
+        ]);
 
         /*
         |--------------------------------------------------------------------------
@@ -99,7 +106,9 @@ class ReferralController extends Controller
             'patient',
             'reason',
             'hospital',
+            'hospital.referralType',
             'diagnoses',
+            'referralLetters.printedBy',
         ])
         // The list only needs a boolean. Loading every letter and follow-up made
         // this response grow dramatically as the database increased.
@@ -110,17 +119,23 @@ class ReferralController extends Controller
         ])
         ->where('status', '<>', 'Requested');
 
-        if ($isDataEntryUser) {
-            $query->whereHas('patient.creator', function ($q) use ($dataEntryEmails) {
-                $q->whereIn('email', $dataEntryEmails);
-            });
-        } else {
-            $query->whereHas('patient.creator', function ($q) use ($dataEntryEmails) {
-                $q->whereNotIn('email', $dataEntryEmails);
-            });
+        // DG and administrators must be able to see referrals created from
+        // hospital/data-entry patients as well as referrals from other users.
+        // The old email-only check excluded the seeded `dg@mohz.go.tz` account
+        // and hid valid hospital referrals from DG.
+        if (! $canSeeAllReferralSources) {
+            if ($isDataEntryUser) {
+                $query->whereHas('patient.creator', function ($q) use ($dataEntryEmails) {
+                    $q->whereIn('email', $dataEntryEmails);
+                });
+            } else {
+                $query->whereHas('patient.creator', function ($q) use ($dataEntryEmails) {
+                    $q->whereNotIn('email', $dataEntryEmails);
+                });
+            }
         }
 
-        if (!$user->hasRole(['ROLE DIRECTOR GENERAL', 'ROLE ADMIN'])) {
+        if (! $canSeeAllReferralSources) {
             $query->where('status', '<>', 'Pending');
         }
 
@@ -160,7 +175,7 @@ class ReferralController extends Controller
         | PRELOAD BOARDED OUT LETTERS
         |--------------------------------------------------------------------------
         */
-        $boardedOutLetters = BoardedOutLetter::with('patientHistory')
+        $boardedOutLetters = BoardedOutLetter::with(['patientHistory', 'printedBy'])
             ->whereHas('patientHistory', function ($q) use ($patientIds) {
                 $q->whereIn('patient_id', $patientIds);
             })
@@ -196,6 +211,12 @@ class ReferralController extends Controller
                     return (bool) $ref->has_followup;
                 });
 
+                $referralLetter = $group
+                    ->map(fn ($ref) => $ref->referralLetters)
+                    ->filter()
+                    ->sortByDesc('referral_letter_id')
+                    ->first();
+
                 return [
                     'referral_number' => $first->referral_number,
                     'patient' => $first->patient,
@@ -211,6 +232,16 @@ class ReferralController extends Controller
                     
                     // ✅ IMEONGEZWA: Kujua kiwango cha juu (Group Level) kama ina follow up
                     'has_followup' => $groupHasFollowUp, 
+                    'referral_letter' => $referralLetter ? [
+                        'referral_letter_id' => $referralLetter->referral_letter_id,
+                        'is_printed' => (bool) $referralLetter->is_printed,
+                        'printed_at' => $referralLetter->printed_at,
+                        'printed_by' => $referralLetter->printed_by,
+                        'printed_by_name' => $referralLetter->printedBy?->full_name
+                            ?: $referralLetter->printedBy?->email,
+                        'print_count' => (int) $referralLetter->print_count,
+                        'last_printed_language' => $referralLetter->last_printed_language,
+                    ] : null,
 
                     'referrals' => $group->map(function ($ref) {
                         // ✅ Angalia kama rufaa hii mahususi ya hospitali hii ina follow-up
@@ -229,10 +260,18 @@ class ReferralController extends Controller
                     'latest_activity' => $group->max('created_at'),
                     'is_boarded_out' => $isBoardedOut,
                     'boarded_out' => $boardedOut ? [
+                        'id' => $boardedOut->id,
                         'receiver' => $boardedOut->receiver,
                         'reference_number' => $boardedOut->reference_number,
                         'reference_date' => $boardedOut->reference_date,
                         'recommendations' => $boardedOut->recommendations,
+                        'is_printed' => (bool) $boardedOut->is_printed,
+                        'printed_at' => $boardedOut->printed_at,
+                        'printed_by' => $boardedOut->printed_by,
+                        'printed_by_name' => $boardedOut->printedBy?->full_name
+                            ?: $boardedOut->printedBy?->email,
+                        'print_count' => (int) $boardedOut->print_count,
+                        'last_printed_language' => $boardedOut->last_printed_language,
                     ] : null,
                     'history_id' => $history?->patient_histories_id,
                     'history' => $history
@@ -254,19 +293,17 @@ class ReferralController extends Controller
             ])
             ->whereDoesntHave('referrals')
             ->whereDoesntHave('boardedOutLetters')
-            ->whereIn('status', ['requested', 'approved'])
-            ->whereHas('patient.creator', function ($q) use (
-                $dataEntryEmails,
+            ->whereIn('status', ['requested', 'approved']);
+
+        if (! $canSeeAllReferralSources) {
+            $noReferralHistories->whereHas('patient.creator', function ($q) use ($dataEntryEmails, $isDataEntryUser) {
                 $isDataEntryUser
-            ) {
-                if ($isDataEntryUser) {
-                    $q->whereIn('email', $dataEntryEmails);
-                } else {
-                    $q->whereNotIn('email', $dataEntryEmails);
-                }
-            })
-            ->latest()
-            ->get();
+                    ? $q->whereIn('email', $dataEntryEmails)
+                    : $q->whereNotIn('email', $dataEntryEmails);
+            });
+        }
+
+        $noReferralHistories = $noReferralHistories->latest()->get();
 
         $virtualReferrals = $noReferralHistories->map(function ($history) {
             return [
@@ -304,22 +341,20 @@ class ReferralController extends Controller
                 'patient',
                 'diagnoses',
                 'reason',
-                'boardedOutLetters'
+                'boardedOutLetters.printedBy'
             ])
             ->whereHas('boardedOutLetters')
-            ->whereDoesntHave('referrals')
-            ->whereHas('patient.creator', function ($q) use (
-                $dataEntryEmails,
+            ->whereDoesntHave('referrals');
+
+        if (! $canSeeAllReferralSources) {
+            $boardedOutHistories->whereHas('patient.creator', function ($q) use ($dataEntryEmails, $isDataEntryUser) {
                 $isDataEntryUser
-            ) {
-                if ($isDataEntryUser) {
-                    $q->whereIn('email', $dataEntryEmails);
-                } else {
-                    $q->whereNotIn('email', $dataEntryEmails);
-                }
-            })
-            ->latest()
-            ->get();
+                    ? $q->whereIn('email', $dataEntryEmails)
+                    : $q->whereNotIn('email', $dataEntryEmails);
+            });
+        }
+
+        $boardedOutHistories = $boardedOutHistories->latest()->get();
 
         $boardedOutVirtuals = $boardedOutHistories->map(function ($history) {
             $boardedOut = $history->boardedOutLetters->last();
@@ -350,10 +385,18 @@ class ReferralController extends Controller
                 'is_boarded_out' => $isBoardedOut,
                 'history_id' => $history->patient_histories_id,
                 'boarded_out' => [
+                    'id' => $boardedOut?->id,
                     'receiver' => $boardedOut?->receiver,
                     'reference_number' => $boardedOut?->reference_number,
                     'reference_date' => $boardedOut?->reference_date,
                     'recommendations' => $boardedOut?->recommendations,
+                    'is_printed' => (bool) $boardedOut?->is_printed,
+                    'printed_at' => $boardedOut?->printed_at,
+                    'printed_by' => $boardedOut?->printed_by,
+                    'printed_by_name' => $boardedOut?->printedBy?->full_name
+                        ?: $boardedOut?->printedBy?->email,
+                    'print_count' => (int) ($boardedOut?->print_count ?? 0),
+                    'last_printed_language' => $boardedOut?->last_printed_language,
                 ]
             ];
         });
@@ -1381,15 +1424,15 @@ class ReferralController extends Controller
                             'boardDiagnoses',
                             'reason',
                             'boardReason',
-                            'boardedOutLetters'
+                            'boardedOutLetters.printedBy'
                         ]);
                     },
                 ]);
             },
             'hospital.referralType',
             'referralFlights',
-            'hospitalLetters',
-            'referralLetters',
+            'hospitalLetters.printedBy',
+            'referralLetters.printedBy',
             'parent',
             'children',
             'bills',
@@ -1421,7 +1464,7 @@ class ReferralController extends Controller
             | GET RELATED HISTORY
             |--------------------------------------------------------------------------
             */
-            $history = PatientHistory::with('boardedOutLetters')
+            $history = PatientHistory::with('boardedOutLetters.printedBy')
                 ->where('patient_id', $referral->patient_id)
                 ->latest('created_at')
                 ->first();
@@ -1431,8 +1474,8 @@ class ReferralController extends Controller
             | CHECK BOARDED OUT
             |--------------------------------------------------------------------------
             */
-            $boardedOutLetter = $history?->boardedOutLetters()
-                ->latest()
+            $boardedOutLetter = $history?->boardedOutLetters
+                ?->sortByDesc('id')
                 ->first();
 
             $referral->history_id = $history?->patient_histories_id;
@@ -1468,7 +1511,7 @@ class ReferralController extends Controller
                                 'boardDiagnoses',
                                 'reason',
                                 'boardReason',
-                                'boardedOutLetters'
+                                'boardedOutLetters.printedBy'
                             ]);
                         },
                     ]);
@@ -1477,7 +1520,7 @@ class ReferralController extends Controller
                 'boardDiagnoses',
                 'reason',
                 'boardReason',
-                'boardedOutLetters'
+                'boardedOutLetters.printedBy'
             ])
             ->where('patient_histories_id', $id)
             ->first();
@@ -1494,7 +1537,9 @@ class ReferralController extends Controller
             $referral = new \stdClass();
 
             $referral->is_boarded_out = $hasBoardedOut;
-            $referral->boarded_out_letter = $history->boardedOutLetters()->latest()->first();
+            $referral->boarded_out_letter = $history->boardedOutLetters
+                ?->sortByDesc('id')
+                ->first();
 
             $referral->referral_id = null;
             // new
@@ -1626,7 +1671,8 @@ class ReferralController extends Controller
             'patient.files',
             'reason',
             'hospital',
-            'hospitalLetters.followups'
+            'hospitalLetters.followups',
+            'hospitalLetters.printedBy'
         ])->where('referral_id', $rootReferralId)
         ->orWhere('parent_referral_id', $rootReferralId)
         ->get();

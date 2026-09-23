@@ -257,7 +257,19 @@ class PatientListController extends Controller
                     'files',
                     'geographicalLocation',
                     'latestHistory' => function ($h) {
-                        $h->with(['diagnoses','boardDiagnoses', 'reason','boardReason', 'patient']);
+                        $h->with([
+                            'diagnoses',
+                            'boardDiagnoses',
+                            'reason',
+                            'boardReason',
+                            'patient',
+                            // Only active referrals affect the board decision.
+                            // Closed/cancelled referrals belong to an older workflow.
+                            'referrals' => function ($referrals) {
+                                $referrals->whereNotIn('status', ['Closed', 'Cancelled', 'BoardedOut', 'Expired'])
+                                    ->latest('referral_id');
+                            },
+                        ]);
                     }
                 ]);
             }

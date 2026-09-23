@@ -32,7 +32,7 @@ class HospitalLetterController extends Controller
             ], 403);
         }
 
-        $letters = HospitalLetter::with(['referral','followups'])->get();
+        $letters = HospitalLetter::with(['referral','followups','printedBy'])->get();
 
         return response()->json([
             'data' => $letters,

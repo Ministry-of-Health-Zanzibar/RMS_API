@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class CleanExpiredPasswordResets extends Command
 {
@@ -18,7 +19,7 @@ class CleanExpiredPasswordResets extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Delete expired password reset records.';
 
     /**
      * Execute the console command.

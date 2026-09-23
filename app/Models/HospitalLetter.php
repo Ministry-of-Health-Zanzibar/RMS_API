@@ -22,6 +22,17 @@ class HospitalLetter extends Model
         'next_appointment_date',
         'letter_file',
         'outcome',
+        'is_printed',
+        'printed_at',
+        'printed_by',
+        'print_count',
+        'last_printed_language',
+    ];
+
+    protected $casts = [
+        'is_printed' => 'boolean',
+        'printed_at' => 'datetime',
+        'print_count' => 'integer',
     ];
 
     public function referral()
@@ -32,6 +43,17 @@ class HospitalLetter extends Model
     public function followups()
     {
         return $this->hasMany(FollowUp::class, 'letter_id', 'letter_id');
+    }
+
+    public function printedBy()
+    {
+        return $this->belongsTo(User::class, 'printed_by');
+    }
+
+    public function printEvents()
+    {
+        return $this->hasMany(LetterPrintEvent::class, 'letter_id', 'letter_id')
+            ->where('letter_type', 'follow_up');
     }
 
     public function getActivitylogOptions(): LogOptions

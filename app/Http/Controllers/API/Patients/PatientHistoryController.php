@@ -799,6 +799,8 @@ class PatientHistoryController extends Controller
             return response()->json(['status' => false, 'errors' => $validator->errors(), 'statusCode' => 422], 422);
         }
 
+        $createReferral = $request->boolean('create_referral_record');
+
         try {
             DB::beginTransaction();
 
@@ -818,7 +820,7 @@ class PatientHistoryController extends Controller
 
             // 3. Conditional Referral Creation
             // Only creates the record if the board determines an external referral is necessary
-            if ($request->create_referral_record) {
+            if ($createReferral) {
                 $today = now()->format('Y-m-d');
                 $count = Referral::whereDate('created_at', $today)->count() + 1;
                 $referralNumber = 'REF-'.$today.'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
@@ -860,7 +862,7 @@ class PatientHistoryController extends Controller
             return response()->json([
                 'status' => true,
                 'data' => $history->load(['patient', 'diagnoses', 'reason']),
-                'message' => $request->create_referral_record
+                'message' => $createReferral
                             ? 'Referral created and sent to DG for approval'
                             : 'Medical evaluation (Maamuzi) sent to DG for approval',
                 'statusCode' => 200,
@@ -878,9 +880,9 @@ class PatientHistoryController extends Controller
         $user = auth()->user();
         $history = PatientHistory::findOrFail($id);
 
-        // if (!$user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
-        //     return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
-        // }
+        if (! $user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+            return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
+        }
 
         $validator = Validator::make($request->all(), [
             'board_comments' => 'required|string',
@@ -889,6 +891,7 @@ class PatientHistoryController extends Controller
             'board_diagnosis_ids.*' => 'exists:diagnoses,diagnosis_id',
             'patient_file' => 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:5000',
             'description' => 'nullable|string',
+            'create_referral_record' => 'required|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -910,19 +913,60 @@ class PatientHistoryController extends Controller
             })->toArray();
             $history->boardDiagnoses()->sync($boardDiagnoses);
 
-            // 3. Find and Update Existing Referral
-            // We look for a referral linked to this patient that is still in 'Requested' status
+            // 3. Synchronize the referral decision.
+            // A recommendation-only submission must not create a referral. If
+            // the doctor later checks the option during edit, create the
+            // referral at that point. Existing active referrals are reused so
+            // repeated edits never create duplicates.
+            $createReferral = $request->boolean('create_referral_record');
+            $referralWasDeleted = false;
+            // If Mkurugenzi already approved this history before the board
+            // enabled the referral option, the new referral must enter the DG
+            // queue directly. Otherwise it remains Requested, while the
+            // referral list intentionally hides Requested records.
+            $alreadyApprovedByMkurugenzi = $history->status === 'approved'
+                && filled($history->mkurugenzi_tiba_comments);
+            $newReferralStatus = $alreadyApprovedByMkurugenzi ? 'Pending' : 'Requested';
             $referral = Referral::where('patient_id', $history->patient_id)
-                ->whereIn('status', ['Requested', 'Pending'])
-                ->latest()
+                ->whereNotIn('status', ['Closed', 'Cancelled', 'Expired', 'BoardedOut'])
+                ->latest('referral_id')
                 ->first();
 
-            if ($referral) {
-                $referral->update([
-                    'reason_id' => $request->board_reason_id,
-                ]);
-                // Sync the diagnoses to the referral as well
+            if ($createReferral) {
+                if (! $referral) {
+                    $today = now()->format('Y-m-d');
+                    $count = Referral::whereDate('created_at', $today)->count() + 1;
+                    $referralNumber = 'REF-'.$today.'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
+
+                    $referral = Referral::create([
+                        'patient_id' => $history->patient_id,
+                        'reason_id' => $request->board_reason_id,
+                        'status' => $newReferralStatus,
+                        'referral_number' => $referralNumber,
+                        'created_by' => $user->id,
+                    ]);
+                } else {
+                    $referralUpdates = [
+                        'reason_id' => $request->board_reason_id,
+                    ];
+
+                    // Repair a referral created by the previous edit flow if
+                    // the history has already been approved by Mkurugenzi.
+                    if ($alreadyApprovedByMkurugenzi && $referral->status === 'Requested') {
+                        $referralUpdates['status'] = 'Pending';
+                    }
+
+                    $referral->update($referralUpdates);
+                }
+
                 $referral->diagnoses()->sync($request->board_diagnosis_ids);
+            } elseif ($referral) {
+                // The board explicitly changed an existing referral into a
+                // recommendation-only outcome. This is intentionally a hard
+                // delete, including the referral's dependent records.
+                $this->permanentlyDeleteReferralTree($referral);
+                $referral = null;
+                $referralWasDeleted = true;
             }
 
             // 5. Handle Patient File (Replace logic)
@@ -952,7 +996,17 @@ class PatientHistoryController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $history->load(['patient.referrals', 'boardDiagnoses', 'boardReason']),
-                'message' => 'Medical Board update successful (Referral synchronized)',
+                'message' => $createReferral
+                    ? ($referral->wasRecentlyCreated
+                        ? ($referral->status === 'Pending'
+                            ? 'Referral created and queued for DG confirmation'
+                            : 'Referral created and sent to Mkurugenzi Tiba for approval')
+                        : 'Referral details updated successfully')
+                    : ($referralWasDeleted
+                        ? 'Recommendation saved; the referral and all related records were permanently deleted'
+                        : 'Recommendation saved; no referral record was created'),
+                'referral_deleted' => $referralWasDeleted,
+                'referral_status' => $referral?->status,
                 'statusCode' => 200,
             ]);
 
@@ -961,6 +1015,93 @@ class PatientHistoryController extends Controller
 
             return Helper::serverError($e, 'Medical Board update failed.');
         }
+    }
+
+    /**
+     * Permanently delete a referral and every record that depends on it.
+     *
+     * Referral records use soft deletes, but this operation is explicitly
+     * destructive because the Medical Board has changed the case to a
+     * recommendation-only outcome. Dependent rows are removed first so this
+     * also works on databases where the foreign keys are not cascading.
+     */
+    private function permanentlyDeleteReferralTree(Referral $referral): int
+    {
+        $referralIds = collect([$referral->getKey()]);
+        $frontier = $referralIds->all();
+
+        // Include any child referrals created from this referral (for example,
+        // a referral letter can create a linked child referral).
+        while (! empty($frontier)) {
+            $children = DB::table('referrals')
+                ->whereIn('parent_referral_id', $frontier)
+                ->pluck('referral_id')
+                ->diff($referralIds)
+                ->values();
+
+            if ($children->isEmpty()) {
+                break;
+            }
+
+            $referralIds = $referralIds->merge($children)->unique()->values();
+            $frontier = $children->all();
+        }
+
+        $ids = $referralIds->values()->all();
+
+        // Bills and their dependent items/payment allocations must be removed
+        // before the referral can be deleted.
+        $billIds = DB::table('bills')
+            ->whereIn('referral_id', $ids)
+            ->pluck('bill_id');
+
+        if ($billIds->isNotEmpty()) {
+            $paymentIds = DB::table('bill_payments')
+                ->whereIn('bill_id', $billIds)
+                ->pluck('payment_id')
+                ->unique()
+                ->values();
+
+            DB::table('bill_payments')->whereIn('bill_id', $billIds)->delete();
+            DB::table('bill_items')->whereIn('bill_id', $billIds)->delete();
+            DB::table('bills')->whereIn('bill_id', $billIds)->delete();
+
+            // A payment may be shared by another bill. Remove it only when no
+            // remaining allocation references it.
+            if ($paymentIds->isNotEmpty()) {
+                DB::table('payments')
+                    ->whereIn('payment_id', $paymentIds)
+                    ->whereNotExists(function ($query) {
+                        $query->select(DB::raw(1))
+                            ->from('bill_payments')
+                            ->whereColumn('bill_payments.payment_id', 'payments.payment_id');
+                    })
+                    ->delete();
+            }
+        }
+
+        // Hospital letters own follow-up records, so remove follow-ups first.
+        $letterIds = DB::table('hospital_letters')
+            ->whereIn('referral_id', $ids)
+            ->pluck('letter_id');
+
+        if ($letterIds->isNotEmpty()) {
+            DB::table('followups')->whereIn('letter_id', $letterIds)->delete();
+        }
+
+        DB::table('hospital_letters')->whereIn('referral_id', $ids)->delete();
+        DB::table('referral_letters')->whereIn('referral_id', $ids)->delete();
+        DB::table('treatments')->whereIn('referral_id', $ids)->delete();
+        DB::table('referral_flights')->whereIn('referral_id', $ids)->delete();
+        DB::table('diagnosis_referral')->whereIn('referral_id', $ids)->delete();
+
+        // Delete children before their parents because parent_referral_id is a
+        // self-referencing foreign key.
+        foreach ($referralIds->reverse() as $referralId) {
+            DB::table('referrals')->where('referral_id', $referralId)->delete();
+        }
+
+        return count($ids);
     }
 
     public function getMedicalBoardUpdate($id)
@@ -975,7 +1116,11 @@ class PatientHistoryController extends Controller
                     $query->wherePivot('added_by', 'medical_board')
                         ->select('diagnoses.diagnosis_id', 'diagnoses.diagnosis_name', 'diagnoses.diagnosis_code');
                 },
-                'reason:reason_id,referral_reason_name',
+                'boardReason:reason_id,referral_reason_name',
+                'referrals' => function ($query) {
+                    $query->whereNotIn('status', ['Closed', 'Cancelled', 'BoardedOut', 'Expired'])
+                        ->latest('referral_id');
+                },
             ])->findOrFail($id);
 
             // 2. Fetch the specific file uploaded by this board member
@@ -988,11 +1133,12 @@ class PatientHistoryController extends Controller
             $boardData = [
                 'patient_histories_id' => $history->patient_histories_id,
                 'board_comments' => $history->board_comments,
+                'board_reason_id' => $history->board_reason_id,
 
                 // Full Reason Object for the dropdown/select initial value
-                'board_reason' => $history->reason ? [
-                    'reason_id' => $history->reason->reason_id,
-                    'referral_reason_name' => $history->reason->referral_reason_name,
+                'board_reason' => $history->boardReason ? [
+                    'reason_id' => $history->boardReason->reason_id,
+                    'referral_reason_name' => $history->boardReason->referral_reason_name,
                 ] : null,
 
                 // The Raw ID for basic form state
@@ -1016,6 +1162,7 @@ class PatientHistoryController extends Controller
                     'url' => $patientFile ? asset($patientFile->file_path) : null,
                     'type' => $patientFile ? $patientFile->file_type : null,
                 ],
+                'referrals' => $history->referrals->values(),
             ];
 
             return response()->json([
