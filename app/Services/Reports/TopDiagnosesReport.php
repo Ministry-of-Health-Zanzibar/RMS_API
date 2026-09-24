@@ -13,6 +13,7 @@ class TopDiagnosesReport
             ->join('patient_histories as ph', 'ph.patient_histories_id', '=', 'hd.patient_histories_id')
             ->join('patients as p', 'p.patient_id', '=', 'ph.patient_id')
             ->whereNull('d.deleted_at')->whereNull('ph.deleted_at')->whereNull('p.deleted_at')
+            ->where('hd.added_by', 'medical_board')
             ->where('ph.created_at', '>=', $start)->where('ph.created_at', '<', $end)
             ->select('d.diagnosis_name', 'p.patient_id', 'p.name', 'p.gender')
             ->selectRaw('COUNT(DISTINCT ph.patient_histories_id) AS history_count')

@@ -25,12 +25,12 @@
         .body { line-height: 1.42; }
         .body p { margin-bottom: 5.5px; }
         .patient-list { margin: 0 0 5px 18px; padding: 0; font-weight: 700; }
-        .signature-wrap { display: table; width: 100%; height: 24mm; margin-top: 3px; page-break-inside: avoid; }
-        .signature-cell, .stamp-cell { display: table-cell; width: 50%; vertical-align: middle; }
-        .stamp-cell { text-align: right; }
-        .signature { display: block; width: 58mm; height: 18mm; object-fit: contain; object-position: left center; }
-        .stamp { display: inline-block; width: 38mm; height: 18mm; object-fit: contain; opacity: .88; }
-        .signatory { margin-top: 1px; }
+        .signature-wrap { position: relative; width: 100%; min-height: 33mm; margin-top: 3px; page-break-inside: avoid; }
+        .signature-cell { display: block; width: 100%; height: 15mm; }
+        .signature { position: relative; z-index: 1; display: block; width: 46mm; height: 14mm; object-fit: contain; object-position: left center; }
+        .stamp-cell { position: absolute; top: 6mm; left: 34mm; z-index: 10; width: 30mm; height: 18mm; text-align: left; }
+        .stamp { position: relative; z-index: 10; display: block; width: 30mm; height: 18mm; object-fit: contain; opacity: 1; }
+        .signatory { position: relative; z-index: 1; margin-top: 0; }
         .signatory p { margin-bottom: 1px; }
         .footer { margin-top: 6px; text-align: center; color: #444; font-size: 8pt; }
         .footer .rule { margin: 5px 0 4px; }
@@ -84,13 +84,13 @@
 
         <div class="signature-wrap">
             <div class="signature-cell"><img class="signature" src="{{ $signatureData }}" alt="Signature"></div>
+            <div class="signatory">
+                <p class="uppercase">DKT. MARYAM SEIF HEMED,</p>
+                <p class="uppercase">DIRECTOR GENERAL,</p>
+                <p class="uppercase">MINISTRY OF HEALTH,</p>
+                <p class="uppercase">ZANZIBAR.</p>
+            </div>
             <div class="stamp-cell"><img class="stamp" src="{{ $stampData }}" alt="Official Ministry stamp"></div>
-        </div>
-        <div class="signatory">
-            <p class="uppercase">DKT. MARYAM SEIF HEMED,</p>
-            <p class="uppercase">DIRECTOR GENERAL,</p>
-            <p class="uppercase">MINISTRY OF HEALTH,</p>
-            <p class="uppercase">ZANZIBAR.</p>
         </div>
 
         <div class="footer">
@@ -144,13 +144,13 @@
 
         <div class="signature-wrap">
             <div class="signature-cell"><img class="signature" src="{{ $signatureData }}" alt="Sahihi"></div>
+            <div class="signatory">
+                <p>DKT. MARYAM SEIF HEMED,</p>
+                <p>MKURUGENZI MKUU,</p>
+                <p>WIZARA YA AFYA,</p>
+                <p><u>ZANZIBAR</u></p>
+            </div>
             <div class="stamp-cell"><img class="stamp" src="{{ $stampData }}" alt="Muhuri rasmi wa Wizara"></div>
-        </div>
-        <div class="signatory">
-            <p>DKT. MARYAM SEIF HEMED,</p>
-            <p>MKURUGENZI MKUU,</p>
-            <p>WIZARA YA AFYA,</p>
-            <p><u>ZANZIBAR</u></p>
         </div>
 
         <div class="footer">

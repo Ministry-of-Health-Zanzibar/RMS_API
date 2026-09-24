@@ -26,10 +26,14 @@ class LetterBrandingService
         $setting = $this->currentSetting();
         $signaturePath = $setting?->signature_path ?: self::DEFAULT_SIGNATURE;
         $stampPath = $setting?->stamp_path ?: self::DEFAULT_STAMP;
+        $signatureColor = $this->dominantInkColor($signaturePath);
 
         return [
             'signatureData' => $this->dataUri($signaturePath),
-            'stampData' => $this->dataUri($stampPath),
+            // Uploaded and bundled stamps may include a scanned paper
+            // background. Remove that background before embedding the stamp so
+            // it can sit over the DG signature and signatory text cleanly.
+            'stampData' => $this->transparentStampDataUri($stampPath, $signatureColor),
             'signaturePath' => $signaturePath,
             'stampPath' => $stampPath,
         ];
@@ -126,5 +130,124 @@ class LetterBrandingService
         $mime = mime_content_type($absolutePath) ?: 'image/png';
 
         return 'data:' . $mime . ';base64,' . base64_encode((string) file_get_contents($absolutePath));
+    }
+
+    private function dominantInkColor(string $path): array
+    {
+        $absolutePath = public_path(ltrim($path, '/'));
+        $contents = is_file($absolutePath) ? file_get_contents($absolutePath) : false;
+
+        if (!$contents || !function_exists('imagecreatefromstring')) {
+            return [0, 15, 222];
+        }
+
+        $source = @imagecreatefromstring($contents);
+
+        if (!$source) {
+            return [0, 15, 222];
+        }
+
+        if (function_exists('imagepalettetotruecolor') && !imageistruecolor($source)) {
+            imagepalettetotruecolor($source);
+        }
+
+        $counts = [];
+        for ($y = 0; $y < imagesy($source); $y++) {
+            for ($x = 0; $x < imagesx($source); $x++) {
+                $pixel = imagecolorat($source, $x, $y);
+                $alpha = ($pixel & 0x7f000000) >> 24;
+                $red = ($pixel >> 16) & 0xff;
+                $green = ($pixel >> 8) & 0xff;
+                $blue = $pixel & 0xff;
+
+                // Ignore transparent pixels and the near-white canvas around
+                // the signature. The most frequent remaining color is the
+                // signature's actual ink color.
+                if ($alpha >= 96 || (($red + $green + $blue) / 3) >= 180) {
+                    continue;
+                }
+
+                $rgb = ($red << 16) | ($green << 8) | $blue;
+                $counts[$rgb] = ($counts[$rgb] ?? 0) + 1;
+            }
+        }
+
+        imagedestroy($source);
+
+        if (!$counts) {
+            return [0, 15, 222];
+        }
+
+        arsort($counts);
+        $rgb = (int) array_key_first($counts);
+
+        return [($rgb >> 16) & 0xff, ($rgb >> 8) & 0xff, $rgb & 0xff];
+    }
+
+    private function transparentStampDataUri(string $path, array $inkColor): string
+    {
+        $absolutePath = public_path(ltrim($path, '/'));
+        $contents = is_file($absolutePath) ? file_get_contents($absolutePath) : false;
+
+        if (!$contents || !function_exists('imagecreatefromstring')) {
+            return $this->dataUri($path);
+        }
+
+        $source = @imagecreatefromstring($contents);
+
+        if (!$source) {
+            return $this->dataUri($path);
+        }
+
+        if (function_exists('imagepalettetotruecolor') && !imageistruecolor($source)) {
+            imagepalettetotruecolor($source);
+        }
+
+        $width = imagesx($source);
+        $height = imagesy($source);
+        $output = imagecreatetruecolor($width, $height);
+
+        imagealphablending($output, false);
+        imagesavealpha($output, true);
+        $transparent = imagecolorallocatealpha($output, 255, 255, 255, 127);
+        imagefill($output, 0, 0, $transparent);
+
+        for ($y = 0; $y < $height; $y++) {
+            for ($x = 0; $x < $width; $x++) {
+                $pixel = imagecolorat($source, $x, $y);
+                $red = ($pixel >> 16) & 0xff;
+                $green = ($pixel >> 8) & 0xff;
+                $blue = $pixel & 0xff;
+                $sourceAlpha = ($pixel & 0x7f000000) >> 24;
+                $average = ($red + $green + $blue) / 3;
+                $spread = max($red, $green, $blue) - min($red, $green, $blue);
+
+                // The scan background is near-white and low-saturation. Keep
+                // the dark/blue ink, but make paper and paper noise invisible.
+                $alpha = $sourceAlpha;
+                if ($sourceAlpha < 127 && $average > 205 && $spread < 55) {
+                    $alpha = 127;
+                } elseif ($sourceAlpha < 127) {
+                    // Preserve anti-aliased ink edges while replacing every
+                    // visible stamp color with the DG signature blue.
+                    $inkStrength = max(0, min(1, (220 - $average) / 180));
+                    $alpha = max($sourceAlpha, 127 - (int) round($inkStrength * 127));
+                }
+
+                $color = imagecolorallocatealpha($output, $inkColor[0], $inkColor[1], $inkColor[2], $alpha);
+                imagesetpixel($output, $x, $y, $color);
+            }
+        }
+
+        imagealphablending($output, false);
+        ob_start();
+        imagepng($output);
+        $png = ob_get_clean();
+        imagedestroy($source);
+        imagedestroy($output);
+
+        return is_string($png) && $png !== ''
+            ? 'data:image/png;base64,' . base64_encode($png)
+            : $this->dataUri($path);
     }
 }

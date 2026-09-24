@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use App\Support\Pagination;
+use App\Support\SuperAdminAccess;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -103,7 +104,7 @@ class DiagnosisController extends Controller
     public function searchDiagnosis(Request $request)
     {
         $user = auth()->user();
-        if (! $user->can('View Diagnoses')) {
+        if (! SuperAdminAccess::allowed($user, 'View Diagnoses') && ! SuperAdminAccess::allowed($user, 'View Report')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403,
@@ -123,7 +124,7 @@ class DiagnosisController extends Controller
 
         $term = mb_strtolower($query);
 
-        $diagnoses = Diagnosis::withTrashed()
+        $diagnoses = Diagnosis::query()
             ->select('diagnosis_id', 'diagnosis_name', 'diagnosis_code')
             ->where(function ($q) use ($term) {
                 $q->whereRaw('LOWER(diagnosis_name) LIKE ?', [$term.'%'])

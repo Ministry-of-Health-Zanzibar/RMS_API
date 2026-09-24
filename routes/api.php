@@ -21,6 +21,7 @@ use App\Http\Controllers\API\Referrals\ReferralController;
 use App\Http\Controllers\API\Referrals\ReferralFlightController;
 use App\Http\Controllers\API\ReferralType\ReferralTypeController;
 use App\Http\Controllers\API\Report\ReportController;
+use App\Http\Controllers\API\Report\ReportingController;
 use App\Http\Controllers\API\Setup\DiagnosisController;
 use App\Http\Controllers\API\Treatments\TreatmentController;
 use Illuminate\Support\Facades\Route;
@@ -126,6 +127,10 @@ Route::middleware(['auth:sanctum', 'not.blocked'])->group(function () {
     Route::patch('bills/unBlock/{billId}', [BillController::class, 'unBlockBill']);
 
     // REPORT APIs
+    Route::get('reports/types', [ReportingController::class, 'types']);
+    Route::get('reports/filters', [ReportingController::class, 'filters']);
+    Route::post('reports/generate', [ReportingController::class, 'generate']);
+    Route::post('reports/export/{format}', [ReportingController::class, 'export'])->whereIn('format', ['xlsx', 'pdf', 'docx']);
     Route::get('reports/top-diagnoses', \App\Http\Controllers\API\Report\TopDiagnosesController::class);
     Route::get('reports/referrals/{patientId}', [ReportController::class, 'referralReport']);
     Route::get('reports/workflowStatusReport', [ReportController::class, 'workflowStatusReport']);
