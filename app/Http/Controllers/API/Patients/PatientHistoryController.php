@@ -12,6 +12,9 @@ use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Services\PatientHistoryWorkflowService;
+use App\Support\Pagination;
+use App\Support\SuperAdminAccess;
 
 /**
  * @OA\Tag(
@@ -69,21 +72,42 @@ class PatientHistoryController extends Controller
      *     @OA\Response(response=403, description="Forbidden")
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
-        if (! $user->can('View Patient History')) {
+        if (! SuperAdminAccess::allowed($user, 'View Patient History')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403,
             ], 403);
         }
 
-        $histories = PatientHistory::with('patient.geographicalLocation', 'diagnoses', 'reason')->latest()->get();
+        $search = trim((string) $request->input('search', ''));
+        $histories = PatientHistory::with('patient.geographicalLocation', 'diagnoses', 'reason')
+            ->when($search !== '', function ($query) use ($search): void {
+                $term = mb_strtolower($search);
+                $query->whereHas('patient', function ($patientQuery) use ($term): void {
+                    $patientQuery->whereRaw('LOWER(name) LIKE ?', [$term.'%'])
+                        ->orWhereRaw('LOWER(phone) LIKE ?', [$term.'%'])
+                        ->orWhereRaw('LOWER(matibabu_card) LIKE ?', [$term.'%']);
+                });
+            })
+            ->when($request->filled('status'), function ($query) use ($request): void {
+                $query->where('status', $request->input('status'));
+            })
+            ->when($request->filled('date_from'), function ($query) use ($request): void {
+                $query->whereDate('created_at', '>=', $request->input('date_from'));
+            })
+            ->when($request->filled('date_to'), function ($query) use ($request): void {
+                $query->whereDate('created_at', '<=', $request->input('date_to'));
+            })
+            ->latest('patient_histories_id')
+            ->paginate(Pagination::perPage($request, 25));
 
         return response()->json([
             'status' => true,
-            'data' => $histories,
+            'data' => $histories->items(),
+            'meta' => Pagination::meta($histories),
             'message' => 'Patient histories retrieved successfully',
             'statusCode' => 200,
         ]);
@@ -184,13 +208,24 @@ class PatientHistoryController extends Controller
             });
         }
 
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $term = mb_strtolower($search);
+            $query->where(function ($query) use ($term): void {
+                $query->whereRaw('LOWER(name) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(phone) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(matibabu_card) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(zan_id) LIKE ?', [$term.'%']);
+            });
+        }
+
         $patients = $query->with(['latestHistory' => function ($q) {
             $q->where('status', 'reviewed')->with(['diagnoses', 'reason']);
         }])
             ->latest()
-            ->get();
+            ->paginate(Pagination::perPage($request, 25));
 
-        $result = $patients->map(function ($patient) {
+        $result = collect($patients->items())->map(function ($patient) {
             return [
                 'patient_id' => $patient->patient_id,
                 'name' => $patient->name,
@@ -203,6 +238,7 @@ class PatientHistoryController extends Controller
         return response()->json([
             'status' => true,
             'data' => $result->values(),
+            'meta' => Pagination::meta($patients),
             'message' => 'Patients retrieved successfully',
             'statusCode' => 200,
         ]);
@@ -451,7 +487,10 @@ class PatientHistoryController extends Controller
     {
         $user = auth()->user();
 
-        if (! $user->canAny(['View Patient History', 'View History'])) {
+        if (
+            ! SuperAdminAccess::allowed($user) &&
+            ! $user->canAny(['View Patient History', 'View History'])
+        ) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403,
@@ -803,6 +842,13 @@ class PatientHistoryController extends Controller
 
         try {
             DB::beginTransaction();
+            $history = PatientHistory::query()
+                ->lockForUpdate()
+                ->findOrFail($id);
+            $workflow = app(PatientHistoryWorkflowService::class);
+            $fromStatus = $history->status;
+            $beforeSnapshot = $workflow->snapshot($history, []);
+            $referral = null;
 
             // 1. Always Update Board findings (Uchunguzi/Maamuzi)
             $history->update([
@@ -857,6 +903,19 @@ class PatientHistoryController extends Controller
                 ]);
             }
 
+            $workflow->record(
+                $history,
+                'medical_board_referral_decision',
+                $fromStatus,
+                $history->status,
+                $beforeSnapshot,
+                [
+                    'create_referral_record' => $createReferral,
+                    'referral_id' => $referral?->referral_id,
+                ],
+                $referral ? $workflow->referralTreeSnapshotIds($referral->referral_id) : [],
+            );
+
             DB::commit();
 
             return response()->json([
@@ -900,6 +959,22 @@ class PatientHistoryController extends Controller
 
         try {
             DB::beginTransaction();
+            $history = PatientHistory::query()
+                ->lockForUpdate()
+                ->findOrFail($id);
+            $workflow = app(PatientHistoryWorkflowService::class);
+            $fromStatus = $history->status;
+
+            $referral = Referral::query()
+                ->where('patient_id', $history->patient_id)
+                ->whereNotIn('status', ['Closed', 'Cancelled', 'Expired', 'BoardedOut'])
+                ->latest('referral_id')
+                ->lockForUpdate()
+                ->first();
+            $beforeReferralIds = $referral
+                ? $workflow->referralTreeSnapshotIds($referral->referral_id)
+                : [];
+            $beforeSnapshot = $workflow->snapshot($history, $beforeReferralIds);
 
             // 1. Update Board fields in History
             $history->update([
@@ -927,11 +1002,6 @@ class PatientHistoryController extends Controller
             $alreadyApprovedByMkurugenzi = $history->status === 'approved'
                 && filled($history->mkurugenzi_tiba_comments);
             $newReferralStatus = $alreadyApprovedByMkurugenzi ? 'Pending' : 'Requested';
-            $referral = Referral::where('patient_id', $history->patient_id)
-                ->whereNotIn('status', ['Closed', 'Cancelled', 'Expired', 'BoardedOut'])
-                ->latest('referral_id')
-                ->first();
-
             if ($createReferral) {
                 if (! $referral) {
                     $today = now()->format('Y-m-d');
@@ -990,6 +1060,23 @@ class PatientHistoryController extends Controller
                     ]
                 );
             }
+
+            $eventReferralIds = $referral
+                ? $workflow->referralTreeSnapshotIds($referral->referral_id)
+                : $beforeReferralIds;
+            $workflow->record(
+                $history,
+                'medical_board_referral_decision',
+                $fromStatus,
+                $history->status,
+                $beforeSnapshot,
+                [
+                    'create_referral_record' => $createReferral,
+                    'referral_id' => $referral?->referral_id,
+                    'referral_deleted' => $referralWasDeleted,
+                ],
+                $eventReferralIds,
+            );
 
             DB::commit();
 
@@ -1220,17 +1307,30 @@ class PatientHistoryController extends Controller
         }
 
         try {
-            // --- NEW AUTOMATION DETECTOR ---
-            // Check if comments are empty BEFORE we assign the new ones
+            DB::beginTransaction();
+            $history = PatientHistory::query()
+                ->lockForUpdate()
+                ->findOrFail($id);
+            $referral = Referral::query()
+                ->where('patient_id', $history->patient_id)
+                ->where('status', 'Requested')
+                ->latest('referral_id')
+                ->lockForUpdate()
+                ->first();
+            $workflow = app(PatientHistoryWorkflowService::class);
+            $fromStatus = $history->status;
+            $beforeReferralIds = $referral
+                ? $workflow->referralTreeSnapshotIds($referral->referral_id)
+                : [];
+            $beforeSnapshot = $workflow->snapshot($history, $beforeReferralIds);
+
+            // Check if comments are empty BEFORE we assign the new ones.
             $isFirstTime = empty($history->mkurugenzi_tiba_comments);
 
-            // 1 Save Mkurugenzi Tiba comments
+            // Save Mkurugenzi Tiba comments
             $history->mkurugenzi_tiba_comments = $request->mkurugenzi_tiba_comments;
             $history->mkurugenzi_tiba_id = $user->id;
             $history->save();
-
-            // 2 Find the Requested referral
-            $referral = $history->referrals->first();
 
             // --- UPDATED LOGIC ---
             // Only update the referral status if this is the FIRST time adding comments
@@ -1272,6 +1372,25 @@ class PatientHistoryController extends Controller
                 }
             }
 
+            $eventReferralIds = $referral
+                ? $workflow->referralTreeSnapshotIds($referral->referral_id)
+                : $beforeReferralIds;
+            $workflow->record(
+                $history,
+                'mkurugenzi_tiba_decision',
+                $fromStatus,
+                $history->status,
+                $beforeSnapshot,
+                [
+                    'referral_id' => $referral?->referral_id,
+                    'referral_status' => $referral?->status,
+                    'first_approval' => $isFirstTime,
+                ],
+                $eventReferralIds,
+            );
+
+            DB::commit();
+
             // 5 Return full response
             return response()->json([
                 'status' => true,
@@ -1284,6 +1403,7 @@ class PatientHistoryController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            DB::rollBack();
             return Helper::serverError($e, 'Referral approval update failed.');
         }
     }
@@ -1501,9 +1621,6 @@ class PatientHistoryController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $user = Auth::user();
-        $history = PatientHistory::findOrFail($id);
-
-        // 1. Updated Validation to include 'assigned'
         $validator = \Validator::make($request->all(), [
             'status' => 'required|string|in:pending,reviewed,assigned,requested,approved,confirmed,rejected',
             'comment' => 'nullable|string',
@@ -1521,66 +1638,92 @@ class PatientHistoryController extends Controller
         $newStatus = $validated['status'];
         $comment = $validated['comment'] ?? null;
 
-        // 2. Transition Check (Uses the isValidTransition logic we updated earlier)
-        if (! $this->isValidTransition($history->status, $newStatus)) {
+        try {
+            $workflow = app(PatientHistoryWorkflowService::class);
+            $history = DB::transaction(function () use ($id, $user, $newStatus, $comment, $workflow) {
+                $history = PatientHistory::query()
+                    ->lockForUpdate()
+                    ->findOrFail($id);
+
+                if (! $this->isValidTransition($history->status, $newStatus)) {
+                    throw new \RuntimeException("Invalid status transition from {$history->status} to {$newStatus}.");
+                }
+
+                $fromStatus = $history->status;
+                $beforeSnapshot = $workflow->snapshot($history, []);
+
+                switch ($newStatus) {
+                    case 'reviewed':
+                        if (! $user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR'])) {
+                            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Unauthorized action for your role.');
+                        }
+                        $history->mkurugenzi_tiba_id = $user->id;
+                        $history->mkurugenzi_tiba_comments = $comment;
+                        break;
+
+                    case 'assigned':
+                        if (! $user->hasAnyRole(['ROLE MEDICAL BOARD MEMBER'])) {
+                            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Unauthorized action for your role.');
+                        }
+                        break;
+
+                    case 'requested':
+                        if (! $user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
+                            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Unauthorized action for your role.');
+                        }
+                        $history->board_comments = $comment;
+                        break;
+
+                    case 'approved':
+                        if (! $user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR'])) {
+                            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Unauthorized action for your role.');
+                        }
+                        $history->board_comments = $comment;
+                        break;
+
+                    case 'confirmed':
+                        if (! $user->hasRole('ROLE DIRECTOR GENERAL')) {
+                            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Unauthorized action for your role.');
+                        }
+                        $history->dg_id = $user->id;
+                        $history->dg_comments = $comment;
+                        break;
+
+                    case 'rejected':
+                        if (! $user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR', 'ROLE MEDICAL BOARD MEMBER', 'ROLE DIRECTOR GENERAL'])) {
+                            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Unauthorized action for your role.');
+                        }
+                        $history->board_comments = $comment;
+                        break;
+                }
+
+                $history->status = $newStatus;
+                $history->save();
+                $workflow->record(
+                    $history,
+                    'status_transition',
+                    $fromStatus,
+                    $newStatus,
+                    $beforeSnapshot,
+                    ['status_change' => true],
+                    [],
+                );
+
+                return $history;
+            });
+        } catch (\Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException $exception) {
             return response()->json([
                 'success' => false,
-                'message' => "Invalid status transition from {$history->status} to {$newStatus}.",
+                'message' => $exception->getMessage(),
+                'statusCode' => 403,
+            ], 403);
+        } catch (\RuntimeException $exception) {
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'statusCode' => 400,
             ], 400);
         }
-
-        // 3. Role-based action control
-        switch ($newStatus) {
-            case 'reviewed':
-                // if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
-                if (! $user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR'])) {
-                    return $this->unauthorized();
-                }
-                $history->mkurugenzi_tiba_id = $user->id;
-                $history->mkurugenzi_tiba_comments = $comment;
-                break;
-
-            case 'assigned':
-                if (! $user->hasAnyRole(['ROLE MEDICAL BOARD MEMBER'])) {
-                    return $this->unauthorized();
-                }
-                // No specific comments usually required for assignment
-                break;
-
-            case 'requested':
-                if (! $user->hasRole('ROLE MEDICAL BOARD MEMBER')) {
-                    return $this->unauthorized();
-                }
-                $history->board_comments = $comment;
-                break;
-
-            case 'approved':
-                // Logic for Board Member passing the patient
-                // if (!$user->hasRole('ROLE MKURUGENZI TIBA')) {
-                if (! $user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR'])) {
-                    return $this->unauthorized();
-                }
-                $history->board_comments = $comment;
-                break;
-
-            case 'confirmed':
-                if (! $user->hasRole('ROLE DIRECTOR GENERAL')) {
-                    return $this->unauthorized();
-                }
-                $history->dg_id = $user->id;
-                $history->dg_comments = $comment;
-                break;
-
-            case 'rejected':
-                if (! $user->hasAnyRole(['ROLE MKURUGENZI TIBA', 'ROLE SUPERVISOR', 'ROLE MEDICAL BOARD MEMBER', 'ROLE DIRECTOR GENERAL'])) {
-                    return $this->unauthorized();
-                }
-                $history->board_comments = $comment;
-                break;
-        }
-
-        $history->status = $newStatus;
-        $history->save();
 
         return response()->json([
             'success' => true,

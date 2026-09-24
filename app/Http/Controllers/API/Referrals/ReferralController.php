@@ -15,6 +15,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
+use App\Support\Pagination;
 
 
 class ReferralController extends Controller
@@ -70,7 +71,7 @@ class ReferralController extends Controller
      *     )
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
@@ -97,26 +98,10 @@ class ReferralController extends Controller
             'ROLE SUPERADMIN',
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | REAL REFERRALS QUERY (IMEREKEBISHWA KUWEKA FOLLOW-UPS)
-        |--------------------------------------------------------------------------
-        */
-        $query = Referral::with([
-            'patient',
-            'reason',
-            'hospital.referralType',
-            'diagnoses',
-            'referralLetters.printedBy',
-        ])
-        // The list only needs a boolean. Loading every letter and follow-up made
-        // this response grow dramatically as the database increased.
-        ->withExists([
-            'hospitalLetters as has_followup' => function ($query) {
-                $query->whereHas('followups');
-            }
-        ])
-        ->where('status', '<>', 'Requested');
+        // Build a small candidate query first. The list is grouped by
+        // referral_number and also contains virtual history rows, so loading
+        // every full referral and related model before grouping was expensive.
+        $query = Referral::query()->where('status', '<>', 'Requested');
 
         // DG and administrators must be able to see referrals created from
         // hospital/data-entry patients as well as referrals from other users.
@@ -138,12 +123,129 @@ class ReferralController extends Controller
             $query->where('status', '<>', 'Pending');
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | FETCH REFERRALS ONLY ONCE
-        |--------------------------------------------------------------------------
-        */
-        $allReferrals = $query->latest()->get();
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $term = mb_strtolower($search);
+            $query->whereHas('patient', function ($patientQuery) use ($term): void {
+                $patientQuery->whereRaw('LOWER(name) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(phone) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(matibabu_card) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(zan_id) LIKE ?', [$term.'%']);
+            });
+        }
+
+        $query->when($request->filled('status'), function ($query) use ($request): void {
+            $query->where('status', $request->input('status'));
+        })->when($request->filled('facility'), function ($query) use ($request): void {
+            $query->where('hospital_id', $request->input('facility'));
+        })->when($request->filled('date_from'), function ($query) use ($request): void {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        })->when($request->filled('date_to'), function ($query) use ($request): void {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        });
+
+        if ($request->boolean('has_followup')) {
+            $query->whereHas('hospitalLetters.followups');
+        }
+
+        $realCandidates = (clone $query)
+            ->selectRaw("'real' as source")
+            ->selectRaw('CAST(referral_number AS VARCHAR) as source_key')
+            ->selectRaw('MAX(created_at) as latest_activity')
+            ->selectRaw("MAX(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as has_pending")
+            ->groupBy('referral_number');
+
+        $virtualQuery = PatientHistory::query()
+            ->whereDoesntHave('referrals')
+            ->whereDoesntHave('boardedOutLetters')
+            ->whereIn('status', ['requested', 'approved']);
+
+        $boardedOutQuery = PatientHistory::query()
+            ->whereHas('boardedOutLetters')
+            ->whereDoesntHave('referrals');
+
+        foreach ([$virtualQuery, $boardedOutQuery] as $sourceQuery) {
+            if (! $canSeeAllReferralSources) {
+                $sourceQuery->whereHas('patient.creator', function ($q) use ($dataEntryEmails, $isDataEntryUser) {
+                    $isDataEntryUser
+                        ? $q->whereIn('email', $dataEntryEmails)
+                        : $q->whereNotIn('email', $dataEntryEmails);
+                });
+            }
+
+            if ($search !== '') {
+                $term = mb_strtolower($search);
+                $sourceQuery->whereHas('patient', function ($patientQuery) use ($term): void {
+                    $patientQuery->whereRaw('LOWER(name) LIKE ?', [$term.'%'])
+                        ->orWhereRaw('LOWER(phone) LIKE ?', [$term.'%'])
+                        ->orWhereRaw('LOWER(matibabu_card) LIKE ?', [$term.'%'])
+                        ->orWhereRaw('LOWER(zan_id) LIKE ?', [$term.'%']);
+                });
+            }
+
+            $sourceQuery->when($request->filled('date_from'), function ($q) use ($request): void {
+                $q->whereDate('created_at', '>=', $request->input('date_from'));
+            })->when($request->filled('date_to'), function ($q) use ($request): void {
+                $q->whereDate('created_at', '<=', $request->input('date_to'));
+            });
+        }
+
+        if ($request->filled('status')) {
+            $status = $request->input('status');
+            $virtualQuery = in_array($status, ['requested', 'approved'], true)
+                ? $virtualQuery->where('status', $status)
+                : $virtualQuery->whereRaw('1 = 0');
+            $boardedOutQuery = $status === 'BoardedOut'
+                ? $boardedOutQuery
+                : $boardedOutQuery->whereRaw('1 = 0');
+        }
+
+        if ($request->boolean('has_followup')) {
+            $virtualQuery->whereRaw('1 = 0');
+            $boardedOutQuery->whereRaw('1 = 0');
+        }
+
+        $virtualCandidates = $virtualQuery
+            ->selectRaw("'virtual' as source")
+            ->selectRaw('CAST(patient_histories_id AS VARCHAR) as source_key')
+            ->selectRaw('updated_at as latest_activity')
+            ->selectRaw('1 as has_pending');
+
+        $boardedOutCandidates = $boardedOutQuery
+            ->selectRaw("'boarded_out' as source")
+            ->selectRaw('CAST(patient_histories_id AS VARCHAR) as source_key')
+            ->selectRaw('updated_at as latest_activity')
+            ->selectRaw('0 as has_pending');
+
+        $candidateQuery = $realCandidates
+            ->unionAll($virtualCandidates)
+            ->unionAll($boardedOutCandidates);
+
+        $candidates = DB::query()
+            ->fromSub($candidateQuery, 'referral_candidates')
+            ->orderByDesc('has_pending')
+            ->orderByDesc('latest_activity')
+            ->orderByDesc('source_key')
+            ->paginate(Pagination::perPage($request, 25));
+
+        $candidateRows = collect($candidates->items());
+        $realReferralNumbers = $candidateRows->where('source', 'real')->pluck('source_key');
+
+        $allReferrals = Referral::with([
+            'patient',
+            'reason',
+            'hospital.referralType',
+            'diagnoses',
+            'referralLetters.printedBy',
+        ])
+            ->withExists([
+                'hospitalLetters as has_followup' => function ($query) {
+                    $query->whereHas('followups');
+                },
+            ])
+            ->whereIn('referral_number', $realReferralNumbers)
+            ->latest()
+            ->get();
 
         /*
         |--------------------------------------------------------------------------
@@ -161,13 +263,13 @@ class ReferralController extends Controller
         | PRELOAD LATEST HISTORIES
         |--------------------------------------------------------------------------
         */
-        $latestHistories = PatientHistory::whereIn('patient_id', $patientIds)
-            ->latest('created_at')
+        $latestHistoryIds = PatientHistory::selectRaw('MAX(patient_histories_id)')
+            ->whereIn('patient_id', $patientIds)
+            ->groupBy('patient_id');
+
+        $latestHistories = PatientHistory::whereIn('patient_histories_id', $latestHistoryIds)
             ->get()
-            ->groupBy('patient_id')
-            ->map(function ($items) {
-                return $items->first();
-            });
+            ->keyBy('patient_id');
 
         /*
         |--------------------------------------------------------------------------
@@ -278,35 +380,30 @@ class ReferralController extends Controller
                         ? $this->formatHistory($history)
                         : null,
                 ];
-            })
-            ->values();
+            });
 
         /*
         |--------------------------------------------------------------------------
         | VIRTUAL (REQUESTED + APPROVED)
         |--------------------------------------------------------------------------
         */
+        $virtualHistoryIds = $candidateRows
+            ->where('source', 'virtual')
+            ->pluck('source_key')
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
         $noReferralHistories = PatientHistory::with([
                 'patient',
                 'diagnoses',
                 'reason'
             ])
-            ->whereDoesntHave('referrals')
-            ->whereDoesntHave('boardedOutLetters')
-            ->whereIn('status', ['requested', 'approved']);
+            ->whereIn('patient_histories_id', $virtualHistoryIds)
+            ->get()
+            ->keyBy('patient_histories_id');
 
-        if (! $canSeeAllReferralSources) {
-            $noReferralHistories->whereHas('patient.creator', function ($q) use ($dataEntryEmails, $isDataEntryUser) {
-                $isDataEntryUser
-                    ? $q->whereIn('email', $dataEntryEmails)
-                    : $q->whereNotIn('email', $dataEntryEmails);
-            });
-        }
-
-        $noReferralHistories = $noReferralHistories->latest()->get();
-
-        $virtualReferrals = $noReferralHistories->map(function ($history) {
-            return [
+        $virtualReferrals = $noReferralHistories->mapWithKeys(function ($history) {
+            return [$history->patient_histories_id => [
                 'referral_number' => 'N/A-' . $history->patient_histories_id,
                 'patient' => $history->patient,
                 'diagnoses' => $history->diagnoses,
@@ -329,7 +426,7 @@ class ReferralController extends Controller
                 'latest_activity' => $history->updated_at,
                 'is_recommendation_only' => true,
                 'history_id' => $history->patient_histories_id,
-            ];
+            ]];
         });
 
         /*
@@ -337,29 +434,26 @@ class ReferralController extends Controller
         | BOARDED OUT VIRTUALS
         |--------------------------------------------------------------------------
         */
+        $boardedOutHistoryIds = $candidateRows
+            ->where('source', 'boarded_out')
+            ->pluck('source_key')
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
         $boardedOutHistories = PatientHistory::with([
                 'patient',
                 'diagnoses',
                 'reason',
                 'boardedOutLetters.printedBy'
             ])
-            ->whereHas('boardedOutLetters')
-            ->whereDoesntHave('referrals');
+            ->whereIn('patient_histories_id', $boardedOutHistoryIds)
+            ->get()
+            ->keyBy('patient_histories_id');
 
-        if (! $canSeeAllReferralSources) {
-            $boardedOutHistories->whereHas('patient.creator', function ($q) use ($dataEntryEmails, $isDataEntryUser) {
-                $isDataEntryUser
-                    ? $q->whereIn('email', $dataEntryEmails)
-                    : $q->whereNotIn('email', $dataEntryEmails);
-            });
-        }
-
-        $boardedOutHistories = $boardedOutHistories->latest()->get();
-
-        $boardedOutVirtuals = $boardedOutHistories->map(function ($history) {
+        $boardedOutVirtuals = $boardedOutHistories->mapWithKeys(function ($history) {
             $boardedOut = $history->boardedOutLetters->last();
             $isBoardedOut = !is_null($boardedOut);
-            return [
+            return [$history->patient_histories_id => [
                 'referral_number' => $isBoardedOut
                     ? 'BO-' . $history->patient_histories_id
                     : 'NBO-' . $history->patient_histories_id,
@@ -398,7 +492,7 @@ class ReferralController extends Controller
                     'print_count' => (int) ($boardedOut?->print_count ?? 0),
                     'last_printed_language' => $boardedOut?->last_printed_language,
                 ]
-            ];
+            ]];
         });
 
         /*
@@ -406,20 +500,21 @@ class ReferralController extends Controller
         | FINAL MERGE + SORT
         |--------------------------------------------------------------------------
         */
-        $finalData = collect()
-            ->concat($referrals)
-            ->concat($virtualReferrals)
-            ->concat($boardedOutVirtuals)
-            ->sort(function ($a, $b) {
-                if ($a['has_pending'] !== $b['has_pending']) {
-                    return $b['has_pending'] <=> $a['has_pending'];
-                }
-                return strtotime($b['latest_activity']) <=> strtotime($a['latest_activity']);
+        $finalData = $candidateRows
+            ->map(function ($candidate) use ($referrals, $virtualReferrals, $boardedOutVirtuals) {
+                return match ($candidate->source) {
+                    'real' => $referrals->get($candidate->source_key),
+                    'virtual' => $virtualReferrals->get((int) $candidate->source_key),
+                    'boarded_out' => $boardedOutVirtuals->get((int) $candidate->source_key),
+                    default => null,
+                };
             })
+            ->filter()
             ->values();
 
         return response([
             'data' => $finalData,
+            'meta' => Pagination::meta($candidates),
             'statusCode' => 200
         ], 200);
     }

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\API\Followups;
 use App\Http\Controllers\Controller;
 use App\Models\FollowUp;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Support\Pagination;
 
 class FollowupController extends Controller
 {
@@ -18,7 +18,7 @@ class FollowupController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         if (!$user->can('View FollowUp')) {
@@ -28,10 +28,37 @@ class FollowupController extends Controller
             ], 403);
         }
 
-        $followups = FollowUp::with(['hospitalLetter','createdBy'])->get();
+        $search = trim((string) $request->input('search', ''));
+        $followups = FollowUp::with([
+                'patient:patient_id,name,phone',
+                'hospitalLetter:letter_id,referral_id,outcome,next_appointment_date',
+            ])
+            ->when($search !== '', function ($query) use ($search): void {
+                $term = mb_strtolower($search);
+                $query->where(function ($query) use ($term): void {
+                    $query->whereHas('patient', function ($patientQuery) use ($term): void {
+                        $patientQuery->whereRaw('LOWER(name) LIKE ?', [$term.'%'])
+                            ->orWhereRaw('LOWER(phone) LIKE ?', [$term.'%']);
+                    })->orWhereHas('hospitalLetter.referral', function ($referralQuery) use ($term): void {
+                        $referralQuery->whereRaw('LOWER(referral_number) LIKE ?', [$term.'%']);
+                    });
+                });
+            })
+            ->when($request->filled('status'), function ($query) use ($request): void {
+                $query->where('followup_status', $request->input('status'));
+            })
+            ->when($request->filled('date_from'), function ($query) use ($request): void {
+                $query->whereDate('followup_date', '>=', $request->input('date_from'));
+            })
+            ->when($request->filled('date_to'), function ($query) use ($request): void {
+                $query->whereDate('followup_date', '<=', $request->input('date_to'));
+            })
+            ->latest('followup_id')
+            ->paginate(Pagination::perPage($request, 25));
 
         return response()->json([
-            'data' => $followups,
+            'data' => $followups->items(),
+            'meta' => Pagination::meta($followups),
             'statusCode' => 200
         ]);
     }
@@ -51,11 +78,15 @@ class FollowupController extends Controller
 
         $validated = $request->validate([
             'letter_id' => ['required','exists:hospital_letters,letter_id'],
+            'patient_id' => ['required','exists:patients,patient_id'],
             'followup_date' => ['required','date'],
             'notes' => ['nullable','string'],
+            'followup_status' => ['nullable','in:Ongoing,Closed,Transferred'],
+            'status' => ['nullable','in:Ongoing,Closed,Transferred'],
         ]);
 
-        $validated['created_by'] = Auth::id();
+        $validated['followup_status'] ??= $validated['status'] ?? 'Ongoing';
+        unset($validated['status']);
 
         $followup = FollowUp::create($validated);
 
@@ -79,7 +110,10 @@ class FollowupController extends Controller
             ], 403);
         }
 
-        $followup = FollowUp::with(['hospitalLetter','createdBy'])->find($id);
+        $followup = FollowUp::with([
+            'patient:patient_id,name,phone',
+            'hospitalLetter:letter_id,referral_id,outcome,next_appointment_date',
+        ])->find($id);
 
         if (!$followup) {
             return response()->json([
@@ -118,9 +152,17 @@ class FollowupController extends Controller
 
         $validated = $request->validate([
             'letter_id' => ['sometimes','exists:hospital_letters,letter_id'],
+            'patient_id' => ['sometimes','exists:patients,patient_id'],
             'followup_date' => ['sometimes','date'],
             'notes' => ['nullable','string'],
+            'followup_status' => ['sometimes','in:Ongoing,Closed,Transferred'],
+            'status' => ['sometimes','in:Ongoing,Closed,Transferred'],
         ]);
+
+        if (array_key_exists('status', $validated) && ! array_key_exists('followup_status', $validated)) {
+            $validated['followup_status'] = $validated['status'];
+        }
+        unset($validated['status']);
 
         $followup->update($validated);
 

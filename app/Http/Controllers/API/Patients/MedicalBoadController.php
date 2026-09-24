@@ -10,6 +10,9 @@ use App\Models\PatientList;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Services\PatientHistoryWorkflowService;
+use App\Support\Pagination;
+use App\Support\SuperAdminAccess;
 
 class MedicalBoadController extends Controller
 {
@@ -60,22 +63,26 @@ class MedicalBoadController extends Controller
      *     )
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         $dataEntryEmails = ['medicalboard@mohz.go.tz', 'hospital@mohz.go.tz', 'mkurugenzi@mohz.go.tz', 'dguser@mohz.go.tz'];
 
-        if (! $user->can('View Patient List')) {
+        if (! SuperAdminAccess::allowed($user, 'View Patient List')) {
             return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
         $isDataEntryUser = in_array($user->email, $dataEntryEmails);
+        $isSuperAdmin = SuperAdminAccess::allowed($user);
 
-        $query = PatientList::with(['creator', 'patients.geographicalLocation', 'boardMembers'])
+        $query = PatientList::query()
             ->withTrashed();
 
         // --- LOGIC YA KUTENGANISHA ---
-        if ($isDataEntryUser) {
+        if ($isSuperAdmin) {
+            // Administrators can review every medical board, regardless of
+            // which hospital or board user created it.
+        } elseif ($isDataEntryUser) {
             $query->whereHas('creator', function ($q) use ($dataEntryEmails) {
                 $q->whereIn('email', $dataEntryEmails);
             });
@@ -85,10 +92,23 @@ class MedicalBoadController extends Controller
             });
         }
 
-        $lists = $query->get();
+        $search = trim((string) $request->input('search', ''));
+        $query->when($search !== '', function ($query) use ($search): void {
+            $term = mb_strtolower($search);
+            $query->where(function ($query) use ($term): void {
+                $query->whereRaw('LOWER(patient_list_title) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(reference_number) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(board_type) LIKE ?', [$term.'%']);
+            });
+        });
+
+        $lists = $query
+            ->latest('created_at')
+            ->paginate(Pagination::perPage($request, 25));
 
         return response()->json([
-            'data' => $lists,
+            'data' => $lists->items(),
+            'meta' => Pagination::meta($lists),
             'statusCode' => 200,
         ]);
     }
@@ -147,7 +167,7 @@ class MedicalBoadController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if (! $user->can('Create Patient List')) {
+        if (! SuperAdminAccess::allowed($user, 'Create Patient List')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403,
@@ -250,7 +270,7 @@ class MedicalBoadController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        if (! $user->can('View Patient List')) {
+        if (! SuperAdminAccess::allowed($user, 'View Patient List')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403,
@@ -310,7 +330,7 @@ class MedicalBoadController extends Controller
     public function updatePatientList(Request $request, $id)
     {
         $user = auth()->user();
-        if (! $user->can('Update Patient List')) {
+        if (! SuperAdminAccess::allowed($user, 'Update Patient List')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403,
@@ -433,7 +453,7 @@ class MedicalBoadController extends Controller
     public function destroy($id)
     {
         $user = auth()->user();
-        if (! $user->can('Delete Patient List')) {
+        if (! SuperAdminAccess::allowed($user, 'Delete Patient List')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403,
@@ -518,7 +538,7 @@ class MedicalBoadController extends Controller
     public function getAllPatientsByPatientListId(int $patientListId)
     {
         $user = auth()->user();
-        if (! $user->can('View Patient List')) {
+        if (! SuperAdminAccess::allowed($user, 'View Patient List')) {
             return response()->json([
                 'message' => 'Forbidden',
                 'statusCode' => 403,
@@ -546,7 +566,7 @@ class MedicalBoadController extends Controller
         $user = auth()->user();
 
         // Check permission
-        if (! $user->can('Create Patient List')) {
+        if (! SuperAdminAccess::allowed($user, 'Create Patient List')) {
             return response()->json(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
@@ -585,13 +605,40 @@ class MedicalBoadController extends Controller
             $patientList->patients()->syncWithoutDetaching($request->patient_ids);
 
             // 2. Update status of the latest history for each patient to 'assigned'
+            $workflow = app(PatientHistoryWorkflowService::class);
+            $patients = Patient::query()
+                ->with('latestHistory')
+                ->whereIn('patient_id', $request->patient_ids)
+                ->get()
+                ->keyBy('patient_id');
+            $historyIds = $patients->map(fn (Patient $patient) => $patient->latestHistory?->patient_histories_id)
+                ->filter()
+                ->values();
+            $histories = PatientHistory::query()
+                ->whereIn('patient_histories_id', $historyIds)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('patient_histories_id');
+
             foreach ($request->patient_ids as $pId) {
-                $patient = Patient::find($pId);
-                $history = $patient->latestHistory;
+                $patient = $patients->get($pId);
+                $latestHistoryId = $patient?->latestHistory?->patient_histories_id;
+                $history = $latestHistoryId ? $histories->get($latestHistoryId) : null;
 
                 // Only update if current status is 'reviewed' (to follow your isValidTransition logic)
-                if ($history && $history->status === 'reviewed') {
+                if ($patient && $history && $history->status === 'reviewed') {
+                    $fromStatus = $history->status;
+                    $beforeSnapshot = $workflow->snapshot($history, []);
                     $this->applyStatusUpdate($history, 'assigned');
+                    $workflow->record(
+                        $history,
+                        'medical_board_assignment',
+                        $fromStatus,
+                        $history->status,
+                        $beforeSnapshot,
+                        ['patient_list_id' => $patientList->patient_list_id],
+                        [],
+                    );
                 }
             }
 

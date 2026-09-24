@@ -8,11 +8,14 @@ use App\Mail\NewPatientRecordNotification;
 use App\Models\Patient;
 use App\Models\PatientFile;
 use App\Services\MatibabuService;
+use App\Services\PatientHistoryWorkflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
+use App\Support\Pagination;
+use App\Support\SuperAdminAccess;
 
 class PatientController extends Controller
 {
@@ -121,13 +124,18 @@ class PatientController extends Controller
             ? Patient::query()->select([
                 'patient_id',
                 'name',
+                'matibabu_card',
+                'zan_id',
+                'date_of_birth',
+                'gender',
                 'phone',
-                'location',
+                'location_id',
                 'position',
                 'job',
                 'deleted_at',
                 'created_by',
                 'created_at',
+                DB::raw('(SELECT location_name FROM geographical_locations gl WHERE gl.location_id = patients.location_id LIMIT 1) as location'),
             ])
             : Patient::with($relations);
 
@@ -152,16 +160,43 @@ class PatientController extends Controller
             $query->where('created_by', $user->id);
         }
 
-        // Panga kwa tarehe na chukua data zote (get) bila pagination
-        $patients = $query->latest('created_at')->get();
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $term = mb_strtolower($search);
+            $query->where(function ($query) use ($term): void {
+                $query->whereRaw('LOWER(name) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(phone) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(matibabu_card) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(zan_id) LIKE ?', [$term.'%']);
+            });
+        }
+
+        $query->when($request->filled('date_from'), function ($query) use ($request): void {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        })->when($request->filled('date_to'), function ($query) use ($request): void {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        });
+
+        $sort = in_array($request->input('sort'), ['created_at', 'name', 'patient_id'], true)
+            ? $request->input('sort')
+            : 'created_at';
+        $direction = strtolower((string) $request->input('direction', 'desc')) === 'asc'
+            ? 'asc'
+            : 'desc';
+
+        $patients = $query
+            ->orderBy($sort, $direction)
+            ->orderBy('patient_id', 'desc')
+            ->paginate(Pagination::perPage($request, 25));
 
         return response([
-            'data' => $patients, // Inarudisha list nzima ya wagonjwa moja kwa moja
+            'data' => $patients->items(),
+            'meta' => Pagination::meta($patients),
             'statusCode' => 200,
         ], 200);
     }
 
-    public function patientsHistories()
+    public function patientsHistories(Request $request)
     {
         $user = auth()->user();
 
@@ -173,26 +208,44 @@ class PatientController extends Controller
             'dguser@mohz.go.tz',
         ];
 
-        if (! $user->canAny(['View Patient', 'View History'])) {
+        if (
+            ! SuperAdminAccess::allowed($user) &&
+            ! $user->canAny(['View Patient', 'View History'])
+        ) {
             return response(['message' => 'Forbidden', 'statusCode' => 403], 403);
         }
 
         $isMkurugenzi = $user->hasRole('ROLE MKURUGENZI TIBA');
         $isDataEntryUser = in_array($user->email, $dataEntryEmails);
+        $isSuperAdmin = SuperAdminAccess::allowed($user);
 
-        $latestStatusSubquery = '(SELECT status FROM patient_histories
-                                WHERE patient_histories.patient_id = patients.patient_id
-                                ORDER BY patient_histories_id DESC LIMIT 1)';
+        // Resolve the latest history once and join it to the patient list.
+        // The previous correlated subquery was repeated in the filter and
+        // ordering expressions for every patient row.
+        $latestHistoryIds = DB::table('patient_histories')
+            ->selectRaw('MAX(patient_histories_id)')
+            ->whereNull('deleted_at')
+            ->groupBy('patient_id');
+        $latestHistoryQuery = DB::table('patient_histories as latest_histories')
+            ->select(
+                'latest_histories.patient_id',
+                DB::raw('latest_histories.status as latest_status_text'),
+            )
+            ->whereIn('latest_histories.patient_histories_id', $latestHistoryIds);
 
         $query = Patient::query()
             ->with(['latestHistory', 'creator'])
             ->join('users', 'users.id', '=', 'patients.created_by')
-            ->leftJoin('hospital_user', 'hospital_user.user_id', '=', 'users.id')
-            ->leftJoin('hospitals', 'hospitals.hospital_id', '=', 'hospital_user.hospital_id')
+            ->joinSub($latestHistoryQuery, 'latest_history', function ($join): void {
+                $join->on('latest_history.patient_id', '=', 'patients.patient_id');
+            })
             ->whereHas('patientHistories');
 
         // --- LOGIC MPYA YA KUTENGANISHA DATA ---
-        if ($isDataEntryUser) {
+        if ($isSuperAdmin) {
+            // Super Admin must be able to review every patient history,
+            // including records created by hospital and medical-board users.
+        } elseif ($isDataEntryUser) {
             // Data Entry Users wanaona tu data zilizoundwa na wenzao
             $query->whereIn('users.email', $dataEntryEmails);
         } else {
@@ -200,38 +253,47 @@ class PatientController extends Controller
             $query->whereNotIn('users.email', $dataEntryEmails);
         }
 
-        // Kumbuka: $perPage imeondolewa hapa kwa kuwa haihitajiki tena
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $term = mb_strtolower($search);
+            $query->where(function ($query) use ($term): void {
+                $query->whereRaw('LOWER(patients.name) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(patients.phone) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(patients.matibabu_card) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(patients.zan_id) LIKE ?', [$term.'%']);
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('latest_history.latest_status_text', $request->input('status'));
+        }
 
         $patients = $query
             ->select(
                 'patients.*',
-                'hospitals.hospital_name as hospital',
-                'hospital_user.role as hospital_role',
-                DB::raw("$latestStatusSubquery as latest_status_text")
-            )
-            ->groupBy(
-                'patients.patient_id',
-                'hospitals.hospital_name',
-                'hospital_user.role'
+                DB::raw("(SELECT h.hospital_name FROM hospital_user hu JOIN hospitals h ON h.hospital_id = hu.hospital_id WHERE hu.user_id = users.id ORDER BY hu.hospital_id LIMIT 1) as hospital"),
+                DB::raw("(SELECT hu.role FROM hospital_user hu WHERE hu.user_id = users.id ORDER BY hu.hospital_id LIMIT 1) as hospital_role"),
+                'latest_history.latest_status_text',
             )
             ->orderByRaw("
                 CASE
-                    WHEN $latestStatusSubquery = 'pending' THEN 1
-                    WHEN $latestStatusSubquery = 'requested' THEN ".($isMkurugenzi ? '2' : '4')."
-                    WHEN $latestStatusSubquery = 'reviewed' THEN ".($isMkurugenzi ? '3' : '2')."
-                    WHEN $latestStatusSubquery = 'assigned' THEN ".($isMkurugenzi ? '4' : '3')."
-                    WHEN $latestStatusSubquery = 'approved' THEN 5
-                    WHEN $latestStatusSubquery = 'confirmed' THEN 6
-                    WHEN $latestStatusSubquery = 'rejected' THEN 7
+                    WHEN latest_history.latest_status_text = 'pending' THEN 1
+                    WHEN latest_history.latest_status_text = 'requested' THEN ".($isMkurugenzi ? '2' : '4')."
+                    WHEN latest_history.latest_status_text = 'reviewed' THEN ".($isMkurugenzi ? '3' : '2')."
+                    WHEN latest_history.latest_status_text = 'assigned' THEN ".($isMkurugenzi ? '4' : '3')."
+                    WHEN latest_history.latest_status_text = 'approved' THEN 5
+                    WHEN latest_history.latest_status_text = 'confirmed' THEN 6
+                    WHEN latest_history.latest_status_text = 'rejected' THEN 7
                     ELSE 8
                 END ASC
             ")
             ->orderBy('patients.patient_id', 'desc')
-            ->get(); // Inachukua data zote mara moja
+            ->paginate(Pagination::perPage($request, 25));
 
         return response(
             [
-                'data' => $patients,
+                'data' => $patients->items(),
+                'meta' => Pagination::meta($patients),
                 'statusCode' => 200,
             ],
             200
@@ -736,6 +798,9 @@ class PatientController extends Controller
             //     The last step (DG confirmation = 'confirmed') is left MANUAL.
             // ------------------------------------------------------------------
             $autoComment = 'Auto-approved by the system during registration (Mkurugenzi Tiba stage).';
+            $workflow = app(PatientHistoryWorkflowService::class);
+            $workflowBeforeSnapshot = $workflow->snapshot($patientHistory, []);
+            $workflowFromStatus = $patientHistory->status;
 
             // pending -> reviewed
             $patientHistory->update([
@@ -773,6 +838,16 @@ class PatientController extends Controller
             if ($request->filled('diagnosis_ids')) {
                 $referral->diagnoses()->sync($request->diagnosis_ids);
             }
+
+            $workflow->record(
+                $patientHistory,
+                'auto_approved_registration',
+                $workflowFromStatus,
+                $patientHistory->status,
+                $workflowBeforeSnapshot,
+                ['referral_id' => $referral->referral_id],
+                $workflow->referralTreeSnapshotIds($referral->referral_id),
+            );
 
             DB::commit();
 
@@ -1449,7 +1524,7 @@ class PatientController extends Controller
         ], 200);
     }
 
-    public function getAllPatients()
+    public function getAllPatients(Request $request)
     {
         $user = auth()->user();
 
@@ -1460,7 +1535,7 @@ class PatientController extends Controller
             ], 403);
         }
 
-        $patients = Patient::with([
+        $query = Patient::with([
             'patientList',
             'files',
             'geographicalLocation',
@@ -1468,14 +1543,31 @@ class PatientController extends Controller
             'referrals.hospital',
             'referrals.creator',
         ])
-            ->whereDoesntHave('referrals') // patients with no referrals
-            ->orWhereHas('referrals', function ($query) {
-                $query->whereIn('status', ['Cancelled', 'Expired', 'Closed', 'Pending']);
-            })
-            ->get();
+            ->where(function ($query): void {
+                $query->whereDoesntHave('referrals') // patients with no referrals
+                    ->orWhereHas('referrals', function ($referralQuery): void {
+                        $referralQuery->whereIn('status', ['Cancelled', 'Expired', 'Closed', 'Pending']);
+                    });
+            });
+
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $term = mb_strtolower($search);
+            $query->where(function ($query) use ($term): void {
+                $query->whereRaw('LOWER(name) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(phone) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(matibabu_card) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(zan_id) LIKE ?', [$term.'%']);
+            });
+        }
+
+        $patients = $query
+            ->latest('patient_id')
+            ->paginate(Pagination::perPage($request, 25));
 
         return response([
-            'data' => $patients,
+            'data' => $patients->items(),
+            'meta' => Pagination::meta($patients),
             'statusCode' => 200,
         ], 200);
     }

@@ -32,6 +32,10 @@ class User extends Authenticatable
         'gender',
         'password',
         'login_status',
+        'is_blocked',
+        'blocked_at',
+        'blocked_by',
+        'blocked_reason',
         'created_by'
     ];
 
@@ -40,7 +44,7 @@ class User extends Authenticatable
      *
      * @var array
      */
-    protected $dates = ['deleted_at'];
+    protected $dates = ['deleted_at', 'blocked_at'];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -78,12 +82,29 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'is_blocked' => 'boolean',
+        'blocked_at' => 'datetime',
     ];
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['*']);
+            ->logOnly([
+                'first_name',
+                'middle_name',
+                'last_name',
+                'address',
+                'phone_no',
+                'date_of_birth',
+                'email',
+                'gender',
+                'login_status',
+                'is_blocked',
+                'blocked_at',
+                'blocked_by',
+                'blocked_reason',
+                'created_by',
+            ]);
         // Chain fluent methods for configuration options
     }
 

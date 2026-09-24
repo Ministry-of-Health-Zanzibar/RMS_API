@@ -8,6 +8,7 @@ use App\Models\BillItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Support\Pagination;
 
 class BillItemController extends Controller
 {
@@ -46,7 +47,7 @@ class BillItemController extends Controller
      *     )
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         if (!$user->can('View Bill Item')) {
@@ -56,10 +57,25 @@ class BillItemController extends Controller
             ], 403);
         }
 
-        $billItems = BillItem::withTrashed()->with('bill')->get();
+        $search = trim((string) $request->input('search', ''));
+        $billItems = BillItem::withTrashed()
+            ->with('bill')
+            ->when($request->filled('bill_id'), function ($query) use ($request): void {
+                $query->where('bill_id', $request->input('bill_id'));
+            })
+            ->when($search !== '', function ($query) use ($search): void {
+                $term = mb_strtolower($search);
+                $query->where(function ($query) use ($term): void {
+                    $query->whereRaw('LOWER(description) LIKE ?', [$term.'%'])
+                        ->orWhereRaw('CAST(bill_id AS VARCHAR) LIKE ?', [$term.'%']);
+                });
+            })
+            ->latest('bill_item_id')
+            ->paginate(Pagination::perPage($request, 25));
 
         return response()->json([
-            'data' => $billItems,
+            'data' => $billItems->items(),
+            'meta' => Pagination::meta($billItems),
             'statusCode' => 200
         ], 200);
     }

@@ -131,6 +131,11 @@ class permission_info extends Seeder
 
             'View History',
 
+            'View Audit Logs',
+            'Undo Patient History Workflow',
+            'Block User',
+            'Unblock User',
+
         ];
 
         foreach ($permissions as $permission) {

@@ -22,6 +22,8 @@ class FollowUp extends Model
         'letter_id',
         'followup_date',
         'status',
+        'followup_status',
+        'notes',
     ];
 
     /*

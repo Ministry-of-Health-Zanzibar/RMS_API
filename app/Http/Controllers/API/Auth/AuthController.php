@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Helpers\Helper;
 use Auth;
 use Illuminate\Http\Request;
+use App\Support\AuditService;
 use Spatie\Permission\Models\Permission;
 use Validator;
 
@@ -23,8 +24,37 @@ class AuthController extends Controller
         }
 
         if (! Auth::attempt($request->only('email', 'password'))) {
+            AuditService::record(
+                'login_failed',
+                'authentication',
+                null,
+                [],
+                [],
+                'Failed login attempt',
+                ['email' => $request->input('email')],
+            );
             Helper::sendError('Email Or Password is incorrect !!!');
         } else {
+            $authenticatedUser = auth()->user();
+            if ($authenticatedUser->is_blocked || $authenticatedUser->trashed()) {
+                Auth::logout();
+                AuditService::record(
+                    'login_blocked',
+                    'authentication',
+                    $authenticatedUser,
+                    [],
+                    ['blocked' => true],
+                    'Blocked user login attempt',
+                    ['user_id' => $authenticatedUser->id],
+                );
+
+                return response()->json([
+                    'message' => 'This account is blocked. Contact an administrator.',
+                    'code' => 'ACCOUNT_BLOCKED',
+                    'statusCode' => 403,
+                ], 403);
+            }
+
             $roles = [];
             $permissions = [];
             $hospitalInfo = null; // default null if not hospital user
@@ -60,16 +90,26 @@ class AuthController extends Controller
 
             $token = auth()->user()->createToken('auth_token')->plainTextToken;
             $data = [
-                'user_id' => auth()->user()->id,
-                'email' => auth()->user()->email,
-                'full_name' => auth()->user()->first_name.' '.auth()->user()->middle_name.' '.auth()->user()->last_name,
-                'login_status' => auth()->user()->login_status,
+                'user_id' => $authenticatedUser->id,
+                'email' => $authenticatedUser->email,
+                'full_name' => $authenticatedUser->first_name.' '.$authenticatedUser->middle_name.' '.$authenticatedUser->last_name,
+                'login_status' => $authenticatedUser->login_status,
                 'statusCode' => 200,
                 'token' => $token,
                 'roles' => $roles,
                 'permissions' => $permissions,
                 'hospital_info' => $hospitalInfo, // added hospital info here
             ];
+
+            AuditService::record(
+                'login',
+                'authentication',
+                $authenticatedUser,
+                [],
+                ['login_status' => $authenticatedUser->login_status],
+                'User logged in',
+                ['user_id' => $authenticatedUser->id],
+            );
 
             return response()->json(['data' => $data]);
         }
@@ -78,7 +118,9 @@ class AuthController extends Controller
     // method for user logout and delete token
     public function logout()
     {
-        auth()->user()->tokens()->delete();
+        $user = auth()->user();
+        AuditService::record('logout', 'authentication', $user, [], [], 'User logged out', ['user_id' => $user->id]);
+        $user->tokens()->delete();
 
         return response()->json(['status' => 401]);
     }

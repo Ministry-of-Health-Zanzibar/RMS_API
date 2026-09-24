@@ -42,12 +42,16 @@ Route::post('login', [App\Http\Controllers\API\Auth\AuthController::class, 'logi
 Route::post('forgot-password', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'forgotPassword'])->middleware('throttle:5,1');
 Route::post('reset-forgot-password', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'forgotPasswordReset'])->middleware('throttle:5,1');
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'not.blocked'])->group(function () {
 
     Route::get('checkPassword', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'index'])->name('checkPassword');
     Route::post('changePassword', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'change_password'])->name('changePassword');
     Route::post('resetPassword', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'resetPassword'])->name('resetPassword');
-    Route::get('logsFunction', [App\Http\Controllers\API\User\UserProfileCotroller::class, 'logs_function'])->name('logsFunction');
+    // Kept as a compatibility alias; both endpoints use the protected,
+    // paginated audit-log implementation.
+    Route::get('logsFunction', [App\Http\Controllers\API\AuditLogController::class, 'index'])->name('logsFunction');
+    Route::get('audit-logs', [App\Http\Controllers\API\AuditLogController::class, 'index']);
+    Route::get('audit-logs/{id}', [App\Http\Controllers\API\AuditLogController::class, 'show']);
 
     Route::resource('uploadTypes', App\Http\Controllers\API\Setup\UploadTypesController::class);
     Route::resource('locations', App\Http\Controllers\API\Setup\GeographicalLocationsController::class);
@@ -208,6 +212,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Patient Histories
     Route::prefix('patient-histories')->group(function () {
         Route::get('/', [PatientHistoryController::class, 'index']);
+        Route::get('/{id}/workflow-events', [App\Http\Controllers\API\PatientHistoryWorkflowController::class, 'index'])->whereNumber('id');
         Route::get('/{id}', [PatientHistoryController::class, 'show']);
         Route::post('/', [PatientHistoryController::class, 'store']);
         Route::post('/update/{id}', [PatientHistoryController::class, 'update']);
@@ -222,6 +227,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/{id}/mkurugenzi-comments', [PatientHistoryController::class, 'getMkurugenziComments']);
         Route::get('/allowed-to-assign/patients', [PatientHistoryController::class, 'getPatientToBeAssignedToMedicalBoard']);
     });
+    Route::post('patient-history-workflow-events/{eventId}/undo', [App\Http\Controllers\API\PatientHistoryWorkflowController::class, 'undo'])->whereNumber('eventId');
 
     // Patient History Conversations
     Route::prefix('patient-history-conversations')->group(function () {

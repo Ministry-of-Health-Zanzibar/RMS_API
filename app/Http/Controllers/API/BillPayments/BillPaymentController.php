@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\BillPayment;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use App\Support\Pagination;
 
 
 class BillPaymentController extends Controller
@@ -18,7 +19,7 @@ class BillPaymentController extends Controller
     /**
      * Display all Bill Payments
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         if (!$user->can('View Payment')) {
@@ -28,10 +29,25 @@ class BillPaymentController extends Controller
             ], 403);
         }
 
-        $billPayments = BillPayment::with(['bill', 'payment'])->get();
+        $search = trim((string) $request->input('search', ''));
+        $billPayments = BillPayment::with(['bill', 'payment'])
+            ->when($request->filled('status'), function ($query) use ($request): void {
+                $query->where('status', $request->input('status'));
+            })
+            ->when($search !== '', function ($query) use ($search): void {
+                $term = mb_strtolower($search);
+                $query->where(function ($query) use ($term): void {
+                    $query->whereRaw('CAST(bill_id AS VARCHAR) LIKE ?', [$term.'%'])
+                        ->orWhereRaw('CAST(payment_id AS VARCHAR) LIKE ?', [$term.'%'])
+                        ->orWhereRaw('LOWER(status) LIKE ?', [$term.'%']);
+                });
+            })
+            ->latest('bill_payment_id')
+            ->paginate(Pagination::perPage($request, 25));
 
         return response()->json([
-            'data' => $billPayments,
+            'data' => $billPayments->items(),
+            'meta' => Pagination::meta($billPayments),
             'message' => 'Bill payments retrieved successfully',
             'statusCode' => 200
         ], 200);

@@ -6,6 +6,7 @@ use App\Models\PatientList;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Support\Pagination;
 
 class PatientListController extends Controller
 {
@@ -17,7 +18,7 @@ class PatientListController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         if (!$user->can('View Patient List')) {
@@ -29,12 +30,28 @@ class PatientListController extends Controller
 
         // The list page only renders PatientList columns. Loading every patient
         // (and every patient's location) caused a large, unused nested payload.
+        $search = trim((string) $request->input('search', ''));
         $lists = PatientList::withTrashed()
+            ->when($search !== '', function ($query) use ($search): void {
+                $term = mb_strtolower($search);
+                $query->where(function ($query) use ($term): void {
+                    $query->whereRaw('LOWER(patient_list_title) LIKE ?', [$term.'%'])
+                        ->orWhereRaw('LOWER(reference_number) LIKE ?', [$term.'%'])
+                        ->orWhereRaw('LOWER(board_type) LIKE ?', [$term.'%']);
+                });
+            })
+            ->when($request->filled('date_from'), function ($query) use ($request): void {
+                $query->whereDate('created_at', '>=', $request->input('date_from'));
+            })
+            ->when($request->filled('date_to'), function ($query) use ($request): void {
+                $query->whereDate('created_at', '<=', $request->input('date_to'));
+            })
             ->latest('created_at')
-            ->get();
+            ->paginate(Pagination::perPage($request, 25));
 
         return response([
-            'data' => $lists,
+            'data' => $lists->items(),
+            'meta' => Pagination::meta($lists),
             'statusCode' => 200
         ], 200);
     }

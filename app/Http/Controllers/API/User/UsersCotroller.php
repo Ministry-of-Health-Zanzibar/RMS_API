@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Helpers\Helper;
 use App\Mail\UserCredentialsMail;
 use App\Models\User;
+use App\Services\UserBlockService;
+use App\Support\SuperAdminAccess;
+use App\Support\Pagination;
 use DB;
 use Exception;
 use Illuminate\Http\Request;
@@ -77,112 +80,82 @@ class UsersCotroller extends Controller
      *     )
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
-        if (auth()->user()->hasRole('ROLE ADMIN')) {
+        $actor = auth()->user();
+        $isAdmin = $actor->hasAnyRole(['ROLE ADMIN', 'ROLE SUPER ADMIN', 'ROLE SUPERADMIN']);
+        $isNational = $actor->hasRole('ROLE NATIONAL');
+        $isAccountant = $actor->hasRole('ROLE ACCOUNTANT');
 
-            try {
-                $staffs = DB::table('users')
-                    ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
-                    ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-                    ->leftJoin('hospital_user', 'hospital_user.user_id', '=', 'users.id')
-                    ->leftJoin('hospitals', 'hospitals.hospital_id', '=', 'hospital_user.hospital_id')
-                    ->where('model_has_roles.model_type', User::class)
-                    ->where('users.id', '!=', 1)
-                    ->where('users.created_by', Auth::id())
-                    ->select(
-                        'users.*',
-                        'roles.name as role_name',
-                        'roles.id as role_id',
-                        'hospitals.hospital_name as hospital'
-                    )
-                    ->get();
-
-                return response()->json([
-                    'data' => $staffs,
-                    'statusCode' => 200,
-                ]);
-
-            } catch (Exception $e) {
-                return Helper::serverError($e);
-            }
-
-        } elseif (auth()->user()->hasRole('ROLE NATIONAL')) {
-
-            try {
-                $staffs = DB::table('users')
-                    ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
-                    ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-                    ->where('model_has_roles.model_type', User::class)
-                    ->where('users.created_by', Auth::id())
-                    ->where('roles.name', '!=', 'ROLE NATIONAL')
-                    ->where('model_has_roles.role_id', '!=', 1)
-                    ->select(
-                        'users.id',
-                        'users.first_name',
-                        'users.middle_name',
-                        'users.last_name',
-                        'users.email',
-                        'users.phone_no',
-                        'users.address',
-                        'users.gender',
-                        'users.date_of_birth',
-                        'users.deleted_at',
-                        'roles.name as role_name',
-                        'roles.id as role_id'
-                    )
-                    ->get();
-
-                return response()->json([
-                    'data' => $staffs,
-                    'statusCode' => 200,
-                ]);
-
-            } catch (Exception $e) {
-                return Helper::serverError($e);
-            }
-
-        } elseif (auth()->user()->hasRole('ROLE ACCOUNTANT')) {
-
-            try {
-                $staffs = DB::table('users')
-                    ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
-                    ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-                    ->where('model_has_roles.model_type', User::class)
-                    ->where('users.created_by', 2)
-                    ->where('roles.name', '!=', 'ROLE NATIONAL')
-                    ->where('model_has_roles.role_id', '!=', 1)
-                    ->select(
-                        'users.id',
-                        'users.first_name',
-                        'users.middle_name',
-                        'users.last_name',
-                        'users.email',
-                        'users.phone_no',
-                        'users.address',
-                        'users.gender',
-                        'users.date_of_birth',
-                        'users.deleted_at',
-                        'roles.name as role_name',
-                        'roles.id as role_id'
-                    )
-                    ->get();
-
-                return response()->json([
-                    'data' => $staffs,
-                    'statusCode' => 200,
-                ]);
-
-            } catch (Exception $e) {
-                return Helper::serverError($e);
-            }
-
-        } else {
+        if (! $isAdmin && ! $isNational && ! $isAccountant && ! $actor->can('View User')) {
             return response()->json([
-                'message' => 'Unauthenticated',
+                'message' => 'Unauthorized',
                 'statusCode' => 401,
-            ]);
+            ], 401);
         }
+
+        $query = DB::table('users')
+            ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+            ->leftJoin('hospital_user', 'hospital_user.user_id', '=', 'users.id')
+            ->leftJoin('hospitals', 'hospitals.hospital_id', '=', 'hospital_user.hospital_id')
+            ->leftJoin('users as blocker', 'blocker.id', '=', 'users.blocked_by')
+            ->where('model_has_roles.model_type', User::class)
+            ->where('users.id', '!=', 1)
+            ->select(
+                'users.id',
+                'users.first_name',
+                'users.middle_name',
+                'users.last_name',
+                'users.email',
+                'users.phone_no',
+                'users.address',
+                'users.gender',
+                'users.date_of_birth',
+                'users.deleted_at',
+                'users.is_blocked',
+                'users.blocked_at',
+                'users.blocked_by',
+                'users.blocked_reason',
+                DB::raw("NULLIF(CONCAT_WS(' ', blocker.first_name, blocker.middle_name, blocker.last_name), '') as blocked_by_name"),
+                'roles.name as role_name',
+                'roles.id as role_id',
+                'hospitals.hospital_name as hospital',
+            );
+
+        if ($isAdmin) {
+            $query->where('users.created_by', Auth::id());
+        } elseif ($isNational) {
+            $query->where('users.created_by', Auth::id())
+                ->where('roles.name', '!=', 'ROLE NATIONAL')
+                ->where('model_has_roles.role_id', '!=', 1);
+        } elseif ($isAccountant) {
+            $query->where('users.created_by', 2)
+                ->where('roles.name', '!=', 'ROLE NATIONAL')
+                ->where('model_has_roles.role_id', '!=', 1);
+        }
+
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $term = mb_strtolower($search);
+            $query->where(function ($query) use ($term): void {
+                $query->whereRaw('LOWER(users.first_name) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(users.middle_name) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(users.last_name) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(users.email) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(users.phone_no) LIKE ?', [$term.'%']);
+            });
+        }
+
+        $staffs = $query
+            ->orderByDesc('users.id')
+            ->paginate(Pagination::perPage($request, 25));
+
+        return response()->json([
+            'data' => $staffs->items(),
+            'meta' => Pagination::meta($staffs),
+            'statusCode' => 200,
+        ]);
     }
 
     /**
@@ -403,7 +376,7 @@ class UsersCotroller extends Controller
             ];
         } else {
             return response()
-                ->json(['message' => 'Unauthorized', 'statusCode' => 401]);
+                ->json(['message' => 'Unauthorized', 'statusCode' => 401], 401);
         }
     }
 
@@ -511,7 +484,7 @@ class UsersCotroller extends Controller
             }
         } else {
             return response()
-                ->json(['message' => 'Unauthorized', 'statusCode' => 401]);
+                ->json(['message' => 'Unauthorized', 'statusCode' => 401], 401);
         }
     }
 
@@ -556,55 +529,66 @@ class UsersCotroller extends Controller
      *     )
      * )
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        //
-        if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Delete User')) {
+        if (! ctype_digit($id) || (int) $id < 1) {
+            return response()->json([
+                'message' => 'The user ID must be a positive integer.',
+                'statusCode' => 422,
+            ], 422);
+        }
+
+        if (SuperAdminAccess::allowed(auth()->user(), 'Block User')) {
             try {
-                $delete = User::find($id);
-                if ($delete != null) {
-                    $delete->delete();
+                $request->validate([
+                    'reason' => ['nullable', 'string', 'max:2000'],
+                ]);
 
-                    $successResponse = [
-                        'message' => 'User Account Blocked Successfully',
-                        'statusCode' => '200',
-                    ];
+                app(UserBlockService::class)->block(
+                    (int) $id,
+                    auth()->user(),
+                    $request->input('reason'),
+                );
 
-                    return response()->json($successResponse);
-                }
+                return response()->json([
+                    'message' => 'User Account Blocked Successfully',
+                    'statusCode' => 200,
+                ]);
             } catch (Exception $e) {
-                return Helper::serverError($e);
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'statusCode' => $e instanceof \RuntimeException ? 422 : 500,
+                ], $e instanceof \RuntimeException ? 422 : 500);
             }
         } else {
             return response()
-                ->json(['message' => 'Unauthorized', 'statusCode' => 401]);
+                ->json(['message' => 'Unauthorized', 'statusCode' => 401], 401);
         }
     }
 
     public function unBlockUser(string $id)
     {
-        // Hakikisha mwenye uwezo wa ku-unblock ni Admin au mwenye permission husika
-        if (auth()->user()->hasRole('ROLE ADMIN') || auth()->user()->hasRole('ROLE NATIONAL') || auth()->user()->can('Update User')) {
+        if (! ctype_digit($id) || (int) $id < 1) {
+            return response()->json([
+                'message' => 'The user ID must be a positive integer.',
+                'statusCode' => 422,
+            ], 422);
+        }
+
+        if (SuperAdminAccess::allowed(auth()->user(), 'Unblock User')) {
             try {
-                // Tunatumia onlyTrashed() kupata wale tu walio-blocked
-                $user = User::onlyTrashed()->find($id);
-
-                if ($user != null) {
-                    $user->restore(); // Hii inafuta tarehe kwenye deleted_at
-
-                    return response()->json([
-                        'message' => 'User Account Unblocked Successfully',
-                        'statusCode' => '201',
-                    ]);
-                }
+                app(UserBlockService::class)->unblock((int) $id, auth()->user());
 
                 return response()->json([
-                    'message' => 'User not found in blocked list',
-                    'statusCode' => '404',
-                ], 404);
+                    'message' => 'User Account Unblocked Successfully',
+                    'statusCode' => 200,
+                ]);
 
             } catch (Exception $e) {
-                return Helper::serverError($e);
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'statusCode' => $e instanceof \RuntimeException ? 422 : 500,
+                ], $e instanceof \RuntimeException ? 422 : 500);
             }
         } else {
             return response()->json(['message' => 'Unauthorized', 'statusCode' => 401], 401);

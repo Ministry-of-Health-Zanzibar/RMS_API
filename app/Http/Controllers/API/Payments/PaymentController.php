@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use App\Support\Pagination;
 
 
 /**
@@ -33,7 +34,7 @@ class PaymentController extends Controller
      *     @OA\Response(response=200, description="List of payments")
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         if (!$user->can('View Payment')) {
@@ -42,11 +43,42 @@ class PaymentController extends Controller
                 'statusCode' => 403
             ], 403);
         }
-        // $payments = Payment::latest()->paginate(10);
-        $payments = Payment::latest()->get(); // <- get() executes the query
+        $search = trim((string) $request->input('search', ''));
+        $payments = Payment::query()
+            ->select([
+                'payment_id',
+                'payer',
+                'amount_paid',
+                'currency',
+                'payment_method',
+                'reference_number',
+                'voucher_number',
+                'payment_date',
+                'created_by',
+                'created_at',
+                'updated_at',
+                'deleted_at',
+            ])
+            ->when($search !== '', function ($query) use ($search): void {
+                $term = mb_strtolower($search);
+                $query->where(function ($query) use ($term): void {
+                    $query->whereRaw('LOWER(payer) LIKE ?', [$term.'%'])
+                        ->orWhereRaw('LOWER(reference_number) LIKE ?', [$term.'%'])
+                        ->orWhereRaw('LOWER(voucher_number) LIKE ?', [$term.'%']);
+                });
+            })
+            ->when($request->filled('date_from'), function ($query) use ($request): void {
+                $query->whereDate('created_at', '>=', $request->input('date_from'));
+            })
+            ->when($request->filled('date_to'), function ($query) use ($request): void {
+                $query->whereDate('created_at', '<=', $request->input('date_to'));
+            })
+            ->latest('payment_id')
+            ->paginate(Pagination::perPage($request, 25));
 
         return response()->json([
-            'data' => $payments,
+            'data' => $payments->items(),
+            'meta' => Pagination::meta($payments),
             'statusCode' => 200
         ]);
     }

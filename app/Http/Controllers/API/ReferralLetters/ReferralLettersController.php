@@ -8,6 +8,8 @@ use App\Models\BoardedOutLetter;
 use App\Models\PatientHistory;
 use App\Models\Referral;
 use App\Models\ReferralLetter;
+use App\Services\PatientHistoryWorkflowService;
+use App\Support\Pagination;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -71,7 +73,7 @@ class ReferralLettersController extends Controller
      *     )
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         if (! $user->can('View ReferralLetter')) {
@@ -81,19 +83,28 @@ class ReferralLettersController extends Controller
             ], 403);
         }
 
-        $Referral_letter = ReferralLetter::withTrashed()->get();
+        $letters = ReferralLetter::withTrashed()
+            ->when($request->filled('search'), function ($query) use ($request): void {
+                $term = mb_strtolower(trim((string) $request->input('search')));
+                $query->where(function ($query) use ($term): void {
+                    $query->whereRaw('LOWER(referral_letter_code) LIKE ?', [$term.'%'])
+                        ->orWhereRaw('LOWER(letter_text) LIKE ?', [$term.'%']);
+                });
+            })
+            ->when($request->filled('date_from'), function ($query) use ($request): void {
+                $query->whereDate('created_at', '>=', $request->input('date_from'));
+            })
+            ->when($request->filled('date_to'), function ($query) use ($request): void {
+                $query->whereDate('created_at', '<=', $request->input('date_to'));
+            })
+            ->latest('referral_letter_id')
+            ->paginate(Pagination::perPage($request, 25));
 
-        if ($Referral_letter) {
-            return response([
-                'data' => $Referral_letter,
-                'statusCode' => 200,
-            ], 200);
-        } else {
-            return response([
-                'message' => 'No data found',
-                'statusCode' => 500,
-            ], 500);
-        }
+        return response([
+            'data' => $letters->items(),
+            'meta' => Pagination::meta($letters),
+            'statusCode' => 200,
+        ], 200);
     }
 
     /**
@@ -234,9 +245,10 @@ class ReferralLettersController extends Controller
 
             if ($data['status'] === 'BoardedOut') {
 
-                $patientHistory = PatientHistory::findOrFail(
-                    $data['patient_histories_id']
-                );
+                $patientHistory = PatientHistory::query()
+                    ->lockForUpdate()
+                    ->findOrFail($data['patient_histories_id']);
+                $workflow = app(PatientHistoryWorkflowService::class);
 
                 /*
                 |--------------------------------------------------------------------------
@@ -246,7 +258,13 @@ class ReferralLettersController extends Controller
                 $existingReferral = Referral::where('patient_id', $patientHistory->patient_id)
                     ->whereNotIn('status', ['Cancelled'])
                     ->latest()
+                    ->lockForUpdate()
                     ->first();
+                $fromStatus = $patientHistory->status;
+                $beforeReferralIds = $existingReferral
+                    ? $workflow->referralTreeSnapshotIds($existingReferral->referral_id)
+                    : [];
+                $beforeSnapshot = $workflow->snapshot($patientHistory, $beforeReferralIds);
 
                 /*
                 |--------------------------------------------------------------------------
@@ -284,6 +302,21 @@ class ReferralLettersController extends Controller
                     ]);
                 }
 
+                $workflow->record(
+                    $patientHistory,
+                    'dg_boarded_out_decision',
+                    $fromStatus,
+                    $patientHistory->status,
+                    $beforeSnapshot,
+                    [
+                        'referral_id' => $existingReferral?->referral_id,
+                        'boarded_out_letter_id' => $boardedOut->id,
+                    ],
+                    $existingReferral
+                        ? $workflow->referralTreeSnapshotIds($existingReferral->referral_id)
+                        : $beforeReferralIds,
+                );
+
                 DB::commit();
 
                 return response([
@@ -305,15 +338,20 @@ class ReferralLettersController extends Controller
                 ], 422);
             }
 
-            $referral = Referral::findOrFail($referralId);
+            $referral = Referral::query()
+                ->lockForUpdate()
+                ->findOrFail($referralId);
             if ($data['status'] === 'Confirmed and BoardedOut') {
 
-                $patientHistory = PatientHistory::where(
-                    'patient_histories_id',
-                    $data['patient_histories_id'],
-                )
+                $patientHistory = PatientHistory::query()
+                    ->where('patient_histories_id', $data['patient_histories_id'])
                     ->where('patient_id', $referral->patient_id)
+                    ->lockForUpdate()
                     ->firstOrFail();
+                $workflow = app(PatientHistoryWorkflowService::class);
+                $fromStatus = $patientHistory->status;
+                $beforeReferralIds = $workflow->referralTreeSnapshotIds($referral->referral_id);
+                $beforeSnapshot = $workflow->snapshot($patientHistory, $beforeReferralIds);
 
                 /*
                 |--------------------------------------------------------------------------
@@ -353,6 +391,20 @@ class ReferralLettersController extends Controller
                     'created_by' => $user->id,
                 ]);
 
+                $workflow->record(
+                    $patientHistory,
+                    'dg_confirmed_and_boarded_out_decision',
+                    $fromStatus,
+                    $patientHistory->status,
+                    $beforeSnapshot,
+                    [
+                        'referral_id' => $referral->referral_id,
+                        'referral_letter_id' => $referralLetter->referral_letter_id,
+                        'boarded_out_letter_id' => $boardedOut->id,
+                    ],
+                    $workflow->referralTreeSnapshotIds($referral->referral_id),
+                );
+
                 DB::commit();
 
                 return response([
@@ -364,6 +416,17 @@ class ReferralLettersController extends Controller
                     'statusCode' => 201,
                 ], 201);
             }
+
+            $workflow = app(PatientHistoryWorkflowService::class);
+            $patientHistory = PatientHistory::query()
+                ->where('patient_id', $referral->patient_id)
+                ->where('status', 'approved')
+                ->latest('created_at')
+                ->lockForUpdate()
+                ->firstOrFail();
+            $fromStatus = $patientHistory->status;
+            $beforeReferralIds = $workflow->referralTreeSnapshotIds($referral->referral_id);
+            $beforeSnapshot = $workflow->snapshot($patientHistory, $beforeReferralIds);
 
             // 2️⃣ Update referral
             if ($data['status'] === 'Confirmed') {
@@ -380,11 +443,6 @@ class ReferralLettersController extends Controller
             }
 
             // 3️⃣ Update patient history
-            $patientHistory = PatientHistory::where('patient_id', $referral->patient_id)
-                ->where('status', 'approved')
-                ->latest('created_at')
-                ->firstOrFail();
-
             $patientHistory->update([
                 'status' => 'confirmed',
                 'dg_comments' => $data['letter_text'] ?? null,
@@ -399,6 +457,20 @@ class ReferralLettersController extends Controller
                 'end_date' => $data['end_date'] ?? null,
                 'created_by' => $user->id,
             ]);
+
+            $workflow->record(
+                $patientHistory,
+                'dg_referral_decision',
+                $fromStatus,
+                $patientHistory->status,
+                $beforeSnapshot,
+                [
+                    'referral_id' => $referral->referral_id,
+                    'referral_letter_id' => $referralLetter->referral_letter_id,
+                    'referral_status' => $referral->status,
+                ],
+                $workflow->referralTreeSnapshotIds($referral->referral_id),
+            );
 
             DB::commit();
 

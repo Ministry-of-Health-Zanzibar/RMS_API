@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use App\Support\Pagination;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -59,7 +60,7 @@ class DiagnosisController extends Controller
      *     )
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         if (! $user->can('View Diagnoses')) {
@@ -69,37 +70,73 @@ class DiagnosisController extends Controller
             ], 403);
         }
 
-        $diagnoses = Diagnosis::select(
-            'diagnosis_id',
-            'diagnosis_name',
-            'diagnosis_code'
-        )
-            ->orderBy('diagnosis_name')
-            ->toBase()
-            ->get();
+        $search = trim((string) $request->input('search', $request->input('q', '')));
+        $sort = in_array($request->input('sort'), ['diagnosis_id', 'diagnosis_name', 'diagnosis_code'], true)
+            ? $request->input('sort')
+            : 'diagnosis_name';
+        $direction = strtolower((string) $request->input('direction', 'asc')) === 'desc'
+            ? 'desc'
+            : 'asc';
+
+        $query = Diagnosis::query()
+            ->select('diagnosis_id', 'diagnosis_name', 'diagnosis_code', 'uuid', 'deleted_at')
+            ->when($search !== '', function ($query) use ($search): void {
+                $term = mb_strtolower($search);
+                $query->where(function ($query) use ($term): void {
+                    $query->whereRaw('LOWER(diagnosis_name) LIKE ?', [$term.'%'])
+                        ->orWhereRaw('LOWER(diagnosis_code) LIKE ?', [$term.'%']);
+                });
+            })
+            ->orderBy($sort, $direction)
+            ->orderBy('diagnosis_id');
+
+        $diagnoses = $query->paginate(Pagination::perPage($request, 25));
 
         return response()->json([
             'message' => 'Diagnoses retrieved successfully',
-            'data' => $diagnoses,
+            'data' => $diagnoses->items(),
+            'meta' => Pagination::meta($diagnoses),
             'statusCode' => 200,
         ], 200);
     }
 
     public function searchDiagnosis(Request $request)
     {
-        $query = $request->get('q');
+        $user = auth()->user();
+        if (! $user->can('View Diagnoses')) {
+            return response()->json([
+                'message' => 'Forbidden',
+                'statusCode' => 403,
+            ], 403);
+        }
+
+        $query = trim((string) $request->get('q', ''));
+        $limit = min(max((int) $request->input('limit', 20), 1), 50);
+
+        if (mb_strlen($query) < 2) {
+            return response()->json([
+                'data' => [],
+                'meta' => ['limit' => $limit, 'minimum_query_length' => 2],
+                'statusCode' => 200,
+            ]);
+        }
+
+        $term = mb_strtolower($query);
 
         $diagnoses = Diagnosis::withTrashed()
             ->select('diagnosis_id', 'diagnosis_name', 'diagnosis_code')
-            ->when($query, function ($q) use ($query) {
-                $q->where('diagnosis_name', 'ilike', "{$query}%"); // PostgreSQL case-insensitive prefix
+            ->where(function ($q) use ($term) {
+                $q->whereRaw('LOWER(diagnosis_name) LIKE ?', [$term.'%'])
+                    ->orWhereRaw('LOWER(diagnosis_code) LIKE ?', [$term.'%']);
             })
             ->orderBy('diagnosis_name', 'asc')
-            ->limit(50)
+            ->limit($limit)
             ->get();
 
         return response()->json([
             'data' => $diagnoses,
+            'meta' => ['limit' => $limit, 'query' => $query],
+            'statusCode' => 200,
         ]);
     }
 

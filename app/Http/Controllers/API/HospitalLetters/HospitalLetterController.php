@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Support\Pagination;
 
 class HospitalLetterController extends Controller
 {
@@ -22,7 +23,7 @@ class HospitalLetterController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         if (!$user->can('View Hospital Letter')) {
@@ -32,10 +33,22 @@ class HospitalLetterController extends Controller
             ], 403);
         }
 
-        $letters = HospitalLetter::with(['referral','followups','printedBy'])->get();
+        $letters = HospitalLetter::with(['referral','printedBy'])
+            ->when($request->filled('outcome'), function ($query) use ($request): void {
+                $query->where('outcome', $request->input('outcome'));
+            })
+            ->when($request->filled('date_from'), function ($query) use ($request): void {
+                $query->whereDate('created_at', '>=', $request->input('date_from'));
+            })
+            ->when($request->filled('date_to'), function ($query) use ($request): void {
+                $query->whereDate('created_at', '<=', $request->input('date_to'));
+            })
+            ->latest('letter_id')
+            ->paginate(Pagination::perPage($request, 25));
 
         return response()->json([
-            'data' => $letters,
+            'data' => $letters->items(),
+            'meta' => Pagination::meta($letters),
             'statusCode' => 200
         ]);
     }
